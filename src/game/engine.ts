@@ -168,6 +168,9 @@ export function update(state: GameState, dt: number) {
   const spawnRate = 0.9 + minutes * 0.6; // per second
   spawnEnemies(state, dt, spawnRate);
 
+  // Keep the orbiting fly swarm in sync with the "flies" plague level.
+  syncOrbitFlies(state, dt);
+
   // Cast plagues
   for (const [id, level] of state.plagues) {
     const cd = (state.plagueCooldown.get(id) ?? 0) - dt;
