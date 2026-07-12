@@ -48,11 +48,13 @@ export type NpcId =
 
 export type UpgradeChoice = {
   id: string;
-  plague: PlagueId;
+  plague?: PlagueId;
+  npc?: NpcId;
   title: string;
   description: string;
   scripture?: string;
   isUnlock?: boolean;
+  isCompanion?: boolean;
   apply: (state: GameState) => void;
 };
 
@@ -131,4 +133,8 @@ export type GameState = {
   darknessUntil?: number;
   darknessStart?: number;
   darknessDur?: number;
+
+  // Modular obstacle collision system — static decor with collision radius.
+  // Populated once at world init; movement code resolves against this list.
+  obstacles?: Array<{ pos: Vec2; r: number }>;
 };

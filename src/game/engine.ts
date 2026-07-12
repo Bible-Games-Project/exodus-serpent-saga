@@ -52,26 +52,68 @@ export function createInitialState(): GameState {
     worldH,
   };
   state.entities.set(player.id, player);
-  // Sprinkle some decor
+  // Sprinkle some decor. Each decor kind has a collision radius that feeds
+  // the modular obstacle system (see resolveObstacles).
+  const DECOR_RADIUS: Record<string, number> = { palm: 12, rock: 16, pyramid: 44 };
+  const obstacles: Array<{ pos: Vec2; r: number }> = [];
   for (let i = 0; i < 60; i++) {
     const k = Math.random();
     const kind = k < 0.6 ? "palm" : k < 0.9 ? "rock" : "pyramid";
+    // Keep decor away from Moses' spawn so he isn't stuck.
+    let px = 0, py = 0;
+    for (let tries = 0; tries < 8; tries++) {
+      px = rand(0, worldW);
+      py = rand(0, worldH);
+      if (Math.hypot(px - player.pos.x, py - player.pos.y) > 120) break;
+    }
+    const r = DECOR_RADIUS[kind] ?? 0;
     const dec: Entity = {
       id: state.nextId++,
-      pos: { x: rand(0, worldW), y: rand(0, worldH) },
+      pos: { x: px, y: py },
       vel: { x: 0, y: 0 },
       radius: 0,
-      hp: 1,
-      maxHp: 1,
+      hp: 1, maxHp: 1,
       team: "decor",
-      facing: 1,
-      animT: 0,
-      born: 0,
+      facing: 1, animT: 0, born: 0,
       kind,
+      data: { obstacleRadius: r },
     };
     state.entities.set(dec.id, dec);
+    if (r > 0) obstacles.push({ pos: dec.pos, r });
   }
+  state.obstacles = obstacles;
   return state;
+}
+
+// ---------- modular obstacle collision ----------
+// Push `pos` out of every obstacle it overlaps. Reusable for players, allies,
+// enemies, and any future entity type.
+function resolveObstacles(pos: Vec2, radius: number, state: GameState) {
+  const obs = state.obstacles;
+  if (!obs) return;
+  for (const o of obs) {
+    const dx = pos.x - o.pos.x;
+    const dy = pos.y - o.pos.y;
+    const min = o.r + radius;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < min * min && d2 > 0.0001) {
+      const d = Math.sqrt(d2);
+      pos.x = o.pos.x + (dx / d) * min;
+      pos.y = o.pos.y + (dy / d) * min;
+    } else if (d2 <= 0.0001) {
+      pos.x += min;
+    }
+  }
+}
+
+// Returns true if the point is inside the current camera viewport (with margin).
+function inViewport(state: GameState, pos: Vec2, margin = 40): boolean {
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  return (
+    Math.abs(pos.x - state.camera.x) < vw / 2 - margin &&
+    Math.abs(pos.y - state.camera.y) < vh / 2 - margin
+  );
 }
 
 // ---------- pixel-art blood pool builder ----------
@@ -156,6 +198,7 @@ export function update(state: GameState, dt: number) {
   p.vel.y = (iy / mag) * speed * (Math.hypot(ix, iy) > 0.05 ? 1 : 0);
   p.pos.x = clamp(p.pos.x + p.vel.x * dt, 30, state.worldW - 30);
   p.pos.y = clamp(p.pos.y + p.vel.y * dt, 30, state.worldH - 30);
+  resolveObstacles(p.pos, p.radius, state);
   if (Math.abs(p.vel.x) > 5) p.facing = p.vel.x > 0 ? 1 : -1;
   p.animT += dt * (Math.hypot(p.vel.x, p.vel.y) > 5 ? 6 : 0);
 
@@ -197,7 +240,7 @@ export function update(state: GameState, dt: number) {
       let bestD = dist2(e.pos, p.pos);
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
-        if (!n) continue;
+        if (!n || n.data?.downedUntil) continue;
         const d = dist2(e.pos, n.pos);
         if (d < bestD * 0.7) {
           bestD = d;
@@ -208,16 +251,13 @@ export function update(state: GameState, dt: number) {
       const dy = targetPos.y - e.pos.y;
       const d = Math.hypot(dx, dy) || 1;
       const baseSpd = (e.data?.speed as number) ?? 60;
-      // Plague of Darkness slows every enemy by 10% while active.
       const slow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
-      // Hail freeze — enemies caught in a hail impact are slowed 70%.
       const frozen = state.now < ((e.data?.freezeUntil as number) ?? 0);
       const freezeMul = frozen ? 0.3 : 1;
       const spd = baseSpd * slow * freezeMul;
       e.pos.x += (dx / d) * spd * dt;
       e.pos.y += (dy / d) * spd * dt;
-      // Jackal sprite is drawn head-left by default, so invert facing so it
-      // always runs head-first toward Moses, never backwards.
+      resolveObstacles(e.pos, e.radius, state);
       if (e.kind === "jackal") {
         e.facing = dx > 0 ? -1 : 1;
       } else {
@@ -233,37 +273,18 @@ export function update(state: GameState, dt: number) {
           state.running = false;
         }
       }
+      // Damage allies on contact — companions take damage exactly like Moses.
+      for (const npcId of state.npcs.values()) {
+        const n = state.entities.get(npcId);
+        if (!n || n.data?.downedUntil) continue;
+        if (dist2(e.pos, n.pos) < (e.radius + n.radius) ** 2) {
+          const contactDmg = (e.data?.contactDmg as number) ?? 8;
+          n.hp -= contactDmg * dt;
+          if (n.hp <= 0) downCompanion(state, n);
+        }
+      }
     } else if (e.team === "ally") {
-      // Follow player at loose distance, attack nearest enemy in range
-      const dx = p.pos.x - e.pos.x;
-      const dy = p.pos.y - e.pos.y;
-      const d = Math.hypot(dx, dy);
-      const followDist = 80 + (e.data?.slot as number ?? 0) * 15;
-      if (d > followDist) {
-        e.pos.x += (dx / d) * 120 * dt;
-        e.pos.y += (dy / d) * 120 * dt;
-        e.facing = dx > 0 ? 1 : -1;
-      }
-      // Attack cooldown
-      const cd = ((e.data?.atkCd as number) ?? 0) - dt;
-      if (cd <= 0) {
-        // find nearest enemy within 220 px
-        let nearest: Entity | null = null;
-        let bestD = 220 * 220;
-        for (const en of state.entities.values()) {
-          if (en.team !== "enemy") continue;
-          const d2 = dist2(en.pos, e.pos);
-          if (d2 < bestD) { bestD = d2; nearest = en; }
-        }
-        if (nearest) {
-          spawnAllyBolt(state, e, nearest);
-          e.data!.atkCd = 1.2;
-        } else {
-          e.data!.atkCd = 0.4;
-        }
-      } else {
-        e.data!.atkCd = cd;
-      }
+      updateCompanion(state, e, dt);
     } else if (e.team === "projectile") {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
@@ -945,25 +966,6 @@ function syncOrbitFlies(state: GameState, dt: number) {
 }
 
 
-function spawnAllyBolt(state: GameState, ally: Entity, target: Entity) {
-  const dx = target.pos.x - ally.pos.x;
-  const dy = target.pos.y - ally.pos.y;
-  const d = Math.hypot(dx, dy) || 1;
-  const speed = 300;
-  const e: Entity = {
-    id: state.nextId++,
-    pos: { x: ally.pos.x, y: ally.pos.y },
-    vel: { x: (dx / d) * speed, y: (dy / d) * speed },
-    radius: 5,
-    hp: 1, maxHp: 1,
-    team: "projectile", facing: 1,
-    animT: 0, born: state.now,
-    ttl: 1.4, dmg: 14 + Math.floor(state.level / 3),
-    kind: "bolt",
-    data: { hit: new Set<number>() },
-  };
-  state.entities.set(e.id, e);
-}
 
 function killEnemy(state: GameState, e: Entity) {
   state.entities.delete(e.id);
@@ -982,6 +984,140 @@ function killEnemy(state: GameState, e: Entity) {
   state.entities.set(gem.id, gem);
 }
 
+// ---------- companion definitions & AI ----------
+// Every companion has a unique combat behavior (weapon, range, cooldown,
+// projectile color/speed). Adding a new companion is data-only.
+type CompanionCombat = {
+  attackRange: number;
+  cooldown: number;
+  boltSpeed: number;
+  boltDmg: number;
+  boltRadius: number;
+  boltColor: string;
+  boltKind: string; // visual key rendered by GameCanvas
+};
+const COMPANION_COMBAT: Record<import("./types").NpcId, CompanionCombat> = {
+  bithiah:  { attackRange: 200, cooldown: 1.4, boltSpeed: 260, boltDmg: 10, boltRadius: 5, boltColor: "#f0e8b4", boltKind: "reed" },
+  aaron:    { attackRange: 90,  cooldown: 0.9, boltSpeed: 0,   boltDmg: 22, boltRadius: 6, boltColor: "#c48a3a", boltKind: "aaronstaff" },
+  miriam:   { attackRange: 210, cooldown: 1.3, boltSpeed: 240, boltDmg: 14, boltRadius: 7, boltColor: "#7fc7ff", boltKind: "waterbowl" },
+  jethro:   { attackRange: 170, cooldown: 1.8, boltSpeed: 200, boltDmg: 20, boltRadius: 6, boltColor: "#e8c060", boltKind: "wisdom" },
+  zipporah: { attackRange: 220, cooldown: 1.1, boltSpeed: 300, boltDmg: 14, boltRadius: 4, boltColor: "#b0b0b0", boltKind: "flint" },
+  joshua:   { attackRange: 260, cooldown: 1.0, boltSpeed: 340, boltDmg: 20, boltRadius: 4, boltColor: "#d8d4c0", boltKind: "spear" },
+  hur:      { attackRange: 180, cooldown: 1.6, boltSpeed: 260, boltDmg: 16, boltRadius: 5, boltColor: "#f0a0f0", boltKind: "prayer" },
+  elder:    { attackRange: 200, cooldown: 1.4, boltSpeed: 260, boltDmg: 18, boltRadius: 5, boltColor: "#e0e0ff", boltKind: "prayer" },
+};
+
+function updateCompanion(state: GameState, e: Entity, dt: number) {
+  const d = e.data!;
+  // Downed — resting for 30s after HP hits 0.
+  if (d.downedUntil) {
+    if (state.now >= (d.downedUntil as number)) {
+      d.downedUntil = undefined;
+      e.hp = e.maxHp;
+    } else {
+      return;
+    }
+  }
+
+  const p = state.player;
+  const combat = COMPANION_COMBAT[e.kind as import("./types").NpcId] ?? COMPANION_COMBAT.elder;
+  const inView = inViewport(state, e.pos);
+
+  if (!inView) {
+    // Rush back into view — head toward Moses.
+    const dx = p.pos.x - e.pos.x;
+    const dy = p.pos.y - e.pos.y;
+    const dd = Math.hypot(dx, dy) || 1;
+    const spd = 160;
+    e.pos.x += (dx / dd) * spd * dt;
+    e.pos.y += (dy / dd) * spd * dt;
+    e.facing = dx > 0 ? 1 : -1;
+    d.wanderT = 0;
+  } else {
+    // Wander — pick a random point inside the visible camera every few sec.
+    let wt = ((d.wanderT as number) ?? 0) - dt;
+    let wx = (d.wanderX as number) ?? e.pos.x;
+    let wy = (d.wanderY as number) ?? e.pos.y;
+    if (wt <= 0 || Math.hypot(wx - e.pos.x, wy - e.pos.y) < 6) {
+      const vw = state.viewport?.w ?? 800;
+      const vh = state.viewport?.h ?? 600;
+      const m = 60;
+      wx = state.camera.x + rand(-vw / 2 + m, vw / 2 - m);
+      wy = state.camera.y + rand(-vh / 2 + m, vh / 2 - m);
+      wt = 2 + Math.random() * 2.5;
+      d.wanderX = wx; d.wanderY = wy;
+    }
+    d.wanderT = wt;
+    const dx = wx - e.pos.x;
+    const dy = wy - e.pos.y;
+    const dd = Math.hypot(dx, dy) || 1;
+    const spd = 70;
+    e.pos.x += (dx / dd) * spd * dt;
+    e.pos.y += (dy / dd) * spd * dt;
+    if (Math.abs(dx) > 2) e.facing = dx > 0 ? 1 : -1;
+  }
+  resolveObstacles(e.pos, e.radius, state);
+
+  // Attack: find nearest enemy inside range.
+  const cd = ((d.atkCd as number) ?? 0) - dt;
+  if (cd <= 0) {
+    let nearest: Entity | null = null;
+    let bestD = combat.attackRange * combat.attackRange;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      const d2 = dist2(en.pos, e.pos);
+      if (d2 < bestD) { bestD = d2; nearest = en; }
+    }
+    if (nearest) {
+      spawnCompanionAttack(state, e, nearest, combat);
+      d.atkCd = combat.cooldown;
+    } else {
+      d.atkCd = 0.3;
+    }
+  } else {
+    d.atkCd = cd;
+  }
+}
+
+function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, combat: CompanionCombat) {
+  const dx = target.pos.x - ally.pos.x;
+  const dy = target.pos.y - ally.pos.y;
+  const dd = Math.hypot(dx, dy) || 1;
+  ally.facing = dx > 0 ? 1 : -1;
+  // Aaron — instant melee swing (no projectile).
+  if (combat.boltSpeed === 0) {
+    if (dd < combat.attackRange) {
+      target.hp -= combat.boltDmg;
+      if (target.hp <= 0) killEnemy(state, target);
+    }
+    // brief visual
+    spawnVisualHazard(state, "companionmelee", {
+      x: ally.pos.x + (dx / dd) * 20,
+      y: ally.pos.y + (dy / dd) * 20,
+    }, 0.18, { color: combat.boltColor });
+    return;
+  }
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: ally.pos.x, y: ally.pos.y },
+    vel: { x: (dx / dd) * combat.boltSpeed, y: (dy / dd) * combat.boltSpeed },
+    radius: combat.boltRadius,
+    hp: 1, maxHp: 1,
+    team: "projectile", facing: ally.facing,
+    animT: 0, born: state.now,
+    ttl: 1.4, dmg: combat.boltDmg,
+    kind: "bolt",
+    data: { hit: new Set<number>(), boltKind: combat.boltKind, boltColor: combat.boltColor, angle: Math.atan2(dy, dx) },
+  };
+  state.entities.set(e.id, e);
+}
+
+function downCompanion(_state: GameState, n: Entity) {
+  n.hp = 0;
+  if (!n.data) n.data = {};
+  n.data.downedUntil = _state.now + 30;
+}
+
 // ---------- leveling ----------
 function levelUp(state: GameState) {
   state.xp -= state.xpToNext;
@@ -989,33 +1125,31 @@ function levelUp(state: GameState) {
   state.xpToNext = Math.floor(5 + state.level * 3 + state.level ** 1.35);
   state.player.maxHp += 5;
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15);
-
-  // Every 5 levels unlock next companion (Elder repeats)
-  if (state.level % 5 === 0) {
-    unlockNextCompanion(state);
-  }
   offerUpgrades(state);
 }
 
-function unlockNextCompanion(state: GameState) {
-  const idx = state.nextNpcIndex;
-  const npcId = idx < NPC_ORDER.length ? NPC_ORDER[idx] : "elder";
-  const p = state.player.pos;
-  const slot = state.npcs.size;
+function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
+  // Spawn within the visible viewport (never off-screen). Pick a random point
+  // inside the camera rect with a comfortable margin.
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  const m = 80;
+  const px = state.camera.x + rand(-vw / 2 + m, vw / 2 - m);
+  const py = state.camera.y + rand(-vh / 2 + m, vh / 2 - m);
   const ally: Entity = {
     id: state.nextId++,
-    pos: { x: p.x + Math.cos(slot) * 60, y: p.y + Math.sin(slot) * 60 },
+    pos: { x: px, y: py },
     vel: { x: 0, y: 0 },
     radius: 12,
     hp: 60, maxHp: 60,
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
-    data: { slot, atkCd: 0.5, npcLabel: NPCS[npcId].name },
+    data: { atkCd: 0.5, wanderT: 0 },
   };
   state.entities.set(ally.id, ally);
   state.npcs.set(npcId, ally.id);
-  state.nextNpcIndex = idx + 1;
+  state.nextNpcIndex = Math.min(NPC_ORDER.length, state.nextNpcIndex + 1);
   state.newNpcs.add(npcId);
 }
 
@@ -1023,7 +1157,6 @@ function offerUpgrades(state: GameState) {
   const choices: UpgradeChoice[] = [];
   const active = state.plagues;
 
-  // Level-up options in each of the active plagues
   for (const [id, lvl] of active) {
     const def = PLAGUES[id];
     choices.push({
@@ -1035,8 +1168,6 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Only the NEXT locked plague in strict biblical order is offered — never
-  // two new plague unlocks at once.
   for (const id of PLAGUE_ORDER) {
     if (active.has(id)) continue;
     const def = PLAGUES[id];
@@ -1057,12 +1188,32 @@ function offerUpgrades(state: GameState) {
     break;
   }
 
-  // Shuffle and take 3
+  // Companion blessing — always offer the next companion in the fixed
+  // biblical order. After Elder of Israel, every additional pick grants
+  // another Elder (per Numbers 11:16-17 — the seventy elders).
+  const idx = state.nextNpcIndex;
+  const npcId: import("./types").NpcId = idx < NPC_ORDER.length ? NPC_ORDER[idx] : "elder";
+  const npc = NPCS[npcId];
+  const isFirst = !state.npcs.has(npcId);
+  choices.push({
+    id: `npc-${npcId}-${state.level}`,
+    npc: npcId,
+    isCompanion: true,
+    isUnlock: isFirst,
+    title: isFirst ? `Companion: ${npc.name}` : `${npc.name} joins again`,
+    description: npc.description,
+    scripture: npc.scripture,
+    apply: (s) => summonCompanion(s, npcId),
+  });
+
+  // Shuffle non-companion choices and cap to 2, then always append the companion so it stays visible.
+  const companion = choices.pop()!;
   for (let i = choices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [choices[i], choices[j]] = [choices[j], choices[i]];
   }
-  const picks = choices.slice(0, 3);
+  const picks = choices.slice(0, 2);
+  picks.push(companion);
   if (picks.length === 0) return;
   state.levelUpPending = picks;
 }

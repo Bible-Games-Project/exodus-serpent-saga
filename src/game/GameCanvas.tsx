@@ -332,7 +332,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
             >
               {c.isUnlock && (
                 <span
-                  className="absolute -right-2 -top-2 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow"
+                  className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`}
                   style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}
                 >
                   NEW
@@ -413,61 +413,119 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // MOSES_NOSTAFF) and we render an animated swinging staff sweeping through
     // an arc from Moses' hand, trailed by a chunky pixel-art crescent slash.
     if (e.kind === "staffswing") {
-      const range = (e.data?.range as number) ?? 70;
-      const halfArc = (e.data?.halfArc as number) ?? 1.05;
+      void e.data?.range;
       const facing = (e.data?.facing as number) ?? 1;
       const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
       const progress = 1 - life;
-      const baseAng = facing === 1 ? 0 : Math.PI;
-      const startA = baseAng - halfArc;
-      const endA = baseAng + halfArc;
-      // Anchor at Moses' hand (offset from body center for the two-handed grip)
-      const cx = s.player.pos.x - camX + facing * 4;
-      const cy = s.player.pos.y - camY - 4;
+      // Overhead swing — from up-behind to down-forward. Reads clearly as
+      // a top-to-bottom axe/staff strike.
+      const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
+      const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
+      // Fixed staff length identical to Moses' idle staff (visible column
+      // is 20 pixels tall × SCALE=3 = 60 on-screen pixels).
+      const staffLen = 60;
+      // Pivot at Moses' hand near waist — never at feet or groin.
+      const cx = s.player.pos.x - camX + facing * 5;
+      const cy = s.player.pos.y - camY - 22;
       const swingAng = startA + (endA - startA) * progress;
 
       ctx.save();
-      // Trailing crescent — chunky pixel arc
-      const segs = 18;
+      // Elegant white slash — trails behind the tip along the arc.
+      // Length is approximately twice the previous crescent by trailing the
+      // full past sweep with brighter, larger tail pixels.
+      const trailStart = Math.max(0, progress - 0.75);
+      const segs = 26;
       for (let i = 0; i < segs; i++) {
         const t = i / (segs - 1);
-        const a = startA + (endA - startA) * t * progress;
-        const trail = 0.2 + 0.8 * t;
-        ctx.globalAlpha = life * trail;
-        ctx.fillStyle = t > 0.78 ? "#fff8e0" : t > 0.45 ? "#ffd870" : "#c88a3a";
-        const ox = cx + Math.cos(a) * range;
-        const oy = cy + Math.sin(a) * range;
-        const sz = t > 0.78 ? 5 : t > 0.45 ? 4 : 3;
-        ctx.fillRect(Math.round(ox - sz / 2), Math.round(oy - sz / 2), sz, sz);
-        ctx.globalAlpha = life * trail * 0.6;
-        ctx.fillStyle = "#8a4a1a";
-        const ix = cx + Math.cos(a) * (range - 7);
-        const iy = cy + Math.sin(a) * (range - 7);
-        ctx.fillRect(Math.round(ix - 1), Math.round(iy - 1), 3, 3);
+        const a = startA + (endA - startA) * (trailStart + t * (progress - trailStart));
+        const fade = life * (0.25 + 0.75 * t);
+        // outer glow
+        ctx.globalAlpha = fade * 0.55;
+        ctx.fillStyle = "#ffffff";
+        const ox = cx + Math.cos(a) * staffLen;
+        const oy = cy + Math.sin(a) * staffLen;
+        const outerSz = t > 0.8 ? 7 : t > 0.5 ? 6 : 5;
+        ctx.fillRect(Math.round(ox - outerSz / 2), Math.round(oy - outerSz / 2), outerSz, outerSz);
+        // bright core
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = "#ffffff";
+        const coreSz = t > 0.8 ? 4 : 3;
+        ctx.fillRect(Math.round(ox - coreSz / 2), Math.round(oy - coreSz / 2), coreSz, coreSz);
       }
-      // The swinging staff itself (Moses' own weapon, now animated)
+      // The swinging staff itself — length matches the idle staff exactly.
       ctx.globalAlpha = 1;
-      const tipX = cx + Math.cos(swingAng) * (range - 2);
-      const tipY = cy + Math.sin(swingAng) * (range - 2);
-      // dark outline
+      const tipX = cx + Math.cos(swingAng) * staffLen;
+      const tipY = cy + Math.sin(swingAng) * staffLen;
       ctx.strokeStyle = "#2b1d10";
       ctx.lineWidth = 6;
       ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
-      // wood shaft
       ctx.strokeStyle = "#8a5a34";
       ctx.lineWidth = 4;
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
-      // wood highlight
       ctx.strokeStyle = "#b48355";
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
-      // glowing tip
-      ctx.fillStyle = "#fff2c0";
-      ctx.beginPath(); ctx.arc(tipX, tipY, 3, 0, Math.PI * 2); ctx.fill();
+      // white glowing tip
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(tipX, tipY, 4, 0, Math.PI * 2); ctx.fill();
+      // knob at pivot so staff never looks detached
+      ctx.fillStyle = "#5a3820";
+      ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
       continue;
     }
+
+    if (e.kind === "companionmelee") {
+      const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
+      const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+      const x = e.pos.x - camX;
+      const y = e.pos.y - camY;
+      ctx.save();
+      ctx.globalAlpha = life;
+      ctx.fillStyle = (e.data?.color as string) ?? "#ffffff";
+      ctx.fillRect(x - 8, y - 2, 16, 4);
+      ctx.fillRect(x - 2, y - 8, 4, 16);
+      ctx.restore();
+      continue;
+    }
+
+    if (e.kind === "bolt") {
+      const boltKind = (e.data?.boltKind as string | undefined) ?? "default";
+      const color = (e.data?.boltColor as string | undefined) ?? "#f0e8b4";
+      const x = e.pos.x - camX;
+      const y = e.pos.y - camY;
+      const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      if (boltKind === "spear") {
+        // Joshua — long spear shaft with steel tip.
+        ctx.fillStyle = "#5a3820"; ctx.fillRect(-10, -1, 18, 2);
+        ctx.fillStyle = color; ctx.fillRect(6, -2, 6, 4);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(10, -1, 2, 2);
+      } else if (boltKind === "waterbowl") {
+        // Miriam — a splash of water.
+        ctx.fillStyle = "#3f7bbf"; ctx.fillRect(-4, -4, 8, 8);
+        ctx.fillStyle = color; ctx.fillRect(-3, -3, 6, 6);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(-1, -1, 2, 2);
+      } else if (boltKind === "aaronstaff") {
+        // Aaron's melee flash — handled by companionmelee above, this branch
+        // is unused for Aaron, kept for safety.
+        ctx.fillStyle = color; ctx.fillRect(-6, -2, 12, 4);
+      } else if (boltKind === "flint") {
+        // Zipporah — sharp flint sliver.
+        ctx.fillStyle = "#4a4a4a"; ctx.fillRect(-4, -1, 8, 2);
+        ctx.fillStyle = color; ctx.fillRect(-3, -1, 6, 2);
+      } else {
+        // wisdom / prayer / reed — pulsing glowing orb with cross-glow.
+        ctx.fillStyle = color; ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-1, -4, 2, 8);
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(-1, -1, 2, 2);
+      }
+      ctx.restore();
+      continue;
+    }
+
 
 
     // Gnat swarm — dedicated renderer draws every mosquito distinctly.
@@ -548,7 +606,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       // it's travelling — never tail-first.
       const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
       const rotImg = renderSprite(sprite, frameIdx, SCALE, false);
-      // rotated shadow — long axis follows the body direction
       ctx.save();
       ctx.translate(e.pos.x - camX, e.pos.y - camY + 6);
       ctx.rotate(angle);
@@ -557,29 +614,48 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.ellipse(0, 0, rotImg.width * 0.45, 3, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      // body
       ctx.save();
       ctx.translate(e.pos.x - camX, e.pos.y - camY);
       ctx.rotate(angle);
       ctx.drawImage(rotImg, -rotImg.width / 2, -rotImg.height / 2);
       ctx.restore();
     } else {
+      const downed = e.team === "ally" && e.data?.downedUntil != null;
       const shadowY = Math.round(e.pos.y - camY + 8);
       const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
       ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
       ctx.beginPath();
       ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.drawImage(img, sx, sy, drawW, drawH);
+      if (downed) {
+        // Fallen companion — rotated on side, dimmed, with resting glyph.
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.translate(sx + drawW / 2, sy + drawH / 2);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+        ctx.fillStyle = "#f0e0a0";
+        ctx.font = "700 10px Nunito, sans-serif";
+        ctx.textAlign = "center";
+        const remain = Math.max(0, Math.ceil((e.data!.downedUntil as number) - s.now));
+        ctx.fillText(`${remain}s`, sx + drawW / 2, sy - 2);
+      } else {
+        ctx.drawImage(img, sx, sy, drawW, drawH);
+      }
     }
 
-    if (e.team === "ally" && e.data?.npcLabel) {
-      ctx.font = "600 10px Nunito, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillText(String(e.data.npcLabel), sx + drawW / 2 + 1, sy - 3);
-      ctx.fillStyle = "#f6efdc";
-      ctx.fillText(String(e.data.npcLabel), sx + drawW / 2, sy - 4);
+    // Companion health bar — green, mirrors Moses' HP bar style.
+    if (e.team === "ally") {
+      const bw = 26;
+      const bx = sx + drawW / 2 - bw / 2;
+      const by = sy - 5;
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
+      ctx.fillStyle = "#1e5a1e";
+      ctx.fillRect(bx, by, bw, 3);
+      ctx.fillStyle = "#4ec24e";
+      ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
 
     if (e.team === "enemy" && e.hp < e.maxHp) {
@@ -592,6 +668,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
   }
+
 
   // 3) Plague of Darkness — dim the world with a lamp-circle around Moses.
   const dEnd = s.darknessUntil ?? 0;
