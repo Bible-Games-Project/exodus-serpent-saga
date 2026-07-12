@@ -1035,25 +1035,26 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Unlock next locked plagues
+  // Only the NEXT locked plague in strict biblical order is offered — never
+  // two new plague unlocks at once.
   for (const id of PLAGUE_ORDER) {
     if (active.has(id)) continue;
     const def = PLAGUES[id];
-    if (state.level >= def.unlockLevel) {
-      choices.push({
-        id: `${id}-unlock`,
-        plague: id,
-        title: `Unlock: ${def.name}`,
-        description: def.description,
-        scripture: def.scripture,
-        isUnlock: true,
-        apply: (s) => {
-          s.plagues.set(id, 1);
-          s.plagueCooldown.set(id, 0.5);
-          s.newPlagues.add(id);
-        },
-      });
-    }
+    if (state.level < def.unlockLevel) break;
+    choices.push({
+      id: `${id}-unlock`,
+      plague: id,
+      title: `Unlock: ${def.name}`,
+      description: def.description,
+      scripture: def.scripture,
+      isUnlock: true,
+      apply: (s) => {
+        s.plagues.set(id, 1);
+        s.plagueCooldown.set(id, 0.5);
+        s.newPlagues.add(id);
+      },
+    });
+    break;
   }
 
   // Shuffle and take 3
