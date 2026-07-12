@@ -20,6 +20,7 @@ export type Entity = {
 };
 
 export type PlagueId =
+  | "staff"
   | "serpent"
   | "blood"
   | "frogs"
@@ -49,6 +50,8 @@ export type UpgradeChoice = {
   plague: PlagueId;
   title: string;
   description: string;
+  scripture?: string;
+  isUnlock?: boolean;
   apply: (state: GameState) => void;
 };
 
@@ -66,6 +69,7 @@ export type PlagueDef = {
   id: PlagueId;
   name: string;
   description: string;
+  scripture?: string; // biblical reference + brief explanation
   unlockLevel: number; // player level at which offered
   base: PlagueLevel;
   scale: (level: number) => PlagueLevel; // infinite evolution
@@ -75,6 +79,7 @@ export type NpcDef = {
   id: NpcId;
   name: string;
   description: string;
+  scripture?: string;
 };
 
 export type GameState = {
@@ -103,6 +108,10 @@ export type GameState = {
   // unlocked npc ids -> entity id
   npcs: Map<NpcId, number>;
   nextNpcIndex: number; // how many companions unlocked
+
+  // NEW badges — cleared once the player views/interacts with the item.
+  newPlagues: Set<PlagueId>;
+  newNpcs: Set<NpcId>;
 
   // input
   input: { x: number; y: number };
