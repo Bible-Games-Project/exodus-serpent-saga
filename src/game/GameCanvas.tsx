@@ -537,7 +537,24 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.beginPath();
     ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.drawImage(img, sx, sy, drawW, drawH);
+
+    if (e.kind === "serpent") {
+      // Rotate the serpent sprite once (locked at spawn) so it always faces
+      // the direction it was fired in, regardless of enemy movement.
+      const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
+      // sprite art faces right — flip vertically when firing leftward so the
+      // head silhouette stays upright rather than upside-down.
+      const facingLeft = Math.cos(angle) < 0;
+      const rotImg = renderSprite(sprite, frameIdx, SCALE, false);
+      ctx.save();
+      ctx.translate(e.pos.x - camX, e.pos.y - camY);
+      ctx.rotate(angle + (facingLeft ? Math.PI : 0));
+      if (facingLeft) ctx.scale(1, -1);
+      ctx.drawImage(rotImg, -rotImg.width / 2, -rotImg.height / 2);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, sx, sy, drawW, drawH);
+    }
 
     if (e.team === "ally" && e.data?.npcLabel) {
       ctx.font = "600 10px Nunito, sans-serif";
