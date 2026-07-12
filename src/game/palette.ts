@@ -1,56 +1,66 @@
-// Small palette of hand-picked pastel/desert colors used across all sprites.
-// Keeping palette central means every entity feels part of the same painting.
-export const PALETTE = {
-  T: "transparent",
-  // Skin & robes
-  s1: "#e6c39a", // warm skin light
-  s2: "#c99a6c", // warm skin shadow
-  r1: "#f4e2c1", // linen light (Moses robe)
-  r2: "#d8b98a", // linen shadow
-  br: "#7a4a2b", // beard / dark hair
-  hi: "#f6efdc", // highlight / eye white
-  bl: "#2b1d14", // deep outline
-  // Staff / wood
-  wd: "#8a5a34",
-  wl: "#b48355",
-  // Serpent (green)
-  g1: "#7fa96b",
-  g2: "#4d7a3e",
-  g3: "#c5d99a",
-  // Blood / fire (red)
-  bd: "#a12b2b",
-  bl2: "#e05a48",
-  // Frog
-  fg: "#83a05a",
-  fg2: "#4a6b34",
-  // Gnat/fly
-  gn: "#3a2f24",
-  gn2: "#645445",
-  // Sand / desert
-  sa: "#e9c9a1",
-  sd: "#c69a6c",
-  sh: "#a17048",
-  // Sky
-  sk: "#f2d9ae",
-  // Palm / vegetation
-  pg: "#6b8a4a",
-  pd: "#4b6832",
-  // Stone / ruins
-  st: "#c9b090",
-  sd2: "#9a7f5c",
-  // Enemy — Egyptian soldier (bronze / white kilt)
-  bz: "#b98550",
-  bz2: "#7a5230",
-  wh: "#efe6cf",
+// Single-character palette codes. One character = one pixel in every sprite.
+// `.` is transparent. Keeps sprite grids readable and easy to edit.
+export const PALETTE: Record<string, string> = {
+  ".": "transparent",
+  // Neutral / outline
+  "K": "#2b1d14", // deep outline (black-ish)
+  "W": "#f6efdc", // highlight / linen white
+  // Warm skin
+  "s": "#e6c39a",
+  "S": "#c99a6c",
+  // Hair / beard / brown
+  "b": "#7a4a2b",
+  "B": "#4a2c18",
+  // Robes (linen)
+  "l": "#f4e2c1",
+  "L": "#d8b98a",
+  // Wood / staff
+  "w": "#8a5a34",
+  "d": "#b48355",
+  // Serpents / vegetation (greens)
+  "g": "#7fa96b",
+  "G": "#4d7a3e",
+  "y": "#c5d99a", // light green highlight
+  "v": "#4b6832", // dark palm
+  // Reds — blood / clay / fire
+  "r": "#a12b2b",
+  "R": "#e05a48",
+  "c": "#c76a4a", // clay
+  // Frogs / gnats
+  "f": "#83a05a",
+  "F": "#4a6b34",
+  "n": "#3a2f24", // gnat body
+  "N": "#645445",
+  // Desert / sand
+  "a": "#e9c9a1", // sand light
+  "A": "#c69a6c", // sand mid
+  "H": "#a17048", // sand shadow / dune line
+  // Sky wash
+  "k": "#f2d9ae",
+  // Stone
+  "t": "#c9b090",
+  "T": "#9a7f5c",
+  // Enemy — bronze soldier
+  "z": "#b98550",
+  "Z": "#7a5230",
   // Enemy — jackal
-  jk: "#4a3628",
-  jk2: "#2a1e14",
+  "j": "#4a3628",
+  "J": "#2a1e14",
   // Gold / xp
-  go: "#e6c261",
-  go2: "#b48836",
-  // Blue nile
-  nl: "#7fa8b8",
-  nl2: "#4a7688",
-} as const;
+  "o": "#e6c261",
+  "O": "#b48836",
+  // Nile blue
+  "u": "#7fa8b8",
+  "U": "#4a7688",
+  // Aaron / priest robes (warm red-orange)
+  "e": "#d06544",
+  "E": "#8f3a26",
+  // Miriam / soft rose
+  "m": "#d97e8c",
+  "M": "#8a4753",
+  // Jethro / earthy purple
+  "p": "#8a6d9e",
+  "P": "#4d3a5c",
+};
 
-export type Color = keyof typeof PALETTE;
+export type ColorCode = keyof typeof PALETTE;
