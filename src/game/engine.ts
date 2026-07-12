@@ -441,7 +441,9 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: 0, born: state.now,
         ttl: stats.ttl, dmg: stats.dmg,
         kind: "serpent",
-        data: { pierce: 1, hit: new Set<number>() },
+        // angle is locked at spawn — the serpent keeps this facing for its
+        // whole flight, even if the target moves.
+        data: { pierce: 1, hit: new Set<number>(), angle: ang },
       };
       state.entities.set(e.id, e);
     }
