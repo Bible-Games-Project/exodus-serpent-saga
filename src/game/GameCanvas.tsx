@@ -472,41 +472,57 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
     // Gnat swarm — a dark buzzing cloud of many tiny particles.
     if (e.kind === "gnatswarm") {
-      const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number }> | undefined;
-      const maxTtl = (e.data?.maxTtl as number) ?? 5;
-      if (!particles) continue;
-      const remaining = (e.ttl ?? 0) / maxTtl;
-      // fade in for the first 15%, fade out over the last 40%
-      let fade = 1;
-      if (remaining > 0.85) fade = (1 - remaining) / 0.15;
-      else if (remaining < 0.4) fade = remaining / 0.4;
-      fade = Math.max(0, Math.min(1, fade));
-      const cx = e.pos.x - camX;
-      const cy = e.pos.y - camY;
-      const t = e.animT;
-      // soft dark backing cloud
-      ctx.save();
-      ctx.globalAlpha = 0.22 * fade;
-      const r = (e.data?.radius as number) ?? 55;
-      const cloud = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
-      cloud.addColorStop(0, "rgba(30,20,15,0.9)");
-      cloud.addColorStop(1, "rgba(30,20,15,0)");
-      ctx.fillStyle = cloud;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      // individual gnats
-      ctx.fillStyle = "#1a120c";
-      for (const p of particles) {
-        const jx = Math.cos(t * 6 + p.phase) * p.amp;
-        const jy = Math.sin(t * 7.5 + p.phase * 1.3) * p.amp;
-        ctx.globalAlpha = fade * (0.75 + 0.25 * Math.sin(t * 8 + p.phase));
-        ctx.fillRect(Math.round(cx + p.ox + jx), Math.round(cy + p.oy + jy), 2, 2);
-      }
-      ctx.globalAlpha = 1;
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(30,20,15,0.9)",
+        particle: "#1a120c",
+      });
       continue;
     }
+    if (e.kind === "livestockcloud") {
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(60,110,40,0.9)",
+        particle: "#2f4a1a",
+        highlight: "#8ab24a",
+      });
+      continue;
+    }
+    if (e.kind === "boilscloud") {
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(96,40,120,0.9)",
+        particle: "#3a1240",
+        highlight: "#c078e0",
+      });
+      continue;
+    }
+    if (e.kind === "firstborncloud") {
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(0,0,0,0.95)",
+        particle: "#0a0710",
+        highlight: "#3a2b4a",
+      });
+      continue;
+    }
+    if (e.kind === "locustswarm") {
+      drawLocustSwarm(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "hailstone") {
+      drawHailstone(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "hailimpact") {
+      drawHailImpact(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "fireball") {
+      drawFireball(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "fireexplosion") {
+      drawFireExplosion(ctx, e, camX, camY);
+      continue;
+    }
+
 
     const sprite = SPRITE_MAP[e.kind];
     if (!sprite) continue;
