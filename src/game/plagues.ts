@@ -101,76 +101,90 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   livestock: {
     id: "livestock",
     name: "Plague on Livestock",
-    description: "A wasting sickness periodically weakens all foes in range.",
+    description: "A green poisonous cloud drifts across the field, sickening only animals.",
     scripture:
-      "Exodus 9:3-6 — The hand of the LORD is upon thy cattle... a very grievous murrain. All the cattle of Egypt died.",
+      "Exodus 9:3-6 — The hand of the LORD is upon thy cattle... a very grievous murrain. All the cattle of Egypt died. This plague strikes only animal-kind.",
     unlockLevel: 12,
-    base: { level: 1, cooldown: 4, dmg: 5, count: 1, speed: 0, ttl: 1, extra: { radius: 160 } },
-    scale: scale({ level: 1, cooldown: 4, dmg: 5, count: 1, speed: 0, ttl: 1 }, {
-      dmg: 2,
+    base: { level: 1, cooldown: 6, dmg: 10, count: 1, speed: 45, ttl: 6, extra: { radius: 90 } },
+    scale: scale({ level: 1, cooldown: 6, dmg: 10, count: 1, speed: 45, ttl: 6 }, {
+      dmg: 3,
+      ttl: 0.4,
     }),
   },
   boils: {
     id: "boils",
     name: "Plague of Boils",
-    description: "Fiery boils erupt from the ground around Moses.",
+    description: "A purple, sickly cloud that erupts painful boils on humans only.",
     scripture:
-      "Exodus 9:10 — Moses sprinkled ashes toward heaven, and it became a boil breaking forth with sores upon man and beast.",
+      "Exodus 9:10 — Moses sprinkled ashes toward heaven, and it became a boil breaking forth with sores upon man. This plague strikes only human-kind.",
     unlockLevel: 14,
-    base: { level: 1, cooldown: 3, dmg: 20, count: 3, speed: 0, ttl: 0.6, extra: { radius: 40 } },
-    scale: scale({ level: 1, cooldown: 3, dmg: 20, count: 3, speed: 0, ttl: 0.6 }, {
-      dmg: 6,
-      count: 0.5,
+    base: { level: 1, cooldown: 6, dmg: 14, count: 1, speed: 45, ttl: 6, extra: { radius: 85 } },
+    scale: scale({ level: 1, cooldown: 6, dmg: 14, count: 1, speed: 45, ttl: 6 }, {
+      dmg: 4,
+      ttl: 0.4,
     }),
   },
   hail: {
     id: "hail",
     name: "Plague of Hail",
-    description: "Chunks of fiery hail rain from the sky in a wide arc.",
+    description: "A continuous hailstorm — chunks of ice fall from the sky across the battlefield.",
     scripture:
-      "Exodus 9:23-24 — The LORD sent thunder and hail, and the fire ran along upon the ground; there was hail, and fire mingled with the hail, very grievous.",
+      "Exodus 9:23-24 — The LORD sent thunder and hail, very grievous. Ice pelts anything caught beneath the sky.",
     unlockLevel: 16,
-    base: { level: 1, cooldown: 3.5, dmg: 22, count: 5, speed: 220, ttl: 1.4 },
-    scale: scale({ level: 1, cooldown: 3.5, dmg: 22, count: 5, speed: 220, ttl: 1.4 }, {
-      dmg: 5,
-      count: 0.7,
+    base: { level: 1, cooldown: 0.35, dmg: 12, count: 1, speed: 520, ttl: 0.9 },
+    scale: scale({ level: 1, cooldown: 0.35, dmg: 12, count: 1, speed: 520, ttl: 0.9 }, {
+      cooldown: 0.02,
+      dmg: 3,
+    }),
+  },
+  fire: {
+    id: "fire",
+    name: "Fire from Heaven",
+    description: "Fireballs fall from the sky and explode on impact, scorching all enemies nearby.",
+    scripture:
+      "Exodus 9:24 — There was hail, and fire mingled with the hail, very grievous. The LORD's fire ran along the ground.",
+    unlockLevel: 17,
+    base: { level: 1, cooldown: 3.5, dmg: 45, count: 1, speed: 560, ttl: 0.9, extra: { radius: 55 } },
+    scale: scale({ level: 1, cooldown: 3.5, dmg: 45, count: 1, speed: 560, ttl: 0.9 }, {
+      cooldown: 0.15,
+      dmg: 10,
     }),
   },
   locusts: {
     id: "locusts",
     name: "Plague of Locusts",
-    description: "A cloud of locusts sweeps across the field, devouring all before it.",
+    description: "A massive swarm sweeps across the visible field, devouring everything it touches.",
     scripture:
       "Exodus 10:13-15 — The east wind brought the locusts... they covered the face of the whole earth, so that the land was darkened.",
     unlockLevel: 18,
-    base: { level: 1, cooldown: 5, dmg: 4, count: 12, speed: 130, ttl: 2.5 },
-    scale: scale({ level: 1, cooldown: 5, dmg: 4, count: 12, speed: 130, ttl: 2.5 }, {
-      dmg: 2,
-      count: 1.5,
+    base: { level: 1, cooldown: 12, dmg: 10, count: 1, speed: 210, ttl: 6, extra: { radius: 130 } },
+    scale: scale({ level: 1, cooldown: 12, dmg: 10, count: 1, speed: 210, ttl: 6 }, {
+      cooldown: 0.4,
+      dmg: 3,
     }),
   },
   darkness: {
     id: "darkness",
     name: "Plague of Darkness",
-    description: "A three-day darkness dims the field; enemies slow and take extra damage.",
+    description: "Every 30 seconds a supernatural darkness falls — only Moses' lamp remains lit. Enemies slow.",
     scripture:
       "Exodus 10:22 — Moses stretched forth his hand toward heaven, and there was a thick darkness in all the land of Egypt three days.",
     unlockLevel: 20,
-    base: { level: 1, cooldown: 8, dmg: 0, count: 1, speed: 0, ttl: 4 },
-    scale: scale({ level: 1, cooldown: 8, dmg: 0, count: 1, speed: 0, ttl: 4 }, {
-      ttl: 0.4,
+    base: { level: 1, cooldown: 30, dmg: 0, count: 1, speed: 0, ttl: 5 },
+    scale: scale({ level: 1, cooldown: 30, dmg: 0, count: 1, speed: 0, ttl: 5 }, {
+      ttl: 0.3,
     }),
   },
   firstborn: {
     id: "firstborn",
     name: "Death of the Firstborn",
-    description: "Once per minute, slays the strongest enemy nearby.",
+    description: "A dark cloud drifts across the field. Any enemy it touches has a 50% chance to die instantly.",
     scripture:
-      "Exodus 12:29 — At midnight the LORD smote all the firstborn in the land of Egypt, from the firstborn of Pharaoh to the firstborn of the captive.",
+      "Exodus 12:29 — At midnight the LORD smote all the firstborn in the land of Egypt. A shadow passed over.",
     unlockLevel: 22,
-    base: { level: 1, cooldown: 60, dmg: 99999, count: 1, speed: 0, ttl: 0.1 },
-    scale: scale({ level: 1, cooldown: 60, dmg: 99999, count: 1, speed: 0, ttl: 0.1 }, {
-      cooldown: 4,
+    base: { level: 1, cooldown: 13, dmg: 99999, count: 1, speed: 55, ttl: 7, extra: { radius: 95, chance: 0.5 } },
+    scale: scale({ level: 1, cooldown: 13, dmg: 99999, count: 1, speed: 55, ttl: 7 }, {
+      cooldown: 0.4,
     }),
   },
   pillar: {
@@ -210,6 +224,7 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "livestock",
   "boils",
   "hail",
+  "fire",
   "locusts",
   "darkness",
   "firstborn",

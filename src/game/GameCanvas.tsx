@@ -472,41 +472,57 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
     // Gnat swarm — a dark buzzing cloud of many tiny particles.
     if (e.kind === "gnatswarm") {
-      const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number }> | undefined;
-      const maxTtl = (e.data?.maxTtl as number) ?? 5;
-      if (!particles) continue;
-      const remaining = (e.ttl ?? 0) / maxTtl;
-      // fade in for the first 15%, fade out over the last 40%
-      let fade = 1;
-      if (remaining > 0.85) fade = (1 - remaining) / 0.15;
-      else if (remaining < 0.4) fade = remaining / 0.4;
-      fade = Math.max(0, Math.min(1, fade));
-      const cx = e.pos.x - camX;
-      const cy = e.pos.y - camY;
-      const t = e.animT;
-      // soft dark backing cloud
-      ctx.save();
-      ctx.globalAlpha = 0.22 * fade;
-      const r = (e.data?.radius as number) ?? 55;
-      const cloud = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
-      cloud.addColorStop(0, "rgba(30,20,15,0.9)");
-      cloud.addColorStop(1, "rgba(30,20,15,0)");
-      ctx.fillStyle = cloud;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-      // individual gnats
-      ctx.fillStyle = "#1a120c";
-      for (const p of particles) {
-        const jx = Math.cos(t * 6 + p.phase) * p.amp;
-        const jy = Math.sin(t * 7.5 + p.phase * 1.3) * p.amp;
-        ctx.globalAlpha = fade * (0.75 + 0.25 * Math.sin(t * 8 + p.phase));
-        ctx.fillRect(Math.round(cx + p.ox + jx), Math.round(cy + p.oy + jy), 2, 2);
-      }
-      ctx.globalAlpha = 1;
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(30,20,15,0.9)",
+        particle: "#1a120c",
+      });
       continue;
     }
+    if (e.kind === "livestockcloud") {
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(60,110,40,0.9)",
+        particle: "#2f4a1a",
+        highlight: "#8ab24a",
+      });
+      continue;
+    }
+    if (e.kind === "boilscloud") {
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(96,40,120,0.9)",
+        particle: "#3a1240",
+        highlight: "#c078e0",
+      });
+      continue;
+    }
+    if (e.kind === "firstborncloud") {
+      drawParticleCloud(ctx, e, camX, camY, {
+        backing: "rgba(0,0,0,0.95)",
+        particle: "#0a0710",
+        highlight: "#3a2b4a",
+      });
+      continue;
+    }
+    if (e.kind === "locustswarm") {
+      drawLocustSwarm(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "hailstone") {
+      drawHailstone(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "hailimpact") {
+      drawHailImpact(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "fireball") {
+      drawFireball(ctx, e, camX, camY);
+      continue;
+    }
+    if (e.kind === "fireexplosion") {
+      drawFireExplosion(ctx, e, camX, camY);
+      continue;
+    }
+
 
     const sprite = SPRITE_MAP[e.kind];
     if (!sprite) continue;
@@ -531,28 +547,34 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const drawH = img.height * scaleY;
     const sx = Math.round(e.pos.x - camX - drawW / 2);
     const sy = Math.round(e.pos.y - camY - drawH + 8 + hopOffY);
-    const shadowY = Math.round(e.pos.y - camY + 8);
-    const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
-    ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
-    ctx.beginPath();
-    ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
-    ctx.fill();
 
     if (e.kind === "serpent") {
-      // Rotate the serpent sprite once (locked at spawn) so it always faces
-      // the direction it was fired in, regardless of enemy movement.
+      // Rotate the sprite (and its shadow) so it always faces the direction
+      // it's travelling — never tail-first.
       const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
-      // sprite art faces right — flip vertically when firing leftward so the
-      // head silhouette stays upright rather than upside-down.
-      const facingLeft = Math.cos(angle) < 0;
       const rotImg = renderSprite(sprite, frameIdx, SCALE, false);
+      // rotated shadow — long axis follows the body direction
+      ctx.save();
+      ctx.translate(e.pos.x - camX, e.pos.y - camY + 6);
+      ctx.rotate(angle);
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rotImg.width * 0.45, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // body
       ctx.save();
       ctx.translate(e.pos.x - camX, e.pos.y - camY);
-      ctx.rotate(angle + (facingLeft ? Math.PI : 0));
-      if (facingLeft) ctx.scale(1, -1);
+      ctx.rotate(angle);
       ctx.drawImage(rotImg, -rotImg.width / 2, -rotImg.height / 2);
       ctx.restore();
     } else {
+      const shadowY = Math.round(e.pos.y - camY + 8);
+      const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
+      ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
+      ctx.beginPath();
+      ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.drawImage(img, sx, sy, drawW, drawH);
     }
 
@@ -575,4 +597,205 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
   }
+
+  // 3) Plague of Darkness — dim the world with a lamp-circle around Moses.
+  const dEnd = s.darknessUntil ?? 0;
+  if (dEnd > s.now) {
+    const dur = s.darknessDur ?? 5;
+    const start = s.darknessStart ?? (dEnd - dur);
+    const elapsed = s.now - start;
+    const remaining = dEnd - s.now;
+    const fade = 0.6;
+    let k = 1;
+    if (elapsed < fade) k = elapsed / fade;
+    else if (remaining < fade) k = remaining / fade;
+    k = Math.max(0, Math.min(1, k));
+    const alpha = 0.88 * k;
+    const px = s.player.pos.x - camX;
+    const py = s.player.pos.y - camY;
+    const holeR = 70;
+    const outerR = Math.hypot(viewW, viewH);
+    const g = ctx.createRadialGradient(px, py, holeR * 0.35, px, py, outerR);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(holeR / outerR, `rgba(0,0,0,${alpha * 0.5})`);
+    g.addColorStop(Math.min(0.5, (holeR * 2) / outerR), `rgba(0,0,0,${alpha})`);
+    g.addColorStop(1, `rgba(0,0,0,${alpha})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, viewW, viewH);
+    // warm lamp glow inside the safe circle
+    const lamp = ctx.createRadialGradient(px, py, 0, px, py, holeR);
+    lamp.addColorStop(0, `rgba(255,200,120,${0.25 * k})`);
+    lamp.addColorStop(1, "rgba(255,200,120,0)");
+    ctx.fillStyle = lamp;
+    ctx.fillRect(0, 0, viewW, viewH);
+  }
+}
+
+// ---------------- shared hazard renderers ----------------
+function drawParticleCloud(
+  ctx: CanvasRenderingContext2D,
+  e: Entity,
+  camX: number,
+  camY: number,
+  tint: { backing: string; particle: string; highlight?: string },
+) {
+  const particles = e.data?.particles as
+    | Array<{ ox: number; oy: number; phase: number; amp: number; size: number }>
+    | undefined;
+  if (!particles) return;
+  const maxTtl = (e.data?.maxTtl as number) ?? 5;
+  const remaining = (e.ttl ?? 0) / maxTtl;
+  let fade = 1;
+  if (remaining > 0.85) fade = (1 - remaining) / 0.15;
+  else if (remaining < 0.3) fade = remaining / 0.3;
+  fade = Math.max(0, Math.min(1, fade));
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  const r = (e.data?.radius as number) ?? 80;
+  ctx.save();
+  ctx.globalAlpha = 0.28 * fade;
+  const grd = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+  grd.addColorStop(0, tint.backing);
+  grd.addColorStop(1, tint.backing.replace(/,[^,]+\)$/, ",0)"));
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  for (const p of particles) {
+    const jx = Math.cos(t * 3 + p.phase) * p.amp;
+    const jy = Math.sin(t * 3.7 + p.phase * 1.3) * p.amp;
+    const a = fade * (0.7 + 0.3 * Math.sin(t * 4 + p.phase));
+    ctx.globalAlpha = a;
+    ctx.fillStyle = tint.highlight && Math.random() < 0.18 ? tint.highlight : tint.particle;
+    ctx.fillRect(Math.round(cx + p.ox + jx), Math.round(cy + p.oy + jy), p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawLocustSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const particles = e.data?.particles as
+    | Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }>
+    | undefined;
+  if (!particles) return;
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  const r = (e.data?.radius as number) ?? 130;
+  // backing darkening — locusts blot out the sun
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  const grd = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
+  grd.addColorStop(0, "rgba(50,40,20,0.9)");
+  grd.addColorStop(1, "rgba(50,40,20,0)");
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // individual locusts
+  for (const p of particles) {
+    const jx = Math.cos(t * 5 + p.phase) * p.amp;
+    const jy = Math.sin(t * 6.4 + p.phase * 1.1) * p.amp;
+    const x = Math.round(cx + p.ox + jx);
+    const y = Math.round(cy + p.oy + jy);
+    // body — brown/tan
+    ctx.fillStyle = "#7a5a20";
+    ctx.fillRect(x, y, 3, 2);
+    ctx.fillStyle = "#3a2a10";
+    ctx.fillRect(x, y + 1, 3, 1);
+    // wings flap
+    const flap = Math.sin(t * 22 + p.wing) > 0;
+    ctx.fillStyle = "rgba(220,200,120,0.85)";
+    if (flap) {
+      ctx.fillRect(x - 1, y - 1, 2, 1);
+      ctx.fillRect(x + 2, y - 1, 2, 1);
+    } else {
+      ctx.fillRect(x - 1, y, 2, 1);
+      ctx.fillRect(x + 2, y, 2, 1);
+    }
+  }
+}
+
+function drawHailstone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const x = Math.round(e.pos.x - camX);
+  const y = Math.round(e.pos.y - camY);
+  // trailing streak
+  ctx.strokeStyle = "rgba(200,225,255,0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x - e.vel.x * 0.04, y - e.vel.y * 0.04);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  // chunky pixel ice
+  ctx.fillStyle = "#dbe9f7";
+  ctx.fillRect(x - 2, y - 2, 4, 4);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x - 1, y - 2, 2, 2);
+  ctx.fillStyle = "#8fa8c4";
+  ctx.fillRect(x, y + 1, 2, 1);
+}
+
+function drawHailImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.25;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  ctx.save();
+  ctx.globalAlpha = life;
+  ctx.fillStyle = "#eaf3ff";
+  // four dispersing shards
+  const spread = (1 - life) * 8 + 2;
+  ctx.fillRect(Math.round(cx - spread), Math.round(cy), 2, 2);
+  ctx.fillRect(Math.round(cx + spread), Math.round(cy), 2, 2);
+  ctx.fillRect(Math.round(cx), Math.round(cy - spread), 2, 2);
+  ctx.fillRect(Math.round(cx), Math.round(cy + spread), 2, 2);
+  ctx.restore();
+}
+
+function drawFireball(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const x = Math.round(e.pos.x - camX);
+  const y = Math.round(e.pos.y - camY);
+  // fire trail
+  ctx.strokeStyle = "rgba(255,120,20,0.4)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x - e.vel.x * 0.06, y - e.vel.y * 0.06);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  // core
+  ctx.fillStyle = "#ff3010";
+  ctx.fillRect(x - 4, y - 4, 8, 8);
+  ctx.fillStyle = "#ffb040";
+  ctx.fillRect(x - 3, y - 3, 6, 6);
+  ctx.fillStyle = "#ffffe0";
+  ctx.fillRect(x - 2, y - 2, 4, 4);
+}
+
+function drawFireExplosion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.4;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const R = (e.data?.radius as number) ?? 55;
+  const rNow = R * (1 - life) + 8;
+  ctx.save();
+  ctx.globalAlpha = life;
+  const grd = ctx.createRadialGradient(cx, cy, rNow * 0.2, cx, cy, rNow);
+  grd.addColorStop(0, "#fff2b0");
+  grd.addColorStop(0.4, "#ff8020");
+  grd.addColorStop(1, "rgba(120,20,0,0)");
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rNow, 0, Math.PI * 2);
+  ctx.fill();
+  // ember sparks
+  ctx.fillStyle = "#ffd070";
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const rr = rNow * 0.9;
+    ctx.fillRect(Math.round(cx + Math.cos(a) * rr), Math.round(cy + Math.sin(a) * rr), 2, 2);
+  }
+  ctx.restore();
 }
