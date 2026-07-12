@@ -52,26 +52,68 @@ export function createInitialState(): GameState {
     worldH,
   };
   state.entities.set(player.id, player);
-  // Sprinkle some decor
+  // Sprinkle some decor. Each decor kind has a collision radius that feeds
+  // the modular obstacle system (see resolveObstacles).
+  const DECOR_RADIUS: Record<string, number> = { palm: 12, rock: 16, pyramid: 44 };
+  const obstacles: Array<{ pos: Vec2; r: number }> = [];
   for (let i = 0; i < 60; i++) {
     const k = Math.random();
     const kind = k < 0.6 ? "palm" : k < 0.9 ? "rock" : "pyramid";
+    // Keep decor away from Moses' spawn so he isn't stuck.
+    let px = 0, py = 0;
+    for (let tries = 0; tries < 8; tries++) {
+      px = rand(0, worldW);
+      py = rand(0, worldH);
+      if (Math.hypot(px - player.pos.x, py - player.pos.y) > 120) break;
+    }
+    const r = DECOR_RADIUS[kind] ?? 0;
     const dec: Entity = {
       id: state.nextId++,
-      pos: { x: rand(0, worldW), y: rand(0, worldH) },
+      pos: { x: px, y: py },
       vel: { x: 0, y: 0 },
       radius: 0,
-      hp: 1,
-      maxHp: 1,
+      hp: 1, maxHp: 1,
       team: "decor",
-      facing: 1,
-      animT: 0,
-      born: 0,
+      facing: 1, animT: 0, born: 0,
       kind,
+      data: { obstacleRadius: r },
     };
     state.entities.set(dec.id, dec);
+    if (r > 0) obstacles.push({ pos: dec.pos, r });
   }
+  state.obstacles = obstacles;
   return state;
+}
+
+// ---------- modular obstacle collision ----------
+// Push `pos` out of every obstacle it overlaps. Reusable for players, allies,
+// enemies, and any future entity type.
+function resolveObstacles(pos: Vec2, radius: number, state: GameState) {
+  const obs = state.obstacles;
+  if (!obs) return;
+  for (const o of obs) {
+    const dx = pos.x - o.pos.x;
+    const dy = pos.y - o.pos.y;
+    const min = o.r + radius;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < min * min && d2 > 0.0001) {
+      const d = Math.sqrt(d2);
+      pos.x = o.pos.x + (dx / d) * min;
+      pos.y = o.pos.y + (dy / d) * min;
+    } else if (d2 <= 0.0001) {
+      pos.x += min;
+    }
+  }
+}
+
+// Returns true if the point is inside the current camera viewport (with margin).
+function inViewport(state: GameState, pos: Vec2, margin = 40): boolean {
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  return (
+    Math.abs(pos.x - state.camera.x) < vw / 2 - margin &&
+    Math.abs(pos.y - state.camera.y) < vh / 2 - margin
+  );
 }
 
 // ---------- pixel-art blood pool builder ----------
