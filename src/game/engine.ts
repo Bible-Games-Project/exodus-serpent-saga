@@ -281,7 +281,18 @@ export function update(state: GameState, dt: number) {
           }
           spawnVisualHazard(state, "fireexplosion", e.pos, 0.4, { radius: R });
         } else if (e.kind === "hailstone") {
-          spawnVisualHazard(state, "hailimpact", e.pos, 0.25, {});
+          const R = (e.data?.radius as number) ?? 60;
+          const freezeDur = (e.data?.freeze as number) ?? 2.5;
+          for (const en of state.entities.values()) {
+            if (en.team !== "enemy") continue;
+            if (dist2(en.pos, e.pos) < R * R) {
+              en.hp -= e.dmg ?? 0;
+              if (!en.data) en.data = {};
+              en.data.freezeUntil = state.now + freezeDur;
+              if (en.hp <= 0) killEnemy(state, en);
+            }
+          }
+          spawnVisualHazard(state, "hailimpact", e.pos, 0.45, { radius: R });
         }
         state.entities.delete(e.id);
         continue;
