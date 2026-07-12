@@ -606,7 +606,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       // it's travelling — never tail-first.
       const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
       const rotImg = renderSprite(sprite, frameIdx, SCALE, false);
-      // rotated shadow — long axis follows the body direction
       ctx.save();
       ctx.translate(e.pos.x - camX, e.pos.y - camY + 6);
       ctx.rotate(angle);
@@ -615,29 +614,48 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.ellipse(0, 0, rotImg.width * 0.45, 3, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      // body
       ctx.save();
       ctx.translate(e.pos.x - camX, e.pos.y - camY);
       ctx.rotate(angle);
       ctx.drawImage(rotImg, -rotImg.width / 2, -rotImg.height / 2);
       ctx.restore();
     } else {
+      const downed = e.team === "ally" && e.data?.downedUntil != null;
       const shadowY = Math.round(e.pos.y - camY + 8);
       const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
       ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
       ctx.beginPath();
       ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.drawImage(img, sx, sy, drawW, drawH);
+      if (downed) {
+        // Fallen companion — rotated on side, dimmed, with resting glyph.
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.translate(sx + drawW / 2, sy + drawH / 2);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+        ctx.fillStyle = "#f0e0a0";
+        ctx.font = "700 10px Nunito, sans-serif";
+        ctx.textAlign = "center";
+        const remain = Math.max(0, Math.ceil((e.data!.downedUntil as number) - s.now));
+        ctx.fillText(`${remain}s`, sx + drawW / 2, sy - 2);
+      } else {
+        ctx.drawImage(img, sx, sy, drawW, drawH);
+      }
     }
 
-    if (e.team === "ally" && e.data?.npcLabel) {
-      ctx.font = "600 10px Nunito, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillText(String(e.data.npcLabel), sx + drawW / 2 + 1, sy - 3);
-      ctx.fillStyle = "#f6efdc";
-      ctx.fillText(String(e.data.npcLabel), sx + drawW / 2, sy - 4);
+    // Companion health bar — green, mirrors Moses' HP bar style.
+    if (e.team === "ally") {
+      const bw = 26;
+      const bx = sx + drawW / 2 - bw / 2;
+      const by = sy - 5;
+      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
+      ctx.fillStyle = "#1e5a1e";
+      ctx.fillRect(bx, by, bw, 3);
+      ctx.fillStyle = "#4ec24e";
+      ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
 
     if (e.team === "enemy" && e.hp < e.maxHp) {
@@ -650,6 +668,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
   }
+
 
   // 3) Plague of Darkness — dim the world with a lamp-circle around Moses.
   const dEnd = s.darknessUntil ?? 0;
