@@ -8,7 +8,7 @@ export type Entity = {
   radius: number; // for collision
   hp: number;
   maxHp: number;
-  team: "player" | "ally" | "enemy" | "projectile" | "pickup" | "decor" | "hazard";
+  team: "player" | "ally" | "enemy" | "projectile" | "pickup" | "decor" | "hazard" | "orbit";
   facing: 1 | -1;
   animT: number; // seconds
   born: number; // spawn time
