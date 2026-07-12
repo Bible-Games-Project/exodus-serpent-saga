@@ -258,6 +258,22 @@ export function update(state: GameState, dt: number) {
     } else if (e.team === "projectile") {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
+        // Fire from Heaven — explode on impact.
+        if (e.kind === "fireball") {
+          const R = (e.data?.radius as number) ?? 55;
+          for (const en of state.entities.values()) {
+            if (en.team !== "enemy") continue;
+            // Ramses will opt out via en.data.immuneFire when added later.
+            if (en.data?.immuneFire) continue;
+            if (dist2(en.pos, e.pos) < R * R) {
+              en.hp -= e.dmg ?? 0;
+              if (en.hp <= 0) killEnemy(state, en);
+            }
+          }
+          spawnVisualHazard(state, "fireexplosion", e.pos, 0.4, { radius: R });
+        } else if (e.kind === "hailstone") {
+          spawnVisualHazard(state, "hailimpact", e.pos, 0.25, {});
+        }
         state.entities.delete(e.id);
         continue;
       }
@@ -287,7 +303,10 @@ export function update(state: GameState, dt: number) {
         e.pos.y += e.vel.y * dt;
       }
 
-      // Collide with enemies
+      // Collide with enemies (skip pure fall — hailstone/fireball damage
+      // is handled by the impact on ttl end so a single stone doesn't
+      // shred whole clumps in flight).
+      if (e.kind === "hailstone" || e.kind === "fireball") continue;
       const hit = e.data?.hit as Set<number> | undefined;
       for (const en of state.entities.values()) {
         if (en.team !== "enemy") continue;
@@ -300,7 +319,7 @@ export function update(state: GameState, dt: number) {
         }
       }
     } else if (e.team === "hazard") {
-      // Persistent AoE — blood pool, staff swing, gnat swarm.
+      // Persistent AoE — blood pool, staff swing, gnat swarm, drifting clouds.
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) { state.entities.delete(e.id); continue; }
       // hazards may drift (gnat swarm)
