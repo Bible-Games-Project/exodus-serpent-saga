@@ -526,8 +526,13 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     const margin = radius + 12;
     // pick a random point inside the visible camera rect, keeping the whole
     // pool on-screen so the left/right/top/bottom edges never clip it.
-    const halfW = Math.max(margin, vw / 2 - margin);
-    const halfH = Math.max(margin, vh / 2 - margin);
+    // Use the actual on-screen canvas footprint of the generated art (not
+    // just the logical radius) so the splatter droplets never poke past
+    // the viewport edge either.
+    const artHalf = canvas.width / 2;
+    const screenMargin = artHalf + 4;
+    const halfW = Math.max(0, vw / 2 - screenMargin);
+    const halfH = Math.max(0, vh / 2 - screenMargin);
     let px = state.camera.x + rand(-halfW, halfW);
     let py = state.camera.y + rand(-halfH, halfH);
     // clamp to world bounds so it stays fully inside the playable area.
