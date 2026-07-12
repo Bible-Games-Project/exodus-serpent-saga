@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PlayRouteImport } from './routes/play'
+import { Route as MoreGamesRouteImport } from './routes/more-games'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicLeaderboardSubmitRouteImport } from './routes/api/public/leaderboard/submit'
@@ -17,6 +18,11 @@ import { Route as ApiPublicLeaderboardSubmitRouteImport } from './routes/api/pub
 const PlayRoute = PlayRouteImport.update({
   id: '/play',
   path: '/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoreGamesRoute = MoreGamesRouteImport.update({
+  id: '/more-games',
+  path: '/more-games',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeaderboardRoute = LeaderboardRouteImport.update({
@@ -39,12 +45,14 @@ const ApiPublicLeaderboardSubmitRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
@@ -52,18 +60,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/leaderboard': typeof LeaderboardRoute
+  '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/leaderboard' | '/play' | '/api/public/leaderboard/submit'
+  fullPaths:
+    | '/'
+    | '/leaderboard'
+    | '/more-games'
+    | '/play'
+    | '/api/public/leaderboard/submit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/leaderboard' | '/play' | '/api/public/leaderboard/submit'
+  to:
+    | '/'
+    | '/leaderboard'
+    | '/more-games'
+    | '/play'
+    | '/api/public/leaderboard/submit'
   id:
     | '__root__'
     | '/'
     | '/leaderboard'
+    | '/more-games'
     | '/play'
     | '/api/public/leaderboard/submit'
   fileRoutesById: FileRoutesById
@@ -71,6 +91,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LeaderboardRoute: typeof LeaderboardRoute
+  MoreGamesRoute: typeof MoreGamesRoute
   PlayRoute: typeof PlayRoute
   ApiPublicLeaderboardSubmitRoute: typeof ApiPublicLeaderboardSubmitRoute
 }
@@ -82,6 +103,13 @@ declare module '@tanstack/react-router' {
       path: '/play'
       fullPath: '/play'
       preLoaderRoute: typeof PlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/more-games': {
+      id: '/more-games'
+      path: '/more-games'
+      fullPath: '/more-games'
+      preLoaderRoute: typeof MoreGamesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leaderboard': {
@@ -111,6 +139,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LeaderboardRoute: LeaderboardRoute,
+  MoreGamesRoute: MoreGamesRoute,
   PlayRoute: PlayRoute,
   ApiPublicLeaderboardSubmitRoute: ApiPublicLeaderboardSubmitRoute,
 }
