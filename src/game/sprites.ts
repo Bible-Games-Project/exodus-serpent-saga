@@ -209,18 +209,42 @@ export const JACKAL = make([
   ],
 ]);
 
-// Frog — 10x7
+// Frog — 10x7. Three frames: crouch (pre-jump), stretch (mid-air), landing.
+// Rendered with additional squash/stretch and vertical hop offset in the
+// draw pipeline for a cartoon-style bounce.
 export const FROG = make([
+  // crouch — legs tucked, wide low body
+  [
+    "..........",
+    "..........",
+    "..fffff...",
+    ".fFfWfFf..",
+    "ffFfffFff.",
+    "FF.FfFf.FF",
+    "KKKKKKKKKK",
+  ],
+  // stretch — mid-air, legs trailing
   [
     "..fffff...",
     ".fFfWfFf..",
     "ffFfffFff.",
     "fFffffffFf",
     "fFfffffffF",
+    ".F..ff..F.",
+    "..K..KK.K.",
+  ],
+  // landing — legs splayed
+  [
+    "..........",
+    "..fffff...",
+    ".fFfWfFf..",
+    "ffFfffFff.",
+    "fFffffffFf",
     "FF..FF..FF",
-    "KK..KK..KK",
+    "K.K.KK.K.K",
   ],
 ]);
+
 
 // Fly / gnat — 5x4
 export const FLY = make([
