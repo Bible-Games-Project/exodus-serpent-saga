@@ -48,11 +48,13 @@ export type NpcId =
 
 export type UpgradeChoice = {
   id: string;
-  plague: PlagueId;
+  plague?: PlagueId;
+  npc?: NpcId;
   title: string;
   description: string;
   scripture?: string;
   isUnlock?: boolean;
+  isCompanion?: boolean;
   apply: (state: GameState) => void;
 };
 
