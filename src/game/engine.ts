@@ -635,9 +635,15 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       targetKind: "human",
     });
   } else if (id === "hail") {
-    spawnHailstone(state, stats);
+    // Burst of hailstones falling simultaneously across the visible field.
+    const stones = Math.max(1, stats.count);
+    const R = (def.base.extra?.radius ?? 70);
+    const freeze = (def.base.extra?.freeze ?? 2.5);
+    for (let i = 0; i < stones; i++) {
+      spawnHailstone(state, stats, R, freeze);
+    }
   } else if (id === "fire") {
-    spawnFireball(state, stats, def.base.extra?.radius ?? 55);
+    spawnFireball(state, stats, def.base.extra?.radius ?? 90);
   } else if (id === "locusts") {
     spawnLocustSwarm(state, stats, def.base.extra?.radius ?? 130);
   } else if (id === "firstborn") {
