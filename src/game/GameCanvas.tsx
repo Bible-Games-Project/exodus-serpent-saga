@@ -413,7 +413,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // MOSES_NOSTAFF) and we render an animated swinging staff sweeping through
     // an arc from Moses' hand, trailed by a chunky pixel-art crescent slash.
     if (e.kind === "staffswing") {
-      const range = (e.data?.range as number) ?? 70;
+      void e.data?.range;
       const facing = (e.data?.facing as number) ?? 1;
       const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
       const progress = 1 - life;
