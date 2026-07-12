@@ -372,18 +372,36 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         id: state.nextId++,
         pos: { x: p.x, y: p.y },
         vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
-        radius: 10,
+        radius: 12,
         hp: 1, maxHp: 1,
-        team: "projectile", facing: 1,
+        team: "projectile", facing: Math.cos(ang) > 0 ? 1 : -1,
         animT: 0, born: state.now,
         ttl: stats.ttl, dmg: stats.dmg,
         kind: "frog",
-        data: { pierce: 1, hit: new Set<number>() },
+        // hopT/hopDur drive both motion (in update) and squash/stretch (in draw)
+        data: { pierce: 1, hit: new Set<number>(), hopT: 0, hopDur: 0.65 },
       };
       state.entities.set(e.id, e);
     }
+  } else if (id === "blood") {
+    // Persistent pool of blood — sits on the ground, ticks damage on any
+    // enemy inside its radius until it evaporates.
+    const radius = (def.base.extra?.radius ?? 90) + level * 6;
+    const e: Entity = {
+      id: state.nextId++,
+      pos: { x: p.x, y: p.y },
+      vel: { x: 0, y: 0 },
+      radius,
+      hp: 1, maxHp: 1,
+      team: "hazard", facing: 1,
+      animT: 0, born: state.now,
+      ttl: stats.ttl,
+      kind: "bloodpool",
+      data: { radius, dps: stats.dmg, tickAcc: 0 },
+    };
+    state.entities.set(e.id, e);
   } else {
-    // Area-of-effect plagues damage everything within radius immediately
+    // Fallback area-of-effect: instantaneous damage in a ring around Moses
     const radius = (def.base.extra?.radius ?? 100) + level * 4;
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
@@ -393,6 +411,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       }
     }
   }
+}
+
 }
 
 function spawnAllyBolt(state: GameState, ally: Entity, target: Entity) {
