@@ -186,6 +186,9 @@ export function update(state: GameState, dt: number) {
   // Move entities
   for (const e of state.entities.values()) {
     if (e === p) continue;
+    // orbit flies are fully driven by syncOrbitFlies each frame — don't
+    // let the shared animT bump fight the wing-flap timing.
+    if (e.team === "orbit") continue;
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
