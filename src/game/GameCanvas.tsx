@@ -332,7 +332,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
             >
               {c.isUnlock && (
                 <span
-                  className="absolute -right-2 -top-2 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow"
+                  className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`}
                   style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}
                 >
                   NEW
