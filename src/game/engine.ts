@@ -737,27 +737,31 @@ function spawnDriftingCloud(
 }
 
 // ---------- Hail / Fire from Heaven ----------
-function spawnHailstone(state: GameState, stats: { dmg: number; speed: number; ttl: number }) {
+function spawnHailstone(
+  state: GameState,
+  stats: { dmg: number; speed: number; ttl: number },
+  impactRadius = 70,
+  freezeDur = 2.5,
+) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
-  // pick a random target inside viewport; fall from above the visible top edge.
-  const tx = state.camera.x + rand(-vw / 2 + 30, vw / 2 - 30);
-  const ty = state.camera.y + rand(-vh / 2 + 30, vh / 2 - 30);
-  const fallDist = 220 + Math.random() * 60;
-  const startX = tx - fallDist * 0.35;
+  const tx = state.camera.x + rand(-vw / 2 + 40, vw / 2 - 40);
+  const ty = state.camera.y + rand(-vh / 2 + 40, vh / 2 - 40);
+  const fallDist = 240 + Math.random() * 70;
+  const startX = tx - fallDist * 0.3;
   const startY = ty - fallDist;
   const ttl = fallDist / stats.speed;
   const e: Entity = {
     id: state.nextId++,
     pos: { x: startX, y: startY },
     vel: { x: (tx - startX) / ttl, y: (ty - startY) / ttl },
-    radius: 6,
+    radius: 8,
     hp: 1, maxHp: 1,
     team: "projectile", facing: 1,
     animT: 0, born: state.now,
     ttl, dmg: stats.dmg,
     kind: "hailstone",
-    data: { impactY: ty },
+    data: { impactY: ty, radius: impactRadius, freeze: freezeDur },
   };
   state.entities.set(e.id, e);
 }
