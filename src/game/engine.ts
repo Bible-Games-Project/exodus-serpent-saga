@@ -966,25 +966,6 @@ function syncOrbitFlies(state: GameState, dt: number) {
 }
 
 
-function spawnAllyBolt(state: GameState, ally: Entity, target: Entity) {
-  const dx = target.pos.x - ally.pos.x;
-  const dy = target.pos.y - ally.pos.y;
-  const d = Math.hypot(dx, dy) || 1;
-  const speed = 300;
-  const e: Entity = {
-    id: state.nextId++,
-    pos: { x: ally.pos.x, y: ally.pos.y },
-    vel: { x: (dx / d) * speed, y: (dy / d) * speed },
-    radius: 5,
-    hp: 1, maxHp: 1,
-    team: "projectile", facing: 1,
-    animT: 0, born: state.now,
-    ttl: 1.4, dmg: 14 + Math.floor(state.level / 3),
-    kind: "bolt",
-    data: { hit: new Set<number>() },
-  };
-  state.entities.set(e.id, e);
-}
 
 function killEnemy(state: GameState, e: Entity) {
   state.entities.delete(e.id);
