@@ -58,79 +58,81 @@ export function renderSprite(
 
 // ---------------- Sprites ----------------
 
-// Moses — 16 wide x 20 tall. Two-frame walk cycle.
+// Moses — 16 wide x 20 tall. Blue-robed prophet holding a wooden staff on
+// his right side. Two-frame walk cycle. The staff is his signature visual.
 export const MOSES = make([
   [
-    "................",
-    "......KKKKK.....",
-    ".....KbbbbbK....",
-    ".....KbsssbK....",
-    ".....KbsWsbK....",
-    "......bBBBb.....",
-    ".....bbbbbbb....",
-    "....llllllll....",
-    "....lllllllw...",
-    "...lLlLlLlLlw..",
-    "...lllllllllw..",
-    "...lLlllllLlw..",
-    "...lllllllll...",
-    "...lLlllllLl...",
-    "....llll.llll...",
-    "....LLLL.LLLL...",
-    "....ssss.ssss...",
-    "....SSSS.SSSS...",
-    "....KK....KK....",
-    "................",
+    "..............ww",
+    ".............wdw",
+    ".....KKKKKK..wdw",
+    "....KWbbbbbK.wdw",
+    "....KbssssbK.wdw",
+    "....KbsWWsbK.wdw",
+    ".....bBBBBb..wdw",
+    "....bbbbbbb..wdw",
+    "...uuuuuuuu..wdw",
+    "...uUuUuUuU..wdw",
+    "..uuuWuuuWuu.wdw",
+    "..uUuuuuuuUu.wdw",
+    "..uuuuuuuuuu.wdw",
+    "..uUuuuuuuUu.wdw",
+    "...uuu..uuu..wdw",
+    "...UUU..UUU..wdw",
+    "...sss..sss..wdw",
+    "...SSS..SSS..wdw",
+    "...KK....KK..wdw",
+    ".............wdw",
   ],
   [
-    "................",
-    "......KKKKK.....",
-    ".....KbbbbbK....",
-    ".....KbsssbK....",
-    ".....KbsWsbK....",
-    "......bBBBb.....",
-    "....bbbbbbbb....",
-    "...lllllllll....",
-    "...llllllllw....",
-    "..lLlllllLlw....",
-    "..lllllllllw....",
-    "..lLlllllLlw....",
-    "...lllllllw.....",
-    "....llllllw.....",
-    "....lllllll.....",
-    ".....LLllLL.....",
-    ".....ssssss.....",
-    "....SSss..ss....",
-    "....KK.....KK...",
-    "................",
+    "..............ww",
+    ".............wdw",
+    ".....KKKKKK..wdw",
+    "....KWbbbbbK.wdw",
+    "....KbssssbK.wdw",
+    "....KbsWWsbK.wdw",
+    ".....bBBBBb..wdw",
+    "....bbbbbbb..wdw",
+    "...uuuuuuuu..wdw",
+    "...uUuUuUuU..wdw",
+    "..uuuWuuuWuu.wdw",
+    "..uUuuuuuuUu.wdw",
+    "..uuuuuuuuuu.wdw",
+    "..uUuuuuuuUu.wdw",
+    "....uuuuuu...wdw",
+    "....UUUUUU...wdw",
+    "...ss....ss..wdw",
+    "..SSs....sSS.wdw",
+    "..KK......KK.wdw",
+    ".............wdw",
   ],
 ]);
 
-// Living serpent projectile — 12x6, 3-frame slither
+// Living serpent projectile — long, thin, slithering body. 18 wide x 4 tall,
+// 4-frame slither with the head bulge on the leading (right) edge.
 export const SERPENT = make([
   [
-    "..ygggg......",
-    ".gGGGGgy.....",
-    "yGGyGyGGg....",
-    ".ggGGGGgy....",
-    "..gggggGy....",
-    "...gggggg....",
+    "..ggggggggggggGGg.",
+    "gGGGGGGGGGGGGGyWGg",
+    ".ggggggggggggggGgg",
+    "..................",
   ],
   [
-    "....gggg....",
-    "..gGGyGGg...",
-    "yGGGyGyGGgy",
-    "yGGyGyGGGGy",
-    "..gGGGGgg...",
-    "....gggg....",
+    "gGGGGGGGGGGGGGGGg.",
+    ".gGGGGGGGGGGGGyWGg",
+    "..gggggggggggggGgg",
+    "..................",
   ],
   [
-    ".gggggg.....",
-    "gGGGGgy.....",
-    "yGyGGyGGg...",
-    ".gGGGGGGGy..",
-    "..gggggGGgy.",
-    "....ggggggg.",
+    "..gggggggggggggGg.",
+    "gGGGGGGGGGGGGGyWGg",
+    ".ggGGGGGGGGGGGGGgg",
+    "..................",
+  ],
+  [
+    "..................",
+    "..gggggggggggggGg.",
+    "gGGGGGGGGGGGGGyWGg",
+    ".ggggggggggggggGgg",
   ],
 ]);
 
@@ -178,6 +180,7 @@ export const SOLDIER = make([
   ],
 ]);
 
+
 // Jackal enemy — 16x10, fast low predator
 export const JACKAL = make([
   [
@@ -206,18 +209,42 @@ export const JACKAL = make([
   ],
 ]);
 
-// Frog — 10x7
+// Frog — 10x7. Three frames: crouch (pre-jump), stretch (mid-air), landing.
+// Rendered with additional squash/stretch and vertical hop offset in the
+// draw pipeline for a cartoon-style bounce.
 export const FROG = make([
+  // crouch — legs tucked, wide low body
+  [
+    "..........",
+    "..........",
+    "..fffff...",
+    ".fFfWfFf..",
+    "ffFfffFff.",
+    "FF.FfFf.FF",
+    "KKKKKKKKKK",
+  ],
+  // stretch — mid-air, legs trailing
   [
     "..fffff...",
     ".fFfWfFf..",
     "ffFfffFff.",
     "fFffffffFf",
     "fFfffffffF",
+    ".F..ff..F.",
+    "..K..KK.K.",
+  ],
+  // landing — legs splayed
+  [
+    "..........",
+    "..fffff...",
+    ".fFfWfFf..",
+    "ffFfffFff.",
+    "fFffffffFf",
     "FF..FF..FF",
-    "KK..KK..KK",
+    "K.K.KK.K.K",
   ],
 ]);
+
 
 // Fly / gnat — 5x4
 export const FLY = make([
