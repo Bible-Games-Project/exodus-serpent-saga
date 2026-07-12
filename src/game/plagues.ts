@@ -1,9 +1,7 @@
 import type { PlagueDef, PlagueId, PlagueLevel } from "./types";
 
 // Every plague evolves infinitely: each level bumps damage, count, or utility.
-// Only a handful have unique behavior baked into the engine right now — the
-// rest are declared here so the level-up screen and future updates can wire
-// them in without touching UI code.
+// Scripture strings are shown on unlock so players learn the biblical story.
 function scale(base: PlagueLevel, bumps: Partial<Record<keyof PlagueLevel, number>>) {
   return (level: number): PlagueLevel => ({
     ...base,
@@ -17,13 +15,28 @@ function scale(base: PlagueLevel, bumps: Partial<Record<keyof PlagueLevel, numbe
 }
 
 export const PLAGUES: Record<PlagueId, PlagueDef> = {
+  staff: {
+    id: "staff",
+    name: "Staff of Moses",
+    description: "Sweeping melee strike with the shepherd's staff.",
+    scripture:
+      "Exodus 4:2 — 'And the LORD said unto him, What is that in thine hand? And he said, A rod.' Moses' staff becomes the instrument of God's power.",
+    unlockLevel: 1,
+    base: { level: 1, cooldown: 0.55, dmg: 16, count: 1, speed: 0, ttl: 0.18, extra: { range: 70, arc: 1.05 } },
+    scale: scale({ level: 1, cooldown: 0.55, dmg: 16, count: 1, speed: 0, ttl: 0.18 }, {
+      cooldown: 0.03,
+      dmg: 5,
+    }),
+  },
   serpent: {
     id: "serpent",
     name: "Staff becomes Serpent",
-    description: "Living snakes slither forward in a zig-zag, piercing enemies.",
-    unlockLevel: 1,
-    base: { level: 1, cooldown: 1.1, dmg: 12, count: 1, speed: 260, ttl: 1.6 },
-    scale: scale({ level: 1, cooldown: 1.1, dmg: 12, count: 1, speed: 260, ttl: 1.6 }, {
+    description: "Hurl the staff — it becomes a living serpent that slithers forward, piercing foes.",
+    scripture:
+      "Exodus 7:10-12 — Aaron cast down his rod before Pharaoh, and it became a serpent. It swallowed the sorcerers' serpents whole.",
+    unlockLevel: 3,
+    base: { level: 1, cooldown: 1.1, dmg: 14, count: 1, speed: 260, ttl: 1.6 },
+    scale: scale({ level: 1, cooldown: 1.1, dmg: 14, count: 1, speed: 260, ttl: 1.6 }, {
       cooldown: 0.08,
       dmg: 4,
       count: 0.25,
@@ -34,8 +47,10 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   blood: {
     id: "blood",
     name: "Water into Blood",
-    description: "Pool of blood spreads around Moses, damaging any enemy inside.",
-    unlockLevel: 3,
+    description: "A spreading pool of blood harms every enemy that steps in it.",
+    scripture:
+      "Exodus 7:20-21 — Moses lifted the rod and smote the waters of the river, and all the waters were turned to blood. The fish died and the Egyptians could not drink.",
+    unlockLevel: 4,
     base: { level: 1, cooldown: 2.5, dmg: 6, count: 1, speed: 0, ttl: 3.5, extra: { radius: 90 } },
     scale: scale({ level: 1, cooldown: 2.5, dmg: 6, count: 1, speed: 0, ttl: 3.5 }, {
       cooldown: 0.1,
@@ -45,9 +60,11 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   frogs: {
     id: "frogs",
-    name: "Frogs",
-    description: "Hopping frogs bounce randomly, striking enemies on impact.",
-    unlockLevel: 5,
+    name: "Plague of Frogs",
+    description: "Hopping frogs bounce across the field, striking any enemy they land on.",
+    scripture:
+      "Exodus 8:6 — Aaron stretched out his hand over the waters of Egypt, and the frogs came up and covered the land.",
+    unlockLevel: 6,
     base: { level: 1, cooldown: 2.2, dmg: 14, count: 3, speed: 160, ttl: 4 },
     scale: scale({ level: 1, cooldown: 2.2, dmg: 14, count: 3, speed: 160, ttl: 4 }, {
       cooldown: 0.1,
@@ -57,21 +74,25 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   gnats: {
     id: "gnats",
-    name: "Gnats",
-    description: "Swarm orbits Moses, ticking damage on contact.",
-    unlockLevel: 7,
-    base: { level: 1, cooldown: 0.4, dmg: 3, count: 4, speed: 90, ttl: 999, extra: { radius: 60 } },
-    scale: scale({ level: 1, cooldown: 0.4, dmg: 3, count: 4, speed: 90, ttl: 999 }, {
-      dmg: 1,
-      count: 0.5,
-      speed: 4,
+    name: "Plague of Gnats (Lice)",
+    description: "A dark swarm of gnats drifts across the battlefield, biting anything in its path.",
+    scripture:
+      "Exodus 8:16-17 — Aaron smote the dust of the earth, and it became lice throughout all the land of Egypt.",
+    unlockLevel: 8,
+    base: { level: 1, cooldown: 3.5, dmg: 5, count: 1, speed: 70, ttl: 5, extra: { radius: 55 } },
+    scale: scale({ level: 1, cooldown: 3.5, dmg: 5, count: 1, speed: 70, ttl: 5 }, {
+      cooldown: 0.15,
+      dmg: 2,
+      count: 0.4,
     }),
   },
   flies: {
     id: "flies",
-    name: "Flies",
-    description: "Homing flies seek out the nearest enemy.",
-    unlockLevel: 9,
+    name: "Plague of Flies",
+    description: "Swarms of flies seek out the nearest enemy on their own.",
+    scripture:
+      "Exodus 8:24 — There came a grievous swarm of flies into the house of Pharaoh, and into all the land of Egypt.",
+    unlockLevel: 10,
     base: { level: 1, cooldown: 1.6, dmg: 10, count: 2, speed: 180, ttl: 3 },
     scale: scale({ level: 1, cooldown: 1.6, dmg: 10, count: 2, speed: 180, ttl: 3 }, {
       cooldown: 0.1,
@@ -81,9 +102,11 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   livestock: {
     id: "livestock",
-    name: "Livestock Plague",
-    description: "Enemies rot: periodically weakens all foes in range.",
-    unlockLevel: 11,
+    name: "Plague on Livestock",
+    description: "A wasting sickness periodically weakens all foes in range.",
+    scripture:
+      "Exodus 9:3-6 — The hand of the LORD is upon thy cattle... a very grievous murrain. All the cattle of Egypt died.",
+    unlockLevel: 12,
     base: { level: 1, cooldown: 4, dmg: 5, count: 1, speed: 0, ttl: 1, extra: { radius: 160 } },
     scale: scale({ level: 1, cooldown: 4, dmg: 5, count: 1, speed: 0, ttl: 1 }, {
       dmg: 2,
@@ -91,9 +114,11 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   boils: {
     id: "boils",
-    name: "Boils",
+    name: "Plague of Boils",
     description: "Fiery boils erupt from the ground around Moses.",
-    unlockLevel: 13,
+    scripture:
+      "Exodus 9:10 — Moses sprinkled ashes toward heaven, and it became a boil breaking forth with sores upon man and beast.",
+    unlockLevel: 14,
     base: { level: 1, cooldown: 3, dmg: 20, count: 3, speed: 0, ttl: 0.6, extra: { radius: 40 } },
     scale: scale({ level: 1, cooldown: 3, dmg: 20, count: 3, speed: 0, ttl: 0.6 }, {
       dmg: 6,
@@ -102,9 +127,11 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   hail: {
     id: "hail",
-    name: "Hail",
-    description: "Chunks of hail rain from the sky in a wide arc.",
-    unlockLevel: 15,
+    name: "Plague of Hail",
+    description: "Chunks of fiery hail rain from the sky in a wide arc.",
+    scripture:
+      "Exodus 9:23-24 — The LORD sent thunder and hail, and the fire ran along upon the ground; there was hail, and fire mingled with the hail, very grievous.",
+    unlockLevel: 16,
     base: { level: 1, cooldown: 3.5, dmg: 22, count: 5, speed: 220, ttl: 1.4 },
     scale: scale({ level: 1, cooldown: 3.5, dmg: 22, count: 5, speed: 220, ttl: 1.4 }, {
       dmg: 5,
@@ -113,9 +140,11 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   locusts: {
     id: "locusts",
-    name: "Locusts",
-    description: "Cloud of locusts sweeps across the field.",
-    unlockLevel: 17,
+    name: "Plague of Locusts",
+    description: "A cloud of locusts sweeps across the field, devouring all before it.",
+    scripture:
+      "Exodus 10:13-15 — The east wind brought the locusts... they covered the face of the whole earth, so that the land was darkened.",
+    unlockLevel: 18,
     base: { level: 1, cooldown: 5, dmg: 4, count: 12, speed: 130, ttl: 2.5 },
     scale: scale({ level: 1, cooldown: 5, dmg: 4, count: 12, speed: 130, ttl: 2.5 }, {
       dmg: 2,
@@ -124,9 +153,11 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
   darkness: {
     id: "darkness",
-    name: "Darkness",
-    description: "A veil dims the field; enemies slow and take extra damage.",
-    unlockLevel: 19,
+    name: "Plague of Darkness",
+    description: "A three-day darkness dims the field; enemies slow and take extra damage.",
+    scripture:
+      "Exodus 10:22 — Moses stretched forth his hand toward heaven, and there was a thick darkness in all the land of Egypt three days.",
+    unlockLevel: 20,
     base: { level: 1, cooldown: 8, dmg: 0, count: 1, speed: 0, ttl: 4 },
     scale: scale({ level: 1, cooldown: 8, dmg: 0, count: 1, speed: 0, ttl: 4 }, {
       ttl: 0.4,
@@ -135,7 +166,9 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   firstborn: {
     id: "firstborn",
     name: "Death of the Firstborn",
-    description: "Once per minute, instantly slays the strongest enemy nearby.",
+    description: "Once per minute, slays the strongest enemy nearby.",
+    scripture:
+      "Exodus 12:29 — At midnight the LORD smote all the firstborn in the land of Egypt, from the firstborn of Pharaoh to the firstborn of the captive.",
     unlockLevel: 22,
     base: { level: 1, cooldown: 60, dmg: 99999, count: 1, speed: 0, ttl: 0.1 },
     scale: scale({ level: 1, cooldown: 60, dmg: 99999, count: 1, speed: 0, ttl: 0.1 }, {
@@ -145,7 +178,9 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   pillar: {
     id: "pillar",
     name: "Pillar of Cloud & Fire",
-    description: "Guardian pillar follows Moses, scorching adjacent foes.",
+    description: "A guardian pillar follows Moses, scorching foes that draw near.",
+    scripture:
+      "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, and by night in a pillar of fire, to give them light.",
     unlockLevel: 25,
     base: { level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999, extra: { radius: 70 } },
     scale: scale({ level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
@@ -155,7 +190,9 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   redsea: {
     id: "redsea",
     name: "Parting of the Red Sea",
-    description: "A tidal wave crashes across the map, wiping out all in its path.",
+    description: "A tidal wave crashes across the map, wiping out everything in its path.",
+    scripture:
+      "Exodus 14:21-28 — Moses stretched out his hand over the sea; the waters returned and covered the chariots of Pharaoh.",
     unlockLevel: 30,
     base: { level: 1, cooldown: 45, dmg: 200, count: 1, speed: 320, ttl: 2.5 },
     scale: scale({ level: 1, cooldown: 45, dmg: 200, count: 1, speed: 320, ttl: 2.5 }, {
@@ -166,6 +203,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
 };
 
 export const PLAGUE_ORDER: PlagueId[] = [
+  "staff",
   "serpent",
   "blood",
   "frogs",

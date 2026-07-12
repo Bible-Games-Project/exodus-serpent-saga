@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, MOSES, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
-import { applyUpgrade, createInitialState, update } from "./engine";
-import type { Entity, GameState, UpgradeChoice } from "./types";
+import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
+import { PLAGUES } from "./plagues";
+import { NPCS } from "./npcs";
+import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
 
 const SPRITE_MAP: Record<string, Sprite> = {
   moses: MOSES,
@@ -15,8 +17,6 @@ const SPRITE_MAP: Record<string, Sprite> = {
   palm: PALM,
   pyramid: PYRAMID,
   rock: ROCK,
-  // Companions — Aaron sprite is reused with a tint hint; different NPCs
-  // are visually distinguished by their name label rendered above them.
   bithiah: AARON,
   aaron: AARON,
   miriam: AARON,
@@ -27,9 +27,8 @@ const SPRITE_MAP: Record<string, Sprite> = {
   elder: AARON,
 };
 
-const SCALE = 3; // pixel scale — each sprite pixel becomes 3 screen px
+const SCALE = 3;
 
-// Chunky sand tile drawn once and tiled — subtle warm gradient.
 function makeSandTile(): HTMLCanvasElement {
   const size = 64;
   const c = document.createElement("canvas");
@@ -40,7 +39,6 @@ function makeSandTile(): HTMLCanvasElement {
   grd.addColorStop(1, "#dbb47f");
   g.fillStyle = grd;
   g.fillRect(0, 0, size, size);
-  // sparse dots
   g.fillStyle = "rgba(120,80,50,0.08)";
   for (let i = 0; i < 40; i++) {
     g.fillRect(Math.random() * size, Math.random() * size, 2, 2);
@@ -57,7 +55,7 @@ type Props = {
 export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(null!);
-  const [uiTick, setUiTick] = useState(0); // trigger overlay re-renders
+  const [uiTick, setUiTick] = useState(0);
 
   useEffect(() => {
     stateRef.current = createInitialState();
@@ -67,7 +65,6 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
 
     const sandTile = makeSandTile();
 
-    // ----- input -----
     const keys = new Set<string>();
     const onKeyDown = (e: KeyboardEvent) => {
       keys.add(e.key.toLowerCase());
@@ -77,7 +74,6 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
-    // touch joystick
     const joystick = { active: false, cx: 0, cy: 0, x: 0, y: 0 };
     const onTouchStart = (e: TouchEvent) => {
       const t = e.touches[0];
@@ -97,7 +93,6 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
     cnv.addEventListener("touchend", onTouchEnd);
     cnv.addEventListener("touchcancel", onTouchEnd);
 
-    // ----- resize -----
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       cnv.width = Math.floor(cnv.clientWidth * dpr);
@@ -106,7 +101,6 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
     resize();
     window.addEventListener("resize", resize);
 
-    // ----- loop -----
     let last = performance.now();
     let raf = 0;
     let uiCounter = 0;
@@ -117,7 +111,6 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
       last = t;
 
       const s = stateRef.current;
-      // read input
       let ix = 0, iy = 0;
       if (keys.has("a") || keys.has("arrowleft")) ix -= 1;
       if (keys.has("d") || keys.has("arrowright")) ix += 1;
@@ -146,9 +139,8 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
         onGameOver({ level: s.level, survivalSeconds: Math.floor(s.survivalSeconds), kills: s.kills });
       }
 
-      // trigger overlay re-renders infrequently
       uiCounter++;
-      if (uiCounter % 6 === 0) setUiTick((v) => v + 1);
+      if (uiCounter % 4 === 0) setUiTick((v) => v + 1);
 
       raf = requestAnimationFrame(loop);
     };
@@ -186,6 +178,12 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
           <div className="pointer-events-none absolute inset-0">
             <HUD state={s} tick={uiTick} />
           </div>
+          <LoadoutBar
+            state={s}
+            tick={uiTick}
+            onDismissPlague={(id) => { dismissNewPlague(s, id); setUiTick((v) => v + 1); }}
+            onDismissNpc={(id) => { dismissNewNpc(s, id); setUiTick((v) => v + 1); }}
+          />
           {pending && (
             <LevelUpOverlay
               choices={pending}
@@ -222,7 +220,6 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const secs = Math.floor(state.survivalSeconds % 60);
   return (
     <>
-      {/* XP bar top */}
       <div className="absolute inset-x-0 top-0 h-2 bg-black/20">
         <div className="h-full bg-gold transition-[width] duration-100" style={{ width: `${xpPct * 100}%` }} />
       </div>
@@ -243,6 +240,82 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   );
 }
 
+function LoadoutBar({
+  state,
+  tick: _tick,
+  onDismissPlague,
+  onDismissNpc,
+}: {
+  state: GameState;
+  tick: number;
+  onDismissPlague: (id: PlagueId) => void;
+  onDismissNpc: (id: NpcId) => void;
+}) {
+  const plagues = Array.from(state.plagues.entries());
+  const npcs = Array.from(state.npcs.keys());
+  return (
+    <div className="absolute inset-x-0 bottom-2 flex flex-wrap items-center justify-center gap-1.5 px-2">
+      {plagues.map(([id, lvl]) => (
+        <LoadoutPill
+          key={id}
+          isNew={state.newPlagues.has(id)}
+          title={PLAGUES[id].name}
+          subtitle={`Lv ${lvl}`}
+          tone="plague"
+          onClick={() => onDismissPlague(id)}
+        />
+      ))}
+      {npcs.map((id) => (
+        <LoadoutPill
+          key={id}
+          isNew={state.newNpcs.has(id)}
+          title={NPCS[id].name}
+          subtitle="Companion"
+          tone="ally"
+          onClick={() => onDismissNpc(id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function LoadoutPill({
+  isNew,
+  title,
+  subtitle,
+  tone,
+  onClick,
+}: {
+  isNew: boolean;
+  title: string;
+  subtitle: string;
+  tone: "plague" | "ally";
+  onClick: () => void;
+}) {
+  const toneCls = tone === "plague"
+    ? "border-primary/50 bg-black/40 text-white"
+    : "border-gold/50 bg-black/40 text-white";
+  return (
+    <button
+      onClick={onClick}
+      className={`pointer-events-auto relative flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-semibold shadow ${toneCls} ${isNew ? "ring-2 ring-yellow-300 ring-offset-1 ring-offset-black/30" : ""}`}
+      title={isNew ? "New! Click to acknowledge" : title}
+    >
+      <span className="max-w-[110px] truncate">{title}</span>
+      <span className="opacity-70">·</span>
+      <span className="opacity-90">{subtitle}</span>
+      {isNew && (
+        <span
+          className="absolute -right-1.5 -top-2 rounded-full bg-yellow-400 px-1.5 py-0.5 text-[9px] font-black uppercase leading-none tracking-wider text-black shadow"
+          style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}
+        >
+          NEW
+        </span>
+      )}
+    </button>
+  );
+}
+
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
@@ -254,10 +327,23 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
             <button
               key={c.id}
               onClick={() => onPick(c)}
-              className="group rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary"
+              className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary"
             >
+              {c.isUnlock && (
+                <span
+                  className="absolute -right-2 -top-2 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow"
+                  style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}
+                >
+                  NEW
+                </span>
+              )}
               <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
               <div className="text-xs text-muted-foreground">{c.description}</div>
+              {c.scripture && (
+                <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] italic leading-snug text-foreground/80">
+                  {c.scripture}
+                </div>
+              )}
             </button>
           ))}
         </div>
@@ -271,7 +357,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   const w = cnv.width;
   const h = cnv.height;
 
-  // Sand background — tile relative to camera for parallax
   const cam = s.camera;
   const dpr = w / cnv.clientWidth;
   const viewW = cnv.clientWidth;
@@ -288,37 +373,95 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
   }
 
-  // Warm vignette
   const grd = ctx.createRadialGradient(viewW / 2, viewH / 2, viewH * 0.2, viewW / 2, viewH / 2, viewH * 0.9);
   grd.addColorStop(0, "rgba(255,220,170,0)");
   grd.addColorStop(1, "rgba(140,80,40,0.28)");
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, viewW, viewH);
 
-  // World-to-screen offset
   const camX = cam.x - viewW / 2;
   const camY = cam.y - viewH / 2;
 
-  // Sort by y for pseudo-depth
   const drawList: Entity[] = [];
   for (const e of s.entities.values()) drawList.push(e);
   drawList.sort((a, b) => a.pos.y - b.pos.y);
 
   for (const e of drawList) {
-    // Blood pool — draw as a soft red radial stain on the sand.
+    // Pixel-art blood pool — irregular pre-rendered blob.
     if (e.kind === "bloodpool") {
+      const canvas = e.data?.canvas as HTMLCanvasElement | undefined;
+      if (!canvas) continue;
+      const maxTtl = (e.data?.maxTtl as number) ?? 3;
+      const alpha = Math.min(1, (e.ttl ?? 0) / maxTtl) * 0.9 + 0.1;
+      ctx.globalAlpha = Math.min(1, alpha);
+      const cx = Math.round(e.pos.x - camX - canvas.width / 2);
+      const cy = Math.round(e.pos.y - camY - canvas.height / 2);
+      ctx.drawImage(canvas, cx, cy);
+      ctx.globalAlpha = 1;
+      continue;
+    }
+
+    // Staff swing — a bright arc drawn in front of Moses for a moment.
+    if (e.kind === "staffswing") {
+      const range = (e.data?.range as number) ?? 70;
+      const halfArc = (e.data?.halfArc as number) ?? 1.05;
+      const facing = (e.data?.facing as number) ?? 1;
+      const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
       const cx = e.pos.x - camX;
       const cy = e.pos.y - camY;
-      const r = (e.data?.radius as number) ?? 90;
-      const alpha = Math.min(1, (e.ttl ?? 0) / 1.5) * 0.55;
-      const grd2 = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
-      grd2.addColorStop(0, `rgba(140,20,20,${alpha})`);
-      grd2.addColorStop(0.7, `rgba(120,10,10,${alpha * 0.6})`);
-      grd2.addColorStop(1, "rgba(120,10,10,0)");
-      ctx.fillStyle = grd2;
+      const baseAng = facing === 1 ? 0 : Math.PI;
+      ctx.save();
+      ctx.globalAlpha = life * 0.85;
+      ctx.strokeStyle = "#f6efdc";
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.ellipse(cx, cy, r, r * 0.55, 0, 0, Math.PI * 2);
+      ctx.arc(cx, cy, range, baseAng - halfArc, baseAng + halfArc);
+      ctx.stroke();
+      ctx.globalAlpha = life * 0.35;
+      ctx.strokeStyle = "#8a5a34";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, range - 4, baseAng - halfArc, baseAng + halfArc);
+      ctx.stroke();
+      ctx.restore();
+      continue;
+    }
+
+    // Gnat swarm — a dark buzzing cloud of many tiny particles.
+    if (e.kind === "gnatswarm") {
+      const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number }> | undefined;
+      const maxTtl = (e.data?.maxTtl as number) ?? 5;
+      if (!particles) continue;
+      const remaining = (e.ttl ?? 0) / maxTtl;
+      // fade in for the first 15%, fade out over the last 40%
+      let fade = 1;
+      if (remaining > 0.85) fade = (1 - remaining) / 0.15;
+      else if (remaining < 0.4) fade = remaining / 0.4;
+      fade = Math.max(0, Math.min(1, fade));
+      const cx = e.pos.x - camX;
+      const cy = e.pos.y - camY;
+      const t = e.animT;
+      // soft dark backing cloud
+      ctx.save();
+      ctx.globalAlpha = 0.22 * fade;
+      const r = (e.data?.radius as number) ?? 55;
+      const cloud = ctx.createRadialGradient(cx, cy, r * 0.1, cx, cy, r);
+      cloud.addColorStop(0, "rgba(30,20,15,0.9)");
+      cloud.addColorStop(1, "rgba(30,20,15,0)");
+      ctx.fillStyle = cloud;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+      // individual gnats
+      ctx.fillStyle = "#1a120c";
+      for (const p of particles) {
+        const jx = Math.cos(t * 6 + p.phase) * p.amp;
+        const jy = Math.sin(t * 7.5 + p.phase * 1.3) * p.amp;
+        ctx.globalAlpha = fade * (0.75 + 0.25 * Math.sin(t * 8 + p.phase));
+        ctx.fillRect(Math.round(cx + p.ox + jx), Math.round(cy + p.oy + jy), 2, 2);
+      }
+      ctx.globalAlpha = 1;
       continue;
     }
 
@@ -327,7 +470,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const frameIdx = Math.floor(e.animT) % sprite.frames.length;
     const flip = e.facing === -1;
 
-    // Frog hop — compute vertical offset and squash/stretch from hopT.
     let hopOffY = 0;
     let scaleY = 1;
     let scaleX = 1;
@@ -346,7 +488,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const drawH = img.height * scaleY;
     const sx = Math.round(e.pos.x - camX - drawW / 2);
     const sy = Math.round(e.pos.y - camY - drawH + 8 + hopOffY);
-    // Soft shadow — stays on the ground even while frogs hop.
     const shadowY = Math.round(e.pos.y - camY + 8);
     const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
     ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
@@ -355,7 +496,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.fill();
     ctx.drawImage(img, sx, sy, drawW, drawH);
 
-    // Ally name floating label
     if (e.team === "ally" && e.data?.npcLabel) {
       ctx.font = "600 10px Nunito, sans-serif";
       ctx.textAlign = "center";
@@ -365,7 +505,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.fillText(String(e.data.npcLabel), sx + drawW / 2, sy - 4);
     }
 
-    // Enemy HP bar
     if (e.team === "enemy" && e.hp < e.maxHp) {
       const bw = 22;
       const bx = sx + drawW / 2 - bw / 2;
