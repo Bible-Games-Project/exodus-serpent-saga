@@ -139,3 +139,8 @@
     letter-spacing: 0.02em;
   }
 }
+
+@keyframes exodus-new-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.08); }
+}
