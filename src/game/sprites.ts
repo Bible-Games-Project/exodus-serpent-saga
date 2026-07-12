@@ -1,0 +1,341 @@
+import { PALETTE } from "./palette";
+
+// A sprite is a small grid of pixels described as string rows.
+// One character per pixel; `.` is transparent. See ./palette.ts for the codes.
+export type Sprite = {
+  w: number;
+  h: number;
+  frames: string[][];
+};
+
+function make(rows: string[][]): Sprite {
+  const h = rows[0].length;
+  const w = rows[0][0].length;
+  // sanity — all rows same width; if not, pad
+  for (const frame of rows) {
+    for (let i = 0; i < frame.length; i++) {
+      if (frame[i].length < w) frame[i] = frame[i].padEnd(w, ".");
+    }
+  }
+  return { w, h, frames: rows };
+}
+
+const cache = new Map<string, HTMLCanvasElement>();
+
+export function renderSprite(
+  sprite: Sprite,
+  frame: number,
+  scale: number,
+  flipX = false,
+): HTMLCanvasElement {
+  const f = frame % sprite.frames.length;
+  const key = `${sprite.w}x${sprite.h}:${f}:${scale}:${flipX}:${sprite.frames[f].join("|")}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const cnv = document.createElement("canvas");
+  cnv.width = sprite.w * scale;
+  cnv.height = sprite.h * scale;
+  const ctx = cnv.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+
+  const rows = sprite.frames[f];
+  for (let y = 0; y < sprite.h; y++) {
+    const row = rows[y] ?? "";
+    for (let x = 0; x < sprite.w; x++) {
+      const ch = row[x];
+      if (!ch || ch === "." || ch === " ") continue;
+      const c = PALETTE[ch];
+      if (!c || c === "transparent") continue;
+      const dx = flipX ? (sprite.w - 1 - x) * scale : x * scale;
+      ctx.fillStyle = c;
+      ctx.fillRect(dx, y * scale, scale, scale);
+    }
+  }
+  cache.set(key, cnv);
+  return cnv;
+}
+
+// ---------------- Sprites ----------------
+
+// Moses — 16 wide x 20 tall. Two-frame walk cycle.
+export const MOSES = make([
+  [
+    "................",
+    "......KKKKK.....",
+    ".....KbbbbbK....",
+    ".....KbsssbK....",
+    ".....KbsWsbK....",
+    "......bBBBb.....",
+    ".....bbbbbbb....",
+    "....llllllll....",
+    "....lllllllw...",
+    "...lLlLlLlLlw..",
+    "...lllllllllw..",
+    "...lLlllllLlw..",
+    "...lllllllll...",
+    "...lLlllllLl...",
+    "....llll.llll...",
+    "....LLLL.LLLL...",
+    "....ssss.ssss...",
+    "....SSSS.SSSS...",
+    "....KK....KK....",
+    "................",
+  ],
+  [
+    "................",
+    "......KKKKK.....",
+    ".....KbbbbbK....",
+    ".....KbsssbK....",
+    ".....KbsWsbK....",
+    "......bBBBb.....",
+    "....bbbbbbbb....",
+    "...lllllllll....",
+    "...llllllllw....",
+    "..lLlllllLlw....",
+    "..lllllllllw....",
+    "..lLlllllLlw....",
+    "...lllllllw.....",
+    "....llllllw.....",
+    "....lllllll.....",
+    ".....LLllLL.....",
+    ".....ssssss.....",
+    "....SSss..ss....",
+    "....KK.....KK...",
+    "................",
+  ],
+]);
+
+// Living serpent projectile — 12x6, 3-frame slither
+export const SERPENT = make([
+  [
+    "..ygggg......",
+    ".gGGGGgy.....",
+    "yGGyGyGGg....",
+    ".ggGGGGgy....",
+    "..gggggGy....",
+    "...gggggg....",
+  ],
+  [
+    "....gggg....",
+    "..gGGyGGg...",
+    "yGGGyGyGGgy",
+    "yGGyGyGGGGy",
+    "..gGGGGgg...",
+    "....gggg....",
+  ],
+  [
+    ".gggggg.....",
+    "gGGGGgy.....",
+    "yGyGGyGGg...",
+    ".gGGGGGGGy..",
+    "..gggggGGgy.",
+    "....ggggggg.",
+  ],
+]);
+
+// Egyptian soldier enemy — 12x18, bronze helmet + white kilt
+export const SOLDIER = make([
+  [
+    "....zzzz....",
+    "...zzzzzz...",
+    "...zsssZz...",
+    "...zsWsZz...",
+    "....bbbb....",
+    "....ZZZZ....",
+    "...zzzzzz...",
+    "..zzWWWWzz..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "...WWWWWW...",
+    "...ssssss...",
+    "...ssssss...",
+    "...SSSSSS...",
+    "...bb..bb...",
+    "...KK..KK...",
+    "............",
+  ],
+  [
+    "....zzzz....",
+    "...zzzzzz...",
+    "...zsssZz...",
+    "...zsWsZz...",
+    "....bbbb....",
+    "....ZZZZ....",
+    "...zzzzzz...",
+    "..zzWWWWzz..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "...WWWWWW...",
+    "...ssssss...",
+    "....ssss....",
+    "...SSSSSS...",
+    "..bb....bb..",
+    "..KK....KK..",
+    "............",
+  ],
+]);
+
+// Jackal enemy — 16x10, fast low predator
+export const JACKAL = make([
+  [
+    "..JJ...........J",
+    ".JjjJ.........Jj",
+    "JjjjjjjjjjjjjJj.",
+    "JjjWjjjjjjjjjjJ.",
+    "JjjjjjjjjjjjjjJ.",
+    ".JjjjjjjjjjjjJ..",
+    "..Jj..JJ..JJ..J.",
+    "..Jj..jj..jj....",
+    "..Jj..jj..jj....",
+    "..KK..KK..KK....",
+  ],
+  [
+    "..JJ.........JJJ",
+    ".JjjJ.......Jjj.",
+    "JjjjjjjjjjjjJj..",
+    "JjjWjjjjjjjjjJ..",
+    "JjjjjjjjjjjjjJ..",
+    ".Jjjjjjjjjjjjj..",
+    "..JJ..JJ..JJ..J.",
+    "..jj..jj..jj..jj",
+    "..jj..jj..jj..jj",
+    "..KK..KK..KK..KK",
+  ],
+]);
+
+// Frog — 10x7
+export const FROG = make([
+  [
+    "..fffff...",
+    ".fFfWfFf..",
+    "ffFfffFff.",
+    "fFffffffFf",
+    "fFfffffffF",
+    "FF..FF..FF",
+    "KK..KK..KK",
+  ],
+]);
+
+// Fly / gnat — 5x4
+export const FLY = make([
+  [
+    "W.W..",
+    "NnnnN",
+    ".KK..",
+    ".K...",
+  ],
+  [
+    ".W.W.",
+    "WNnnNW",
+    ".KKK.",
+    "..K..",
+  ],
+]);
+
+// XP gem — 6x6
+export const GEM = make([
+  [
+    "..oo..",
+    ".oWWo.",
+    "oWooWo",
+    "oooooo",
+    ".OoOO.",
+    "..OO..",
+  ],
+]);
+
+// Aaron (companion) — 16x20 warm red robe
+export const AARON = make([
+  [
+    "................",
+    "......KKKKK.....",
+    ".....KbbbbbK....",
+    ".....KbsssbK....",
+    ".....KbsWsbK....",
+    "......bBBBb.....",
+    ".....bbbbbbb....",
+    "....eeeeeeee....",
+    "....eEeEeEeE....",
+    "...eeeeeeeeee...",
+    "...eEeeeeeeEe...",
+    "...eeeeeeeeee...",
+    "...eEeeeeeeEe...",
+    "...eeeeeeeeee...",
+    "....eee..eee....",
+    "....EEE..EEE....",
+    "....sss..sss....",
+    "....SSS..SSS....",
+    "....KK....KK....",
+    "................",
+  ],
+]);
+
+// Palm tree — 20x24
+export const PALM = make([
+  [
+    "....vvggg..gggvv....",
+    "..vgggggvvgggggv....",
+    ".vgvggvvggvvgggggv..",
+    "vggvvggvvggvvgggggv.",
+    "..vvggv..vvggvvgg...",
+    "......v..v..........",
+    ".........w..........",
+    "........ww..........",
+    "........ww..........",
+    "........wd..........",
+    "........wd..........",
+    ".......wwd..........",
+    ".......wwd..........",
+    "........wd..........",
+    "........wd..........",
+    ".......wwd..........",
+    "........wd..........",
+    "........wd..........",
+    "........wd..........",
+    ".......www..........",
+    ".....HH...HH........",
+    "...HH..HH...HH......",
+    ".HH..............HH.",
+    "....................",
+  ],
+]);
+
+// Pyramid — 28x18
+export const PYRAMID = make([
+  [
+    ".............oo.............",
+    "............tTTt............",
+    "...........tTttTt...........",
+    "..........tTtttTTt..........",
+    ".........tTttttTTtt.........",
+    "........tTttTtttTTTt........",
+    ".......tTttttTtttTTTtt......",
+    "......tTttTtttTtttTTtTtt....",
+    ".....tTttttTtttTtttTTtTTt...",
+    "....tTttTtttTtttTtttTTtTTt..",
+    "...tTttttTtttTtttTtttTTtTTt.",
+    "..tTttTtttTtttTtttTtttTTtTTt",
+    ".tTttttTtttTtttTtttTtttTTtTT",
+    "tTtttTtttTtttTtttTtttTTtTTTT",
+    "TTttttTtttTtttTtttTtttTTTTTT",
+    "HH..HH..HH..HH..HH..HH..HH..",
+    "..HH..HH..HH..HH..HH..HH..HH",
+    "HH..HH..HH..HH..HH..HH..HH..",
+  ],
+]);
+
+// Rock — 12x7
+export const ROCK = make([
+  [
+    "...ttttt....",
+    "..tttTtttT..",
+    ".tttTtttTtt.",
+    "ttTttttTtttt",
+    "tttTtttttTtt",
+    "HH..HH..HH..",
+    "..HH..HH..HH",
+  ],
+]);
