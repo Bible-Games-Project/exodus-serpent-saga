@@ -413,7 +413,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   }
 }
 
-}
+
 
 function spawnAllyBolt(state: GameState, ally: Entity, target: Entity) {
   const dx = target.pos.x - ally.pos.x;
