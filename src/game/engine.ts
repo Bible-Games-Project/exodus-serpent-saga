@@ -417,9 +417,19 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     };
     state.entities.set(sw.id, sw);
   } else if (id === "serpent") {
+    // Snap the serpent's aim to the closest enemy at spawn — no homing after.
+    let nearest: Entity | null = null;
+    let bestD = Infinity;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      const d2 = dist2(en.pos, p);
+      if (d2 < bestD) { bestD = d2; nearest = en; }
+    }
+    const baseAngle = nearest
+      ? Math.atan2(nearest.pos.y - p.y, nearest.pos.x - p.x)
+      : (state.player.facing === 1 ? 0 : Math.PI);
     for (let i = 0; i < stats.count; i++) {
-      const spread = (i - (stats.count - 1) / 2) * 0.22;
-      const baseAngle = state.player.facing === 1 ? 0 : Math.PI;
+      const spread = (i - (stats.count - 1) / 2) * 0.14;
       const ang = baseAngle + spread;
       const e: Entity = {
         id: state.nextId++,
@@ -427,31 +437,17 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
         radius: 10,
         hp: 1, maxHp: 1,
-        team: "projectile", facing: state.player.facing,
+        team: "projectile", facing: Math.cos(ang) > 0 ? 1 : -1,
         animT: 0, born: state.now,
         ttl: stats.ttl, dmg: stats.dmg,
         kind: "serpent",
-        data: { t: 0, pierce: 1, hit: new Set<number>() },
+        data: { pierce: 1, hit: new Set<number>() },
       };
       state.entities.set(e.id, e);
     }
   } else if (id === "flies") {
-    for (let i = 0; i < stats.count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const e: Entity = {
-        id: state.nextId++,
-        pos: { x: p.x, y: p.y },
-        vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
-        radius: 6,
-        hp: 1, maxHp: 1,
-        team: "projectile", facing: 1,
-        animT: 0, born: state.now,
-        ttl: stats.ttl, dmg: stats.dmg,
-        kind: "fly",
-        data: { homing: 1, hit: new Set<number>() },
-      };
-      state.entities.set(e.id, e);
-    }
+    // Handled entirely by syncOrbitFlies — nothing to spawn per cast.
+    return;
   } else if (id === "frogs") {
     for (let i = 0; i < stats.count; i++) {
       const ang = Math.random() * Math.PI * 2;
