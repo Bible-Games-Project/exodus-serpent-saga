@@ -543,6 +543,82 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
 }
 
 
+// ---------- orbiting fly swarm (Plague of Flies) ----------
+// Each rank of the "flies" plague adds one permanent orbiting fly. They
+// rotate evenly around Moses at a constant speed and damage enemies on
+// contact (with a per-enemy cooldown so a single fly doesn't melt targets).
+function syncOrbitFlies(state: GameState, dt: number) {
+  const targetCount = state.plagues.get("flies") ?? 0;
+  const ids = (state.orbitFlyIds ??= []);
+
+  // remove dead / missing entities from tracking
+  for (let i = ids.length - 1; i >= 0; i--) {
+    if (!state.entities.has(ids[i])) ids.splice(i, 1);
+  }
+
+  // grow to match the current rank
+  while (ids.length < targetCount) {
+    const e: Entity = {
+      id: state.nextId++,
+      pos: { x: state.player.pos.x, y: state.player.pos.y },
+      vel: { x: 0, y: 0 },
+      radius: 8,
+      hp: 1, maxHp: 1,
+      team: "orbit", facing: 1,
+      animT: Math.random() * 10, born: state.now,
+      kind: "fly",
+      data: { hitCd: new Map<number, number>() },
+    };
+    state.entities.set(e.id, e);
+    ids.push(e.id);
+  }
+  // shrink if the count was reduced somehow
+  while (ids.length > targetCount) {
+    const id = ids.pop();
+    if (id != null) state.entities.delete(id);
+  }
+
+  const count = ids.length;
+  if (count === 0) return;
+
+  const def = PLAGUES.flies;
+  const dmg = def.scale(targetCount).dmg;
+  const orbitSpeed = 2.4; // rad/s
+  const radius = 58;
+  const t = state.now;
+
+  for (let i = 0; i < count; i++) {
+    const e = state.entities.get(ids[i]);
+    if (!e) continue;
+    // evenly distributed around the orbit — never overlap
+    const a = t * orbitSpeed + (i / count) * Math.PI * 2;
+    e.pos.x = state.player.pos.x + Math.cos(a) * radius;
+    e.pos.y = state.player.pos.y + Math.sin(a) * radius;
+    e.facing = Math.cos(a) > 0 ? 1 : -1;
+    // fast wing-flap: cycle through the 2 fly frames ~14x/sec
+    e.animT += dt * 14;
+
+    // decrement per-enemy hit cooldowns
+    const hitCd = e.data!.hitCd as Map<number, number>;
+    for (const [k, v] of hitCd) {
+      const nv = v - dt;
+      if (nv <= 0) hitCd.delete(k);
+      else hitCd.set(k, nv);
+    }
+
+    // damage-on-contact
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      if (hitCd.has(en.id)) continue;
+      if (dist2(en.pos, e.pos) < (en.radius + e.radius) ** 2) {
+        en.hp -= dmg;
+        hitCd.set(en.id, 0.4);
+        if (en.hp <= 0) killEnemy(state, en);
+      }
+    }
+  }
+}
+
 
 function spawnAllyBolt(state: GameState, ally: Entity, target: Entity) {
   const dx = target.pos.x - ally.pos.x;
