@@ -517,7 +517,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
 
 
-    const sprite = SPRITE_MAP[e.kind];
+    // Hide Moses' built-in staff column while he's swinging so we don't
+    // render two staffs on top of each other.
+    const sprite = e.kind === "moses" && staffSwinging ? MOSES_NOSTAFF : SPRITE_MAP[e.kind];
     if (!sprite) continue;
     const frameIdx = Math.floor(e.animT) % sprite.frames.length;
     const flip = e.facing === -1;
