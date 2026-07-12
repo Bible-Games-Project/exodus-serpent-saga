@@ -107,6 +107,56 @@ export const MOSES = make([
   ],
 ]);
 
+// Moses with the staff column blanked out — used during a staff swing so
+// the animated swinging staff doesn't appear alongside the sprite's static
+// staff (which would look like two staffs at once).
+export const MOSES_NOSTAFF = make([
+  [
+    "................",
+    "................",
+    ".....KKKKKK.....",
+    "....KWbbbbbK....",
+    "....KbssssbK....",
+    "....KbsWWsbK....",
+    ".....bBBBBb.....",
+    "....bbbbbbb.....",
+    "...uuuuuuuu.....",
+    "...uUuUuUuU.....",
+    "..uuuWuuuWuu....",
+    "..uUuuuuuuUu....",
+    "..uuuuuuuuuu....",
+    "..uUuuuuuuUu....",
+    "...uuu..uuu.....",
+    "...UUU..UUU.....",
+    "...sss..sss.....",
+    "...SSS..SSS.....",
+    "...KK....KK.....",
+    "................",
+  ],
+  [
+    "................",
+    "................",
+    ".....KKKKKK.....",
+    "....KWbbbbbK....",
+    "....KbssssbK....",
+    "....KbsWWsbK....",
+    ".....bBBBBb.....",
+    "....bbbbbbb.....",
+    "...uuuuuuuu.....",
+    "...uUuUuUuU.....",
+    "..uuuWuuuWuu....",
+    "..uUuuuuuuUu....",
+    "..uuuuuuuuuu....",
+    "..uUuuuuuuUu....",
+    "....uuuuuu......",
+    "....UUUUUU......",
+    "...ss....ss.....",
+    "..SSs....sSS....",
+    "..KK......KK....",
+    "................",
+  ],
+]);
+
 // Living serpent projectile — long, thin, slithering body. 18 wide x 4 tall,
 // 4-frame slither with the head bulge on the leading (right) edge.
 export const SERPENT = make([
