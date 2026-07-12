@@ -210,10 +210,19 @@ export function update(state: GameState, dt: number) {
       const baseSpd = (e.data?.speed as number) ?? 60;
       // Plague of Darkness slows every enemy by 10% while active.
       const slow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
-      const spd = baseSpd * slow;
+      // Hail freeze — enemies caught in a hail impact are slowed 70%.
+      const frozen = state.now < ((e.data?.freezeUntil as number) ?? 0);
+      const freezeMul = frozen ? 0.3 : 1;
+      const spd = baseSpd * slow * freezeMul;
       e.pos.x += (dx / d) * spd * dt;
       e.pos.y += (dy / d) * spd * dt;
-      e.facing = dx > 0 ? 1 : -1;
+      // Jackal sprite is drawn head-left by default, so invert facing so it
+      // always runs head-first toward Moses, never backwards.
+      if (e.kind === "jackal") {
+        e.facing = dx > 0 ? -1 : 1;
+      } else {
+        e.facing = dx > 0 ? 1 : -1;
+      }
 
       // Damage player on contact
       if (dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
@@ -272,7 +281,18 @@ export function update(state: GameState, dt: number) {
           }
           spawnVisualHazard(state, "fireexplosion", e.pos, 0.4, { radius: R });
         } else if (e.kind === "hailstone") {
-          spawnVisualHazard(state, "hailimpact", e.pos, 0.25, {});
+          const R = (e.data?.radius as number) ?? 60;
+          const freezeDur = (e.data?.freeze as number) ?? 2.5;
+          for (const en of state.entities.values()) {
+            if (en.team !== "enemy") continue;
+            if (dist2(en.pos, e.pos) < R * R) {
+              en.hp -= e.dmg ?? 0;
+              if (!en.data) en.data = {};
+              en.data.freezeUntil = state.now + freezeDur;
+              if (en.hp <= 0) killEnemy(state, en);
+            }
+          }
+          spawnVisualHazard(state, "hailimpact", e.pos, 0.45, { radius: R });
         }
         state.entities.delete(e.id);
         continue;
@@ -615,9 +635,15 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       targetKind: "human",
     });
   } else if (id === "hail") {
-    spawnHailstone(state, stats);
+    // Burst of hailstones falling simultaneously across the visible field.
+    const stones = Math.max(1, stats.count);
+    const R = (def.base.extra?.radius ?? 70);
+    const freeze = (def.base.extra?.freeze ?? 2.5);
+    for (let i = 0; i < stones; i++) {
+      spawnHailstone(state, stats, R, freeze);
+    }
   } else if (id === "fire") {
-    spawnFireball(state, stats, def.base.extra?.radius ?? 55);
+    spawnFireball(state, stats, def.base.extra?.radius ?? 90);
   } else if (id === "locusts") {
     spawnLocustSwarm(state, stats, def.base.extra?.radius ?? 130);
   } else if (id === "firstborn") {
@@ -711,27 +737,31 @@ function spawnDriftingCloud(
 }
 
 // ---------- Hail / Fire from Heaven ----------
-function spawnHailstone(state: GameState, stats: { dmg: number; speed: number; ttl: number }) {
+function spawnHailstone(
+  state: GameState,
+  stats: { dmg: number; speed: number; ttl: number },
+  impactRadius = 70,
+  freezeDur = 2.5,
+) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
-  // pick a random target inside viewport; fall from above the visible top edge.
-  const tx = state.camera.x + rand(-vw / 2 + 30, vw / 2 - 30);
-  const ty = state.camera.y + rand(-vh / 2 + 30, vh / 2 - 30);
-  const fallDist = 220 + Math.random() * 60;
-  const startX = tx - fallDist * 0.35;
+  const tx = state.camera.x + rand(-vw / 2 + 40, vw / 2 - 40);
+  const ty = state.camera.y + rand(-vh / 2 + 40, vh / 2 - 40);
+  const fallDist = 240 + Math.random() * 70;
+  const startX = tx - fallDist * 0.3;
   const startY = ty - fallDist;
   const ttl = fallDist / stats.speed;
   const e: Entity = {
     id: state.nextId++,
     pos: { x: startX, y: startY },
     vel: { x: (tx - startX) / ttl, y: (ty - startY) / ttl },
-    radius: 6,
+    radius: 8,
     hp: 1, maxHp: 1,
     team: "projectile", facing: 1,
     animT: 0, born: state.now,
     ttl, dmg: stats.dmg,
     kind: "hailstone",
-    data: { impactY: ty },
+    data: { impactY: ty, radius: impactRadius, freeze: freezeDur },
   };
   state.entities.set(e.id, e);
 }
@@ -1005,25 +1035,26 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Unlock next locked plagues
+  // Only the NEXT locked plague in strict biblical order is offered — never
+  // two new plague unlocks at once.
   for (const id of PLAGUE_ORDER) {
     if (active.has(id)) continue;
     const def = PLAGUES[id];
-    if (state.level >= def.unlockLevel) {
-      choices.push({
-        id: `${id}-unlock`,
-        plague: id,
-        title: `Unlock: ${def.name}`,
-        description: def.description,
-        scripture: def.scripture,
-        isUnlock: true,
-        apply: (s) => {
-          s.plagues.set(id, 1);
-          s.plagueCooldown.set(id, 0.5);
-          s.newPlagues.add(id);
-        },
-      });
-    }
+    if (state.level < def.unlockLevel) break;
+    choices.push({
+      id: `${id}-unlock`,
+      plague: id,
+      title: `Unlock: ${def.name}`,
+      description: def.description,
+      scripture: def.scripture,
+      isUnlock: true,
+      apply: (s) => {
+        s.plagues.set(id, 1);
+        s.plagueCooldown.set(id, 0.5);
+        s.newPlagues.add(id);
+      },
+    });
+    break;
   }
 
   // Shuffle and take 3

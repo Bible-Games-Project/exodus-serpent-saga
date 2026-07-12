@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, MOSES, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, JACKAL, MOSES, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -400,82 +400,79 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // 2) Depth-sorted pass for everything else.
   const drawList: Entity[] = [];
+  let staffSwinging = false;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
+    if (e.kind === "staffswing") staffSwinging = true;
     drawList.push(e);
   }
   drawList.sort((a, b) => a.pos.y - b.pos.y);
 
   for (const e of drawList) {
-    // Staff swing — animated pixel-art crescent slash that follows Moses.
+    // Staff swing — the staff sprite on Moses is hidden this frame (via
+    // MOSES_NOSTAFF) and we render an animated swinging staff sweeping through
+    // an arc from Moses' hand, trailed by a chunky pixel-art crescent slash.
     if (e.kind === "staffswing") {
       const range = (e.data?.range as number) ?? 70;
       const halfArc = (e.data?.halfArc as number) ?? 1.05;
       const facing = (e.data?.facing as number) ?? 1;
       const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
-      const progress = 1 - life; // 0 → 1 as the swing sweeps
+      const progress = 1 - life;
       const baseAng = facing === 1 ? 0 : Math.PI;
       const startA = baseAng - halfArc;
       const endA = baseAng + halfArc;
-      // follow the player so the swing tracks Moses instead of hovering
-      const cx = s.player.pos.x - camX;
-      const cy = s.player.pos.y - camY - 6;
+      // Anchor at Moses' hand (offset from body center for the two-handed grip)
+      const cx = s.player.pos.x - camX + facing * 4;
+      const cy = s.player.pos.y - camY - 4;
       const swingAng = startA + (endA - startA) * progress;
 
       ctx.save();
-      // trailing crescent — chunky pixel dots along the swept arc
-      const segs = 16;
+      // Trailing crescent — chunky pixel arc
+      const segs = 18;
       for (let i = 0; i < segs; i++) {
         const t = i / (segs - 1);
         const a = startA + (endA - startA) * t * progress;
-        const trail = 0.25 + 0.75 * t; // brightest at the leading edge
-        // outer white-hot pixel
+        const trail = 0.2 + 0.8 * t;
         ctx.globalAlpha = life * trail;
-        ctx.fillStyle = t > 0.75 ? "#fff8e0" : "#f6d17a";
+        ctx.fillStyle = t > 0.78 ? "#fff8e0" : t > 0.45 ? "#ffd870" : "#c88a3a";
         const ox = cx + Math.cos(a) * range;
         const oy = cy + Math.sin(a) * range;
-        const s1 = t > 0.75 ? 4 : 3;
-        ctx.fillRect(Math.round(ox - s1 / 2), Math.round(oy - s1 / 2), s1, s1);
-        // inner warm gold pixel
-        ctx.globalAlpha = life * trail * 0.65;
-        ctx.fillStyle = "#c88a3a";
-        const ix = cx + Math.cos(a) * (range - 6);
-        const iy = cy + Math.sin(a) * (range - 6);
+        const sz = t > 0.78 ? 5 : t > 0.45 ? 4 : 3;
+        ctx.fillRect(Math.round(ox - sz / 2), Math.round(oy - sz / 2), sz, sz);
+        ctx.globalAlpha = life * trail * 0.6;
+        ctx.fillStyle = "#8a4a1a";
+        const ix = cx + Math.cos(a) * (range - 7);
+        const iy = cy + Math.sin(a) * (range - 7);
         ctx.fillRect(Math.round(ix - 1), Math.round(iy - 1), 3, 3);
       }
-      // rotating staff — drawn from Moses out to the current swing angle
+      // The swinging staff itself (Moses' own weapon, now animated)
       ctx.globalAlpha = 1;
       const tipX = cx + Math.cos(swingAng) * (range - 2);
       const tipY = cy + Math.sin(swingAng) * (range - 2);
-      ctx.strokeStyle = "#3a2010";
-      ctx.lineWidth = 5;
+      // dark outline
+      ctx.strokeStyle = "#2b1d10";
+      ctx.lineWidth = 6;
       ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
-      ctx.strokeStyle = "#8a5a2c";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
-      // staff tip glow
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
+      // wood shaft
+      ctx.strokeStyle = "#8a5a34";
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
+      // wood highlight
+      ctx.strokeStyle = "#b48355";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
+      // glowing tip
       ctx.fillStyle = "#fff2c0";
-      ctx.beginPath();
-      ctx.arc(tipX, tipY, 3, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(tipX, tipY, 3, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
       continue;
     }
 
 
-    // Gnat swarm — a dark buzzing cloud of many tiny particles.
+    // Gnat swarm — dedicated renderer draws every mosquito distinctly.
     if (e.kind === "gnatswarm") {
-      drawParticleCloud(ctx, e, camX, camY, {
-        backing: "rgba(30,20,15,0.9)",
-        particle: "#1a120c",
-      });
+      drawGnatSwarm(ctx, e, camX, camY);
       continue;
     }
     if (e.kind === "livestockcloud") {
@@ -495,11 +492,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       continue;
     }
     if (e.kind === "firstborncloud") {
-      drawParticleCloud(ctx, e, camX, camY, {
-        backing: "rgba(0,0,0,0.95)",
-        particle: "#0a0710",
-        highlight: "#3a2b4a",
-      });
+      drawFirstbornCloud(ctx, e, camX, camY);
       continue;
     }
     if (e.kind === "locustswarm") {
@@ -524,7 +517,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
 
 
-    const sprite = SPRITE_MAP[e.kind];
+    // Hide Moses' built-in staff column while he's swinging so we don't
+    // render two staffs on top of each other.
+    const sprite = e.kind === "moses" && staffSwinging ? MOSES_NOSTAFF : SPRITE_MAP[e.kind];
     if (!sprite) continue;
     const frameIdx = Math.floor(e.animT) % sprite.frames.length;
     const flip = e.facing === -1;
@@ -721,56 +716,91 @@ function drawLocustSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 function drawHailstone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
-  // trailing streak
-  ctx.strokeStyle = "rgba(200,225,255,0.35)";
-  ctx.lineWidth = 2;
+  // long trailing streak
+  ctx.strokeStyle = "rgba(200,225,255,0.5)";
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(x - e.vel.x * 0.04, y - e.vel.y * 0.04);
+  ctx.moveTo(x - e.vel.x * 0.08, y - e.vel.y * 0.08);
   ctx.lineTo(x, y);
   ctx.stroke();
-  // chunky pixel ice
-  ctx.fillStyle = "#dbe9f7";
-  ctx.fillRect(x - 2, y - 2, 4, 4);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(x - 1, y - 2, 2, 2);
-  ctx.fillStyle = "#8fa8c4";
-  ctx.fillRect(x, y + 1, 2, 1);
+  // chunky pixel-art ice boulder
+  ctx.fillStyle = "#4a6a90"; ctx.fillRect(x - 5, y - 4, 10, 9);
+  ctx.fillStyle = "#8fb0d4"; ctx.fillRect(x - 4, y - 4, 8, 8);
+  ctx.fillStyle = "#dbe9f7"; ctx.fillRect(x - 3, y - 3, 6, 6);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 2, y - 3, 3, 3);
+  ctx.fillStyle = "#a8c8e4"; ctx.fillRect(x + 1, y + 1, 2, 2);
 }
 
 function drawHailImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
-  const maxTtl = (e.data?.maxTtl as number) ?? 0.25;
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.45;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const cx = e.pos.x - camX;
   const cy = e.pos.y - camY;
+  const R = (e.data?.radius as number) ?? 60;
+  const rNow = R * (1 - life * 0.7) + 6;
   ctx.save();
+  // frosty shockwave ring
+  ctx.globalAlpha = life * 0.55;
+  const grd = ctx.createRadialGradient(cx, cy, rNow * 0.2, cx, cy, rNow);
+  grd.addColorStop(0, "rgba(220,240,255,0.9)");
+  grd.addColorStop(0.6, "rgba(140,180,220,0.5)");
+  grd.addColorStop(1, "rgba(140,180,220,0)");
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(cx, cy, rNow, 0, Math.PI * 2); ctx.fill();
+  // ring outline
+  ctx.globalAlpha = life * 0.9;
+  ctx.strokeStyle = "#eaf4ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(cx, cy, rNow * 0.9, 0, Math.PI * 2); ctx.stroke();
+  // scattered ice shards
   ctx.globalAlpha = life;
-  ctx.fillStyle = "#eaf3ff";
-  // four dispersing shards
-  const spread = (1 - life) * 8 + 2;
-  ctx.fillRect(Math.round(cx - spread), Math.round(cy), 2, 2);
-  ctx.fillRect(Math.round(cx + spread), Math.round(cy), 2, 2);
-  ctx.fillRect(Math.round(cx), Math.round(cy - spread), 2, 2);
-  ctx.fillRect(Math.round(cx), Math.round(cy + spread), 2, 2);
+  const N = 14;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const rr = rNow * (0.6 + 0.35 * ((i * 7) % 5) / 5);
+    const sx = Math.round(cx + Math.cos(a) * rr);
+    const sy = Math.round(cy + Math.sin(a) * rr);
+    ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#b8d4ec";
+    ctx.fillRect(sx - 1, sy - 1, 3, 3);
+    ctx.fillStyle = "#4a6a90";
+    ctx.fillRect(sx, sy, 1, 1);
+  }
   ctx.restore();
 }
 
 function drawFireball(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
-  // fire trail
-  ctx.strokeStyle = "rgba(255,120,20,0.4)";
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(x - e.vel.x * 0.06, y - e.vel.y * 0.06);
-  ctx.lineTo(x, y);
-  ctx.stroke();
-  // core
-  ctx.fillStyle = "#ff3010";
-  ctx.fillRect(x - 4, y - 4, 8, 8);
-  ctx.fillStyle = "#ffb040";
-  ctx.fillRect(x - 3, y - 3, 6, 6);
-  ctx.fillStyle = "#ffffe0";
-  ctx.fillRect(x - 2, y - 2, 4, 4);
+  const t = e.animT || 0;
+  ctx.save();
+  // long, bright fire trail — layered fading blobs
+  const trailLen = 10;
+  for (let i = trailLen; i >= 1; i--) {
+    const tx = x - e.vel.x * 0.02 * i;
+    const ty = y - e.vel.y * 0.02 * i;
+    const k = i / trailLen;
+    ctx.globalAlpha = (1 - k) * 0.85;
+    const sz = Math.max(2, Math.round(12 - k * 10));
+    ctx.fillStyle = i < 3 ? "#fff4b0" : i < 6 ? "#ffb040" : i < 9 ? "#ff5010" : "#8a1a00";
+    ctx.fillRect(Math.round(tx - sz / 2), Math.round(ty - sz / 2), sz, sz);
+  }
+  ctx.globalAlpha = 1;
+  // outer flame flicker
+  const flick = Math.sin(t * 30) * 1.5;
+  ctx.fillStyle = "#7a1400"; ctx.fillRect(x - 10, y - 10, 20, 20);
+  ctx.fillStyle = "#ff3010"; ctx.fillRect(x - 9, y - 9, 18, 18);
+  ctx.fillStyle = "#ff7020"; ctx.fillRect(x - 7 + flick, y - 7, 14, 14);
+  ctx.fillStyle = "#ffb050"; ctx.fillRect(x - 5, y - 5, 10, 10);
+  ctx.fillStyle = "#ffe090"; ctx.fillRect(x - 3, y - 3 + flick, 6, 6);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 2, y - 2, 4, 4);
+  // ember flecks trailing outside the core
+  ctx.fillStyle = "#ffd070";
+  for (let i = 0; i < 6; i++) {
+    const a = t * 6 + i;
+    const rr = 12 + (i % 3) * 3;
+    ctx.fillRect(Math.round(x + Math.cos(a) * rr), Math.round(y + Math.sin(a) * rr), 2, 2);
+  }
+  ctx.restore();
 }
 
 function drawFireExplosion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
@@ -778,24 +808,155 @@ function drawFireExplosion(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const cx = e.pos.x - camX;
   const cy = e.pos.y - camY;
-  const R = (e.data?.radius as number) ?? 55;
-  const rNow = R * (1 - life) + 8;
+  const R = ((e.data?.radius as number) ?? 90) * 1.35;
+  const rNow = R * (1 - life * 0.85) + 12;
   ctx.save();
+  // outer smoke halo
+  ctx.globalAlpha = life * 0.6;
+  const smoke = ctx.createRadialGradient(cx, cy, rNow * 0.4, cx, cy, rNow * 1.25);
+  smoke.addColorStop(0, "rgba(80,20,0,0.6)");
+  smoke.addColorStop(1, "rgba(60,20,10,0)");
+  ctx.fillStyle = smoke;
+  ctx.beginPath(); ctx.arc(cx, cy, rNow * 1.25, 0, Math.PI * 2); ctx.fill();
+  // main fireball
   ctx.globalAlpha = life;
-  const grd = ctx.createRadialGradient(cx, cy, rNow * 0.2, cx, cy, rNow);
-  grd.addColorStop(0, "#fff2b0");
-  grd.addColorStop(0.4, "#ff8020");
-  grd.addColorStop(1, "rgba(120,20,0,0)");
+  const grd = ctx.createRadialGradient(cx, cy, rNow * 0.15, cx, cy, rNow);
+  grd.addColorStop(0, "#ffffff");
+  grd.addColorStop(0.25, "#fff2b0");
+  grd.addColorStop(0.55, "#ff8020");
+  grd.addColorStop(0.85, "#c02010");
+  grd.addColorStop(1, "rgba(80,20,0,0)");
   ctx.fillStyle = grd;
-  ctx.beginPath();
-  ctx.arc(cx, cy, rNow, 0, Math.PI * 2);
-  ctx.fill();
-  // ember sparks
-  ctx.fillStyle = "#ffd070";
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    const rr = rNow * 0.9;
-    ctx.fillRect(Math.round(cx + Math.cos(a) * rr), Math.round(cy + Math.sin(a) * rr), 2, 2);
+  ctx.beginPath(); ctx.arc(cx, cy, rNow, 0, Math.PI * 2); ctx.fill();
+  // shockwave ring
+  ctx.globalAlpha = life * 0.8;
+  ctx.strokeStyle = "#ffd070";
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(cx, cy, rNow * 0.85, 0, Math.PI * 2); ctx.stroke();
+  // ember shrapnel — chunky pixels flung outward
+  ctx.globalAlpha = life;
+  const embers = 22;
+  for (let i = 0; i < embers; i++) {
+    const a = (i / embers) * Math.PI * 2 + (1 - life) * 2;
+    const rr = rNow * (0.75 + ((i * 13) % 7) / 20);
+    const px = Math.round(cx + Math.cos(a) * rr);
+    const py = Math.round(cy + Math.sin(a) * rr);
+    ctx.fillStyle = i % 3 === 0 ? "#fff4b0" : i % 3 === 1 ? "#ff8020" : "#ffcc40";
+    ctx.fillRect(px - 1, py - 1, 3, 3);
+    ctx.fillStyle = "#3a0800";
+    ctx.fillRect(px, py, 1, 1);
   }
   ctx.restore();
+}
+
+// Firstborn cloud — a bright, holy white glow that drifts across the field.
+function drawFirstbornCloud(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const particles = e.data?.particles as
+    | Array<{ ox: number; oy: number; phase: number; amp: number; size: number }>
+    | undefined;
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  const r = (e.data?.radius as number) ?? 95;
+  const maxTtl = (e.data?.maxTtl as number) ?? 6;
+  const remaining = (e.ttl ?? 0) / maxTtl;
+  let fade = 1;
+  if (remaining > 0.85) fade = (1 - remaining) / 0.15;
+  else if (remaining < 0.3) fade = remaining / 0.3;
+  fade = Math.max(0, Math.min(1, fade));
+
+  ctx.save();
+  // Outer holy halo
+  ctx.globalAlpha = 0.35 * fade;
+  const halo = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r * 1.35);
+  halo.addColorStop(0, "rgba(255,250,220,0.95)");
+  halo.addColorStop(0.5, "rgba(255,240,180,0.4)");
+  halo.addColorStop(1, "rgba(255,240,180,0)");
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 1.35, 0, Math.PI * 2); ctx.fill();
+  // Inner bright core
+  ctx.globalAlpha = 0.85 * fade;
+  const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+  core.addColorStop(0, "rgba(255,255,255,1)");
+  core.addColorStop(0.6, "rgba(255,250,210,0.7)");
+  core.addColorStop(1, "rgba(255,250,210,0)");
+  ctx.fillStyle = core;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // Sparkling motes swirling inside the cloud
+  if (particles) {
+    for (const p of particles) {
+      const jx = Math.cos(t * 2 + p.phase) * p.amp;
+      const jy = Math.sin(t * 2.5 + p.phase * 1.3) * p.amp;
+      const shimmer = 0.55 + 0.45 * Math.sin(t * 5 + p.phase * 2);
+      ctx.globalAlpha = fade * shimmer;
+      ctx.fillStyle = shimmer > 0.85 ? "#ffffff" : "#fff4c0";
+      const x = Math.round(cx + p.ox + jx);
+      const y = Math.round(cy + p.oy + jy);
+      ctx.fillRect(x, y, p.size, p.size);
+      // tiny gold twinkle
+      if (shimmer > 0.9) {
+        ctx.fillStyle = "#ffd070";
+        ctx.fillRect(x - 1, y, 1, 1);
+        ctx.fillRect(x + p.size, y, 1, 1);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Gnat swarm — every mosquito is drawn as a distinct tiny insect with
+// flapping wings, so the swarm reads as hundreds of individual bugs rather
+// than a solid cloud.
+function drawGnatSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const particles = e.data?.particles as
+    | Array<{ ox: number; oy: number; phase: number; amp: number }>
+    | undefined;
+  if (!particles) return;
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  const r = (e.data?.radius as number) ?? 55;
+  const maxTtl = (e.data?.maxTtl as number) ?? 5;
+  const remaining = (e.ttl ?? 0) / maxTtl;
+  let fade = 1;
+  if (remaining > 0.85) fade = (1 - remaining) / 0.15;
+  else if (remaining < 0.3) fade = remaining / 0.3;
+  fade = Math.max(0, Math.min(1, fade));
+
+  // Very faint haze so the swarm reads as a cloud outline without hiding the bugs.
+  ctx.save();
+  ctx.globalAlpha = 0.18 * fade;
+  const grd = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
+  grd.addColorStop(0, "rgba(40,30,20,0.75)");
+  grd.addColorStop(1, "rgba(40,30,20,0)");
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  for (const p of particles) {
+    const jx = Math.cos(t * 3 + p.phase) * p.amp;
+    const jy = Math.sin(t * 3.7 + p.phase * 1.3) * p.amp;
+    const x = Math.round(cx + p.ox + jx);
+    const y = Math.round(cy + p.oy + jy);
+    const flap = Math.sin(t * 26 + p.phase * 3) > 0;
+    ctx.globalAlpha = fade * 0.9;
+    // wings
+    ctx.fillStyle = "rgba(70,55,40,0.75)";
+    if (flap) {
+      ctx.fillRect(x - 2, y - 1, 1, 1);
+      ctx.fillRect(x + 2, y - 1, 1, 1);
+    } else {
+      ctx.fillRect(x - 2, y, 1, 1);
+      ctx.fillRect(x + 2, y, 1, 1);
+    }
+    // body outline
+    ctx.fillStyle = "#0a0805";
+    ctx.fillRect(x - 1, y, 2, 2);
+    // tiny brown highlight so the bug pops
+    ctx.fillStyle = "#4a341f";
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.globalAlpha = 1;
 }

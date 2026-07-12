@@ -127,14 +127,15 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   hail: {
     id: "hail",
     name: "Plague of Hail",
-    description: "A continuous hailstorm — chunks of ice fall from the sky across the battlefield.",
+    description: "A volley of massive hailstones crashes down — each explodes on impact and freezes nearby foes.",
     scripture:
       "Exodus 9:23-24 — The LORD sent thunder and hail, very grievous. Ice pelts anything caught beneath the sky.",
     unlockLevel: 16,
-    base: { level: 1, cooldown: 0.35, dmg: 12, count: 1, speed: 520, ttl: 0.9 },
-    scale: scale({ level: 1, cooldown: 0.35, dmg: 12, count: 1, speed: 520, ttl: 0.9 }, {
-      cooldown: 0.02,
-      dmg: 3,
+    base: { level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9, extra: { radius: 70, freeze: 2.5 } },
+    scale: scale({ level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9 }, {
+      cooldown: 0.15,
+      dmg: 6,
+      count: 0.5,
     }),
   },
   fire: {
