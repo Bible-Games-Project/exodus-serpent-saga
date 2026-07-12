@@ -400,8 +400,10 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // 2) Depth-sorted pass for everything else.
   const drawList: Entity[] = [];
+  let staffSwinging = false;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
+    if (e.kind === "staffswing") staffSwinging = true;
     drawList.push(e);
   }
   drawList.sort((a, b) => a.pos.y - b.pos.y);
