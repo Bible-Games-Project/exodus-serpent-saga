@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PlayRouteImport } from './routes/play'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicLeaderboardSubmitRouteImport } from './routes/api/public/leaderboard/submit'
 
+const PlayRoute = PlayRouteImport.update({
+  id: '/play',
+  path: '/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -26,32 +32,43 @@ const ApiPublicLeaderboardSubmitRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/play': typeof PlayRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/play': typeof PlayRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/play': typeof PlayRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/leaderboard/submit'
+  fullPaths: '/' | '/play' | '/api/public/leaderboard/submit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/leaderboard/submit'
-  id: '__root__' | '/' | '/api/public/leaderboard/submit'
+  to: '/' | '/play' | '/api/public/leaderboard/submit'
+  id: '__root__' | '/' | '/play' | '/api/public/leaderboard/submit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PlayRoute: typeof PlayRoute
   ApiPublicLeaderboardSubmitRoute: typeof ApiPublicLeaderboardSubmitRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/play': {
+      id: '/play'
+      path: '/play'
+      fullPath: '/play'
+      preLoaderRoute: typeof PlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PlayRoute: PlayRoute,
   ApiPublicLeaderboardSubmitRoute: ApiPublicLeaderboardSubmitRoute,
 }
 export const routeTree = rootRouteImport
