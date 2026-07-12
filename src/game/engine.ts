@@ -207,7 +207,10 @@ export function update(state: GameState, dt: number) {
       const dx = targetPos.x - e.pos.x;
       const dy = targetPos.y - e.pos.y;
       const d = Math.hypot(dx, dy) || 1;
-      const spd = (e.data?.speed as number) ?? 60;
+      const baseSpd = (e.data?.speed as number) ?? 60;
+      // Plague of Darkness slows every enemy by 10% while active.
+      const slow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
+      const spd = baseSpd * slow;
       e.pos.x += (dx / d) * spd * dt;
       e.pos.y += (dy / d) * spd * dt;
       e.facing = dx > 0 ? 1 : -1;
