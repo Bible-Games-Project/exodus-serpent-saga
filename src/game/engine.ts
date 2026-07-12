@@ -201,18 +201,41 @@ export function update(state: GameState, dt: number) {
           e.vel.y += ((dy / d) * spd - e.vel.y) * Math.min(1, dt * 4);
         }
       }
-      // Zig-zag for serpents
+      // Zig-zag for serpents (subtle slither perpendicular to travel)
       if (e.kind === "serpent") {
         const t = e.data!.t as number;
         const perp = { x: -e.vel.y, y: e.vel.x };
         const pmag = Math.hypot(perp.x, perp.y) || 1;
-        const wig = Math.sin(t * 14) * 80;
+        const wig = Math.sin(t * 14) * 60;
         e.pos.x += (perp.x / pmag) * wig * dt;
         e.pos.y += (perp.y / pmag) * wig * dt;
         e.data!.t = t + dt;
       }
-      e.pos.x += e.vel.x * dt;
-      e.pos.y += e.vel.y * dt;
+      // Hopping motion for frogs — cycle crouch → jump → land, only moving
+      // while airborne, with new random direction on each landing.
+      if (e.kind === "frog") {
+        const d = e.data!;
+        const dur = (d.hopDur as number) ?? 0.7;
+        let phase = ((d.hopT as number) ?? 0) + dt;
+        if (phase >= dur) {
+          phase = 0;
+          const a = Math.random() * Math.PI * 2;
+          const spd = 170;
+          e.vel.x = Math.cos(a) * spd;
+          e.vel.y = Math.sin(a) * spd;
+          e.facing = e.vel.x > 0 ? 1 : -1;
+        }
+        d.hopT = phase;
+        const norm = phase / dur;
+        const airborne = norm > 0.18 && norm < 0.85;
+        if (airborne) {
+          e.pos.x += e.vel.x * dt;
+          e.pos.y += e.vel.y * dt;
+        }
+      } else {
+        e.pos.x += e.vel.x * dt;
+        e.pos.y += e.vel.y * dt;
+      }
 
       // Collide with enemies
       const hit = e.data?.hit as Set<number> | undefined;
@@ -226,6 +249,26 @@ export function update(state: GameState, dt: number) {
           if (en.hp <= 0) killEnemy(state, en);
         }
       }
+    } else if (e.team === "hazard") {
+      // Persistent AoE (e.g. blood pool) — ticks damage while it lives.
+      e.ttl = (e.ttl ?? 0) - dt;
+      if (e.ttl <= 0) { state.entities.delete(e.id); continue; }
+      const d = e.data!;
+      const tick = 0.35;
+      d.tickAcc = ((d.tickAcc as number) ?? tick) + dt;
+      if ((d.tickAcc as number) >= tick) {
+        d.tickAcc = (d.tickAcc as number) - tick;
+        const r = (d.radius as number) ?? 90;
+        const dmg = (d.dps as number) ?? 4;
+        for (const en of state.entities.values()) {
+          if (en.team !== "enemy") continue;
+          if (dist2(en.pos, e.pos) < r * r) {
+            en.hp -= dmg * tick;
+            if (en.hp <= 0) killEnemy(state, en);
+          }
+        }
+      }
+
     } else if (e.team === "pickup") {
       // XP magnet
       const magnet = 60 + state.level * 3;
