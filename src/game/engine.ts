@@ -240,7 +240,7 @@ export function update(state: GameState, dt: number) {
       let bestD = dist2(e.pos, p.pos);
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
-        if (!n) continue;
+        if (!n || n.data?.downedUntil) continue;
         const d = dist2(e.pos, n.pos);
         if (d < bestD * 0.7) {
           bestD = d;
@@ -251,16 +251,13 @@ export function update(state: GameState, dt: number) {
       const dy = targetPos.y - e.pos.y;
       const d = Math.hypot(dx, dy) || 1;
       const baseSpd = (e.data?.speed as number) ?? 60;
-      // Plague of Darkness slows every enemy by 10% while active.
       const slow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
-      // Hail freeze — enemies caught in a hail impact are slowed 70%.
       const frozen = state.now < ((e.data?.freezeUntil as number) ?? 0);
       const freezeMul = frozen ? 0.3 : 1;
       const spd = baseSpd * slow * freezeMul;
       e.pos.x += (dx / d) * spd * dt;
       e.pos.y += (dy / d) * spd * dt;
-      // Jackal sprite is drawn head-left by default, so invert facing so it
-      // always runs head-first toward Moses, never backwards.
+      resolveObstacles(e.pos, e.radius, state);
       if (e.kind === "jackal") {
         e.facing = dx > 0 ? -1 : 1;
       } else {
@@ -276,37 +273,18 @@ export function update(state: GameState, dt: number) {
           state.running = false;
         }
       }
+      // Damage allies on contact — companions take damage exactly like Moses.
+      for (const npcId of state.npcs.values()) {
+        const n = state.entities.get(npcId);
+        if (!n || n.data?.downedUntil) continue;
+        if (dist2(e.pos, n.pos) < (e.radius + n.radius) ** 2) {
+          const contactDmg = (e.data?.contactDmg as number) ?? 8;
+          n.hp -= contactDmg * dt;
+          if (n.hp <= 0) downCompanion(state, n);
+        }
+      }
     } else if (e.team === "ally") {
-      // Follow player at loose distance, attack nearest enemy in range
-      const dx = p.pos.x - e.pos.x;
-      const dy = p.pos.y - e.pos.y;
-      const d = Math.hypot(dx, dy);
-      const followDist = 80 + (e.data?.slot as number ?? 0) * 15;
-      if (d > followDist) {
-        e.pos.x += (dx / d) * 120 * dt;
-        e.pos.y += (dy / d) * 120 * dt;
-        e.facing = dx > 0 ? 1 : -1;
-      }
-      // Attack cooldown
-      const cd = ((e.data?.atkCd as number) ?? 0) - dt;
-      if (cd <= 0) {
-        // find nearest enemy within 220 px
-        let nearest: Entity | null = null;
-        let bestD = 220 * 220;
-        for (const en of state.entities.values()) {
-          if (en.team !== "enemy") continue;
-          const d2 = dist2(en.pos, e.pos);
-          if (d2 < bestD) { bestD = d2; nearest = en; }
-        }
-        if (nearest) {
-          spawnAllyBolt(state, e, nearest);
-          e.data!.atkCd = 1.2;
-        } else {
-          e.data!.atkCd = 0.4;
-        }
-      } else {
-        e.data!.atkCd = cd;
-      }
+      updateCompanion(state, e, dt);
     } else if (e.team === "projectile") {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
