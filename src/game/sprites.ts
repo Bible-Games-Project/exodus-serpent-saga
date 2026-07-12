@@ -136,6 +136,51 @@ export const SERPENT = make([
   ],
 ]);
 
+// Egyptian soldier enemy — 12x18, bronze helmet + white kilt
+export const SOLDIER = make([
+  [
+    "....zzzz....",
+    "...zzzzzz...",
+    "...zsssZz...",
+    "...zsWsZz...",
+    "....bbbb....",
+    "....ZZZZ....",
+    "...zzzzzz...",
+    "..zzWWWWzz..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "...WWWWWW...",
+    "...ssssss...",
+    "...ssssss...",
+    "...SSSSSS...",
+    "...bb..bb...",
+    "...KK..KK...",
+    "............",
+  ],
+  [
+    "....zzzz....",
+    "...zzzzzz...",
+    "...zsssZz...",
+    "...zsWsZz...",
+    "....bbbb....",
+    "....ZZZZ....",
+    "...zzzzzz...",
+    "..zzWWWWzz..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "..zWWWWWWZ..",
+    "...WWWWWW...",
+    "...ssssss...",
+    "....ssss....",
+    "...SSSSSS...",
+    "..bb....bb..",
+    "..KK....KK..",
+    "............",
+  ],
+]);
+
+
 // Jackal enemy — 16x10, fast low predator
 export const JACKAL = make([
   [
