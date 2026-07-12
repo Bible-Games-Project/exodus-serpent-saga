@@ -473,15 +473,30 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     for (let k = 0; k < count; k++) {
       const ang = Math.random() * Math.PI * 2;
       const radius = (def.base.extra?.radius ?? 55) + level * 4;
-      // build particles for a lively cloud
+      // Build an irregular, organic cloud shape from several offset sub-clusters
+      // rather than a uniform disc. Each sub-cluster is a lobe of the swarm.
+      const lobes: Array<{ cx: number; cy: number; r: number }> = [];
+      const nLobes = 4 + Math.floor(Math.random() * 4);
+      for (let li = 0; li < nLobes; li++) {
+        const la = Math.random() * Math.PI * 2;
+        const lr = Math.random() * radius * 0.85;
+        lobes.push({
+          cx: Math.cos(la) * lr,
+          cy: Math.sin(la) * lr * 0.75,
+          r: radius * (0.28 + Math.random() * 0.4),
+        });
+      }
       const particles: Array<{ ox: number; oy: number; phase: number; amp: number }> = [];
-      const nP = 28 + Math.floor(Math.random() * 14);
+      const nP = 40 + Math.floor(Math.random() * 18);
       for (let i = 0; i < nP; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.random() * radius;
+        // pick a lobe and a point inside it — biases density unevenly
+        const lobe = lobes[Math.floor(Math.random() * lobes.length)];
+        // sqrt for a natural falloff toward the lobe center
+        const rr = Math.sqrt(Math.random()) * lobe.r;
+        const aa = Math.random() * Math.PI * 2;
         particles.push({
-          ox: Math.cos(a) * r,
-          oy: Math.sin(a) * r * 0.75,
+          ox: lobe.cx + Math.cos(aa) * rr,
+          oy: lobe.cy + Math.sin(aa) * rr,
           phase: Math.random() * Math.PI * 2,
           amp: 2 + Math.random() * 4,
         });
@@ -496,7 +511,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: Math.random() * 10, born: state.now,
         ttl: stats.ttl,
         kind: "gnatswarm",
-        data: { radius, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+        data: { radius, dps: stats.dmg, tickAcc: 0, particles, lobes, maxTtl: stats.ttl },
       };
       state.entities.set(e.id, e);
     }
