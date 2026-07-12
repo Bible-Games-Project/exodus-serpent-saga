@@ -499,12 +499,26 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       state.entities.set(e.id, e);
     }
   } else if (id === "blood") {
-    // Persistent irregular pool of blood.
-    const radius = (def.base.extra?.radius ?? 90) + level * 6;
+    // Persistent irregular pool of blood — spawned at a random location within
+    // the player's current viewport (not directly on Moses), and always fully
+    // inside both the screen and the playable world.
+    const radius = (def.base.extra?.radius ?? 65) + level * 4;
     const canvas = makeBloodPoolCanvas(radius);
+    const vw = state.viewport?.w ?? 800;
+    const vh = state.viewport?.h ?? 600;
+    const margin = radius + 12;
+    // pick a random point inside the visible camera rect, keeping the whole
+    // pool on-screen so the left/right/top/bottom edges never clip it.
+    const halfW = Math.max(margin, vw / 2 - margin);
+    const halfH = Math.max(margin, vh / 2 - margin);
+    let px = state.camera.x + rand(-halfW, halfW);
+    let py = state.camera.y + rand(-halfH, halfH);
+    // clamp to world bounds so it stays fully inside the playable area.
+    px = clamp(px, margin, state.worldW - margin);
+    py = clamp(py, margin, state.worldH - margin);
     const e: Entity = {
       id: state.nextId++,
-      pos: { x: p.x, y: p.y },
+      pos: { x: px, y: py },
       vel: { x: 0, y: 0 },
       radius,
       hp: 1, maxHp: 1,
