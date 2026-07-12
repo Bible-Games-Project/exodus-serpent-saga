@@ -596,8 +596,45 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       data: { radius, dps: stats.dmg, tickAcc: 0, canvas, maxTtl: stats.ttl },
     };
     state.entities.set(e.id, e);
+  } else if (id === "livestock") {
+    spawnDriftingCloud(state, {
+      kind: "livestockcloud",
+      radius: (def.base.extra?.radius ?? 90),
+      dps: stats.dmg,
+      ttl: stats.ttl,
+      speed: stats.speed,
+      targetKind: "animal",
+    });
+  } else if (id === "boils") {
+    spawnDriftingCloud(state, {
+      kind: "boilscloud",
+      radius: (def.base.extra?.radius ?? 85),
+      dps: stats.dmg,
+      ttl: stats.ttl,
+      speed: stats.speed,
+      targetKind: "human",
+    });
+  } else if (id === "hail") {
+    spawnHailstone(state, stats);
+  } else if (id === "fire") {
+    spawnFireball(state, stats, def.base.extra?.radius ?? 55);
+  } else if (id === "locusts") {
+    spawnLocustSwarm(state, stats, def.base.extra?.radius ?? 130);
+  } else if (id === "firstborn") {
+    spawnDriftingCloud(state, {
+      kind: "firstborncloud",
+      radius: (def.base.extra?.radius ?? 95),
+      dps: 0,
+      ttl: stats.ttl,
+      speed: stats.speed,
+      chance: def.base.extra?.chance ?? 0.5,
+    });
+  } else if (id === "darkness") {
+    state.darknessStart = state.now;
+    state.darknessUntil = state.now + stats.ttl;
+    state.darknessDur = stats.ttl;
   } else {
-    // Fallback area-of-effect: instantaneous damage in a ring around Moses
+    // Pillar / redsea / other fallback: instantaneous damage around Moses.
     const radius = (def.base.extra?.radius ?? 100) + level * 4;
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
@@ -607,6 +644,196 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       }
     }
   }
+}
+
+// ---------- shared: pixel-particle cloud ----------
+// Green/purple/black drifting clouds (livestock, boils, firstborn) all
+// share the gnat-swarm particle bag with an irregular shape.
+function buildCloudParticles(radius: number) {
+  const lobes: Array<{ cx: number; cy: number; r: number }> = [];
+  const nLobes = 4 + Math.floor(Math.random() * 4);
+  for (let li = 0; li < nLobes; li++) {
+    const la = Math.random() * Math.PI * 2;
+    const lr = Math.random() * radius * 0.7;
+    lobes.push({
+      cx: Math.cos(la) * lr,
+      cy: Math.sin(la) * lr * 0.75,
+      r: radius * (0.32 + Math.random() * 0.45),
+    });
+  }
+  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> = [];
+  const nP = 60 + Math.floor(Math.random() * 30);
+  for (let i = 0; i < nP; i++) {
+    const lobe = lobes[Math.floor(Math.random() * lobes.length)];
+    const rr = Math.sqrt(Math.random()) * lobe.r;
+    const aa = Math.random() * Math.PI * 2;
+    particles.push({
+      ox: lobe.cx + Math.cos(aa) * rr,
+      oy: lobe.cy + Math.sin(aa) * rr,
+      phase: Math.random() * Math.PI * 2,
+      amp: 1.5 + Math.random() * 3.5,
+      size: Math.random() < 0.35 ? 3 : 2,
+    });
+  }
+  return particles;
+}
+
+function spawnDriftingCloud(
+  state: GameState,
+  opts: { kind: string; radius: number; dps: number; ttl: number; speed: number; targetKind?: string; chance?: number },
+) {
+  const p = state.player.pos;
+  const ang = Math.random() * Math.PI * 2;
+  const spawnR = 220 + Math.random() * 60;
+  const particles = buildCloudParticles(opts.radius);
+  const driftAng = Math.random() * Math.PI * 2;
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: p.x + Math.cos(ang) * spawnR, y: p.y + Math.sin(ang) * spawnR },
+    vel: { x: Math.cos(driftAng) * opts.speed, y: Math.sin(driftAng) * opts.speed },
+    radius: opts.radius,
+    hp: 1, maxHp: 1,
+    team: "hazard", facing: 1,
+    animT: Math.random() * 10, born: state.now,
+    ttl: opts.ttl,
+    kind: opts.kind,
+    data: {
+      radius: opts.radius,
+      dps: opts.dps,
+      tickAcc: 0,
+      particles,
+      maxTtl: opts.ttl,
+      targetKind: opts.targetKind,
+      chance: opts.chance,
+    },
+  };
+  state.entities.set(e.id, e);
+}
+
+// ---------- Hail / Fire from Heaven ----------
+function spawnHailstone(state: GameState, stats: { dmg: number; speed: number; ttl: number }) {
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  // pick a random target inside viewport; fall from above the visible top edge.
+  const tx = state.camera.x + rand(-vw / 2 + 30, vw / 2 - 30);
+  const ty = state.camera.y + rand(-vh / 2 + 30, vh / 2 - 30);
+  const fallDist = 220 + Math.random() * 60;
+  const startX = tx - fallDist * 0.35;
+  const startY = ty - fallDist;
+  const ttl = fallDist / stats.speed;
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: startX, y: startY },
+    vel: { x: (tx - startX) / ttl, y: (ty - startY) / ttl },
+    radius: 6,
+    hp: 1, maxHp: 1,
+    team: "projectile", facing: 1,
+    animT: 0, born: state.now,
+    ttl, dmg: stats.dmg,
+    kind: "hailstone",
+    data: { impactY: ty },
+  };
+  state.entities.set(e.id, e);
+}
+
+function spawnFireball(state: GameState, stats: { dmg: number; speed: number }, radius: number) {
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  const tx = state.camera.x + rand(-vw / 2 + 60, vw / 2 - 60);
+  const ty = state.camera.y + rand(-vh / 2 + 60, vh / 2 - 60);
+  const fallDist = 300 + Math.random() * 80;
+  const startX = tx - fallDist * 0.4;
+  const startY = ty - fallDist;
+  const ttl = fallDist / stats.speed;
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: startX, y: startY },
+    vel: { x: (tx - startX) / ttl, y: (ty - startY) / ttl },
+    radius: 10,
+    hp: 1, maxHp: 1,
+    team: "projectile", facing: 1,
+    animT: 0, born: state.now,
+    ttl, dmg: stats.dmg,
+    kind: "fireball",
+    data: { impactY: ty, radius },
+  };
+  state.entities.set(e.id, e);
+}
+
+function spawnVisualHazard(
+  state: GameState,
+  kind: string,
+  pos: Vec2,
+  ttl: number,
+  data: Record<string, unknown>,
+) {
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: pos.x, y: pos.y },
+    vel: { x: 0, y: 0 },
+    radius: 4,
+    hp: 1, maxHp: 1,
+    team: "hazard", facing: 1,
+    animT: 0, born: state.now,
+    ttl,
+    kind,
+    data: { ...data, dps: 0, maxTtl: ttl },
+  };
+  state.entities.set(e.id, e);
+}
+
+// ---------- Locust swarm ----------
+// Enters from a random screen edge and flies across the visible area.
+function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, radius: number) {
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  const cam = state.camera;
+  const edge = Math.floor(Math.random() * 4); // 0 top, 1 right, 2 bottom, 3 left
+  let sx = 0, sy = 0, tx = 0, ty = 0;
+  const off = radius + 40;
+  const jitter = 0.5; // vary the crossing line
+  if (edge === 0) {
+    sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y - vh / 2 - off;
+    tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y + vh / 2 + off;
+  } else if (edge === 1) {
+    sx = cam.x + vw / 2 + off; sy = cam.y + rand(-vh / 2, vh / 2);
+    tx = cam.x - vw / 2 - off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter;
+  } else if (edge === 2) {
+    sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y + vh / 2 + off;
+    tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y - vh / 2 - off;
+  } else {
+    sx = cam.x - vw / 2 - off; sy = cam.y + rand(-vh / 2, vh / 2);
+    tx = cam.x + vw / 2 + off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter;
+  }
+  const dx = tx - sx, dy = ty - sy;
+  const d = Math.hypot(dx, dy) || 1;
+  // Locust particles — many small bugs jittering.
+  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }> = [];
+  const nP = 100 + Math.floor(Math.random() * 40);
+  for (let i = 0; i < nP; i++) {
+    const rr = Math.sqrt(Math.random()) * radius;
+    const aa = Math.random() * Math.PI * 2;
+    particles.push({
+      ox: Math.cos(aa) * rr,
+      oy: Math.sin(aa) * rr * 0.7,
+      phase: Math.random() * Math.PI * 2,
+      amp: 2 + Math.random() * 4,
+      wing: Math.random() * Math.PI * 2,
+    });
+  }
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: sx, y: sy },
+    vel: { x: (dx / d) * stats.speed, y: (dy / d) * stats.speed },
+    radius,
+    hp: 1, maxHp: 1,
+    team: "hazard", facing: 1,
+    animT: 0, born: state.now,
+    ttl: stats.ttl,
+    kind: "locustswarm",
+    data: { radius, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+  };
+  state.entities.set(e.id, e);
 }
 
 
