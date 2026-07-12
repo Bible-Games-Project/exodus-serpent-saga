@@ -210,10 +210,19 @@ export function update(state: GameState, dt: number) {
       const baseSpd = (e.data?.speed as number) ?? 60;
       // Plague of Darkness slows every enemy by 10% while active.
       const slow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
-      const spd = baseSpd * slow;
+      // Hail freeze — enemies caught in a hail impact are slowed 70%.
+      const frozen = state.now < ((e.data?.freezeUntil as number) ?? 0);
+      const freezeMul = frozen ? 0.3 : 1;
+      const spd = baseSpd * slow * freezeMul;
       e.pos.x += (dx / d) * spd * dt;
       e.pos.y += (dy / d) * spd * dt;
-      e.facing = dx > 0 ? 1 : -1;
+      // Jackal sprite is drawn head-left by default, so invert facing so it
+      // always runs head-first toward Moses, never backwards.
+      if (e.kind === "jackal") {
+        e.facing = dx > 0 ? -1 : 1;
+      } else {
+        e.facing = dx > 0 ? 1 : -1;
+      }
 
       // Damage player on contact
       if (dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
