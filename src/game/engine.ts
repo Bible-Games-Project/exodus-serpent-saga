@@ -252,35 +252,7 @@ export function update(state: GameState, dt: number) {
         state.entities.delete(e.id);
         continue;
       }
-      const homing = e.data?.homing;
-      if (homing) {
-        // seek nearest enemy
-        let nearest: Entity | null = null;
-        let bestD = Infinity;
-        for (const en of state.entities.values()) {
-          if (en.team !== "enemy") continue;
-          const d2 = dist2(en.pos, e.pos);
-          if (d2 < bestD) { bestD = d2; nearest = en; }
-        }
-        if (nearest) {
-          const dx = nearest.pos.x - e.pos.x;
-          const dy = nearest.pos.y - e.pos.y;
-          const d = Math.hypot(dx, dy) || 1;
-          const spd = Math.hypot(e.vel.x, e.vel.y) || 200;
-          e.vel.x += ((dx / d) * spd - e.vel.x) * Math.min(1, dt * 4);
-          e.vel.y += ((dy / d) * spd - e.vel.y) * Math.min(1, dt * 4);
-        }
-      }
-      // Zig-zag for serpents (subtle slither perpendicular to travel)
-      if (e.kind === "serpent") {
-        const t = e.data!.t as number;
-        const perp = { x: -e.vel.y, y: e.vel.x };
-        const pmag = Math.hypot(perp.x, perp.y) || 1;
-        const wig = Math.sin(t * 14) * 60;
-        e.pos.x += (perp.x / pmag) * wig * dt;
-        e.pos.y += (perp.y / pmag) * wig * dt;
-        e.data!.t = t + dt;
-      }
+      // Serpents travel in a straight line (aim locked at spawn).
       // Hopping motion for frogs
       if (e.kind === "frog") {
         const d = e.data!;
