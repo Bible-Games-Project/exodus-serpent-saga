@@ -409,75 +409,70 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   drawList.sort((a, b) => a.pos.y - b.pos.y);
 
   for (const e of drawList) {
-    // Staff swing — animated pixel-art crescent slash that follows Moses.
+    // Staff swing — the staff sprite on Moses is hidden this frame (via
+    // MOSES_NOSTAFF) and we render an animated swinging staff sweeping through
+    // an arc from Moses' hand, trailed by a chunky pixel-art crescent slash.
     if (e.kind === "staffswing") {
       const range = (e.data?.range as number) ?? 70;
       const halfArc = (e.data?.halfArc as number) ?? 1.05;
       const facing = (e.data?.facing as number) ?? 1;
       const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
-      const progress = 1 - life; // 0 → 1 as the swing sweeps
+      const progress = 1 - life;
       const baseAng = facing === 1 ? 0 : Math.PI;
       const startA = baseAng - halfArc;
       const endA = baseAng + halfArc;
-      // follow the player so the swing tracks Moses instead of hovering
-      const cx = s.player.pos.x - camX;
-      const cy = s.player.pos.y - camY - 6;
+      // Anchor at Moses' hand (offset from body center for the two-handed grip)
+      const cx = s.player.pos.x - camX + facing * 4;
+      const cy = s.player.pos.y - camY - 4;
       const swingAng = startA + (endA - startA) * progress;
 
       ctx.save();
-      // trailing crescent — chunky pixel dots along the swept arc
-      const segs = 16;
+      // Trailing crescent — chunky pixel arc
+      const segs = 18;
       for (let i = 0; i < segs; i++) {
         const t = i / (segs - 1);
         const a = startA + (endA - startA) * t * progress;
-        const trail = 0.25 + 0.75 * t; // brightest at the leading edge
-        // outer white-hot pixel
+        const trail = 0.2 + 0.8 * t;
         ctx.globalAlpha = life * trail;
-        ctx.fillStyle = t > 0.75 ? "#fff8e0" : "#f6d17a";
+        ctx.fillStyle = t > 0.78 ? "#fff8e0" : t > 0.45 ? "#ffd870" : "#c88a3a";
         const ox = cx + Math.cos(a) * range;
         const oy = cy + Math.sin(a) * range;
-        const s1 = t > 0.75 ? 4 : 3;
-        ctx.fillRect(Math.round(ox - s1 / 2), Math.round(oy - s1 / 2), s1, s1);
-        // inner warm gold pixel
-        ctx.globalAlpha = life * trail * 0.65;
-        ctx.fillStyle = "#c88a3a";
-        const ix = cx + Math.cos(a) * (range - 6);
-        const iy = cy + Math.sin(a) * (range - 6);
+        const sz = t > 0.78 ? 5 : t > 0.45 ? 4 : 3;
+        ctx.fillRect(Math.round(ox - sz / 2), Math.round(oy - sz / 2), sz, sz);
+        ctx.globalAlpha = life * trail * 0.6;
+        ctx.fillStyle = "#8a4a1a";
+        const ix = cx + Math.cos(a) * (range - 7);
+        const iy = cy + Math.sin(a) * (range - 7);
         ctx.fillRect(Math.round(ix - 1), Math.round(iy - 1), 3, 3);
       }
-      // rotating staff — drawn from Moses out to the current swing angle
+      // The swinging staff itself (Moses' own weapon, now animated)
       ctx.globalAlpha = 1;
       const tipX = cx + Math.cos(swingAng) * (range - 2);
       const tipY = cy + Math.sin(swingAng) * (range - 2);
-      ctx.strokeStyle = "#3a2010";
-      ctx.lineWidth = 5;
+      // dark outline
+      ctx.strokeStyle = "#2b1d10";
+      ctx.lineWidth = 6;
       ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
-      ctx.strokeStyle = "#8a5a2c";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(tipX, tipY);
-      ctx.stroke();
-      // staff tip glow
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
+      // wood shaft
+      ctx.strokeStyle = "#8a5a34";
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
+      // wood highlight
+      ctx.strokeStyle = "#b48355";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(tipX, tipY); ctx.stroke();
+      // glowing tip
       ctx.fillStyle = "#fff2c0";
-      ctx.beginPath();
-      ctx.arc(tipX, tipY, 3, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(tipX, tipY, 3, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
       continue;
     }
 
 
-    // Gnat swarm — a dark buzzing cloud of many tiny particles.
+    // Gnat swarm — dedicated renderer draws every mosquito distinctly.
     if (e.kind === "gnatswarm") {
-      drawParticleCloud(ctx, e, camX, camY, {
-        backing: "rgba(30,20,15,0.9)",
-        particle: "#1a120c",
-      });
+      drawGnatSwarm(ctx, e, camX, camY);
       continue;
     }
     if (e.kind === "livestockcloud") {
@@ -497,11 +492,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       continue;
     }
     if (e.kind === "firstborncloud") {
-      drawParticleCloud(ctx, e, camX, camY, {
-        backing: "rgba(0,0,0,0.95)",
-        particle: "#0a0710",
-        highlight: "#3a2b4a",
-      });
+      drawFirstbornCloud(ctx, e, camX, camY);
       continue;
     }
     if (e.kind === "locustswarm") {
