@@ -129,6 +129,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
       s.input.x = ix;
       s.input.y = iy;
       s.paused = paused;
+      s.viewport = { w: cnv.clientWidth, h: cnv.clientHeight };
 
       if (!paused && !s.gameOver && !s.levelUpPending) update(s, dt);
 
