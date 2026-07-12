@@ -198,6 +198,7 @@ export function update(state: GameState, dt: number) {
   p.vel.y = (iy / mag) * speed * (Math.hypot(ix, iy) > 0.05 ? 1 : 0);
   p.pos.x = clamp(p.pos.x + p.vel.x * dt, 30, state.worldW - 30);
   p.pos.y = clamp(p.pos.y + p.vel.y * dt, 30, state.worldH - 30);
+  resolveObstacles(p.pos, p.radius, state);
   if (Math.abs(p.vel.x) > 5) p.facing = p.vel.x > 0 ? 1 : -1;
   p.animT += dt * (Math.hypot(p.vel.x, p.vel.y) > 5 ? 6 : 0);
 
