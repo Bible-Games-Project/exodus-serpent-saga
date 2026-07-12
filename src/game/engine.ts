@@ -563,7 +563,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     // Persistent irregular pool of blood — spawned at a random location within
     // the player's current viewport (not directly on Moses), and always fully
     // inside both the screen and the playable world.
-    const radius = (def.base.extra?.radius ?? 65) + level * 4;
+    // ~50% smaller than the previous pool while keeping the pixel art style.
+    const radius = Math.round(((def.base.extra?.radius ?? 65) + level * 4) * 0.5);
     const canvas = makeBloodPoolCanvas(radius);
     const vw = state.viewport?.w ?? 800;
     const vh = state.viewport?.h ?? 600;
