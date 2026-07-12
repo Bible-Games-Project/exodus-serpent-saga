@@ -612,13 +612,14 @@ function syncOrbitFlies(state: GameState, dt: number) {
   for (let i = 0; i < count; i++) {
     const e = state.entities.get(ids[i]);
     if (!e) continue;
-    // evenly distributed around the orbit — never overlap
+    // evenly distributed around the orbit — angle derived purely from
+    // state.now so motion stays perfectly smooth, continuous, and constant.
     const a = t * orbitSpeed + (i / count) * Math.PI * 2;
     e.pos.x = state.player.pos.x + Math.cos(a) * radius;
     e.pos.y = state.player.pos.y + Math.sin(a) * radius;
     e.facing = Math.cos(a) > 0 ? 1 : -1;
-    // fast wing-flap: cycle through the 2 fly frames ~14x/sec
-    e.animT += dt * 14;
+    // wing-flap keyed to global time (not accumulated) so it never drifts
+    e.animT = t * 14;
 
     // decrement per-enemy hit cooldowns
     const hitCd = e.data!.hitCd as Map<number, number>;
