@@ -531,28 +531,34 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const drawH = img.height * scaleY;
     const sx = Math.round(e.pos.x - camX - drawW / 2);
     const sy = Math.round(e.pos.y - camY - drawH + 8 + hopOffY);
-    const shadowY = Math.round(e.pos.y - camY + 8);
-    const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
-    ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
-    ctx.beginPath();
-    ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
-    ctx.fill();
 
     if (e.kind === "serpent") {
-      // Rotate the serpent sprite once (locked at spawn) so it always faces
-      // the direction it was fired in, regardless of enemy movement.
+      // Rotate the sprite (and its shadow) so it always faces the direction
+      // it's travelling — never tail-first.
       const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
-      // sprite art faces right — flip vertically when firing leftward so the
-      // head silhouette stays upright rather than upside-down.
-      const facingLeft = Math.cos(angle) < 0;
       const rotImg = renderSprite(sprite, frameIdx, SCALE, false);
+      // rotated shadow — long axis follows the body direction
+      ctx.save();
+      ctx.translate(e.pos.x - camX, e.pos.y - camY + 6);
+      ctx.rotate(angle);
+      ctx.fillStyle = "rgba(0,0,0,0.22)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rotImg.width * 0.45, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // body
       ctx.save();
       ctx.translate(e.pos.x - camX, e.pos.y - camY);
-      ctx.rotate(angle + (facingLeft ? Math.PI : 0));
-      if (facingLeft) ctx.scale(1, -1);
+      ctx.rotate(angle);
       ctx.drawImage(rotImg, -rotImg.width / 2, -rotImg.height / 2);
       ctx.restore();
     } else {
+      const shadowY = Math.round(e.pos.y - camY + 8);
+      const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
+      ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
+      ctx.beginPath();
+      ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.drawImage(img, sx, sy, drawW, drawH);
     }
 
