@@ -126,4 +126,9 @@ export type GameState = {
 
   // ids of the flies that permanently orbit the player
   orbitFlyIds?: number[];
+
+  // Plague of Darkness timing — Moses' lone lamp effect.
+  darknessUntil?: number;
+  darknessStart?: number;
+  darknessDur?: number;
 };
