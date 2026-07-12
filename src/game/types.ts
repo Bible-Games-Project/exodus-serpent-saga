@@ -131,4 +131,8 @@ export type GameState = {
   darknessUntil?: number;
   darknessStart?: number;
   darknessDur?: number;
+
+  // Modular obstacle collision system — static decor with collision radius.
+  // Populated once at world init; movement code resolves against this list.
+  obstacles?: Array<{ pos: Vec2; r: number }>;
 };
