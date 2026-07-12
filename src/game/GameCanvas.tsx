@@ -305,34 +305,70 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   drawList.sort((a, b) => a.pos.y - b.pos.y);
 
   for (const e of drawList) {
+    // Blood pool — draw as a soft red radial stain on the sand.
+    if (e.kind === "bloodpool") {
+      const cx = e.pos.x - camX;
+      const cy = e.pos.y - camY;
+      const r = (e.data?.radius as number) ?? 90;
+      const alpha = Math.min(1, (e.ttl ?? 0) / 1.5) * 0.55;
+      const grd2 = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
+      grd2.addColorStop(0, `rgba(140,20,20,${alpha})`);
+      grd2.addColorStop(0.7, `rgba(120,10,10,${alpha * 0.6})`);
+      grd2.addColorStop(1, "rgba(120,10,10,0)");
+      ctx.fillStyle = grd2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, r, r * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      continue;
+    }
+
     const sprite = SPRITE_MAP[e.kind];
     if (!sprite) continue;
     const frameIdx = Math.floor(e.animT) % sprite.frames.length;
     const flip = e.facing === -1;
-    const img = renderSprite(sprite, frameIdx, SCALE, flip);
-    const sx = Math.round(e.pos.x - camX - img.width / 2);
-    const sy = Math.round(e.pos.y - camY - img.height + 8);
-    // Soft shadow
-    ctx.fillStyle = "rgba(0,0,0,0.18)";
+
+    // Frog hop — compute vertical offset and squash/stretch from hopT.
+    let hopOffY = 0;
+    let scaleY = 1;
+    let scaleX = 1;
+    let frogFrame = frameIdx;
+    if (e.kind === "frog") {
+      const dur = (e.data?.hopDur as number) ?? 0.7;
+      const phase = ((e.data?.hopT as number) ?? 0) / dur;
+      hopOffY = -Math.sin(Math.PI * Math.min(1, Math.max(0, (phase - 0.18) / 0.67))) * 26;
+      if (phase < 0.18) { scaleY = 0.7; scaleX = 1.2; frogFrame = 0; }
+      else if (phase > 0.85) { scaleY = 0.75; scaleX = 1.15; frogFrame = 2; }
+      else { scaleY = 1.1; scaleX = 0.92; frogFrame = 1; }
+    }
+
+    const img = renderSprite(sprite, e.kind === "frog" ? frogFrame : frameIdx, SCALE, flip);
+    const drawW = img.width * scaleX;
+    const drawH = img.height * scaleY;
+    const sx = Math.round(e.pos.x - camX - drawW / 2);
+    const sy = Math.round(e.pos.y - camY - drawH + 8 + hopOffY);
+    // Soft shadow — stays on the ground even while frogs hop.
+    const shadowY = Math.round(e.pos.y - camY + 8);
+    const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
+    ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
     ctx.beginPath();
-    ctx.ellipse(sx + img.width / 2, sy + img.height, img.width * 0.35, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.drawImage(img, sx, sy);
+    ctx.drawImage(img, sx, sy, drawW, drawH);
 
     // Ally name floating label
     if (e.team === "ally" && e.data?.npcLabel) {
       ctx.font = "600 10px Nunito, sans-serif";
       ctx.textAlign = "center";
       ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fillText(String(e.data.npcLabel), sx + img.width / 2 + 1, sy - 3);
+      ctx.fillText(String(e.data.npcLabel), sx + drawW / 2 + 1, sy - 3);
       ctx.fillStyle = "#f6efdc";
-      ctx.fillText(String(e.data.npcLabel), sx + img.width / 2, sy - 4);
+      ctx.fillText(String(e.data.npcLabel), sx + drawW / 2, sy - 4);
     }
 
     // Enemy HP bar
     if (e.team === "enemy" && e.hp < e.maxHp) {
       const bw = 22;
-      const bx = sx + img.width / 2 - bw / 2;
+      const bx = sx + drawW / 2 - bw / 2;
       const by = sy - 5;
       ctx.fillStyle = "rgba(0,0,0,0.4)";
       ctx.fillRect(bx, by, bw, 3);
