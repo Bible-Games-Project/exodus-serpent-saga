@@ -39,10 +39,14 @@ export function createInitialState(): GameState {
     xpToNext: 5,
     kills: 0,
     survivalSeconds: 0,
-    plagues: new Map([["serpent" as PlagueId, 1]]),
-    plagueCooldown: new Map([["serpent" as PlagueId, 0.5]]),
+    // Moses starts with the shepherd's staff (Exodus 4). The staff-into-
+    // serpent sign unlocks later as an upgrade choice.
+    plagues: new Map([["staff" as PlagueId, 1]]),
+    plagueCooldown: new Map([["staff" as PlagueId, 0.3]]),
     npcs: new Map(),
     nextNpcIndex: 0,
+    newPlagues: new Set<PlagueId>(),
+    newNpcs: new Set(),
     input: { x: 0, y: 0 },
     worldW,
     worldH,
@@ -68,6 +72,72 @@ export function createInitialState(): GameState {
     state.entities.set(dec.id, dec);
   }
   return state;
+}
+
+// ---------- pixel-art blood pool builder ----------
+// Generates an irregular, hand-plotted pixel blob so no two pools look alike.
+function makeBloodPoolCanvas(radius: number): HTMLCanvasElement {
+  const size = Math.ceil(radius * 2) + 12;
+  const c = document.createElement("canvas");
+  c.width = size;
+  c.height = size;
+  const g = c.getContext("2d")!;
+  g.imageSmoothingEnabled = false;
+  const cx = size / 2;
+  const cy = size / 2;
+  const pixel = 3;
+  // Build irregular shape from several overlapping offset "blobs".
+  const blobs: Array<[number, number, number]> = [];
+  const nBlobs = 8 + Math.floor(Math.random() * 5);
+  for (let i = 0; i < nBlobs; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = Math.random() * radius * 0.55;
+    const rr = radius * 0.32 + Math.random() * radius * 0.4;
+    blobs.push([Math.cos(a) * r, Math.sin(a) * r, rr]);
+  }
+  const isInside = (px: number, py: number): number => {
+    // returns -1 outside, or the smallest signed distance from edge (0 = right on edge)
+    let minEdge = Infinity;
+    let inside = false;
+    for (const [bx, by, br] of blobs) {
+      const dx = px - cx - bx;
+      const dy = py - cy - by;
+      const d = Math.hypot(dx, dy);
+      if (d < br) inside = true;
+      minEdge = Math.min(minEdge, Math.abs(d - br));
+    }
+    return inside ? minEdge : -minEdge;
+  };
+  for (let y = 0; y < size; y += pixel) {
+    for (let x = 0; x < size; x += pixel) {
+      const edge = isInside(x, y);
+      const shade = Math.random();
+      if (edge >= 0) {
+        // inside the pool
+        let color = "#8a1010";
+        if (edge < 3) {
+          color = shade < 0.55 ? "#4c0606" : "#a02222";
+        } else if (edge < 6) {
+          color = shade < 0.4 ? "#6a0c0c" : "#a02222";
+        } else if (shade < 0.14) {
+          color = "#c02828";
+        } else if (shade < 0.35) {
+          color = "#6a0c0c";
+        }
+        g.fillStyle = color;
+        g.fillRect(x, y, pixel, pixel);
+      } else if (edge > -5 && Math.random() < 0.35) {
+        // splatter droplet near the edge
+        g.fillStyle = shade < 0.5 ? "#4c0606" : "#8a1010";
+        g.fillRect(x, y, pixel, pixel);
+      } else if (edge > -10 && Math.random() < 0.06) {
+        // outlying speck
+        g.fillStyle = "#4c0606";
+        g.fillRect(x, y, pixel, pixel);
+      }
+    }
+  }
+  return c;
 }
 
 // ---------- update loop ----------
@@ -211,8 +281,7 @@ export function update(state: GameState, dt: number) {
         e.pos.y += (perp.y / pmag) * wig * dt;
         e.data!.t = t + dt;
       }
-      // Hopping motion for frogs — cycle crouch → jump → land, only moving
-      // while airborne, with new random direction on each landing.
+      // Hopping motion for frogs
       if (e.kind === "frog") {
         const d = e.data!;
         const dur = (d.hopDur as number) ?? 0.7;
@@ -250,25 +319,29 @@ export function update(state: GameState, dt: number) {
         }
       }
     } else if (e.team === "hazard") {
-      // Persistent AoE (e.g. blood pool) — ticks damage while it lives.
+      // Persistent AoE — blood pool, staff swing, gnat swarm.
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) { state.entities.delete(e.id); continue; }
+      // hazards may drift (gnat swarm)
+      e.pos.x += e.vel.x * dt;
+      e.pos.y += e.vel.y * dt;
       const d = e.data!;
-      const tick = 0.35;
-      d.tickAcc = ((d.tickAcc as number) ?? tick) + dt;
-      if ((d.tickAcc as number) >= tick) {
-        d.tickAcc = (d.tickAcc as number) - tick;
-        const r = (d.radius as number) ?? 90;
-        const dmg = (d.dps as number) ?? 4;
-        for (const en of state.entities.values()) {
-          if (en.team !== "enemy") continue;
-          if (dist2(en.pos, e.pos) < r * r) {
-            en.hp -= dmg * tick;
-            if (en.hp <= 0) killEnemy(state, en);
+      const dps = (d.dps as number) ?? 0;
+      if (dps > 0) {
+        const tick = 0.35;
+        d.tickAcc = ((d.tickAcc as number) ?? tick) + dt;
+        if ((d.tickAcc as number) >= tick) {
+          d.tickAcc = (d.tickAcc as number) - tick;
+          const r = (d.radius as number) ?? 90;
+          for (const en of state.entities.values()) {
+            if (en.team !== "enemy") continue;
+            if (dist2(en.pos, e.pos) < r * r) {
+              en.hp -= dps * tick;
+              if (en.hp <= 0) killEnemy(state, en);
+            }
           }
         }
       }
-
     } else if (e.team === "pickup") {
       // XP magnet
       const magnet = 60 + state.level * 3;
@@ -329,7 +402,46 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   const def = PLAGUES[id];
   const stats = def.scale(level);
   const p = state.player.pos;
-  if (id === "serpent") {
+
+  if (id === "staff") {
+    // Melee staff strike — sweeps in an arc in front of Moses.
+    const facing = state.player.facing;
+    const range = (def.base.extra?.range ?? 70) + level * 4;
+    const halfArc = (def.base.extra?.arc ?? 1.05);
+    const baseAng = facing === 1 ? 0 : Math.PI;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      const dx = en.pos.x - p.x;
+      const dy = en.pos.y - p.y;
+      const d = Math.hypot(dx, dy);
+      if (d > range + en.radius) continue;
+      const ang = Math.atan2(dy, dx);
+      let delta = ang - baseAng;
+      while (delta > Math.PI) delta -= Math.PI * 2;
+      while (delta < -Math.PI) delta += Math.PI * 2;
+      if (Math.abs(delta) <= halfArc) {
+        en.hp -= stats.dmg;
+        // knockback
+        en.pos.x += (dx / (d || 1)) * 10;
+        en.pos.y += (dy / (d || 1)) * 10;
+        if (en.hp <= 0) killEnemy(state, en);
+      }
+    }
+    // Visual swing entity (no damage on tick).
+    const sw: Entity = {
+      id: state.nextId++,
+      pos: { x: p.x, y: p.y },
+      vel: { x: 0, y: 0 },
+      radius: range,
+      hp: 1, maxHp: 1,
+      team: "hazard", facing,
+      animT: 0, born: state.now,
+      ttl: 0.18,
+      kind: "staffswing",
+      data: { range, halfArc, facing, dps: 0 },
+    };
+    state.entities.set(sw.id, sw);
+  } else if (id === "serpent") {
     for (let i = 0; i < stats.count; i++) {
       const spread = (i - (stats.count - 1) / 2) * 0.22;
       const baseAngle = state.player.facing === 1 ? 0 : Math.PI;
@@ -378,15 +490,47 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: 0, born: state.now,
         ttl: stats.ttl, dmg: stats.dmg,
         kind: "frog",
-        // hopT/hopDur drive both motion (in update) and squash/stretch (in draw)
         data: { pierce: 1, hit: new Set<number>(), hopT: 0, hopDur: 0.65 },
       };
       state.entities.set(e.id, e);
     }
+  } else if (id === "gnats") {
+    // Drifting swarm cloud made of many tiny gnat particles.
+    const count = Math.max(1, stats.count);
+    for (let k = 0; k < count; k++) {
+      const ang = Math.random() * Math.PI * 2;
+      const radius = (def.base.extra?.radius ?? 55) + level * 4;
+      // build particles for a lively cloud
+      const particles: Array<{ ox: number; oy: number; phase: number; amp: number }> = [];
+      const nP = 28 + Math.floor(Math.random() * 14);
+      for (let i = 0; i < nP; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random() * radius;
+        particles.push({
+          ox: Math.cos(a) * r,
+          oy: Math.sin(a) * r * 0.75,
+          phase: Math.random() * Math.PI * 2,
+          amp: 2 + Math.random() * 4,
+        });
+      }
+      const e: Entity = {
+        id: state.nextId++,
+        pos: { x: p.x, y: p.y },
+        vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
+        radius,
+        hp: 1, maxHp: 1,
+        team: "hazard", facing: 1,
+        animT: Math.random() * 10, born: state.now,
+        ttl: stats.ttl,
+        kind: "gnatswarm",
+        data: { radius, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+      };
+      state.entities.set(e.id, e);
+    }
   } else if (id === "blood") {
-    // Persistent pool of blood — sits on the ground, ticks damage on any
-    // enemy inside its radius until it evaporates.
+    // Persistent irregular pool of blood.
     const radius = (def.base.extra?.radius ?? 90) + level * 6;
+    const canvas = makeBloodPoolCanvas(radius);
     const e: Entity = {
       id: state.nextId++,
       pos: { x: p.x, y: p.y },
@@ -397,7 +541,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       animT: 0, born: state.now,
       ttl: stats.ttl,
       kind: "bloodpool",
-      data: { radius, dps: stats.dmg, tickAcc: 0 },
+      data: { radius, dps: stats.dmg, tickAcc: 0, canvas, maxTtl: stats.ttl },
     };
     state.entities.set(e.id, e);
   } else {
@@ -486,6 +630,7 @@ function unlockNextCompanion(state: GameState) {
   state.entities.set(ally.id, ally);
   state.npcs.set(npcId, ally.id);
   state.nextNpcIndex = idx + 1;
+  state.newNpcs.add(npcId);
 }
 
 function offerUpgrades(state: GameState) {
@@ -514,9 +659,12 @@ function offerUpgrades(state: GameState) {
         plague: id,
         title: `Unlock: ${def.name}`,
         description: def.description,
+        scripture: def.scripture,
+        isUnlock: true,
         apply: (s) => {
           s.plagues.set(id, 1);
           s.plagueCooldown.set(id, 0.5);
+          s.newPlagues.add(id);
         },
       });
     }
@@ -535,4 +683,12 @@ function offerUpgrades(state: GameState) {
 export function applyUpgrade(state: GameState, choice: UpgradeChoice) {
   choice.apply(state);
   state.levelUpPending = null;
+}
+
+export function dismissNewPlague(state: GameState, id: PlagueId) {
+  state.newPlagues.delete(id);
+}
+
+export function dismissNewNpc(state: GameState, id: import("./types").NpcId) {
+  state.newNpcs.delete(id);
 }
