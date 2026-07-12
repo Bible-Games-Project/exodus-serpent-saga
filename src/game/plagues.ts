@@ -47,13 +47,13 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   blood: {
     id: "blood",
     name: "Water into Blood",
-    description: "A spreading pool of blood harms every enemy that steps in it.",
+    description: "A pool of blood appears on the ground, harming every enemy that steps in it.",
     scripture:
       "Exodus 7:20-21 — Moses lifted the rod and smote the waters of the river, and all the waters were turned to blood. The fish died and the Egyptians could not drink.",
     unlockLevel: 4,
-    base: { level: 1, cooldown: 2.5, dmg: 6, count: 1, speed: 0, ttl: 3.5, extra: { radius: 90 } },
-    scale: scale({ level: 1, cooldown: 2.5, dmg: 6, count: 1, speed: 0, ttl: 3.5 }, {
-      cooldown: 0.1,
+    base: { level: 1, cooldown: 5, dmg: 6, count: 1, speed: 0, ttl: 3.5, extra: { radius: 65 } },
+    scale: scale({ level: 1, cooldown: 5, dmg: 6, count: 1, speed: 0, ttl: 3.5 }, {
+      cooldown: 0.2,
       dmg: 3,
       ttl: 0.25,
     }),
@@ -89,15 +89,13 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   flies: {
     id: "flies",
     name: "Plague of Flies",
-    description: "Swarms of flies seek out the nearest enemy on their own.",
+    description: "A swarm of flies orbits Moses, striking any enemy they touch. Each rank adds another fly.",
     scripture:
       "Exodus 8:24 — There came a grievous swarm of flies into the house of Pharaoh, and into all the land of Egypt.",
     unlockLevel: 10,
-    base: { level: 1, cooldown: 1.6, dmg: 10, count: 2, speed: 180, ttl: 3 },
-    scale: scale({ level: 1, cooldown: 1.6, dmg: 10, count: 2, speed: 180, ttl: 3 }, {
-      cooldown: 0.1,
+    base: { level: 1, cooldown: 999, dmg: 8, count: 1, speed: 0, ttl: 999 },
+    scale: scale({ level: 1, cooldown: 999, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
       dmg: 3,
-      count: 0.5,
     }),
   },
   livestock: {

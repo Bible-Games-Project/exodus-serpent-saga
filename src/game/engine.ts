@@ -168,6 +168,9 @@ export function update(state: GameState, dt: number) {
   const spawnRate = 0.9 + minutes * 0.6; // per second
   spawnEnemies(state, dt, spawnRate);
 
+  // Keep the orbiting fly swarm in sync with the "flies" plague level.
+  syncOrbitFlies(state, dt);
+
   // Cast plagues
   for (const [id, level] of state.plagues) {
     const cd = (state.plagueCooldown.get(id) ?? 0) - dt;
@@ -252,35 +255,7 @@ export function update(state: GameState, dt: number) {
         state.entities.delete(e.id);
         continue;
       }
-      const homing = e.data?.homing;
-      if (homing) {
-        // seek nearest enemy
-        let nearest: Entity | null = null;
-        let bestD = Infinity;
-        for (const en of state.entities.values()) {
-          if (en.team !== "enemy") continue;
-          const d2 = dist2(en.pos, e.pos);
-          if (d2 < bestD) { bestD = d2; nearest = en; }
-        }
-        if (nearest) {
-          const dx = nearest.pos.x - e.pos.x;
-          const dy = nearest.pos.y - e.pos.y;
-          const d = Math.hypot(dx, dy) || 1;
-          const spd = Math.hypot(e.vel.x, e.vel.y) || 200;
-          e.vel.x += ((dx / d) * spd - e.vel.x) * Math.min(1, dt * 4);
-          e.vel.y += ((dy / d) * spd - e.vel.y) * Math.min(1, dt * 4);
-        }
-      }
-      // Zig-zag for serpents (subtle slither perpendicular to travel)
-      if (e.kind === "serpent") {
-        const t = e.data!.t as number;
-        const perp = { x: -e.vel.y, y: e.vel.x };
-        const pmag = Math.hypot(perp.x, perp.y) || 1;
-        const wig = Math.sin(t * 14) * 60;
-        e.pos.x += (perp.x / pmag) * wig * dt;
-        e.pos.y += (perp.y / pmag) * wig * dt;
-        e.data!.t = t + dt;
-      }
+      // Serpents travel in a straight line (aim locked at spawn).
       // Hopping motion for frogs
       if (e.kind === "frog") {
         const d = e.data!;
@@ -442,9 +417,19 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     };
     state.entities.set(sw.id, sw);
   } else if (id === "serpent") {
+    // Snap the serpent's aim to the closest enemy at spawn — no homing after.
+    let nearest: Entity | null = null;
+    let bestD = Infinity;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      const d2 = dist2(en.pos, p);
+      if (d2 < bestD) { bestD = d2; nearest = en; }
+    }
+    const baseAngle = nearest
+      ? Math.atan2(nearest.pos.y - p.y, nearest.pos.x - p.x)
+      : (state.player.facing === 1 ? 0 : Math.PI);
     for (let i = 0; i < stats.count; i++) {
-      const spread = (i - (stats.count - 1) / 2) * 0.22;
-      const baseAngle = state.player.facing === 1 ? 0 : Math.PI;
+      const spread = (i - (stats.count - 1) / 2) * 0.14;
       const ang = baseAngle + spread;
       const e: Entity = {
         id: state.nextId++,
@@ -452,31 +437,17 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
         radius: 10,
         hp: 1, maxHp: 1,
-        team: "projectile", facing: state.player.facing,
+        team: "projectile", facing: Math.cos(ang) > 0 ? 1 : -1,
         animT: 0, born: state.now,
         ttl: stats.ttl, dmg: stats.dmg,
         kind: "serpent",
-        data: { t: 0, pierce: 1, hit: new Set<number>() },
+        data: { pierce: 1, hit: new Set<number>() },
       };
       state.entities.set(e.id, e);
     }
   } else if (id === "flies") {
-    for (let i = 0; i < stats.count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const e: Entity = {
-        id: state.nextId++,
-        pos: { x: p.x, y: p.y },
-        vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
-        radius: 6,
-        hp: 1, maxHp: 1,
-        team: "projectile", facing: 1,
-        animT: 0, born: state.now,
-        ttl: stats.ttl, dmg: stats.dmg,
-        kind: "fly",
-        data: { homing: 1, hit: new Set<number>() },
-      };
-      state.entities.set(e.id, e);
-    }
+    // Handled entirely by syncOrbitFlies — nothing to spawn per cast.
+    return;
   } else if (id === "frogs") {
     for (let i = 0; i < stats.count; i++) {
       const ang = Math.random() * Math.PI * 2;
@@ -528,12 +499,26 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       state.entities.set(e.id, e);
     }
   } else if (id === "blood") {
-    // Persistent irregular pool of blood.
-    const radius = (def.base.extra?.radius ?? 90) + level * 6;
+    // Persistent irregular pool of blood — spawned at a random location within
+    // the player's current viewport (not directly on Moses), and always fully
+    // inside both the screen and the playable world.
+    const radius = (def.base.extra?.radius ?? 65) + level * 4;
     const canvas = makeBloodPoolCanvas(radius);
+    const vw = state.viewport?.w ?? 800;
+    const vh = state.viewport?.h ?? 600;
+    const margin = radius + 12;
+    // pick a random point inside the visible camera rect, keeping the whole
+    // pool on-screen so the left/right/top/bottom edges never clip it.
+    const halfW = Math.max(margin, vw / 2 - margin);
+    const halfH = Math.max(margin, vh / 2 - margin);
+    let px = state.camera.x + rand(-halfW, halfW);
+    let py = state.camera.y + rand(-halfH, halfH);
+    // clamp to world bounds so it stays fully inside the playable area.
+    px = clamp(px, margin, state.worldW - margin);
+    py = clamp(py, margin, state.worldH - margin);
     const e: Entity = {
       id: state.nextId++,
-      pos: { x: p.x, y: p.y },
+      pos: { x: px, y: py },
       vel: { x: 0, y: 0 },
       radius,
       hp: 1, maxHp: 1,
@@ -557,6 +542,82 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   }
 }
 
+
+// ---------- orbiting fly swarm (Plague of Flies) ----------
+// Each rank of the "flies" plague adds one permanent orbiting fly. They
+// rotate evenly around Moses at a constant speed and damage enemies on
+// contact (with a per-enemy cooldown so a single fly doesn't melt targets).
+function syncOrbitFlies(state: GameState, dt: number) {
+  const targetCount = state.plagues.get("flies") ?? 0;
+  const ids = (state.orbitFlyIds ??= []);
+
+  // remove dead / missing entities from tracking
+  for (let i = ids.length - 1; i >= 0; i--) {
+    if (!state.entities.has(ids[i])) ids.splice(i, 1);
+  }
+
+  // grow to match the current rank
+  while (ids.length < targetCount) {
+    const e: Entity = {
+      id: state.nextId++,
+      pos: { x: state.player.pos.x, y: state.player.pos.y },
+      vel: { x: 0, y: 0 },
+      radius: 8,
+      hp: 1, maxHp: 1,
+      team: "orbit", facing: 1,
+      animT: Math.random() * 10, born: state.now,
+      kind: "fly",
+      data: { hitCd: new Map<number, number>() },
+    };
+    state.entities.set(e.id, e);
+    ids.push(e.id);
+  }
+  // shrink if the count was reduced somehow
+  while (ids.length > targetCount) {
+    const id = ids.pop();
+    if (id != null) state.entities.delete(id);
+  }
+
+  const count = ids.length;
+  if (count === 0) return;
+
+  const def = PLAGUES.flies;
+  const dmg = def.scale(targetCount).dmg;
+  const orbitSpeed = 2.4; // rad/s
+  const radius = 58;
+  const t = state.now;
+
+  for (let i = 0; i < count; i++) {
+    const e = state.entities.get(ids[i]);
+    if (!e) continue;
+    // evenly distributed around the orbit — never overlap
+    const a = t * orbitSpeed + (i / count) * Math.PI * 2;
+    e.pos.x = state.player.pos.x + Math.cos(a) * radius;
+    e.pos.y = state.player.pos.y + Math.sin(a) * radius;
+    e.facing = Math.cos(a) > 0 ? 1 : -1;
+    // fast wing-flap: cycle through the 2 fly frames ~14x/sec
+    e.animT += dt * 14;
+
+    // decrement per-enemy hit cooldowns
+    const hitCd = e.data!.hitCd as Map<number, number>;
+    for (const [k, v] of hitCd) {
+      const nv = v - dt;
+      if (nv <= 0) hitCd.delete(k);
+      else hitCd.set(k, nv);
+    }
+
+    // damage-on-contact
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      if (hitCd.has(en.id)) continue;
+      if (dist2(en.pos, e.pos) < (en.radius + e.radius) ** 2) {
+        en.hp -= dmg;
+        hitCd.set(en.id, 0.4);
+        if (en.hp <= 0) killEnemy(state, en);
+      }
+    }
+  }
+}
 
 
 function spawnAllyBolt(state: GameState, ally: Entity, target: Entity) {

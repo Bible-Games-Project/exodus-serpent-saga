@@ -8,7 +8,7 @@ export type Entity = {
   radius: number; // for collision
   hp: number;
   maxHp: number;
-  team: "player" | "ally" | "enemy" | "projectile" | "pickup" | "decor" | "hazard";
+  team: "player" | "ally" | "enemy" | "projectile" | "pickup" | "decor" | "hazard" | "orbit";
   facing: 1 | -1;
   animT: number; // seconds
   born: number; // spawn time
@@ -119,4 +119,10 @@ export type GameState = {
   // world bounds — very large "infinite feel"
   worldW: number;
   worldH: number;
+
+  // last known viewport size (set each frame by the renderer)
+  viewport?: { w: number; h: number };
+
+  // ids of the flies that permanently orbit the player
+  orbitFlyIds?: number[];
 };
