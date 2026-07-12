@@ -89,15 +89,13 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   flies: {
     id: "flies",
     name: "Plague of Flies",
-    description: "Swarms of flies seek out the nearest enemy on their own.",
+    description: "A swarm of flies orbits Moses, striking any enemy they touch. Each rank adds another fly.",
     scripture:
       "Exodus 8:24 — There came a grievous swarm of flies into the house of Pharaoh, and into all the land of Egypt.",
     unlockLevel: 10,
-    base: { level: 1, cooldown: 1.6, dmg: 10, count: 2, speed: 180, ttl: 3 },
-    scale: scale({ level: 1, cooldown: 1.6, dmg: 10, count: 2, speed: 180, ttl: 3 }, {
-      cooldown: 0.1,
+    base: { level: 1, cooldown: 999, dmg: 8, count: 1, speed: 0, ttl: 999 },
+    scale: scale({ level: 1, cooldown: 999, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
       dmg: 3,
-      count: 0.5,
     }),
   },
   livestock: {
