@@ -29,6 +29,7 @@ export type PlagueId =
   | "livestock"
   | "boils"
   | "hail"
+  | "fire"
   | "locusts"
   | "darkness"
   | "firstborn"
