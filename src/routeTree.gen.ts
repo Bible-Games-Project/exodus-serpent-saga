@@ -10,33 +10,44 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicLeaderboardSubmitRouteImport } from './routes/api/public/leaderboard/submit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLeaderboardSubmitRoute =
+  ApiPublicLeaderboardSubmitRouteImport.update({
+    id: '/api/public/leaderboard/submit',
+    path: '/api/public/leaderboard/submit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/leaderboard/submit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/leaderboard/submit'
+  id: '__root__' | '/' | '/api/public/leaderboard/submit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicLeaderboardSubmitRoute: typeof ApiPublicLeaderboardSubmitRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +59,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/leaderboard/submit': {
+      id: '/api/public/leaderboard/submit'
+      path: '/api/public/leaderboard/submit'
+      fullPath: '/api/public/leaderboard/submit'
+      preLoaderRoute: typeof ApiPublicLeaderboardSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicLeaderboardSubmitRoute: ApiPublicLeaderboardSubmitRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
