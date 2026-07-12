@@ -186,6 +186,9 @@ export function update(state: GameState, dt: number) {
   // Move entities
   for (const e of state.entities.values()) {
     if (e === p) continue;
+    // orbit flies are fully driven by syncOrbitFlies each frame — don't
+    // let the shared animT bump fight the wing-flap timing.
+    if (e.team === "orbit") continue;
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
@@ -441,7 +444,9 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: 0, born: state.now,
         ttl: stats.ttl, dmg: stats.dmg,
         kind: "serpent",
-        data: { pierce: 1, hit: new Set<number>() },
+        // angle is locked at spawn — the serpent keeps this facing for its
+        // whole flight, even if the target moves.
+        data: { pierce: 1, hit: new Set<number>(), angle: ang },
       };
       state.entities.set(e.id, e);
     }
@@ -471,15 +476,30 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     for (let k = 0; k < count; k++) {
       const ang = Math.random() * Math.PI * 2;
       const radius = (def.base.extra?.radius ?? 55) + level * 4;
-      // build particles for a lively cloud
+      // Build an irregular, organic cloud shape from several offset sub-clusters
+      // rather than a uniform disc. Each sub-cluster is a lobe of the swarm.
+      const lobes: Array<{ cx: number; cy: number; r: number }> = [];
+      const nLobes = 4 + Math.floor(Math.random() * 4);
+      for (let li = 0; li < nLobes; li++) {
+        const la = Math.random() * Math.PI * 2;
+        const lr = Math.random() * radius * 0.85;
+        lobes.push({
+          cx: Math.cos(la) * lr,
+          cy: Math.sin(la) * lr * 0.75,
+          r: radius * (0.28 + Math.random() * 0.4),
+        });
+      }
       const particles: Array<{ ox: number; oy: number; phase: number; amp: number }> = [];
-      const nP = 28 + Math.floor(Math.random() * 14);
+      const nP = 40 + Math.floor(Math.random() * 18);
       for (let i = 0; i < nP; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.random() * radius;
+        // pick a lobe and a point inside it — biases density unevenly
+        const lobe = lobes[Math.floor(Math.random() * lobes.length)];
+        // sqrt for a natural falloff toward the lobe center
+        const rr = Math.sqrt(Math.random()) * lobe.r;
+        const aa = Math.random() * Math.PI * 2;
         particles.push({
-          ox: Math.cos(a) * r,
-          oy: Math.sin(a) * r * 0.75,
+          ox: lobe.cx + Math.cos(aa) * rr,
+          oy: lobe.cy + Math.sin(aa) * rr,
           phase: Math.random() * Math.PI * 2,
           amp: 2 + Math.random() * 4,
         });
@@ -494,7 +514,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: Math.random() * 10, born: state.now,
         ttl: stats.ttl,
         kind: "gnatswarm",
-        data: { radius, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+        data: { radius, dps: stats.dmg, tickAcc: 0, particles, lobes, maxTtl: stats.ttl },
       };
       state.entities.set(e.id, e);
     }
@@ -509,8 +529,13 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     const margin = radius + 12;
     // pick a random point inside the visible camera rect, keeping the whole
     // pool on-screen so the left/right/top/bottom edges never clip it.
-    const halfW = Math.max(margin, vw / 2 - margin);
-    const halfH = Math.max(margin, vh / 2 - margin);
+    // Use the actual on-screen canvas footprint of the generated art (not
+    // just the logical radius) so the splatter droplets never poke past
+    // the viewport edge either.
+    const artHalf = canvas.width / 2;
+    const screenMargin = artHalf + 4;
+    const halfW = Math.max(0, vw / 2 - screenMargin);
+    const halfH = Math.max(0, vh / 2 - screenMargin);
     let px = state.camera.x + rand(-halfW, halfW);
     let py = state.camera.y + rand(-halfH, halfH);
     // clamp to world bounds so it stays fully inside the playable area.
@@ -590,13 +615,14 @@ function syncOrbitFlies(state: GameState, dt: number) {
   for (let i = 0; i < count; i++) {
     const e = state.entities.get(ids[i]);
     if (!e) continue;
-    // evenly distributed around the orbit — never overlap
+    // evenly distributed around the orbit — angle derived purely from
+    // state.now so motion stays perfectly smooth, continuous, and constant.
     const a = t * orbitSpeed + (i / count) * Math.PI * 2;
     e.pos.x = state.player.pos.x + Math.cos(a) * radius;
     e.pos.y = state.player.pos.y + Math.sin(a) * radius;
     e.facing = Math.cos(a) > 0 ? 1 : -1;
-    // fast wing-flap: cycle through the 2 fly frames ~14x/sec
-    e.animT += dt * 14;
+    // wing-flap keyed to global time (not accumulated) so it never drifts
+    e.animT = t * 14;
 
     // decrement per-enemy hit cooldowns
     const hitCd = e.data!.hitCd as Map<number, number>;
