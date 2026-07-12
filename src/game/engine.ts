@@ -326,6 +326,22 @@ export function update(state: GameState, dt: number) {
       e.pos.x += e.vel.x * dt;
       e.pos.y += e.vel.y * dt;
       const d = e.data!;
+      // Firstborn cloud — instant-kill roll per enemy, once each.
+      if (e.kind === "firstborncloud") {
+        const r = (d.radius as number) ?? 95;
+        const seen = (d.seen ??= new Set<number>()) as Set<number>;
+        const chance = (d.chance as number) ?? 0.5;
+        for (const en of state.entities.values()) {
+          if (en.team !== "enemy") continue;
+          if (seen.has(en.id)) continue;
+          if (dist2(en.pos, e.pos) < r * r) {
+            seen.add(en.id);
+            if (en.data?.immuneFirstborn) continue; // Ramses reserved
+            if (Math.random() < chance) killEnemy(state, en);
+          }
+        }
+        continue;
+      }
       const dps = (d.dps as number) ?? 0;
       if (dps > 0) {
         const tick = 0.35;
@@ -333,8 +349,11 @@ export function update(state: GameState, dt: number) {
         if ((d.tickAcc as number) >= tick) {
           d.tickAcc = (d.tickAcc as number) - tick;
           const r = (d.radius as number) ?? 90;
+          const target = d.targetKind as string | undefined; // "animal" | "human" | undefined
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
+            if (target === "animal" && en.kind !== "jackal") continue;
+            if (target === "human" && en.kind !== "soldier") continue;
             if (dist2(en.pos, e.pos) < r * r) {
               en.hp -= dps * tick;
               if (en.hp <= 0) killEnemy(state, en);
