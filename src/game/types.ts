@@ -16,7 +16,7 @@ export type Entity = {
   dmg?: number;
   ownerId?: number;
   kind: string; // e.g. "moses" | "serpent" | "soldier" | "jackal" | "gem" | ...
-  data?: Record<string, number | string | boolean | undefined>;
+  data?: Record<string, unknown>;
 };
 
 export type PlagueId =
