@@ -1,7 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { NPC_ORDER, NPCS } from "./npcs";
-import { BONUSES, rollBonusDrop, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, shieldDamageMul, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
@@ -11,10 +11,35 @@ const rand = (a: number, b: number) => a + Math.random() * (b - a);
 const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
+// ---------- infinite world wrap ----------
+function wrap(v: number, m: number): number {
+  const r = v % m;
+  return r < 0 ? r + m : r;
+}
+function wrapDelta(a: number, b: number, m: number): number {
+  let d = a - b;
+  d = ((d + m / 2) % m + m) % m - m / 2;
+  return d;
+}
+export function wrapPos(state: GameState, p: Vec2): void {
+  p.x = wrap(p.x, state.worldW);
+  p.y = wrap(p.y, state.worldH);
+}
+export function wrappedDelta(state: GameState, a: Vec2, b: Vec2): Vec2 {
+  return { x: wrapDelta(a.x, b.x, state.worldW), y: wrapDelta(a.y, b.y, state.worldH) };
+}
+function wrapDist2(state: GameState, a: Vec2, b: Vec2): number {
+  const dx = wrapDelta(a.x, b.x, state.worldW);
+  const dy = wrapDelta(a.y, b.y, state.worldH);
+  return dx * dx + dy * dy;
+}
+
+
 // ---------- state factory ----------
 export function createInitialState(): GameState {
-  const worldW = 4000;
-  const worldH = 4000;
+  const worldW = 8000;
+  const worldH = 8000;
+
   const player: Entity = {
     id: 1,
     pos: { x: worldW / 2, y: worldH / 2 },
@@ -82,10 +107,11 @@ export function createInitialState(): GameState {
     state.entities.set(dec.id, dec);
     if (r > 0) obstacles.push({ pos: dec.pos, r });
   }
-  // Throne decor + Ramses himself.
+  // Throne decor + Ramses himself. Throne is placed slightly further away
+  // so Ramses (spawned in ramses.ts at +180) renders in front of it.
   const throne: Entity = {
     id: state.nextId++,
-    pos: { x: player.pos.x + 160, y: player.pos.y - 30 },
+    pos: { x: player.pos.x + 180, y: player.pos.y - 60 },
     vel: { x: 0, y: 0 },
     radius: 0,
     hp: 1, maxHp: 1,
@@ -98,6 +124,7 @@ export function createInitialState(): GameState {
   spawnRamses(state);
   return state;
 }
+
 
 // ---------- modular obstacle collision ----------
 function resolveObstacles(pos: Vec2, radius: number, state: GameState) {
@@ -200,15 +227,23 @@ export function update(state: GameState, dt: number) {
   const mag = Math.hypot(ix, iy) || 1;
   p.vel.x = (ix / mag) * speed * (Math.hypot(ix, iy) > 0.05 ? 1 : 0);
   p.vel.y = (iy / mag) * speed * (Math.hypot(ix, iy) > 0.05 ? 1 : 0);
-  p.pos.x = clamp(p.pos.x + p.vel.x * dt, 30, state.worldW - 30);
-  p.pos.y = clamp(p.pos.y + p.vel.y * dt, 30, state.worldH - 30);
+  p.pos.x = wrap(p.pos.x + p.vel.x * dt, state.worldW);
+  p.pos.y = wrap(p.pos.y + p.vel.y * dt, state.worldH);
   resolveObstacles(p.pos, p.radius, state);
   if (Math.abs(p.vel.x) > 5) p.facing = p.vel.x > 0 ? 1 : -1;
   p.animT += dt * (Math.hypot(p.vel.x, p.vel.y) > 5 ? 6 : 0);
 
-  // Camera follows
-  state.camera.x += (p.pos.x - state.camera.x) * Math.min(1, dt * 5);
-  state.camera.y += (p.pos.y - state.camera.y) * Math.min(1, dt * 5);
+  // Camera follows with wrapped delta so it never jumps at wrap seams.
+  const cdx = wrapDelta(p.pos.x, state.camera.x, state.worldW);
+  const cdy = wrapDelta(p.pos.y, state.camera.y, state.worldH);
+  const k = Math.min(1, dt * 5);
+  state.camera.x = wrap(state.camera.x + cdx * k, state.worldW);
+  state.camera.y = wrap(state.camera.y + cdy * k, state.worldH);
+
+  // World bonuses appear periodically for the player to discover.
+  tickBonusSpawns(state, dt);
+
+
 
   // Spawn enemies over time
   const minutes = state.now / 60;
@@ -248,36 +283,41 @@ export function update(state: GameState, dt: number) {
         // still take contact damage handled in tickRamses; skip here.
         continue;
       }
-      // pick nearest target (Moses or ally)
-      let targetPos: Vec2 = p.pos;
-      let bestD = dist2(e.pos, p.pos);
+      // pick nearest target (Moses or ally) using wrapped delta
+      let targetPos: Vec2 = { x: e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) };
+      let bestD = wrapDist2(state, e.pos, p.pos);
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
-        const d = dist2(e.pos, n.pos);
-        if (d < bestD * 0.7) { bestD = d; targetPos = n.pos; }
+        const d = wrapDist2(state, e.pos, n.pos);
+        if (d < bestD * 0.7) {
+          bestD = d;
+          targetPos = { x: e.pos.x + wrapDelta(n.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(n.pos.y, e.pos.y, state.worldH) };
+        }
       }
       enemyTick(state, e, targetPos, dt, {
         baseSlow: enemySlow,
         resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
       });
+      wrapPos(state, e.pos);
 
       // Contact damage
-      if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+      if (!invuln && wrapDist2(state, e.pos, p.pos) < (e.radius + p.radius) ** 2) {
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
-        p.hp -= contactDmg * dt;
+        p.hp -= contactDmg * dt * shieldDamageMul(state);
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
-        if (dist2(e.pos, n.pos) < (e.radius + n.radius) ** 2) {
+        if (wrapDist2(state, e.pos, n.pos) < (e.radius + n.radius) ** 2) {
           const contactDmg = (e.data?.contactDmg as number) ?? 8;
           n.hp -= contactDmg * dt;
           if (n.hp <= 0) downCompanion(state, n);
         }
       }
+
     } else if (e.team === "ally") {
       updateCompanion(state, e, dt);
     } else if (e.team === "projectile") {
@@ -335,7 +375,7 @@ export function update(state: GameState, dt: number) {
       // Enemy-owned projectile hits player.
       if (e.data?.enemyOwned) {
         if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
-          p.hp -= e.dmg ?? 5;
+          p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
           state.entities.delete(e.id);
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
@@ -413,15 +453,15 @@ export function update(state: GameState, dt: number) {
         }
       }
     } else if (e.team === "pickup") {
-      // XP gems + coins + bonuses
+      // XP gems + coins + bonuses (wrapped so magnet works across world seam)
       const magnetR = (60 + state.level * 3) * magnetMultiplier(state);
-      const dx = p.pos.x - e.pos.x;
-      const dy = p.pos.y - e.pos.y;
+      const dx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+      const dy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
       const d = Math.hypot(dx, dy);
-      if (d < magnetR) {
+      if (d < magnetR && d > 0.001) {
         const s = 260;
-        e.pos.x += (dx / d) * s * dt;
-        e.pos.y += (dy / d) * s * dt;
+        e.pos.x = wrap(e.pos.x + (dx / d) * s * dt, state.worldW);
+        e.pos.y = wrap(e.pos.y + (dy / d) * s * dt, state.worldH);
       }
       if (d < 16) {
         if (e.kind === "gem") {
@@ -440,22 +480,35 @@ export function update(state: GameState, dt: number) {
   for (const e of Array.from(state.entities.values())) {
     if (e.team === "enemy" && e.hp <= 0) killEnemy(state, e);
   }
+
+  // Ramses is untouchable while seated on his throne.
+  if (state.ramsesId != null) {
+    const r = state.entities.get(state.ramsesId);
+    if (r && r.data?.seated) {
+      r.hp = r.maxHp;
+      // stay locked to throne position
+      r.pos.x = r.data.throneX as number;
+      r.pos.y = r.data.throneY as number;
+    }
+  }
 }
+
 
 // ---------- staff hitbox follows swing ----------
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
   const facing = (d.facing as number) ?? 1;
-  const staffLen = (d.staffLen as number) ?? 60;
+  const staffLen = ((d.staffLen as number) ?? 62) * 0.75; // grip -> tip
   const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
   const progress = 1 - life;
   const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
   const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
   const swingAng = startA + (endA - startA) * progress;
-  const cx = state.player.pos.x + facing * 5;
-  const cy = state.player.pos.y - 22;
+  const cx = state.player.pos.x + facing * 8;
+  const cy = state.player.pos.y - 18;
   const tipX = cx + Math.cos(swingAng) * staffLen;
   const tipY = cy + Math.sin(swingAng) * staffLen;
+
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
   const dmg = stats.dmg * damageMultiplier(state);
@@ -969,23 +1022,41 @@ function killEnemy(state: GameState, e: Entity) {
     data: { xp: (e.data?.xp as number) ?? 1 },
   };
   state.entities.set(gem.id, gem);
-  // Bonus drop.
-  const bonus = rollBonusDrop();
-  if (bonus) {
-    const b: Entity = {
-      id: state.nextId++,
-      pos: { x: e.pos.x + rand(-6, 6), y: e.pos.y + rand(-6, 6) },
-      vel: { x: 0, y: 0 },
-      radius: 10,
-      hp: 1, maxHp: 1,
-      team: "pickup", facing: 1,
-      animT: Math.random() * 10, born: state.now,
-      kind: `bonus_${bonus}`,
-      data: { bonusKind: bonus },
-    };
-    state.entities.set(b.id, b);
-  }
+  // (bonuses now spawn randomly in the world, not from kills)
 }
+
+// ---------- world bonus spawner ----------
+function tickBonusSpawns(state: GameState, dt: number) {
+  let cd = (state.bonusSpawnCd ?? 12) - dt;
+  if (cd <= 0) {
+    cd = 22 + Math.random() * 18;
+    // count current bonuses
+    let count = 0;
+    for (const e of state.entities.values()) {
+      if (e.team === "pickup" && typeof e.kind === "string" && e.kind.startsWith("bonus_")) count++;
+    }
+    if (count < 5) {
+      const p = state.player.pos;
+      const ang = Math.random() * Math.PI * 2;
+      const r = 260 + Math.random() * 260;
+      const kind = rollBonusKind();
+      const b: Entity = {
+        id: state.nextId++,
+        pos: { x: wrap(p.x + Math.cos(ang) * r, state.worldW), y: wrap(p.y + Math.sin(ang) * r, state.worldH) },
+        vel: { x: 0, y: 0 },
+        radius: 14,
+        hp: 1, maxHp: 1,
+        team: "pickup", facing: 1,
+        animT: Math.random() * 10, born: state.now,
+        kind: `bonus_${kind}`,
+        data: { bonusKind: kind },
+      };
+      state.entities.set(b.id, b);
+    }
+  }
+  state.bonusSpawnCd = cd;
+}
+
 
 // ---------- companion definitions & AI ----------
 type CompanionCombat = {
@@ -1054,6 +1125,13 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     if (Math.abs(dx) > 2) e.facing = dx > 0 ? 1 : -1;
   }
   resolveObstacles(e.pos, e.radius, state);
+  wrapPos(state, e.pos);
+
+  // attack animation timer (visualized by renderer)
+  if ((d.attackT as number | undefined) != null) {
+    d.attackT = Math.max(0, (d.attackT as number) - dt);
+    if ((d.attackT as number) <= 0) delete d.attackT;
+  }
 
   const cd = ((d.atkCd as number) ?? 0) - dt;
   if (cd <= 0) {
@@ -1061,11 +1139,13 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     let bestD = combat.attackRange * combat.attackRange;
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
-      const d2 = dist2(en.pos, e.pos);
+      const d2 = wrapDist2(state, en.pos, e.pos);
       if (d2 < bestD) { bestD = d2; nearest = en; }
     }
     if (nearest) {
       spawnCompanionAttack(state, e, nearest, combat);
+      d.attackT = 0.28; // trigger swing animation
+      d.attackTMax = 0.28;
       d.atkCd = combat.cooldown;
     } else {
       d.atkCd = 0.3;
@@ -1074,6 +1154,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     d.atkCd = cd;
   }
 }
+
 
 function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, combat: CompanionCombat) {
   const dx = target.pos.x - ally.pos.x;
@@ -1131,7 +1212,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
     pos: { x: px, y: py },
     vel: { x: 0, y: 0 },
     radius: 12,
-    hp: 60, maxHp: 60,
+    hp: 180, maxHp: 180,
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,

@@ -1,18 +1,20 @@
-// Ramses world boss. Sits idle on his throne near the spawn point until
-// the player unlocks the Plague of Darkness, then activates and pursues Moses
-// with periodic superhero-landing leaps.
+// Ramses world boss. Sits idle on his throne near spawn until player reaches
+// level 10, then activates and pursues Moses. Leap attack only unlocks after
+// the player learns the Death of the Firstborn plague.
 import type { Entity, GameState, Vec2 } from "./types";
+import { shieldDamageMul } from "./bonuses";
 
 const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
 export function spawnRamses(state: GameState): void {
-  const cx = state.player.pos.x + 160;
-  const cy = state.player.pos.y - 40;
+  const cx = state.player.pos.x + 180;
+  const cy = state.player.pos.y - 40; // sits on the throne (throne y=-60), his feet in front
+
   const r: Entity = {
     id: state.nextId++,
     pos: { x: cx, y: cy },
     vel: { x: 0, y: 0 },
-    radius: 22,
+    radius: 28,
     hp: 5000, maxHp: 5000,
     team: "enemy",
     facing: -1,
@@ -24,17 +26,18 @@ export function spawnRamses(state: GameState): void {
       speed: 70,
       contactDmg: 20,
       xp: 0,
-      seated: true,
+      seated: true,     // sits and is invulnerable until level 10
       active: false,
       throneX: cx,
       throneY: cy,
       leapCd: 8,
+      leapUnlocked: false, // unlocks with the firstborn plague
       leapPhase: "idle", // "idle" | "telegraph" | "airborne" | "land"
       leapT: 0,
       leapTarget: { x: cx, y: cy } as Vec2,
       leapFrom: { x: cx, y: cy } as Vec2,
-      landRadius: 90,
-      landDmg: 40,
+      landRadius: 100,
+      landDmg: 45,
       immuneFirstborn: true,
       immuneFire: true,
     },
@@ -52,13 +55,20 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const d = r.data!;
   const p = state.player;
 
-  // Activation trigger — 10th plague = darkness unlocked.
-  if (!d.active && state.plagues.has("darkness")) {
+  // Activation trigger — player reaches level 10.
+  if (!d.active && state.level >= 10) {
     d.active = true;
     d.seated = false;
-    d.leapCd = 3;
+    d.leapCd = 5;
   }
-  if (!d.active) return;
+  // Leap unlocks with the final plague.
+  if (!d.leapUnlocked && state.plagues.has("firstborn")) {
+    d.leapUnlocked = true;
+  }
+  if (!d.active) {
+    // Seated idle bob (visual only handled in renderer).
+    return;
+  }
 
   const phase = d.leapPhase as string;
 
@@ -75,23 +85,24 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
 
     // Contact damage
     if (dist2(r.pos, p.pos) < (r.radius + p.radius) ** 2 && !isInvuln(state)) {
-      p.hp -= 30 * dt;
+      p.hp -= 30 * dt * shieldDamageMul(state);
+      if (p.hp <= 0) { state.gameOver = true; state.running = false; }
     }
 
-    const cd = ((d.leapCd as number) ?? 0) - dt;
-    if (cd <= 0) {
-      d.leapPhase = "telegraph";
-      d.leapT = 0.9;
-      d.leapTarget = { x: p.pos.x, y: p.pos.y };
-      d.leapFrom = { x: r.pos.x, y: r.pos.y };
-    } else {
-      d.leapCd = cd;
+    if (d.leapUnlocked) {
+      const cd = ((d.leapCd as number) ?? 0) - dt;
+      if (cd <= 0) {
+        d.leapPhase = "telegraph";
+        d.leapT = 0.9;
+        d.leapTarget = { x: p.pos.x, y: p.pos.y };
+        d.leapFrom = { x: r.pos.x, y: r.pos.y };
+      } else {
+        d.leapCd = cd;
+      }
     }
   } else if (phase === "telegraph") {
-    // Track player briefly then commit.
     d.leapT = ((d.leapT as number) ?? 0) - dt;
     const tp = d.leapTarget as Vec2;
-    // Slight tracking bias while telegraphing (first half).
     if ((d.leapT as number) > 0.45) {
       tp.x = tp.x * 0.75 + p.pos.x * 0.25;
       tp.y = tp.y * 0.75 + p.pos.y * 0.25;
@@ -113,13 +124,12 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
       d.leapPhase = "land";
       d.leapT = 0.4;
       r.pos.x = to.x; r.pos.y = to.y;
-      // impact: damage player if in circle, screen shake.
       const R = d.landRadius as number;
       if (dist2(r.pos, p.pos) < R * R && !isInvuln(state)) {
-        p.hp -= d.landDmg as number;
+        p.hp -= (d.landDmg as number) * shieldDamageMul(state);
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
-      state.screenShake = Math.max(state.screenShake ?? 0, 14);
+      state.screenShake = Math.max(state.screenShake ?? 0, 16);
     }
   } else if (phase === "land") {
     d.leapT = ((d.leapT as number) ?? 0) - dt;
@@ -132,4 +142,9 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
 
 function isInvuln(state: GameState): boolean {
   return state.now < (state.invulnUntil ?? 0);
+}
+
+// Returns true when Ramses is currently untouchable by player attacks.
+export function ramsesImmune(e: Entity): boolean {
+  return !!(e.data && e.data.seated);
 }
