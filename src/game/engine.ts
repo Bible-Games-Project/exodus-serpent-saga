@@ -1,6 +1,10 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { NPC_ORDER, NPCS } from "./npcs";
+import { BONUSES, rollBonusDrop, type BonusKind } from "./bonuses";
+import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
+import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
+import { spawnRamses, tickRamses } from "./ramses";
 
 // ---------- utilities ----------
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -39,8 +43,6 @@ export function createInitialState(): GameState {
     xpToNext: 5,
     kills: 0,
     survivalSeconds: 0,
-    // Moses starts with the shepherd's staff (Exodus 4). The staff-into-
-    // serpent sign unlocks later as an upgrade choice.
     plagues: new Map([["staff" as PlagueId, 1]]),
     plagueCooldown: new Map([["staff" as PlagueId, 0.3]]),
     npcs: new Map(),
@@ -50,21 +52,20 @@ export function createInitialState(): GameState {
     input: { x: 0, y: 0 },
     worldW,
     worldH,
+    passives: {},
+    nextCompanionLevel: 5,
   };
   state.entities.set(player.id, player);
-  // Sprinkle some decor. Each decor kind has a collision radius that feeds
-  // the modular obstacle system (see resolveObstacles).
   const DECOR_RADIUS: Record<string, number> = { palm: 12, rock: 16, pyramid: 44 };
   const obstacles: Array<{ pos: Vec2; r: number }> = [];
   for (let i = 0; i < 60; i++) {
     const k = Math.random();
     const kind = k < 0.6 ? "palm" : k < 0.9 ? "rock" : "pyramid";
-    // Keep decor away from Moses' spawn so he isn't stuck.
     let px = 0, py = 0;
     for (let tries = 0; tries < 8; tries++) {
       px = rand(0, worldW);
       py = rand(0, worldH);
-      if (Math.hypot(px - player.pos.x, py - player.pos.y) > 120) break;
+      if (Math.hypot(px - player.pos.x, py - player.pos.y) > 220) break;
     }
     const r = DECOR_RADIUS[kind] ?? 0;
     const dec: Entity = {
@@ -81,13 +82,24 @@ export function createInitialState(): GameState {
     state.entities.set(dec.id, dec);
     if (r > 0) obstacles.push({ pos: dec.pos, r });
   }
+  // Throne decor + Ramses himself.
+  const throne: Entity = {
+    id: state.nextId++,
+    pos: { x: player.pos.x + 160, y: player.pos.y - 30 },
+    vel: { x: 0, y: 0 },
+    radius: 0,
+    hp: 1, maxHp: 1,
+    team: "decor", facing: 1, animT: 0, born: 0,
+    kind: "throne",
+    data: {},
+  };
+  state.entities.set(throne.id, throne);
   state.obstacles = obstacles;
+  spawnRamses(state);
   return state;
 }
 
 // ---------- modular obstacle collision ----------
-// Push `pos` out of every obstacle it overlaps. Reusable for players, allies,
-// enemies, and any future entity type.
 function resolveObstacles(pos: Vec2, radius: number, state: GameState) {
   const obs = state.obstacles;
   if (!obs) return;
@@ -106,7 +118,6 @@ function resolveObstacles(pos: Vec2, radius: number, state: GameState) {
   }
 }
 
-// Returns true if the point is inside the current camera viewport (with margin).
 function inViewport(state: GameState, pos: Vec2, margin = 40): boolean {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
@@ -117,7 +128,6 @@ function inViewport(state: GameState, pos: Vec2, margin = 40): boolean {
 }
 
 // ---------- pixel-art blood pool builder ----------
-// Generates an irregular, hand-plotted pixel blob so no two pools look alike.
 function makeBloodPoolCanvas(radius: number): HTMLCanvasElement {
   const size = Math.ceil(radius * 2) + 12;
   const c = document.createElement("canvas");
@@ -128,7 +138,6 @@ function makeBloodPoolCanvas(radius: number): HTMLCanvasElement {
   const cx = size / 2;
   const cy = size / 2;
   const pixel = 3;
-  // Build irregular shape from several overlapping offset "blobs".
   const blobs: Array<[number, number, number]> = [];
   const nBlobs = 8 + Math.floor(Math.random() * 5);
   for (let i = 0; i < nBlobs; i++) {
@@ -138,7 +147,6 @@ function makeBloodPoolCanvas(radius: number): HTMLCanvasElement {
     blobs.push([Math.cos(a) * r, Math.sin(a) * r, rr]);
   }
   const isInside = (px: number, py: number): number => {
-    // returns -1 outside, or the smallest signed distance from edge (0 = right on edge)
     let minEdge = Infinity;
     let inside = false;
     for (const [bx, by, br] of blobs) {
@@ -155,25 +163,17 @@ function makeBloodPoolCanvas(radius: number): HTMLCanvasElement {
       const edge = isInside(x, y);
       const shade = Math.random();
       if (edge >= 0) {
-        // inside the pool
         let color = "#8a1010";
-        if (edge < 3) {
-          color = shade < 0.55 ? "#4c0606" : "#a02222";
-        } else if (edge < 6) {
-          color = shade < 0.4 ? "#6a0c0c" : "#a02222";
-        } else if (shade < 0.14) {
-          color = "#c02828";
-        } else if (shade < 0.35) {
-          color = "#6a0c0c";
-        }
+        if (edge < 3) color = shade < 0.55 ? "#4c0606" : "#a02222";
+        else if (edge < 6) color = shade < 0.4 ? "#6a0c0c" : "#a02222";
+        else if (shade < 0.14) color = "#c02828";
+        else if (shade < 0.35) color = "#6a0c0c";
         g.fillStyle = color;
         g.fillRect(x, y, pixel, pixel);
       } else if (edge > -5 && Math.random() < 0.35) {
-        // splatter droplet near the edge
         g.fillStyle = shade < 0.5 ? "#4c0606" : "#8a1010";
         g.fillRect(x, y, pixel, pixel);
       } else if (edge > -10 && Math.random() < 0.06) {
-        // outlying speck
         g.fillStyle = "#4c0606";
         g.fillRect(x, y, pixel, pixel);
       }
@@ -188,9 +188,13 @@ export function update(state: GameState, dt: number) {
   state.now += dt;
   state.survivalSeconds = state.now;
 
-  // Player movement
+  // Screen effect decay
+  if (state.screenShake) state.screenShake = Math.max(0, state.screenShake - dt * 20);
+  if (state.screenFlash) state.screenFlash = Math.max(0, state.screenFlash - dt * 2);
+
+  // Player movement (speed passive + lightning bonus)
   const p = state.player;
-  const speed = 150;
+  const speed = 150 * speedMultiplier(state);
   const ix = state.input.x;
   const iy = state.input.y;
   const mag = Math.hypot(ix, iy) || 1;
@@ -206,12 +210,15 @@ export function update(state: GameState, dt: number) {
   state.camera.x += (p.pos.x - state.camera.x) * Math.min(1, dt * 5);
   state.camera.y += (p.pos.y - state.camera.y) * Math.min(1, dt * 5);
 
-  // Spawn enemies over time (difficulty ramps with survival minutes)
+  // Spawn enemies over time
   const minutes = state.now / 60;
-  const spawnRate = 0.9 + minutes * 0.6; // per second
+  const spawnRate = 0.9 + minutes * 0.6;
   spawnEnemies(state, dt, spawnRate);
 
-  // Keep the orbiting fly swarm in sync with the "flies" plague level.
+  // Ramses boss AI
+  tickRamses(state, dt, { resolveObstacles: (pos, r) => resolveObstacles(pos, r, state) });
+
+  // Orbiting flies
   syncOrbitFlies(state, dt);
 
   // Cast plagues
@@ -226,54 +233,42 @@ export function update(state: GameState, dt: number) {
     }
   }
 
+  const invuln = state.now < (state.invulnUntil ?? 0);
+  const enemySlow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
+
   // Move entities
   for (const e of state.entities.values()) {
     if (e === p) continue;
-    // orbit flies are fully driven by syncOrbitFlies each frame — don't
-    // let the shared animT bump fight the wing-flap timing.
     if (e.team === "orbit") continue;
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
-      // Chase player (or nearest ally if closer and blocking)
-      let targetPos = p.pos;
+      // Ramses handled separately.
+      if (e.kind === "ramses") {
+        // still take contact damage handled in tickRamses; skip here.
+        continue;
+      }
+      // pick nearest target (Moses or ally)
+      let targetPos: Vec2 = p.pos;
       let bestD = dist2(e.pos, p.pos);
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
         const d = dist2(e.pos, n.pos);
-        if (d < bestD * 0.7) {
-          bestD = d;
-          targetPos = n.pos;
-        }
+        if (d < bestD * 0.7) { bestD = d; targetPos = n.pos; }
       }
-      const dx = targetPos.x - e.pos.x;
-      const dy = targetPos.y - e.pos.y;
-      const d = Math.hypot(dx, dy) || 1;
-      const baseSpd = (e.data?.speed as number) ?? 60;
-      const slow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
-      const frozen = state.now < ((e.data?.freezeUntil as number) ?? 0);
-      const freezeMul = frozen ? 0.3 : 1;
-      const spd = baseSpd * slow * freezeMul;
-      e.pos.x += (dx / d) * spd * dt;
-      e.pos.y += (dy / d) * spd * dt;
-      resolveObstacles(e.pos, e.radius, state);
-      if (e.kind === "jackal") {
-        e.facing = dx > 0 ? -1 : 1;
-      } else {
-        e.facing = dx > 0 ? 1 : -1;
-      }
+      enemyTick(state, e, targetPos, dt, {
+        baseSlow: enemySlow,
+        resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
+        spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
+      });
 
-      // Damage player on contact
-      if (dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+      // Contact damage
+      if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt;
-        if (p.hp <= 0) {
-          state.gameOver = true;
-          state.running = false;
-        }
+        if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
-      // Damage allies on contact — companions take damage exactly like Moses.
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
@@ -288,12 +283,10 @@ export function update(state: GameState, dt: number) {
     } else if (e.team === "projectile") {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
-        // Fire from Heaven — explode on impact.
         if (e.kind === "fireball") {
           const R = (e.data?.radius as number) ?? 55;
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
-            // Ramses will opt out via en.data.immuneFire when added later.
             if (en.data?.immuneFire) continue;
             if (dist2(en.pos, e.pos) < R * R) {
               en.hp -= e.dmg ?? 0;
@@ -318,8 +311,6 @@ export function update(state: GameState, dt: number) {
         state.entities.delete(e.id);
         continue;
       }
-      // Serpents travel in a straight line (aim locked at spawn).
-      // Hopping motion for frogs
       if (e.kind === "frog") {
         const d = e.data!;
         const dur = (d.hopDur as number) ?? 0.7;
@@ -335,18 +326,22 @@ export function update(state: GameState, dt: number) {
         d.hopT = phase;
         const norm = phase / dur;
         const airborne = norm > 0.18 && norm < 0.85;
-        if (airborne) {
-          e.pos.x += e.vel.x * dt;
-          e.pos.y += e.vel.y * dt;
-        }
+        if (airborne) { e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt; }
       } else {
         e.pos.x += e.vel.x * dt;
         e.pos.y += e.vel.y * dt;
       }
 
-      // Collide with enemies (skip pure fall — hailstone/fireball damage
-      // is handled by the impact on ttl end so a single stone doesn't
-      // shred whole clumps in flight).
+      // Enemy-owned projectile hits player.
+      if (e.data?.enemyOwned) {
+        if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+          p.hp -= e.dmg ?? 5;
+          state.entities.delete(e.id);
+          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+        }
+        continue;
+      }
+
       if (e.kind === "hailstone" || e.kind === "fireball") continue;
       const hit = e.data?.hit as Set<number> | undefined;
       for (const en of state.entities.values()) {
@@ -360,14 +355,28 @@ export function update(state: GameState, dt: number) {
         }
       }
     } else if (e.team === "hazard") {
-      // Persistent AoE — blood pool, staff swing, gnat swarm, drifting clouds.
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) { state.entities.delete(e.id); continue; }
-      // hazards may drift (gnat swarm)
       e.pos.x += e.vel.x * dt;
       e.pos.y += e.vel.y * dt;
       const d = e.data!;
-      // Firstborn cloud — instant-kill roll per enemy, once each.
+
+      // Staff swing — the hitbox follows the animated staff tip in real time
+      // so the visual and collision always match, including enemies overhead.
+      if (e.kind === "staffswing") {
+        applyStaffSwingHits(state, e, dt);
+        continue;
+      }
+      // Red Sea walls — moving damage walls.
+      if (e.kind === "redseawall") {
+        applyRedSeaWallHits(state, e);
+        continue;
+      }
+      // Red Sea collision flash — instant central damage burst.
+      if (e.kind === "redseaburst") {
+        continue;
+      }
+      // Ramses landing shockwave hazard is purely visual (damage already applied).
       if (e.kind === "firstborncloud") {
         const r = (d.radius as number) ?? 95;
         const seen = (d.seen ??= new Set<number>()) as Set<number>;
@@ -377,7 +386,7 @@ export function update(state: GameState, dt: number) {
           if (seen.has(en.id)) continue;
           if (dist2(en.pos, e.pos) < r * r) {
             seen.add(en.id);
-            if (en.data?.immuneFirstborn) continue; // Ramses reserved
+            if (en.data?.immuneFirstborn) continue;
             if (Math.random() < chance) killEnemy(state, en);
           }
         }
@@ -390,11 +399,12 @@ export function update(state: GameState, dt: number) {
         if ((d.tickAcc as number) >= tick) {
           d.tickAcc = (d.tickAcc as number) - tick;
           const r = (d.radius as number) ?? 90;
-          const target = d.targetKind as string | undefined; // "animal" | "human" | undefined
+          const target = d.targetKind as string | undefined;
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
-            if (target === "animal" && en.kind !== "jackal") continue;
-            if (target === "human" && en.kind !== "soldier") continue;
+            const cat = (en.data?.category as string | undefined) ?? "human";
+            if (target === "animal" && cat !== "animal") continue;
+            if (target === "human" && cat !== "human") continue;
             if (dist2(en.pos, e.pos) < r * r) {
               en.hp -= dps * tick;
               if (en.hp <= 0) killEnemy(state, en);
@@ -403,22 +413,25 @@ export function update(state: GameState, dt: number) {
         }
       }
     } else if (e.team === "pickup") {
-      // XP magnet
-      const magnet = 60 + state.level * 3;
+      // XP gems + coins + bonuses
+      const magnetR = (60 + state.level * 3) * magnetMultiplier(state);
       const dx = p.pos.x - e.pos.x;
       const dy = p.pos.y - e.pos.y;
       const d = Math.hypot(dx, dy);
-      if (d < magnet) {
-        const s = 220;
+      if (d < magnetR) {
+        const s = 260;
         e.pos.x += (dx / d) * s * dt;
         e.pos.y += (dy / d) * s * dt;
       }
       if (d < 16) {
-        state.xp += (e.data?.xp as number) ?? 1;
-        state.entities.delete(e.id);
-        while (state.xp >= state.xpToNext) {
-          levelUp(state);
+        if (e.kind === "gem") {
+          state.xp += (e.data?.xp as number) ?? 1;
+          while (state.xp >= state.xpToNext) levelUp(state);
+        } else if (e.kind?.startsWith("bonus_")) {
+          const kind = (e.data?.bonusKind as BonusKind) ?? "heart";
+          BONUSES[kind].apply(state);
         }
+        state.entities.delete(e.id);
       }
     }
   }
@@ -429,65 +442,108 @@ export function update(state: GameState, dt: number) {
   }
 }
 
+// ---------- staff hitbox follows swing ----------
+function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
+  const d = sw.data!;
+  const facing = (d.facing as number) ?? 1;
+  const staffLen = (d.staffLen as number) ?? 60;
+  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
+  const progress = 1 - life;
+  const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
+  const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
+  const swingAng = startA + (endA - startA) * progress;
+  const cx = state.player.pos.x + facing * 5;
+  const cy = state.player.pos.y - 22;
+  const tipX = cx + Math.cos(swingAng) * staffLen;
+  const tipY = cy + Math.sin(swingAng) * staffLen;
+  const hit = (d.hit ??= new Set<number>()) as Set<number>;
+  const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
+  const dmg = stats.dmg * damageMultiplier(state);
+  const tolerance = 14; // segment thickness
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy") continue;
+    if (hit.has(en.id)) continue;
+    // Distance from enemy to the staff line segment (cx,cy)-(tipX,tipY)
+    const vx = tipX - cx, vy = tipY - cy;
+    const wx = en.pos.x - cx, wy = en.pos.y - cy;
+    const seglen2 = vx * vx + vy * vy;
+    let t = (wx * vx + wy * vy) / (seglen2 || 1);
+    t = Math.max(0, Math.min(1, t));
+    const px = cx + vx * t, py = cy + vy * t;
+    const dd = Math.hypot(en.pos.x - px, en.pos.y - py);
+    if (dd < en.radius + tolerance) {
+      en.hp -= dmg;
+      hit.add(en.id);
+      // knockback
+      const kx = en.pos.x - state.player.pos.x;
+      const ky = en.pos.y - state.player.pos.y;
+      const kd = Math.hypot(kx, ky) || 1;
+      en.pos.x += (kx / kd) * 10;
+      en.pos.y += (ky / kd) * 10;
+      if (en.hp <= 0) killEnemy(state, en);
+    }
+  }
+}
+
+// ---------- red sea walls ----------
+function applyRedSeaWallHits(state: GameState, wall: Entity) {
+  const d = wall.data!;
+  const hit = (d.hit ??= new Set<number>()) as Set<number>;
+  const dmg = (d.dmg as number) * damageMultiplier(state);
+  const wallW = 60;
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy") continue;
+    if (hit.has(en.id)) continue;
+    if (Math.abs(en.pos.x - wall.pos.x) < wallW && Math.abs(en.pos.y - wall.pos.y) < (d.height as number)) {
+      en.hp -= dmg;
+      hit.add(en.id);
+      if (en.hp <= 0) killEnemy(state, en);
+    }
+  }
+}
+
 function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
   const chance = ratePerSec * dt;
   if (Math.random() < chance) {
     const angle = Math.random() * Math.PI * 2;
     const r = 480 + Math.random() * 120;
     const p = state.player.pos;
-    const isJackal = Math.random() < Math.min(0.5, state.now / 180);
-    const e: Entity = {
-      id: state.nextId++,
-      pos: { x: p.x + Math.cos(angle) * r, y: p.y + Math.sin(angle) * r },
-      vel: { x: 0, y: 0 },
-      radius: isJackal ? 10 : 12,
-      hp: isJackal ? 14 : 26 + state.now * 0.4,
-      maxHp: isJackal ? 14 : 26 + state.now * 0.4,
-      team: "enemy",
-      facing: 1,
-      animT: Math.random() * 10,
-      born: state.now,
-      kind: isJackal ? "jackal" : "soldier",
-      data: {
-        speed: isJackal ? 95 : 55 + state.now * 0.05,
-        contactDmg: isJackal ? 12 : 10,
-        xp: isJackal ? 2 : 3,
-      },
-    };
+    const kind = pickEnemyKind(state);
+    const e = makeEnemy(state, kind, {
+      x: p.x + Math.cos(angle) * r,
+      y: p.y + Math.sin(angle) * r,
+    });
     state.entities.set(e.id, e);
   }
+}
+
+function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: string, speed: number, dmg: number, ttl: number) {
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: owner.pos.x, y: owner.pos.y },
+    vel: { x: dir.x * speed, y: dir.y * speed },
+    radius: 6,
+    hp: 1, maxHp: 1,
+    team: "projectile", facing: dir.x > 0 ? 1 : -1,
+    animT: 0, born: state.now,
+    ttl, dmg,
+    kind,
+    data: { enemyOwned: true, angle: Math.atan2(dir.y, dir.x) },
+  };
+  state.entities.set(e.id, e);
 }
 
 function castPlague(state: GameState, id: PlagueId, level: number) {
   const def = PLAGUES[id];
   const stats = def.scale(level);
+  const dmul = damageMultiplier(state);
   const p = state.player.pos;
 
   if (id === "staff") {
-    // Melee staff strike — sweeps in an arc in front of Moses.
+    // Damage handled per-frame in applyStaffSwingHits — spawn hazard only.
     const facing = state.player.facing;
     const range = (def.base.extra?.range ?? 70) + level * 4;
     const halfArc = (def.base.extra?.arc ?? 1.05);
-    const baseAng = facing === 1 ? 0 : Math.PI;
-    for (const en of state.entities.values()) {
-      if (en.team !== "enemy") continue;
-      const dx = en.pos.x - p.x;
-      const dy = en.pos.y - p.y;
-      const d = Math.hypot(dx, dy);
-      if (d > range + en.radius) continue;
-      const ang = Math.atan2(dy, dx);
-      let delta = ang - baseAng;
-      while (delta > Math.PI) delta -= Math.PI * 2;
-      while (delta < -Math.PI) delta += Math.PI * 2;
-      if (Math.abs(delta) <= halfArc) {
-        en.hp -= stats.dmg;
-        // knockback
-        en.pos.x += (dx / (d || 1)) * 10;
-        en.pos.y += (dy / (d || 1)) * 10;
-        if (en.hp <= 0) killEnemy(state, en);
-      }
-    }
-    // Visual swing entity (no damage on tick).
     const sw: Entity = {
       id: state.nextId++,
       pos: { x: p.x, y: p.y },
@@ -498,11 +554,10 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       animT: 0, born: state.now,
       ttl: 0.18,
       kind: "staffswing",
-      data: { range, halfArc, facing, dps: 0 },
+      data: { range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>() },
     };
     state.entities.set(sw.id, sw);
   } else if (id === "serpent") {
-    // Snap the serpent's aim to the closest enemy at spawn — no homing after.
     let nearest: Entity | null = null;
     let bestD = Infinity;
     for (const en of state.entities.values()) {
@@ -524,16 +579,13 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         hp: 1, maxHp: 1,
         team: "projectile", facing: Math.cos(ang) > 0 ? 1 : -1,
         animT: 0, born: state.now,
-        ttl: stats.ttl, dmg: stats.dmg,
+        ttl: stats.ttl, dmg: stats.dmg * dmul,
         kind: "serpent",
-        // angle is locked at spawn — the serpent keeps this facing for its
-        // whole flight, even if the target moves.
         data: { pierce: 1, hit: new Set<number>(), angle: ang },
       };
       state.entities.set(e.id, e);
     }
   } else if (id === "flies") {
-    // Handled entirely by syncOrbitFlies — nothing to spawn per cast.
     return;
   } else if (id === "frogs") {
     for (let i = 0; i < stats.count; i++) {
@@ -546,45 +598,31 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         hp: 1, maxHp: 1,
         team: "projectile", facing: Math.cos(ang) > 0 ? 1 : -1,
         animT: 0, born: state.now,
-        ttl: stats.ttl, dmg: stats.dmg,
+        ttl: stats.ttl, dmg: stats.dmg * dmul,
         kind: "frog",
         data: { pierce: 1, hit: new Set<number>(), hopT: 0, hopDur: 0.65 },
       };
       state.entities.set(e.id, e);
     }
   } else if (id === "gnats") {
-    // Drifting swarm cloud made of many tiny gnat particles.
     const count = Math.max(1, stats.count);
     for (let k = 0; k < count; k++) {
       const ang = Math.random() * Math.PI * 2;
       const radius = (def.base.extra?.radius ?? 55) + level * 4;
-      // Build an irregular, organic cloud shape from several offset sub-clusters
-      // rather than a uniform disc. Each sub-cluster is a lobe of the swarm.
       const lobes: Array<{ cx: number; cy: number; r: number }> = [];
       const nLobes = 4 + Math.floor(Math.random() * 4);
       for (let li = 0; li < nLobes; li++) {
         const la = Math.random() * Math.PI * 2;
         const lr = Math.random() * radius * 0.85;
-        lobes.push({
-          cx: Math.cos(la) * lr,
-          cy: Math.sin(la) * lr * 0.75,
-          r: radius * (0.28 + Math.random() * 0.4),
-        });
+        lobes.push({ cx: Math.cos(la) * lr, cy: Math.sin(la) * lr * 0.75, r: radius * (0.28 + Math.random() * 0.4) });
       }
       const particles: Array<{ ox: number; oy: number; phase: number; amp: number }> = [];
       const nP = 40 + Math.floor(Math.random() * 18);
       for (let i = 0; i < nP; i++) {
-        // pick a lobe and a point inside it — biases density unevenly
         const lobe = lobes[Math.floor(Math.random() * lobes.length)];
-        // sqrt for a natural falloff toward the lobe center
         const rr = Math.sqrt(Math.random()) * lobe.r;
         const aa = Math.random() * Math.PI * 2;
-        particles.push({
-          ox: lobe.cx + Math.cos(aa) * rr,
-          oy: lobe.cy + Math.sin(aa) * rr,
-          phase: Math.random() * Math.PI * 2,
-          amp: 2 + Math.random() * 4,
-        });
+        particles.push({ ox: lobe.cx + Math.cos(aa) * rr, oy: lobe.cy + Math.sin(aa) * rr, phase: Math.random() * Math.PI * 2, amp: 2 + Math.random() * 4 });
       }
       const e: Entity = {
         id: state.nextId++,
@@ -596,32 +634,22 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: Math.random() * 10, born: state.now,
         ttl: stats.ttl,
         kind: "gnatswarm",
-        data: { radius, dps: stats.dmg, tickAcc: 0, particles, lobes, maxTtl: stats.ttl },
+        data: { radius, dps: stats.dmg * dmul, tickAcc: 0, particles, lobes, maxTtl: stats.ttl },
       };
       state.entities.set(e.id, e);
     }
   } else if (id === "blood") {
-    // Persistent irregular pool of blood — spawned at a random location within
-    // the player's current viewport (not directly on Moses), and always fully
-    // inside both the screen and the playable world.
-    // ~50% smaller than the previous pool while keeping the pixel art style.
     const radius = Math.round(((def.base.extra?.radius ?? 65) + level * 4) * 0.5);
     const canvas = makeBloodPoolCanvas(radius);
     const vw = state.viewport?.w ?? 800;
     const vh = state.viewport?.h ?? 600;
     const margin = radius + 12;
-    // pick a random point inside the visible camera rect, keeping the whole
-    // pool on-screen so the left/right/top/bottom edges never clip it.
-    // Use the actual on-screen canvas footprint of the generated art (not
-    // just the logical radius) so the splatter droplets never poke past
-    // the viewport edge either.
     const artHalf = canvas.width / 2;
     const screenMargin = artHalf + 4;
     const halfW = Math.max(0, vw / 2 - screenMargin);
     const halfH = Math.max(0, vh / 2 - screenMargin);
     let px = state.camera.x + rand(-halfW, halfW);
     let py = state.camera.y + rand(-halfH, halfH);
-    // clamp to world bounds so it stays fully inside the playable area.
     px = clamp(px, margin, state.worldW - margin);
     py = clamp(py, margin, state.worldH - margin);
     const e: Entity = {
@@ -634,79 +662,107 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       animT: 0, born: state.now,
       ttl: stats.ttl,
       kind: "bloodpool",
-      data: { radius, dps: stats.dmg, tickAcc: 0, canvas, maxTtl: stats.ttl },
+      data: { radius, dps: stats.dmg * dmul, tickAcc: 0, canvas, maxTtl: stats.ttl },
     };
     state.entities.set(e.id, e);
   } else if (id === "livestock") {
-    spawnDriftingCloud(state, {
-      kind: "livestockcloud",
-      radius: (def.base.extra?.radius ?? 90),
-      dps: stats.dmg,
-      ttl: stats.ttl,
-      speed: stats.speed,
-      targetKind: "animal",
-    });
+    spawnDriftingCloud(state, { kind: "livestockcloud", radius: (def.base.extra?.radius ?? 90), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "animal" });
   } else if (id === "boils") {
-    spawnDriftingCloud(state, {
-      kind: "boilscloud",
-      radius: (def.base.extra?.radius ?? 85),
-      dps: stats.dmg,
-      ttl: stats.ttl,
-      speed: stats.speed,
-      targetKind: "human",
-    });
+    spawnDriftingCloud(state, { kind: "boilscloud", radius: (def.base.extra?.radius ?? 85), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "human" });
   } else if (id === "hail") {
-    // Burst of hailstones falling simultaneously across the visible field.
     const stones = Math.max(1, stats.count);
     const R = (def.base.extra?.radius ?? 70);
     const freeze = (def.base.extra?.freeze ?? 2.5);
-    for (let i = 0; i < stones; i++) {
-      spawnHailstone(state, stats, R, freeze);
-    }
+    for (let i = 0; i < stones; i++) spawnHailstone(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, R, freeze);
   } else if (id === "fire") {
-    spawnFireball(state, stats, def.base.extra?.radius ?? 90);
+    spawnFireball(state, { dmg: stats.dmg * dmul, speed: stats.speed }, def.base.extra?.radius ?? 90);
   } else if (id === "locusts") {
-    spawnLocustSwarm(state, stats, def.base.extra?.radius ?? 130);
+    spawnLocustSwarm(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, def.base.extra?.radius ?? 130);
   } else if (id === "firstborn") {
-    spawnDriftingCloud(state, {
-      kind: "firstborncloud",
-      radius: (def.base.extra?.radius ?? 95),
-      dps: 0,
-      ttl: stats.ttl,
-      speed: stats.speed,
-      chance: def.base.extra?.chance ?? 0.5,
-    });
+    spawnDriftingCloud(state, { kind: "firstborncloud", radius: (def.base.extra?.radius ?? 95), dps: 0, ttl: stats.ttl, speed: stats.speed, chance: def.base.extra?.chance ?? 0.5 });
   } else if (id === "darkness") {
     state.darknessStart = state.now;
     state.darknessUntil = state.now + stats.ttl;
     state.darknessDur = stats.ttl;
-  } else {
-    // Pillar / redsea / other fallback: instantaneous damage around Moses.
-    const radius = (def.base.extra?.radius ?? 100) + level * 4;
+  } else if (id === "redsea") {
+    castRedSea(state, stats, dmul);
+  } else if (id === "pillar") {
+    const radius = (def.base.extra?.radius ?? 70) + level * 4;
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
       if (dist2(en.pos, p) < radius * radius) {
-        en.hp -= stats.dmg;
+        en.hp -= stats.dmg * dmul;
         if (en.hp <= 0) killEnemy(state, en);
       }
     }
   }
 }
 
+// ---------- Red Sea miracle ----------
+function castRedSea(state: GameState, stats: { dmg: number; speed: number; ttl: number }, dmul: number) {
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  const cx = state.camera.x;
+  const cy = state.camera.y;
+  const height = vh + 200;
+  // left wall starts left of screen, moves right; right wall mirrors.
+  const travel = vw / 2 + 40;
+  const dur = travel / stats.speed;
+  const leftFrom = cx - vw / 2 - 40;
+  const rightFrom = cx + vw / 2 + 40;
+  const target = cx;
+  const mkWall = (fromX: number, sign: number) => {
+    const e: Entity = {
+      id: state.nextId++,
+      pos: { x: fromX, y: cy },
+      vel: { x: sign * stats.speed, y: 0 },
+      radius: 30,
+      hp: 1, maxHp: 1,
+      team: "hazard", facing: 1,
+      animT: 0, born: state.now,
+      ttl: dur,
+      kind: "redseawall",
+      data: { dmg: stats.dmg, height: height / 2, hit: new Set<number>(), maxTtl: dur, sign, targetX: target },
+    };
+    state.entities.set(e.id, e);
+  };
+  mkWall(leftFrom, +1);
+  mkWall(rightFrom, -1);
+  // Schedule central collision burst.
+  setTimeout(() => {
+    if (!state.running || state.paused) return;
+    const centerDmg = ((PLAGUES.redsea.base.extra?.centerDmg ?? 220)) * dmul;
+    const R = 180;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      if (dist2(en.pos, { x: cx, y: cy }) < R * R) {
+        en.hp -= centerDmg;
+        if (en.hp <= 0) killEnemy(state, en);
+      }
+    }
+    // AoE across screen for the collision damage baseline too.
+    const wideDmg = stats.dmg * dmul;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy") continue;
+      if (Math.abs(en.pos.y - cy) < height / 2) {
+        en.hp -= wideDmg * 0.5;
+        if (en.hp <= 0) killEnemy(state, en);
+      }
+    }
+    spawnVisualHazard(state, "redseaburst", { x: cx, y: cy }, 0.55, { radius: 220, maxTtl: 0.55 });
+    state.screenShake = Math.max(state.screenShake ?? 0, 22);
+    state.screenFlash = Math.max(state.screenFlash ?? 0, 0.55);
+  }, dur * 1000);
+}
+
 // ---------- shared: pixel-particle cloud ----------
-// Green/purple/black drifting clouds (livestock, boils, firstborn) all
-// share the gnat-swarm particle bag with an irregular shape.
 function buildCloudParticles(radius: number) {
   const lobes: Array<{ cx: number; cy: number; r: number }> = [];
   const nLobes = 4 + Math.floor(Math.random() * 4);
   for (let li = 0; li < nLobes; li++) {
     const la = Math.random() * Math.PI * 2;
     const lr = Math.random() * radius * 0.7;
-    lobes.push({
-      cx: Math.cos(la) * lr,
-      cy: Math.sin(la) * lr * 0.75,
-      r: radius * (0.32 + Math.random() * 0.45),
-    });
+    lobes.push({ cx: Math.cos(la) * lr, cy: Math.sin(la) * lr * 0.75, r: radius * (0.32 + Math.random() * 0.45) });
   }
   const particles: Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> = [];
   const nP = 60 + Math.floor(Math.random() * 30);
@@ -714,21 +770,12 @@ function buildCloudParticles(radius: number) {
     const lobe = lobes[Math.floor(Math.random() * lobes.length)];
     const rr = Math.sqrt(Math.random()) * lobe.r;
     const aa = Math.random() * Math.PI * 2;
-    particles.push({
-      ox: lobe.cx + Math.cos(aa) * rr,
-      oy: lobe.cy + Math.sin(aa) * rr,
-      phase: Math.random() * Math.PI * 2,
-      amp: 1.5 + Math.random() * 3.5,
-      size: Math.random() < 0.35 ? 3 : 2,
-    });
+    particles.push({ ox: lobe.cx + Math.cos(aa) * rr, oy: lobe.cy + Math.sin(aa) * rr, phase: Math.random() * Math.PI * 2, amp: 1.5 + Math.random() * 3.5, size: Math.random() < 0.35 ? 3 : 2 });
   }
   return particles;
 }
 
-function spawnDriftingCloud(
-  state: GameState,
-  opts: { kind: string; radius: number; dps: number; ttl: number; speed: number; targetKind?: string; chance?: number },
-) {
+function spawnDriftingCloud(state: GameState, opts: { kind: string; radius: number; dps: number; ttl: number; speed: number; targetKind?: string; chance?: number }) {
   const p = state.player.pos;
   const ang = Math.random() * Math.PI * 2;
   const spawnR = 220 + Math.random() * 60;
@@ -744,26 +791,12 @@ function spawnDriftingCloud(
     animT: Math.random() * 10, born: state.now,
     ttl: opts.ttl,
     kind: opts.kind,
-    data: {
-      radius: opts.radius,
-      dps: opts.dps,
-      tickAcc: 0,
-      particles,
-      maxTtl: opts.ttl,
-      targetKind: opts.targetKind,
-      chance: opts.chance,
-    },
+    data: { radius: opts.radius, dps: opts.dps, tickAcc: 0, particles, maxTtl: opts.ttl, targetKind: opts.targetKind, chance: opts.chance },
   };
   state.entities.set(e.id, e);
 }
 
-// ---------- Hail / Fire from Heaven ----------
-function spawnHailstone(
-  state: GameState,
-  stats: { dmg: number; speed: number; ttl: number },
-  impactRadius = 70,
-  freezeDur = 2.5,
-) {
+function spawnHailstone(state: GameState, stats: { dmg: number; speed: number; ttl: number }, impactRadius = 70, freezeDur = 2.5) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const tx = state.camera.x + rand(-vw / 2 + 40, vw / 2 - 40);
@@ -811,13 +844,7 @@ function spawnFireball(state: GameState, stats: { dmg: number; speed: number }, 
   state.entities.set(e.id, e);
 }
 
-function spawnVisualHazard(
-  state: GameState,
-  kind: string,
-  pos: Vec2,
-  ttl: number,
-  data: Record<string, unknown>,
-) {
+function spawnVisualHazard(state: GameState, kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>) {
   const e: Entity = {
     id: state.nextId++,
     pos: { x: pos.x, y: pos.y },
@@ -833,44 +860,26 @@ function spawnVisualHazard(
   state.entities.set(e.id, e);
 }
 
-// ---------- Locust swarm ----------
-// Enters from a random screen edge and flies across the visible area.
 function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, radius: number) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const cam = state.camera;
-  const edge = Math.floor(Math.random() * 4); // 0 top, 1 right, 2 bottom, 3 left
+  const edge = Math.floor(Math.random() * 4);
   let sx = 0, sy = 0, tx = 0, ty = 0;
   const off = radius + 40;
-  const jitter = 0.5; // vary the crossing line
-  if (edge === 0) {
-    sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y - vh / 2 - off;
-    tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y + vh / 2 + off;
-  } else if (edge === 1) {
-    sx = cam.x + vw / 2 + off; sy = cam.y + rand(-vh / 2, vh / 2);
-    tx = cam.x - vw / 2 - off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter;
-  } else if (edge === 2) {
-    sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y + vh / 2 + off;
-    tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y - vh / 2 - off;
-  } else {
-    sx = cam.x - vw / 2 - off; sy = cam.y + rand(-vh / 2, vh / 2);
-    tx = cam.x + vw / 2 + off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter;
-  }
+  const jitter = 0.5;
+  if (edge === 0) { sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y - vh / 2 - off; tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y + vh / 2 + off; }
+  else if (edge === 1) { sx = cam.x + vw / 2 + off; sy = cam.y + rand(-vh / 2, vh / 2); tx = cam.x - vw / 2 - off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter; }
+  else if (edge === 2) { sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y + vh / 2 + off; tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y - vh / 2 - off; }
+  else { sx = cam.x - vw / 2 - off; sy = cam.y + rand(-vh / 2, vh / 2); tx = cam.x + vw / 2 + off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter; }
   const dx = tx - sx, dy = ty - sy;
   const d = Math.hypot(dx, dy) || 1;
-  // Locust particles — many small bugs jittering.
   const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }> = [];
   const nP = 100 + Math.floor(Math.random() * 40);
   for (let i = 0; i < nP; i++) {
     const rr = Math.sqrt(Math.random()) * radius;
     const aa = Math.random() * Math.PI * 2;
-    particles.push({
-      ox: Math.cos(aa) * rr,
-      oy: Math.sin(aa) * rr * 0.7,
-      phase: Math.random() * Math.PI * 2,
-      amp: 2 + Math.random() * 4,
-      wing: Math.random() * Math.PI * 2,
-    });
+    particles.push({ ox: Math.cos(aa) * rr, oy: Math.sin(aa) * rr * 0.7, phase: Math.random() * Math.PI * 2, amp: 2 + Math.random() * 4, wing: Math.random() * Math.PI * 2 });
   }
   const e: Entity = {
     id: state.nextId++,
@@ -887,21 +896,11 @@ function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number;
   state.entities.set(e.id, e);
 }
 
-
-// ---------- orbiting fly swarm (Plague of Flies) ----------
-// Each rank of the "flies" plague adds one permanent orbiting fly. They
-// rotate evenly around Moses at a constant speed and damage enemies on
-// contact (with a per-enemy cooldown so a single fly doesn't melt targets).
+// ---------- orbiting flies ----------
 function syncOrbitFlies(state: GameState, dt: number) {
   const targetCount = state.plagues.get("flies") ?? 0;
   const ids = (state.orbitFlyIds ??= []);
-
-  // remove dead / missing entities from tracking
-  for (let i = ids.length - 1; i >= 0; i--) {
-    if (!state.entities.has(ids[i])) ids.splice(i, 1);
-  }
-
-  // grow to match the current rank
+  for (let i = ids.length - 1; i >= 0; i--) if (!state.entities.has(ids[i])) ids.splice(i, 1);
   while (ids.length < targetCount) {
     const e: Entity = {
       id: state.nextId++,
@@ -917,42 +916,30 @@ function syncOrbitFlies(state: GameState, dt: number) {
     state.entities.set(e.id, e);
     ids.push(e.id);
   }
-  // shrink if the count was reduced somehow
   while (ids.length > targetCount) {
     const id = ids.pop();
     if (id != null) state.entities.delete(id);
   }
-
   const count = ids.length;
   if (count === 0) return;
-
   const def = PLAGUES.flies;
-  const dmg = def.scale(targetCount).dmg;
-  const orbitSpeed = 2.4; // rad/s
+  const dmg = def.scale(targetCount).dmg * damageMultiplier(state);
+  const orbitSpeed = 2.4;
   const radius = 58;
   const t = state.now;
-
   for (let i = 0; i < count; i++) {
     const e = state.entities.get(ids[i]);
     if (!e) continue;
-    // evenly distributed around the orbit — angle derived purely from
-    // state.now so motion stays perfectly smooth, continuous, and constant.
     const a = t * orbitSpeed + (i / count) * Math.PI * 2;
     e.pos.x = state.player.pos.x + Math.cos(a) * radius;
     e.pos.y = state.player.pos.y + Math.sin(a) * radius;
     e.facing = Math.cos(a) > 0 ? 1 : -1;
-    // wing-flap keyed to global time (not accumulated) so it never drifts
     e.animT = t * 14;
-
-    // decrement per-enemy hit cooldowns
     const hitCd = e.data!.hitCd as Map<number, number>;
     for (const [k, v] of hitCd) {
       const nv = v - dt;
-      if (nv <= 0) hitCd.delete(k);
-      else hitCd.set(k, nv);
+      if (nv <= 0) hitCd.delete(k); else hitCd.set(k, nv);
     }
-
-    // damage-on-contact
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
       if (hitCd.has(en.id)) continue;
@@ -965,9 +952,9 @@ function syncOrbitFlies(state: GameState, dt: number) {
   }
 }
 
-
-
 function killEnemy(state: GameState, e: Entity) {
+  // Ramses cannot die from normal death — clamp.
+  if (e.kind === "ramses") { e.hp = 1; return; }
   state.entities.delete(e.id);
   state.kills++;
   const gem: Entity = {
@@ -982,11 +969,25 @@ function killEnemy(state: GameState, e: Entity) {
     data: { xp: (e.data?.xp as number) ?? 1 },
   };
   state.entities.set(gem.id, gem);
+  // Bonus drop.
+  const bonus = rollBonusDrop();
+  if (bonus) {
+    const b: Entity = {
+      id: state.nextId++,
+      pos: { x: e.pos.x + rand(-6, 6), y: e.pos.y + rand(-6, 6) },
+      vel: { x: 0, y: 0 },
+      radius: 10,
+      hp: 1, maxHp: 1,
+      team: "pickup", facing: 1,
+      animT: Math.random() * 10, born: state.now,
+      kind: `bonus_${bonus}`,
+      data: { bonusKind: bonus },
+    };
+    state.entities.set(b.id, b);
+  }
 }
 
 // ---------- companion definitions & AI ----------
-// Every companion has a unique combat behavior (weapon, range, cooldown,
-// projectile color/speed). Adding a new companion is data-only.
 type CompanionCombat = {
   attackRange: number;
   cooldown: number;
@@ -994,7 +995,7 @@ type CompanionCombat = {
   boltDmg: number;
   boltRadius: number;
   boltColor: string;
-  boltKind: string; // visual key rendered by GameCanvas
+  boltKind: string;
 };
 const COMPANION_COMBAT: Record<import("./types").NpcId, CompanionCombat> = {
   bithiah:  { attackRange: 200, cooldown: 1.4, boltSpeed: 260, boltDmg: 10, boltRadius: 5, boltColor: "#f0e8b4", boltKind: "reed" },
@@ -1009,7 +1010,6 @@ const COMPANION_COMBAT: Record<import("./types").NpcId, CompanionCombat> = {
 
 function updateCompanion(state: GameState, e: Entity, dt: number) {
   const d = e.data!;
-  // Downed — resting for 30s after HP hits 0.
   if (d.downedUntil) {
     if (state.now >= (d.downedUntil as number)) {
       d.downedUntil = undefined;
@@ -1018,13 +1018,11 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
       return;
     }
   }
-
   const p = state.player;
   const combat = COMPANION_COMBAT[e.kind as import("./types").NpcId] ?? COMPANION_COMBAT.elder;
   const inView = inViewport(state, e.pos);
 
   if (!inView) {
-    // Rush back into view — head toward Moses.
     const dx = p.pos.x - e.pos.x;
     const dy = p.pos.y - e.pos.y;
     const dd = Math.hypot(dx, dy) || 1;
@@ -1034,7 +1032,6 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     e.facing = dx > 0 ? 1 : -1;
     d.wanderT = 0;
   } else {
-    // Wander — pick a random point inside the visible camera every few sec.
     let wt = ((d.wanderT as number) ?? 0) - dt;
     let wx = (d.wanderX as number) ?? e.pos.x;
     let wy = (d.wanderY as number) ?? e.pos.y;
@@ -1058,7 +1055,6 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   }
   resolveObstacles(e.pos, e.radius, state);
 
-  // Attack: find nearest enemy inside range.
   const cd = ((d.atkCd as number) ?? 0) - dt;
   if (cd <= 0) {
     let nearest: Entity | null = null;
@@ -1084,17 +1080,13 @@ function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, co
   const dy = target.pos.y - ally.pos.y;
   const dd = Math.hypot(dx, dy) || 1;
   ally.facing = dx > 0 ? 1 : -1;
-  // Aaron — instant melee swing (no projectile).
+  const dmul = damageMultiplier(state);
   if (combat.boltSpeed === 0) {
     if (dd < combat.attackRange) {
-      target.hp -= combat.boltDmg;
+      target.hp -= combat.boltDmg * dmul;
       if (target.hp <= 0) killEnemy(state, target);
     }
-    // brief visual
-    spawnVisualHazard(state, "companionmelee", {
-      x: ally.pos.x + (dx / dd) * 20,
-      y: ally.pos.y + (dy / dd) * 20,
-    }, 0.18, { color: combat.boltColor });
+    spawnVisualHazard(state, "companionmelee", { x: ally.pos.x + (dx / dd) * 20, y: ally.pos.y + (dy / dd) * 20 }, 0.18, { color: combat.boltColor });
     return;
   }
   const e: Entity = {
@@ -1105,17 +1097,17 @@ function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, co
     hp: 1, maxHp: 1,
     team: "projectile", facing: ally.facing,
     animT: 0, born: state.now,
-    ttl: 1.4, dmg: combat.boltDmg,
+    ttl: 1.4, dmg: combat.boltDmg * dmul,
     kind: "bolt",
     data: { hit: new Set<number>(), boltKind: combat.boltKind, boltColor: combat.boltColor, angle: Math.atan2(dy, dx) },
   };
   state.entities.set(e.id, e);
 }
 
-function downCompanion(_state: GameState, n: Entity) {
+function downCompanion(state: GameState, n: Entity) {
   n.hp = 0;
   if (!n.data) n.data = {};
-  n.data.downedUntil = _state.now + 30;
+  n.data.downedUntil = state.now + 15;
 }
 
 // ---------- leveling ----------
@@ -1129,8 +1121,6 @@ function levelUp(state: GameState) {
 }
 
 function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
-  // Spawn within the visible viewport (never off-screen). Pick a random point
-  // inside the camera rect with a comfortable margin.
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const m = 80;
@@ -1157,6 +1147,7 @@ function offerUpgrades(state: GameState) {
   const choices: UpgradeChoice[] = [];
   const active = state.plagues;
 
+  // Plague level-ups.
   for (const [id, lvl] of active) {
     const def = PLAGUES[id];
     choices.push({
@@ -1168,6 +1159,7 @@ function offerUpgrades(state: GameState) {
     });
   }
 
+  // Plague unlock (only next in biblical order).
   for (const id of PLAGUE_ORDER) {
     if (active.has(id)) continue;
     const def = PLAGUES[id];
@@ -1188,32 +1180,49 @@ function offerUpgrades(state: GameState) {
     break;
   }
 
-  // Companion blessing — always offer the next companion in the fixed
-  // biblical order. After Elder of Israel, every additional pick grants
-  // another Elder (per Numbers 11:16-17 — the seventy elders).
-  const idx = state.nextNpcIndex;
-  const npcId: import("./types").NpcId = idx < NPC_ORDER.length ? NPC_ORDER[idx] : "elder";
-  const npc = NPCS[npcId];
-  const isFirst = !state.npcs.has(npcId);
-  choices.push({
-    id: `npc-${npcId}-${state.level}`,
-    npc: npcId,
-    isCompanion: true,
-    isUnlock: isFirst,
-    title: isFirst ? `Companion: ${npc.name}` : `${npc.name} joins again`,
-    description: npc.description,
-    scripture: npc.scripture,
-    apply: (s) => summonCompanion(s, npcId),
-  });
+  // Passive upgrades.
+  for (const pid of PASSIVE_ORDER) {
+    const def = PASSIVES[pid];
+    if (passiveRank(state, pid) >= def.maxRank) continue;
+    choices.push({
+      id: `passive-${pid}-${state.level}`,
+      title: def.title,
+      description: def.description,
+      apply: (s) => def.apply(s),
+    });
+  }
 
-  // Shuffle non-companion choices and cap to 2, then always append the companion so it stays visible.
-  const companion = choices.pop()!;
+  // Companion — only when nextCompanionLevel reached.
+  const gate = state.nextCompanionLevel ?? 5;
+  const companionEligible = state.level >= gate;
+  let companion: UpgradeChoice | null = null;
+  if (companionEligible) {
+    const idx = state.nextNpcIndex;
+    const npcId: import("./types").NpcId = idx < NPC_ORDER.length ? NPC_ORDER[idx] : "elder";
+    const npc = NPCS[npcId];
+    const isFirst = !state.npcs.has(npcId);
+    companion = {
+      id: `npc-${npcId}-${state.level}`,
+      npc: npcId,
+      isCompanion: true,
+      isUnlock: isFirst,
+      title: isFirst ? `Companion: ${npc.name}` : `${npc.name} joins again`,
+      description: npc.description,
+      scripture: npc.scripture,
+      apply: (s) => {
+        summonCompanion(s, npcId);
+        s.nextCompanionLevel = s.level + 5 + Math.floor(Math.random() * 3);
+      },
+    };
+  }
+
+  // Shuffle non-companion choices; cap to 3 (or 2+companion when eligible).
   for (let i = choices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [choices[i], choices[j]] = [choices[j], choices[i]];
   }
-  const picks = choices.slice(0, 2);
-  picks.push(companion);
+  const picks = choices.slice(0, companion ? 2 : 3);
+  if (companion) picks.push(companion);
   if (picks.length === 0) return;
   state.levelUpPending = picks;
 }
@@ -1230,3 +1239,6 @@ export function dismissNewPlague(state: GameState, id: PlagueId) {
 export function dismissNewNpc(state: GameState, id: import("./types").NpcId) {
   state.newNpcs.delete(id);
 }
+
+// Re-export for callers who might need enemy defs (unused today, keeps tree-shake happy).
+export { ENEMY_DEFS };

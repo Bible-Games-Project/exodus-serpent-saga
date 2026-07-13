@@ -203,14 +203,14 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   redsea: {
     id: "redsea",
     name: "Parting of the Red Sea",
-    description: "A tidal wave crashes across the map, wiping out everything in its path.",
+    description: "Walls of water rush in from both sides and collide at Moses, sweeping the field.",
     scripture:
       "Exodus 14:21-28 — Moses stretched out his hand over the sea; the waters returned and covered the chariots of Pharaoh.",
-    unlockLevel: 30,
-    base: { level: 1, cooldown: 45, dmg: 200, count: 1, speed: 320, ttl: 2.5 },
-    scale: scale({ level: 1, cooldown: 45, dmg: 200, count: 1, speed: 320, ttl: 2.5 }, {
-      dmg: 60,
-      cooldown: 2,
+    unlockLevel: 13,
+    base: { level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6, extra: { centerDmg: 220 } },
+    scale: scale({ level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6 }, {
+      dmg: 20,
+      cooldown: 0.8,
     }),
   },
 };
@@ -223,6 +223,7 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "gnats",
   "flies",
   "livestock",
+  "redsea",
   "boils",
   "hail",
   "fire",
@@ -230,5 +231,4 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "darkness",
   "firstborn",
   "pillar",
-  "redsea",
 ];
