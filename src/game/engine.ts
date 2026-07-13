@@ -4,7 +4,7 @@ import { NPC_ORDER, NPCS } from "./npcs";
 import { BONUSES, rollBonusKind, shieldDamageMul, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
-import { ramsesImmune, spawnRamses, tickRamses } from "./ramses";
+import { spawnRamses, tickRamses } from "./ramses";
 
 // ---------- utilities ----------
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
