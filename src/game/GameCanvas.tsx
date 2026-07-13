@@ -414,9 +414,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // Programmatic enemy renderers
     if (drawProceduralEnemy(ctx, e, camX, camY)) continue;
 
+    // Companions (allies) draw with per-npc procedural style + attack animation
+    if (e.team === "ally" && drawCompanion(ctx, e, camX, camY, s)) continue;
+
     // Fallback: sprite-based rendering
     drawSpriteEntity(ctx, e, camX, camY, s);
   }
+
 
   // 3) Darkness overlay
   const dEnd = s.darknessUntil ?? 0;
