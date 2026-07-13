@@ -1690,3 +1690,216 @@ function drawGnatSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
   }
   ctx.globalAlpha = 1;
 }
+
+// ---------------- Companions (per-NPC procedural renderer) ----------------
+// Each companion has a distinct silhouette, colours and weapon. When their
+// `attackT` counter is active, an extra weapon-swing pose is drawn overlaying
+// the base body so the player sees the actual attack motion.
+type CompanionStyle = {
+  robe: string; robeShade: string;
+  head: string;      // head cover colour
+  headTop: string;   // highlight
+  weapon: (ctx: CanvasRenderingContext2D, x: number, y: number, bob: number, flip: number, swing: number) => void;
+};
+
+const COMPANION_STYLES: Partial<Record<import("./types").NpcId, CompanionStyle>> = {
+  bithiah: {
+    robe: "#c9a05a", robeShade: "#8a5a20", head: "#3060c0", headTop: "#e6c261",
+    weapon: (ctx, x, y, bob, flip, swing) => {
+      // Reed staff — thin gold rod with lotus tip
+      const angle = -0.3 + swing * 1.6;
+      ctx.save();
+      ctx.translate(x + flip * 6, y - 14 + bob);
+      ctx.rotate(angle * flip);
+      ctx.fillStyle = "#c9a05a"; ctx.fillRect(0, -1, 22, 2);
+      ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(22, 0, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    },
+  },
+  aaron: {
+    robe: "#d06544", robeShade: "#8f3a26", head: "#f6efdc", headTop: "#e6c261",
+    weapon: (ctx, x, y, bob, flip, swing) => {
+      // Overhead staff swing (sacred rod)
+      const angle = -1.4 + swing * 2.2;
+      ctx.save();
+      ctx.translate(x + flip * 4, y - 18 + bob);
+      ctx.rotate(angle * flip);
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(-2, -1, 28, 3);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-2, 0, 28, 1);
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(24, -3, 4, 6);
+      ctx.restore();
+    },
+  },
+  miriam: {
+    robe: "#d97e8c", robeShade: "#8a4753", head: "#f4e2c1", headTop: "#c9a05a",
+    weapon: (ctx, x, y, bob, flip, _swing) => {
+      // Water bowl — held forward, sloshing during attack
+      const wobble = _swing > 0 ? Math.sin(_swing * 8) * 2 : 0;
+      const bx = x + flip * 9;
+      const by = y - 14 + bob;
+      ctx.fillStyle = "#7a4a2b"; ctx.fillRect(bx - 4, by, 8, 5);
+      ctx.fillStyle = "#3060c0"; ctx.fillRect(bx - 3, by + 1, 6, 3);
+      ctx.fillStyle = "#8ec8ff"; ctx.fillRect(bx - 3, by + 1 + wobble, 6, 1);
+      if (_swing > 0) {
+        ctx.fillStyle = "#8ec8ff";
+        for (let i = 0; i < 4; i++) {
+          ctx.fillRect(bx + flip * (4 + i * 3), by - 2 - i, 2, 2);
+        }
+      }
+    },
+  },
+  jethro: {
+    robe: "#8a6d9e", robeShade: "#4d3a5c", head: "#f6efdc", headTop: "#8a5a34",
+    weapon: (ctx, x, y, bob, flip, swing) => {
+      // Walking stick — curved, planted; slight raise on swing
+      const angle = 0.15 - swing * 0.6;
+      ctx.save();
+      ctx.translate(x + flip * 8, y - 14 + bob);
+      ctx.rotate(angle * flip);
+      ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -18, 8, -16); ctx.stroke();
+      ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, 12); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -18, 8, -16); ctx.stroke();
+      ctx.restore();
+    },
+  },
+  zipporah: {
+    robe: "#5a8a5c", robeShade: "#2d5a3d", head: "#a12b2b", headTop: "#e6c261",
+    weapon: (ctx, x, y, bob, flip, swing) => {
+      // Flint knife — quick chop
+      const angle = -0.8 + swing * 1.8;
+      ctx.save();
+      ctx.translate(x + flip * 6, y - 12 + bob);
+      ctx.rotate(angle * flip);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(0, -1, 4, 3);
+      ctx.fillStyle = "#dbe9f7"; ctx.fillRect(4, -2, 10, 4);
+      ctx.fillStyle = "#a0a0a0"; ctx.fillRect(4, -2, 10, 1);
+      ctx.restore();
+    },
+  },
+  joshua: {
+    robe: "#3060c0", robeShade: "#0f1b3d", head: "#b98550", headTop: "#e6c261",
+    weapon: (ctx, x, y, bob, flip, swing) => {
+      // Spear — held level, thrust forward during swing
+      const push = swing * 8;
+      ctx.save();
+      ctx.translate(x + flip * (6 + push), y - 14 + bob);
+      ctx.scale(flip, 1);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(0, -1, 22, 2);
+      ctx.fillStyle = "#4a2c18"; ctx.fillRect(0, 0, 22, 1);
+      ctx.fillStyle = "#dbe9f7";
+      ctx.beginPath();
+      ctx.moveTo(22, -1); ctx.lineTo(30, -3); ctx.lineTo(30, 3); ctx.lineTo(22, 2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#a0a0a0";
+      ctx.beginPath();
+      ctx.moveTo(22, -1); ctx.lineTo(30, -3); ctx.lineTo(30, 0); ctx.lineTo(22, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    },
+  },
+  hur: {
+    robe: "#a12b2b", robeShade: "#5a1a1a", head: "#2b4a7a", headTop: "#e6c261",
+    weapon: (ctx, x, y, bob, flip, swing) => {
+      // Sword — overhead slash
+      const angle = -1.3 + swing * 2.2;
+      ctx.save();
+      ctx.translate(x + flip * 6, y - 16 + bob);
+      ctx.rotate(angle * flip);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-1, 0, 3, 4); // hilt
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(-3, 4, 7, 2); // guard
+      ctx.fillStyle = "#dbe9f7"; ctx.fillRect(-1, 6, 3, 18); // blade
+      ctx.fillStyle = "#a0a0a0"; ctx.fillRect(-1, 6, 1, 18);
+      ctx.restore();
+    },
+  },
+  elder: {
+    robe: "#4d3a5c", robeShade: "#2b1d14", head: "#f6efdc", headTop: "#c9a05a",
+    weapon: (ctx, x, y, bob, flip, _swing) => {
+      // Prayer scroll held forward with glow on attack
+      const bx = x + flip * 8;
+      const by = y - 14 + bob;
+      ctx.fillStyle = "#f4e2c1"; ctx.fillRect(bx - 3, by, 8, 8);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(bx - 3, by, 8, 1);
+      ctx.fillStyle = "#2b1d14";
+      ctx.fillRect(bx - 1, by + 3, 4, 1); ctx.fillRect(bx - 1, by + 5, 4, 1);
+      if (_swing > 0) {
+        ctx.globalAlpha = _swing;
+        ctx.fillStyle = "#fff8b0"; ctx.beginPath(); ctx.arc(bx + 2, by + 4, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    },
+  },
+};
+
+function drawCompanion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState): boolean {
+  const style = COMPANION_STYLES[e.kind as import("./types").NpcId];
+  if (!style) return false;
+  const x = Math.round(e.pos.x - camX);
+  const y = Math.round(e.pos.y - camY);
+  const walking = Math.hypot(e.vel.x, e.vel.y) > 5 || Math.abs(Math.sin(e.animT)) > 0.4;
+  const bob = walking ? Math.round(Math.sin(e.animT * 1.2) * 1.4) : 0;
+  const flip = e.facing === -1 ? -1 : 1;
+  const downed = e.data?.downedUntil != null;
+  const attackT = (e.data?.attackT as number | undefined) ?? 0;
+  const attackTMax = (e.data?.attackTMax as number | undefined) ?? 0.28;
+  const swing = attackT > 0 ? 1 - attackT / attackTMax : 0; // 0..1 progress
+
+  // shadow
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.beginPath(); ctx.ellipse(x, y + 10, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+
+  if (downed) {
+    // Fallen — draw a small rotated body on the ground
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.translate(x, y + 4);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = style.robe; ctx.fillRect(-8, -6, 16, 12);
+    ctx.fillStyle = style.robeShade; ctx.fillRect(-8, 0, 16, 6);
+    ctx.fillStyle = style.head; ctx.fillRect(-4, -12, 8, 6);
+    ctx.restore();
+    ctx.fillStyle = "#f0e0a0"; ctx.font = "700 10px Nunito, sans-serif"; ctx.textAlign = "center";
+    const remain = Math.max(0, Math.ceil((e.data!.downedUntil as number) - s.now));
+    ctx.fillText(`${remain}s`, x, y - 4);
+    return true;
+  }
+
+  ctx.save();
+  // legs
+  ctx.fillStyle = style.robeShade;
+  ctx.fillRect(x - 4, y + bob, 3, 8); ctx.fillRect(x + 1, y + bob, 3, 8);
+  ctx.fillStyle = "#2b1d14";
+  ctx.fillRect(x - 4, y + 7 + bob, 3, 2); ctx.fillRect(x + 1, y + 7 + bob, 3, 2);
+  // robe/torso
+  ctx.fillStyle = style.robe; ctx.fillRect(x - 7, y - 14 + bob, 14, 18);
+  ctx.fillStyle = style.robeShade; ctx.fillRect(x - 7, y - 6 + bob, 14, 3);
+  ctx.fillRect(x - 7, y + 1 + bob, 14, 2);
+  // trim band
+  ctx.fillStyle = style.headTop; ctx.fillRect(x - 7, y - 14 + bob, 14, 2);
+  // face (kept generic; head cover distinguishes)
+  ctx.fillStyle = "#e6c39a"; ctx.fillRect(x - 5, y - 22 + bob, 10, 8);
+  ctx.fillStyle = "#2b1d14";
+  ctx.fillRect(x - 3, y - 18 + bob, 1, 1); ctx.fillRect(x + 2, y - 18 + bob, 1, 1);
+  // head cover (silhouette differentiator)
+  ctx.fillStyle = style.head; ctx.fillRect(x - 6, y - 26 + bob, 12, 6);
+  ctx.fillStyle = style.headTop; ctx.fillRect(x - 6, y - 26 + bob, 12, 2);
+  // side flaps for headdress feel
+  ctx.fillStyle = style.head; ctx.fillRect(x - 7, y - 22 + bob, 2, 4); ctx.fillRect(x + 5, y - 22 + bob, 2, 4);
+  ctx.restore();
+
+  // Weapon — drawn on top; passes swing progress for attack pose
+  style.weapon(ctx, x, y, bob, flip, swing);
+
+  // ally HP bar
+  const bw = 26;
+  const bx = x - bw / 2;
+  const by = y - 32;
+  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
+  ctx.fillStyle = "#1e5a1e"; ctx.fillRect(bx, by, bw, 3);
+  ctx.fillStyle = "#4ec24e"; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+
+  return true;
+}
+
