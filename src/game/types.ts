@@ -137,4 +137,20 @@ export type GameState = {
   // Modular obstacle collision system — static decor with collision radius.
   // Populated once at world init; movement code resolves against this list.
   obstacles?: Array<{ pos: Vec2; r: number }>;
+
+  // Player-progression modular systems.
+  passives?: { maxHp?: number; speed?: number; damage?: number; magnet?: number };
+  nextCompanionLevel?: number; // gate for offering a companion pick
+
+  // Bonus-drop timed effects (bonuses.ts).
+  magnetBoostUntil?: number;
+  invulnUntil?: number;
+  speedBoostUntil?: number;
+
+  // Screen effects (camera shake amplitude, flash 0-1).
+  screenShake?: number;
+  screenFlash?: number;
+
+  // Ramses world boss (ramses.ts).
+  ramsesId?: number;
 };
