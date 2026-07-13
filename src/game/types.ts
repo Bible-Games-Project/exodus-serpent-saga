@@ -146,6 +146,10 @@ export type GameState = {
   magnetBoostUntil?: number;
   invulnUntil?: number;
   speedBoostUntil?: number;
+  shieldUntil?: number;
+
+  // Random world-spawn bonus timer (bonuses.ts).
+  bonusSpawnCd?: number;
 
   // Screen effects (camera shake amplitude, flash 0-1).
   screenShake?: number;
