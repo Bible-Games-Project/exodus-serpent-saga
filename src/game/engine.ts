@@ -1123,6 +1123,13 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     if (Math.abs(dx) > 2) e.facing = dx > 0 ? 1 : -1;
   }
   resolveObstacles(e.pos, e.radius, state);
+  wrapPos(state, e.pos);
+
+  // attack animation timer (visualized by renderer)
+  if ((d.attackT as number | undefined) != null) {
+    d.attackT = Math.max(0, (d.attackT as number) - dt);
+    if ((d.attackT as number) <= 0) delete d.attackT;
+  }
 
   const cd = ((d.atkCd as number) ?? 0) - dt;
   if (cd <= 0) {
@@ -1130,11 +1137,13 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     let bestD = combat.attackRange * combat.attackRange;
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
-      const d2 = dist2(en.pos, e.pos);
+      const d2 = wrapDist2(state, en.pos, e.pos);
       if (d2 < bestD) { bestD = d2; nearest = en; }
     }
     if (nearest) {
       spawnCompanionAttack(state, e, nearest, combat);
+      d.attackT = 0.28; // trigger swing animation
+      d.attackTMax = 0.28;
       d.atkCd = combat.cooldown;
     } else {
       d.atkCd = 0.3;
@@ -1143,6 +1152,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     d.atkCd = cd;
   }
 }
+
 
 function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, combat: CompanionCombat) {
   const dx = target.pos.x - ally.pos.x;
