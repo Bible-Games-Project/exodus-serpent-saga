@@ -8,7 +8,8 @@ const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
 export function spawnRamses(state: GameState): void {
   const cx = state.player.pos.x + 180;
-  const cy = state.player.pos.y - 50;
+  const cy = state.player.pos.y - 40; // sits on the throne (throne y=-60), his feet in front
+
   const r: Entity = {
     id: state.nextId++,
     pos: { x: cx, y: cy },
