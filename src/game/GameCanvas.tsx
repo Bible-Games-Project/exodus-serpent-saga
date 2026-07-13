@@ -214,6 +214,8 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   push("magnet", state.magnetBoostUntil);
   push("star", state.invulnUntil);
   push("lightning", state.speedBoostUntil);
+  push("shield", state.shieldUntil);
+
   return (
     <>
       <div className="absolute inset-x-0 top-0 h-2 bg-black/20">
