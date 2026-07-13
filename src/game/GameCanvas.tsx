@@ -288,6 +288,45 @@ function LoadoutPill({ isNew, title, subtitle, tone, onClick }: {
   );
 }
 
+const PLAGUE_ICONS: Partial<Record<PlagueId, { emoji: string; bg: string }>> = {
+  staff:     { emoji: "🪄", bg: "linear-gradient(135deg,#8a5a34,#c9a05a)" },
+  serpent:   { emoji: "🐍", bg: "linear-gradient(135deg,#4d7a3e,#7fa96b)" },
+  blood:     { emoji: "🩸", bg: "linear-gradient(135deg,#5a1a1a,#a12b2b)" },
+  frogs:     { emoji: "🐸", bg: "linear-gradient(135deg,#2d5a3d,#5a8a5c)" },
+  gnats:     { emoji: "🦟", bg: "linear-gradient(135deg,#2b1d14,#7a5a2a)" },
+  flies:     { emoji: "🪰", bg: "linear-gradient(135deg,#2b1d14,#4a2c18)" },
+  livestock: { emoji: "🐂", bg: "linear-gradient(135deg,#2d5a3d,#4d7a3e)" },
+  boils:     { emoji: "🫧", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" },
+  hail:      { emoji: "❄️", bg: "linear-gradient(135deg,#2b4a7a,#8ec8ff)" },
+  fire:      { emoji: "🔥", bg: "linear-gradient(135deg,#5a1a1a,#e05a48)" },
+  locusts:   { emoji: "🦗", bg: "linear-gradient(135deg,#4a2c18,#c9a05a)" },
+  darkness:  { emoji: "🌑", bg: "linear-gradient(135deg,#0a0805,#2b1d14)" },
+  firstborn: { emoji: "💀", bg: "linear-gradient(135deg,#2b1d14,#a17048)" },
+  pillar:    { emoji: "🔆", bg: "linear-gradient(135deg,#c9700a,#e6c261)" },
+  redsea:    { emoji: "🌊", bg: "linear-gradient(135deg,#0f1b3d,#3060c0)" },
+};
+
+const NPC_ICON: Record<NpcId, string> = {
+  bithiah: "👸", aaron: "🧙", miriam: "🎶", jethro: "🧓",
+  zipporah: "🌿", joshua: "🗡", hur: "🛡", elder: "📜",
+};
+
+const PASSIVE_ICON: Record<string, { emoji: string; bg: string }> = {
+  maxHp:  { emoji: "❤️", bg: "linear-gradient(135deg,#a12b2b,#e05a48)" },
+  speed:  { emoji: "👟", bg: "linear-gradient(135deg,#2b4a7a,#8ec8ff)" },
+  damage: { emoji: "⚔️", bg: "linear-gradient(135deg,#5a1a1a,#c9700a)" },
+  magnet: { emoji: "🧲", bg: "linear-gradient(135deg,#4d3a5c,#c04040)" },
+};
+
+function iconFor(c: UpgradeChoice): { emoji: string; bg: string } {
+  if (c.npc) return { emoji: NPC_ICON[c.npc] ?? "✨", bg: "linear-gradient(135deg,#0f3460,#3b82f6)" };
+  if (c.plague) return PLAGUE_ICONS[c.plague] ?? { emoji: "✨", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" };
+  // passive — infer id from choice id "passive-<id>-..."
+  const m = /^passive-([a-zA-Z]+)-/.exec(c.id);
+  if (m && PASSIVE_ICON[m[1]]) return PASSIVE_ICON[m[1]];
+  return { emoji: "✨", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" };
+}
+
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
@@ -295,28 +334,36 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
         <h2 className="mb-1 text-center text-2xl">Level Up!</h2>
         <p className="mb-6 text-center text-sm text-muted-foreground">Choose your blessing</p>
         <div className="grid gap-4 sm:grid-cols-3">
-          {choices.map((c) => (
-            <button key={c.id} onClick={() => onPick(c)}
-              className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary">
-              {c.isUnlock && (
-                <span className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
-                  NEW
-                </span>
-              )}
-              <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
-              <div className="text-xs text-muted-foreground">{c.description}</div>
-              {c.scripture && (
-                <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] italic leading-snug text-foreground/80">
-                  {c.scripture}
+          {choices.map((c) => {
+            const icon = iconFor(c);
+            return (
+              <button key={c.id} onClick={() => onPick(c)}
+                className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary">
+                {c.isUnlock && (
+                  <span className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
+                    NEW
+                  </span>
+                )}
+                <div className="mb-3 flex h-20 items-center justify-center rounded-lg text-4xl shadow-inner" style={{ background: icon.bg }}>
+                  <span style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.4))" }}>{icon.emoji}</span>
                 </div>
-              )}
-            </button>
-          ))}
+                <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
+                <div className="text-xs text-muted-foreground">{c.description}</div>
+                {c.scripture && (
+                  <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] italic leading-snug text-foreground/80">
+                    {c.scripture}
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
+
+
 
 // ---------------- drawing ----------------
 function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameState, sandTile: HTMLCanvasElement) {
