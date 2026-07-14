@@ -1158,9 +1158,16 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
       if (d2 < bestD) { bestD = d2; nearest = en; }
     }
     if (nearest) {
-      spawnCompanionAttack(state, e, nearest, combat);
-      d.attackT = 0.28; // trigger swing animation
-      d.attackTMax = 0.28;
+      // Windup pose plays first; the projectile / hit resolves after windup.
+      const windup = 0.18;
+      const swing = 0.22;
+      d.attackT = windup + swing;
+      d.attackTMax = windup + swing;
+      d.attackWindup = windup;
+      d.attackSwing = swing;
+      d.attackTarget = { x: nearest.pos.x, y: nearest.pos.y };
+      d.attackNearestId = nearest.id;
+      d.attackResolved = false;
       d.atkCd = combat.cooldown;
     } else {
       d.atkCd = 0.3;
@@ -1168,8 +1175,23 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   } else {
     d.atkCd = cd;
   }
-}
 
+  // Resolve the attack the moment the swing peaks (mid-arc), so animation and
+  // damage/projectile spawning are synchronised.
+  if ((d.attackT as number | undefined) != null && !d.attackResolved) {
+    const total = (d.attackTMax as number) ?? 0.4;
+    const windup = (d.attackWindup as number) ?? 0.18;
+    if ((d.attackT as number) <= total - windup) {
+      const tid = d.attackNearestId as number | undefined;
+      const tgt = tid != null ? state.entities.get(tid) : undefined;
+      const fallback = tgt && tgt.hp > 0
+        ? tgt
+        : ({ pos: (d.attackTarget as { x: number; y: number }) ?? e.pos, hp: 1 } as unknown as Entity);
+      spawnCompanionAttack(state, e, fallback, combat);
+      d.attackResolved = true;
+    }
+  }
+}
 
 function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, combat: CompanionCombat) {
   const dx = target.pos.x - ally.pos.x;
