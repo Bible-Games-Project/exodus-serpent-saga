@@ -1253,7 +1253,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
-    data: { atkCd: 0.5, wanderT: 0 },
+    data: { atkCd: 1.2, wanderT: 0, summonUntil: state.now + 1.0 },
   };
   state.entities.set(ally.id, ally);
   state.npcs.set(npcId, ally.id);
