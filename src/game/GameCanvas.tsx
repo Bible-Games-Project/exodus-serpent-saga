@@ -1994,9 +1994,10 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   const kind = (e.data?.bonusKind as BonusKind) ?? "heart";
   void BONUSES[kind]; // ensures import is used
   const x = Math.round(e.pos.x - camX);
-  const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 3 + e.id) * 3);
-  // 3× larger pixel art, no glowing halo.
-  const px = 3;
+  const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 2.5 + e.id) * 4);
+  // ~3× larger pixel art (px 3 → 9). No circular halo/glow — just a tiny
+  // ground shadow so the item still reads as being "on the ground".
+  const px = 9;
   const draw = (grid: string[], palette: Record<string, string>, ox: number, oy: number) => {
     for (let ry = 0; ry < grid.length; ry++) {
       for (let rx = 0; rx < grid[ry].length; rx++) {
@@ -2008,9 +2009,9 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
     }
   };
   ctx.save();
-  // soft ground shadow (subtle, not a glow)
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.beginPath(); ctx.ellipse(x, y + 12, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // Faint elliptical ground shadow beneath the item (not a glow).
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.beginPath(); ctx.ellipse(x, y + 34, 22, 5, 0, 0, Math.PI * 2); ctx.fill();
   if (kind === "heart") {
     const H = [
       ".RR.RR.",
