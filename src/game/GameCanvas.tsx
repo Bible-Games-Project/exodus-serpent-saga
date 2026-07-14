@@ -1176,132 +1176,157 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const seated = !!d.seated;
   const flip = e.facing === -1 ? -1 : 1;
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
+  const walk = Math.sin(e.animT * 0.9) > 0 ? 1 : 0;
 
-  // shadow (bigger — Ramses is roughly twice a human)
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(x, y + 16, 28, 6, 0, 0, Math.PI * 2); ctx.fill();
+  // Shadow — big; Ramses is roughly 2x a normal human.
+  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.beginPath(); ctx.ellipse(x, y + 10, 34, 7, 0, 0, Math.PI * 2); ctx.fill();
 
   let bob = 0;
   if (phase === "airborne") {
     const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.75));
-    bob = -Math.sin(t * Math.PI) * 110;
+    bob = -Math.sin(t * Math.PI) * 130;
   } else if (phase === "telegraph") {
-    bob = -6 - Math.sin(s.now * 20) * 4;
+    bob = -8 - Math.sin(s.now * 20) * 4;
   } else if (seated) {
-    // seated on throne — very small breathing motion.
-    bob = idleBob * 0.4;
+    bob = idleBob * 0.35;
   } else {
     bob = idleBob;
   }
 
-  // ---- body (roughly 2x human height: ~70 tall) ----
-  ctx.save();
-  // Legs / kilt — white with gold trim
-  ctx.fillStyle = "#f6efdc"; ctx.fillRect(x - 12, y - 14 + bob, 24, 20);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 12, y - 14 + bob, 24, 3);
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 12, y + 3 + bob, 24, 3);
-  // gold vertical stripe center of kilt
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 12 + bob, 4, 16);
-  // Legs proper (below kilt)
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 9, y + 6 + bob, 6, 10); ctx.fillRect(x + 3, y + 6 + bob, 6, 10);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 10, y + 14 + bob, 8, 2); ctx.fillRect(x + 2, y + 14 + bob, 8, 2); // anklets
-  // Torso — bare copper skin with gold usekh collar
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 12, y - 32 + bob, 24, 18);
-  ctx.fillStyle = "#8a5a34"; ctx.fillRect(x - 12, y - 16 + bob, 24, 2);
-  // Usekh collar (broad gold necklace)
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 12, y - 32 + bob, 24, 5);
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 12, y - 30 + bob, 24, 2);
-  ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 12, y - 28 + bob, 24, 1);
+  // Draws on the same 3-screen-pixel grid used for humanoids, at 2× Moses scale.
+  const RPX = 3;
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    const rx = flip === 1 ? x + dx * RPX : x - (dx + w) * RPX;
+    const ry = y + (dy + bob / RPX) * RPX;
+    ctx.fillRect(rx, ry, w * RPX, h * RPX);
+  };
+
+  // -------- Legs / kilt (white shendyt with gold trim) --------
+  if (!seated) {
+    // walking legs
+    if (walk) { p(-4, -1, 3, 5, "#c99a6c"); p(1, -1, 3, 5, "#c99a6c"); }
+    else { p(-5, -1, 3, 5, "#c99a6c"); p(2, -1, 3, 5, "#c99a6c"); }
+    // gold anklets
+    p(-5, 3, 4, 1, "#e6c261"); p(1, 3, 4, 1, "#e6c261");
+  } else {
+    // seated legs (sit forward across throne)
+    p(-6, -1, 12, 3, "#c99a6c");
+    p(-6, -1, 12, 1, "#8a5a34");
+  }
+  // Shendyt kilt
+  p(-7, -8, 14, 6, "#f6efdc");
+  p(-7, -8, 14, 1, "#e6c261");
+  p(-7, -3, 14, 1, "#c9a05a");
+  // central gold panel
+  p(-1, -8, 2, 6, "#e6c261");
+  p(0, -8, 1, 6, "#c9700a");
+
+  // -------- Torso (bare copper w/ usekh collar) --------
+  p(-7, -18, 14, 10, "#c99a6c");
+  p(-7, -10, 14, 1, "#8a5a34");
+  // usekh (broad gold necklace)
+  p(-7, -18, 14, 2, "#e6c261");
+  p(-7, -17, 14, 1, "#3060c0");
+  p(-7, -16, 14, 1, "#a12b2b");
   // pectoral scarab
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 3, y - 25 + bob, 6, 4);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 24 + bob, 4, 2);
+  p(-2, -14, 4, 3, "#3060c0");
+  p(-2, -14, 4, 1, "#e6c261");
+  p(-1, -13, 2, 1, "#e6c261");
+  // arms
+  p(-8, -17, 1, 6, "#c99a6c"); p(7, -17, 1, 6, "#c99a6c");
+  p(-8, -11, 1, 3, "#8a5a34"); p(7, -11, 1, 3, "#8a5a34"); // arm shading
 
-  // Neck
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 5, y - 36 + bob, 10, 4);
+  // -------- Neck + head --------
+  p(-3, -20, 6, 2, "#c99a6c");
+  p(-6, -28, 12, 8, "#c99a6c");
+  // kohl eyes
+  p(-5, -25, 4, 1, "#2b1d14"); p(1, -25, 4, 1, "#2b1d14");
+  p(-4, -24, 1, 1, "#f6efdc"); p(2, -24, 1, 1, "#f6efdc");
+  p(-3, -24, 1, 1, "#2b1d14"); p(3, -24, 1, 1, "#2b1d14");
+  // brow / kohl tail
+  p(-6, -26, 6, 1, "#2b1d14"); p(0, -26, 6, 1, "#2b1d14");
+  // pharaoh beard (postiche)
+  p(-1, -20, 2, 4, "#4a2c18");
+  p(-1, -17, 2, 1, "#e6c261");
 
-  // ---- Head — 16x14 face ----
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 8, y - 50 + bob, 16, 14);
-  // eye makeup (Egyptian kohl)
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 6, y - 44 + bob, 5, 2); ctx.fillRect(x + 1, y - 44 + bob, 5, 2);
-  ctx.fillStyle = "#f6efdc"; ctx.fillRect(x - 5, y - 43 + bob, 3, 1); ctx.fillRect(x + 2, y - 43 + bob, 3, 1);
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 4, y - 43 + bob, 1, 1); ctx.fillRect(x + 3, y - 43 + bob, 1, 1);
-  // pharaoh's beard
-  ctx.fillStyle = "#4a2c18"; ctx.fillRect(x - 2, y - 36 + bob, 4, 6);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 30 + bob, 4, 1);
-
-  // ---- Nemes headdress (blue + gold striped) — flares outward at shoulders ----
-  // Top crown of the nemes
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 10, y - 58 + bob, 20, 10);
-  for (let i = 0; i < 5; i++) {
-    ctx.fillStyle = i % 2 === 0 ? "#e6c261" : "#3060c0";
-    ctx.fillRect(x - 10 + i * 4, y - 58 + bob, 4, 10);
+  // -------- Nemes headdress (blue+gold striped) --------
+  // top crown
+  for (let i = 0; i < 8; i++) {
+    p(-8 + i * 2, -34, 2, 6, i % 2 === 0 ? "#3060c0" : "#e6c261");
   }
-  // Nemes side flaps
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 13, y - 48 + bob, 3, 12); ctx.fillRect(x + 10, y - 48 + bob, 3, 12);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 13, y - 48 + bob, 3, 2); ctx.fillRect(x + 10, y - 48 + bob, 3, 2);
-  ctx.fillRect(x - 13, y - 42 + bob, 3, 2); ctx.fillRect(x + 10, y - 42 + bob, 3, 2);
-  // Front brow band
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 10, y - 50 + bob, 20, 3);
-  // Uraeus (cobra) — rearing over brow
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 63 + bob, 4, 5);
-  ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 1, y - 62 + bob, 2, 2);
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 2, y - 58 + bob, 4, 1);
+  // front brow band
+  p(-8, -29, 16, 2, "#e6c261");
+  p(-8, -29, 16, 1, "#c9700a");
+  // side flaps flaring outward
+  p(-10, -28, 2, 8, "#3060c0");
+  p(8, -28, 2, 8, "#3060c0");
+  p(-10, -28, 2, 1, "#e6c261"); p(8, -28, 2, 1, "#e6c261");
+  p(-10, -24, 2, 1, "#e6c261"); p(8, -24, 2, 1, "#e6c261");
+  p(-10, -20, 2, 1, "#e6c261"); p(8, -20, 2, 1, "#e6c261");
+  // Uraeus cobra rearing over brow
+  p(-1, -37, 2, 3, "#e6c261");
+  p(-1, -36, 2, 1, "#a12b2b");
+  p(-2, -33, 4, 1, "#e6c261");
+  p(-1, -32, 2, 1, "#2b1d14");
 
-  // ---- Royal staff (was'-scepter with forked base) — held in front unless airborne ----
+  // -------- Was-scepter (held in front unless airborne) --------
   if (phase !== "airborne") {
-    const staffX = x + flip * 14;
-    const topY = y - 62 + bob;
-    const botY = y + 14 + bob;
-    // shaft
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(staffX - 1, topY, 3, botY - topY);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(staffX, topY + 2, 1, botY - topY - 4);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(staffX, topY + 4, 1, 6);
-    // was-scepter head (stylized animal head)
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(staffX - 3, topY - 4, 8, 6);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(staffX - 3, topY - 4, 8, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(staffX + 3, topY - 2, 1, 1); // eye
+    ctx.save();
+    const staffX = x + flip * 10 * RPX;
+    const staffTopY = y + (-36 + bob / RPX) * RPX;
+    const staffBotY = y + (6 + bob / RPX) * RPX;
+    // shaft — layered wood
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 6; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    // was-scepter head (stylized set-animal)
+    ctx.fillStyle = "#e6c261";
+    ctx.fillRect(staffX - flip * 2, staffTopY - 10, flip * 10, 7);
+    ctx.fillStyle = "#3060c0";
+    ctx.fillRect(staffX - flip * 2, staffTopY - 10, flip * 10, 2);
+    ctx.fillStyle = "#2b1d14";
+    ctx.fillRect(staffX + flip * 6, staffTopY - 7, 2, 2); // eye
     // forked base
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(staffX - 3, botY - 2, 3, 3); ctx.fillRect(staffX + 1, botY - 2, 3, 3);
+    ctx.fillStyle = "#2b1d14";
+    ctx.fillRect(staffX - 5, staffBotY - 2, 4, 5);
+    ctx.fillRect(staffX + 1, staffBotY - 2, 4, 5);
+    ctx.restore();
   }
-  ctx.restore();
 
-  // Land shockwave
+  // Land shockwave (unchanged)
   if (phase === "land") {
     const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.4));
     const R = (d.landRadius as number) * (0.4 + t * 1.1);
     ctx.save();
     ctx.globalAlpha = 1 - t;
-    ctx.strokeStyle = "#f5d488"; ctx.lineWidth = 4;
+    ctx.strokeStyle = "#f5d488"; ctx.lineWidth = 5;
     ctx.beginPath(); ctx.arc(x, y + 6, R, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 2;
+    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(x, y + 6, R * 0.75, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 24; i++) {
-      const a = (i / 24) * Math.PI * 2;
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * Math.PI * 2;
       const rr = R * (0.7 + Math.random() * 0.3);
       const dx = Math.round(x + Math.cos(a) * rr);
       const dy = Math.round(y + 6 + Math.sin(a) * rr * 0.5);
       ctx.fillStyle = i % 2 ? "#c9a06a" : "#e6c261";
-      ctx.fillRect(dx - 1, dy - 1, 3, 3);
-    }
-    ctx.strokeStyle = "#3a1810"; ctx.lineWidth = 2;
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2 + 0.4;
-      ctx.beginPath(); ctx.moveTo(x, y + 6);
-      const lx = x + Math.cos(a) * R * 0.85;
-      const ly = y + 6 + Math.sin(a) * R * 0.85;
-      ctx.lineTo(lx, ly); ctx.stroke();
+      ctx.fillRect(dx - 2, dy - 2, 4, 4);
     }
     ctx.restore();
   }
 
-  // HP bar (visible when active only)
+  // HP bar visible when active
   if (d.active) {
-    const bw = 72;
-    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(x - bw / 2 - 1, y - 74 + bob - 1, bw + 2, 6);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 74 + bob, bw, 4);
-    ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 74 + bob, bw * Math.max(0, e.hp / e.maxHp), 4);
-    ctx.fillStyle = "#ffdd80"; ctx.font = "700 11px Nunito, sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("RAMSES", x, y - 78 + bob);
+    const bw = 80;
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 46 * RPX - 1, bw + 2, 6);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw, 4);
+    ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw * Math.max(0, e.hp / e.maxHp), 4);
+    ctx.fillStyle = "#ffdd80"; ctx.font = "700 12px Nunito, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("RAMSES", x, y - 46 * RPX - 5);
   }
 }
 
@@ -1309,72 +1334,87 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
+  const TPX = 3;
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + dx * TPX, y + dy * TPX, w * TPX, h * TPX);
+  };
   ctx.save();
-  // large shadow
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.beginPath(); ctx.ellipse(x, y + 28, 34, 7, 0, 0, Math.PI * 2); ctx.fill();
+  // Big soft shadow
+  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.beginPath(); ctx.ellipse(x, y + 12 * TPX, 44, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-  // ---- base plinth (stepped) ----
-  ctx.fillStyle = "#a17048"; ctx.fillRect(x - 30, y + 22, 60, 8);
-  ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x - 30, y + 28, 60, 3);
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 30, y + 22, 60, 2);
-
-  // ---- seat block ----
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 26, y + 4, 52, 20);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 26, y + 4, 52, 3);
-  ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 26, y + 20, 52, 3);
-  // side hieroglyph panels (blue + red)
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 24, y + 8, 48, 3);
-  ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 24, y + 15, 48, 2);
-  // hieroglyph symbols on front panel
-  ctx.fillStyle = "#2b1d14";
-  for (let i = 0; i < 4; i++) {
-    const gx = x - 18 + i * 12;
-    ctx.fillRect(gx, y + 12, 2, 3);
-    ctx.fillRect(gx - 1, y + 15, 4, 1);
+  // -------- Stepped stone plinth --------
+  p(-13, 8, 26, 3, "#a17048");
+  p(-13, 8, 26, 1, "#c9a05a");
+  p(-13, 10, 26, 1, "#7a4a2b");
+  // hieroglyph frieze on plinth
+  for (let i = 0; i < 6; i++) {
+    p(-11 + i * 4, 9, 1, 1, "#2b1d14");
+    p(-10 + i * 4, 9, 1, 1, "#2b1d14");
   }
 
-  // ---- backrest — tall, rounded top ----
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 24, y - 52, 48, 56);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 24, y - 52, 48, 3);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 24, y - 46, 48, 2);
-  // rounded corners hint
-  ctx.fillStyle = "#a17048"; ctx.fillRect(x - 24, y - 52, 3, 3); ctx.fillRect(x + 21, y - 52, 3, 3);
-  // Sun disk with rays at top center
-  ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(x, y - 40, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(x, y - 40, 5, 0, Math.PI * 2); ctx.fill();
+  // -------- Backrest (tall gold panel) --------
+  p(-9, -20, 18, 22, "#c9a05a");
+  p(-9, -20, 18, 1, "#e6c261");
+  p(-9, -18, 18, 1, "#e6c261");
+  p(-9, 1, 18, 1, "#8a5a20");
+  // blue-and-gold vertical striping on the backrest
+  for (let i = 0; i < 3; i++) {
+    p(-9 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
+    p(7 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
+  }
+  // Central winged sun-disk emblem
+  ctx.fillStyle = "#e6c261";
+  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#c9700a";
+  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 5, 0, Math.PI * 2); ctx.fill();
+  // wings
+  ctx.fillStyle = "#3060c0";
+  ctx.fillRect(x - 22, y - 15 * TPX - 2, 14, 3);
+  ctx.fillRect(x + 8, y - 15 * TPX - 2, 14, 3);
+  ctx.fillStyle = "#e6c261";
+  ctx.fillRect(x - 22, y - 15 * TPX + 1, 14, 1);
+  ctx.fillRect(x + 8, y - 15 * TPX + 1, 14, 1);
+  // rays
   ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 1;
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
     ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * 9, y - 40 + Math.sin(a) * 9);
-    ctx.lineTo(x + Math.cos(a) * 13, y - 40 + Math.sin(a) * 13);
+    ctx.moveTo(x + Math.cos(a) * 9, y - 15 * TPX + Math.sin(a) * 9);
+    ctx.lineTo(x + Math.cos(a) * 13, y - 15 * TPX + Math.sin(a) * 13);
     ctx.stroke();
   }
-  // Vertical blue+gold striping on backrest sides
-  for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = i % 2 === 0 ? "#3060c0" : "#e6c261";
-    ctx.fillRect(x - 24 + i * 2, y - 30, 2, 30);
-    ctx.fillRect(x + 16 + i * 2, y - 30, 2, 30);
-  }
 
-  // ---- armrests: cobra-headed ----
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 30, y - 6, 6, 24); ctx.fillRect(x + 24, y - 6, 6, 24);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 30, y - 6, 6, 3); ctx.fillRect(x + 24, y - 6, 6, 3);
-  // cobra heads on top of armrests
+  // -------- Seat block --------
+  p(-11, 2, 22, 6, "#c9a05a");
+  p(-11, 2, 22, 1, "#e6c261");
+  p(-11, 7, 22, 1, "#8a5a20");
+  // side hieroglyph panels
+  p(-10, 4, 20, 1, "#3060c0");
+  p(-10, 6, 20, 1, "#a12b2b");
+
+  // -------- Armrests with cobra heads --------
+  p(-13, -2, 2, 10, "#c9a05a");
+  p(11, -2, 2, 10, "#c9a05a");
+  p(-13, -2, 2, 1, "#e6c261"); p(11, -2, 2, 1, "#e6c261");
+  // cobra heads
   const cobra = (cx: number) => {
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(cx - 3, y - 14, 6, 8);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(cx - 3, y - 14, 6, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(cx - 2, y - 10, 1, 1); ctx.fillRect(cx + 1, y - 10, 1, 1);
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(cx - 1, y - 7, 2, 1);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 8);
+    ctx.fillStyle = "#3060c0"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 2);
+    ctx.fillStyle = "#2b1d14"; ctx.fillRect(cx - 3, y - 4 * TPX + 2, 2, 2); ctx.fillRect(cx + 1, y - 4 * TPX + 2, 2, 2);
+    ctx.fillStyle = "#a12b2b"; ctx.fillRect(cx - 1, y - 3 * TPX + 3, 2, 1); // forked tongue
   };
-  cobra(x - 27); cobra(x + 27);
+  cobra(x - 12 * TPX); cobra(x + 12 * TPX);
 
-  // ---- legs (lion paws) ----
-  ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 26, y + 24, 6, 6); ctx.fillRect(x + 20, y + 24, 6, 6);
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 26, y + 29, 6, 2); ctx.fillRect(x + 20, y + 29, 6, 2);
+  // -------- Lion-paw legs --------
+  p(-13, 11, 3, 2, "#8a5a20");
+  p(10, 11, 3, 2, "#8a5a20");
+  p(-13, 12, 1, 1, "#2b1d14"); p(-12, 12, 1, 1, "#2b1d14"); p(-11, 12, 1, 1, "#2b1d14");
+  p(10, 12, 1, 1, "#2b1d14"); p(11, 12, 1, 1, "#2b1d14"); p(12, 12, 1, 1, "#2b1d14");
   ctx.restore();
 }
+
 
 
 // ---------------- staff swing effect ----------------
