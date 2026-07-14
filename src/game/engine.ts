@@ -109,9 +109,10 @@ export function createInitialState(): GameState {
   }
   // Throne decor + Ramses himself. Throne is placed slightly further away
   // so Ramses (spawned in ramses.ts at +180) renders in front of it.
+  const thronePos = { x: player.pos.x + 180, y: player.pos.y - 60 };
   const throne: Entity = {
     id: state.nextId++,
-    pos: { x: player.pos.x + 180, y: player.pos.y - 60 },
+    pos: thronePos,
     vel: { x: 0, y: 0 },
     radius: 0,
     hp: 1, maxHp: 1,
@@ -120,6 +121,8 @@ export function createInitialState(): GameState {
     data: {},
   };
   state.entities.set(throne.id, throne);
+  // Throne is a solid obstacle everyone must go around.
+  obstacles.push({ pos: thronePos, r: 40 });
   state.obstacles = obstacles;
   spawnRamses(state);
   return state;

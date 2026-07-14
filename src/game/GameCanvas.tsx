@@ -288,43 +288,344 @@ function LoadoutPill({ isNew, title, subtitle, tone, onClick }: {
   );
 }
 
-const PLAGUE_ICONS: Partial<Record<PlagueId, { emoji: string; bg: string }>> = {
-  staff:     { emoji: "🪄", bg: "linear-gradient(135deg,#8a5a34,#c9a05a)" },
-  serpent:   { emoji: "🐍", bg: "linear-gradient(135deg,#4d7a3e,#7fa96b)" },
-  blood:     { emoji: "🩸", bg: "linear-gradient(135deg,#5a1a1a,#a12b2b)" },
-  frogs:     { emoji: "🐸", bg: "linear-gradient(135deg,#2d5a3d,#5a8a5c)" },
-  gnats:     { emoji: "🦟", bg: "linear-gradient(135deg,#2b1d14,#7a5a2a)" },
-  flies:     { emoji: "🪰", bg: "linear-gradient(135deg,#2b1d14,#4a2c18)" },
-  livestock: { emoji: "🐂", bg: "linear-gradient(135deg,#2d5a3d,#4d7a3e)" },
-  boils:     { emoji: "🫧", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" },
-  hail:      { emoji: "❄️", bg: "linear-gradient(135deg,#2b4a7a,#8ec8ff)" },
-  fire:      { emoji: "🔥", bg: "linear-gradient(135deg,#5a1a1a,#e05a48)" },
-  locusts:   { emoji: "🦗", bg: "linear-gradient(135deg,#4a2c18,#c9a05a)" },
-  darkness:  { emoji: "🌑", bg: "linear-gradient(135deg,#0a0805,#2b1d14)" },
-  firstborn: { emoji: "💀", bg: "linear-gradient(135deg,#2b1d14,#a17048)" },
-  pillar:    { emoji: "🔆", bg: "linear-gradient(135deg,#c9700a,#e6c261)" },
-  redsea:    { emoji: "🌊", bg: "linear-gradient(135deg,#0f1b3d,#3060c0)" },
+// ------------- Pixel-art icon library for the Level-Up cards -------------
+// Each icon is a small string-grid on a shared palette. `.` = transparent.
+// Icons are rendered on a transparent canvas — no background, no gradient.
+const ICON_PAL: Record<string, string> = {
+  ".": "transparent",
+  K: "#181410", W: "#f6efdc",
+  // wood / staff
+  w: "#8a5a34", d: "#b48355",
+  // greens (serpent / frog / livestock / locust)
+  g: "#4d7a3e", G: "#7fa96b", y: "#c5d99a", v: "#2f4a1a",
+  // reds (blood / fire)
+  r: "#a12b2b", R: "#e05a48",
+  // gnat / fly (dark)
+  n: "#3a2f24", N: "#645445",
+  // hail (blue)
+  b: "#3060c0", B: "#8ec8ff",
+  // sun / gold
+  o: "#e6c261", O: "#c9700a",
+  // darkness / firstborn (purple / bone)
+  p: "#4d3a5c", P: "#8a6d9e", s: "#c99a6c",
+  // water sea
+  u: "#0f1b3d", U: "#3060c0",
+  // heart / speed / magnet
+  m: "#3a2f4a",
 };
 
-const NPC_ICON: Record<NpcId, string> = {
-  bithiah: "👸", aaron: "🧙", miriam: "🎶", jethro: "🧓",
-  zipporah: "🌿", joshua: "🗡", hur: "🛡", elder: "📜",
+const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
+  staff: [
+    "..dddK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+  ],
+  serpent: [
+    "..GGGG..",
+    ".Ggggyy.",
+    ".GgWGGyy",
+    ".GggggG.",
+    "..GGGGGG",
+    ".....GGG",
+    "....GGG.",
+    "...GG...",
+  ],
+  blood: [
+    "....r...",
+    "...rRr..",
+    "..rRRRr.",
+    ".rRRRRRr",
+    ".rRRRRRr",
+    ".rrRRRrr",
+    "..rrrrr.",
+    "...rrr..",
+  ],
+  frogs: [
+    "..gggg..",
+    ".gWgWgg.",
+    ".gggggg.",
+    "gggggggg",
+    "GG.gg.GG",
+    ".G.gg.G.",
+    "..gggg..",
+    "..K..K..",
+  ],
+  gnats: [
+    "n..n..n.",
+    ".n.n.nn.",
+    "n.nnnn..",
+    ".nnKnn.n",
+    "n.nnnn..",
+    ".n.n.nn.",
+    "n..n..n.",
+    "..n..n..",
+  ],
+  flies: [
+    ".n..n...",
+    "N.nnnN..",
+    ".nnnn...",
+    "..K.....",
+    "....n..n",
+    "...NnnnN",
+    "....nnnn",
+    ".....K..",
+  ],
+  livestock: [
+    "..gg..gg",
+    ".gvgggvg",
+    ".ggWWgg.",
+    "gggggggg",
+    "ggvvvvgg",
+    ".g.gg.g.",
+    ".K.KK.K.",
+    "........",
+  ],
+  boils: [
+    "..pp.pp.",
+    ".pPPpPP.",
+    ".pWPpWP.",
+    ".pPP.PP.",
+    "pp.....p",
+    "pPP..pP.",
+    "pWP.pPP.",
+    ".p...p..",
+  ],
+  hail: [
+    ".b.bBb.b",
+    "b.BbbbB.",
+    ".BWBBWB.",
+    "b.BBBB.b",
+    ".BWBBWB.",
+    "b.BBBB.b",
+    ".b.bbb.b",
+    "b..bBb..",
+  ],
+  fire: [
+    "...r....",
+    "..rR....",
+    ".rRRr.r.",
+    "rRoORrR.",
+    "rooOORr.",
+    ".oOOoRr.",
+    "..oOo...",
+    "..oo....",
+  ],
+  locusts: [
+    ".g..g..g",
+    "G.gGgGg.",
+    ".GggWgg.",
+    "GGggggGG",
+    ".GgggggG",
+    "..GggG..",
+    "g..GG..g",
+    "..g..g..",
+  ],
+  darkness: [
+    "..pppp..",
+    ".pKKKKp.",
+    "pKKKKKKp",
+    "pKKKKKPp",
+    "pKKKKPPp",
+    "pKKKPPPp",
+    ".pKPPpp.",
+    "..pppp..",
+  ],
+  firstborn: [
+    "..sWWs..",
+    ".sWWWWs.",
+    "sWKWWKWs",
+    "sWWWWWWs",
+    "sWWKKWWs",
+    ".sWWWWs.",
+    "..sWWs..",
+    "..K..K..",
+  ],
+  pillar: [
+    "...O....",
+    "..OoO...",
+    ".OoOoO..",
+    "OoOOOoO.",
+    "OoWWWoO.",
+    ".OoOoO..",
+    "..OoO...",
+    "...O....",
+  ],
+  redsea: [
+    "uUuuUuuU",
+    "UUUUUUUU",
+    "bUbUbUbU",
+    "BUBUBUBU",
+    ".W.W.W.W",
+    "..W.W.W.",
+    "uuUuUuuU",
+    "UUUUUUUU",
+  ],
 };
 
-const PASSIVE_ICON: Record<string, { emoji: string; bg: string }> = {
-  maxHp:  { emoji: "❤️", bg: "linear-gradient(135deg,#a12b2b,#e05a48)" },
-  speed:  { emoji: "👟", bg: "linear-gradient(135deg,#2b4a7a,#8ec8ff)" },
-  damage: { emoji: "⚔️", bg: "linear-gradient(135deg,#5a1a1a,#c9700a)" },
-  magnet: { emoji: "🧲", bg: "linear-gradient(135deg,#4d3a5c,#c04040)" },
+const ICON_PASSIVE: Record<string, string[]> = {
+  maxHp: [
+    ".rr..rr.",
+    "rRRrrRRr",
+    "rRRRRRRr",
+    "rRRRRRRr",
+    "rRRRRRRr",
+    ".rRRRRr.",
+    "..rRRr..",
+    "...rr...",
+  ],
+  speed: [
+    "....BBBB",
+    "...BbbbB",
+    "..Bbb..B",
+    ".Bbb...B",
+    "Bbb....B",
+    "BbBBBBB.",
+    "B.....B.",
+    "B....B..",
+  ],
+  damage: [
+    "......Kw",
+    ".....KWw",
+    "....KWw.",
+    "...KWw..",
+    "..KWw...",
+    ".KWw....",
+    "KKw.....",
+    "Kw......",
+  ],
+  magnet: [
+    "rrr..rrr",
+    "rRr..rRr",
+    "rRr..rRr",
+    "rRrKKrRr",
+    "rRKKKKRr",
+    ".RKKKKR.",
+    "..KKKK..",
+    "..K..K..",
+  ],
 };
 
-function iconFor(c: UpgradeChoice): { emoji: string; bg: string } {
-  if (c.npc) return { emoji: NPC_ICON[c.npc] ?? "✨", bg: "linear-gradient(135deg,#0f3460,#3b82f6)" };
-  if (c.plague) return PLAGUE_ICONS[c.plague] ?? { emoji: "✨", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" };
-  // passive — infer id from choice id "passive-<id>-..."
+const ICON_NPC: Record<NpcId, string[]> = {
+  bithiah: [
+    "..ooooo.",
+    ".osssso.",
+    "osKsKsso",
+    "osssssso",
+    ".sssssss",
+    ".sbbbbss",
+    "..bbbbss",
+    "..K..K..",
+  ],
+  aaron: [
+    "..KKKK..",
+    ".KwwwwK.",
+    ".KsWWsK.",
+    "..sssss.",
+    "..RRRRR.",
+    "..RwRwR.",
+    "..RRRRR.",
+    "..K..K..",
+  ],
+  miriam: [
+    "..bbbb..",
+    ".bsssss.",
+    ".sKsKss.",
+    "..sssss.",
+    ".mrrrm..",
+    ".mrrrm..",
+    ".mmmmm..",
+    "..K..K..",
+  ],
+  jethro: [
+    "..WWWW..",
+    ".WsssWW.",
+    ".sKsKss.",
+    "..sWWs..",
+    "..bbbbbb",
+    "..dwwwdb",
+    "..bbbbb.",
+    "..K..K..",
+  ],
+  zipporah: [
+    "..gggg..",
+    ".gsssss.",
+    ".sKsKss.",
+    "..sssss.",
+    ".vggggv.",
+    ".vggggv.",
+    "..vvvv..",
+    "..K..K..",
+  ],
+  joshua: [
+    "..KKKK..",
+    ".KssssK.",
+    ".sKsKss.",
+    "..sssss.",
+    "wKssssKw",
+    ".Kssss..",
+    ".K..K...",
+    "K...K...",
+  ],
+  hur: [
+    "..KKKK..",
+    ".KssssK.",
+    ".sKsKss.",
+    ".KsssK..",
+    ".oooooo.",
+    ".oOOOOo.",
+    ".oOOOOo.",
+    "..K..K..",
+  ],
+  elder: [
+    "..WWWW..",
+    ".WWWWWW.",
+    ".sKsKss.",
+    "..sWWs..",
+    ".WWWWWW.",
+    ".KWWWWK.",
+    ".KKKKKK.",
+    "..K..K..",
+  ],
+};
+
+function drawPixelIcon(cnv: HTMLCanvasElement, grid: string[], scale: number) {
+  const w = grid[0].length;
+  const h = grid.length;
+  cnv.width = w * scale;
+  cnv.height = h * scale;
+  const ctx = cnv.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, cnv.width, cnv.height);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const ch = grid[y][x];
+      const c = ICON_PAL[ch];
+      if (!c || c === "transparent") continue;
+      ctx.fillStyle = c;
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }
+  }
+}
+
+function PixelIcon({ grid, size = 64 }: { grid: string[]; size?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (ref.current) drawPixelIcon(ref.current, grid, Math.floor(size / grid.length));
+  }, [grid, size]);
+  return <canvas ref={ref} className="pixel-crisp" style={{ imageRendering: "pixelated", width: size, height: size }} />;
+}
+
+function iconGridFor(c: UpgradeChoice): string[] {
+  if (c.npc) return ICON_NPC[c.npc];
+  if (c.plague && ICON_PLAGUE[c.plague]) return ICON_PLAGUE[c.plague]!;
   const m = /^passive-([a-zA-Z]+)-/.exec(c.id);
-  if (m && PASSIVE_ICON[m[1]]) return PASSIVE_ICON[m[1]];
-  return { emoji: "✨", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" };
+  if (m && ICON_PASSIVE[m[1]]) return ICON_PASSIVE[m[1]];
+  return ICON_PASSIVE.damage;
 }
 
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
@@ -335,7 +636,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
         <p className="mb-6 text-center text-sm text-muted-foreground">Choose your blessing</p>
         <div className="grid gap-4 sm:grid-cols-3">
           {choices.map((c) => {
-            const icon = iconFor(c);
+            const grid = iconGridFor(c);
             return (
               <button key={c.id} onClick={() => onPick(c)}
                 className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary">
@@ -344,8 +645,8 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
                     NEW
                   </span>
                 )}
-                <div className="mb-3 flex h-20 items-center justify-center rounded-lg text-4xl shadow-inner" style={{ background: icon.bg }}>
-                  <span style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.4))" }}>{icon.emoji}</span>
+                <div className="mb-3 flex h-20 items-center justify-center">
+                  <PixelIcon grid={grid} size={72} />
                 </div>
                 <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
                 <div className="text-xs text-muted-foreground">{c.description}</div>
@@ -558,48 +859,58 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   drawShepherdStaff(ctx, gripX, gripY, rot, facing, 62);
 }
 
-// Shared shepherd's-crook renderer: grip at (gx,gy), staff extends 25% down
-// (butt) and 75% up (crook). Crook curves back toward the walker like a
-// biblical shepherd's rod.
+// Shared shepherd's-crook renderer: the grip sits at (gx, gy). The staff is a
+// mostly-straight wooden shaft; only the upper ~20% curves in a soft S that
+// ends in a small hooked tip — a classic shepherd's rod, never a "1" shape.
 function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number, tiltRadians: number, facing: number, length: number) {
   const dirX = Math.cos(tiltRadians) * facing;
   const dirY = Math.sin(tiltRadians);
-  const buttLen = length * 0.25;
-  const topLen = length * 0.75;
-  const buttX = gx - dirX * buttLen;
-  const buttY = gy - dirY * buttLen;
-  const topX = gx + dirX * topLen;
-  const topY = gy + dirY * topLen;
-  // main shaft — layered strokes for pixel-art depth
-  ctx.save();
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(topX, topY); ctx.stroke();
-  ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(topX, topY); ctx.stroke();
-  ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(topX, topY); ctx.stroke();
-
-  // shepherd's crook — quadratic curve back toward the walker
   const perpX = -dirY * facing;
   const perpY = dirX * facing;
-  const crookR = length * 0.16;
-  const ctrlX = topX + dirX * crookR - perpX * crookR * 0.4;
-  const ctrlY = topY + dirY * crookR - perpY * crookR * 0.4;
-  const endX = topX + perpX * crookR * 1.9 - dirX * crookR * 0.3;
-  const endY = topY + perpY * crookR * 1.9 - dirY * crookR * 0.3;
-  ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY); ctx.stroke();
-  ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY); ctx.stroke();
-  ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY); ctx.stroke();
 
-  // hand knuckle at the grip
+  const buttLen = length * 0.25;
+  const shaftLen = length * 0.80;
+  const buttX = gx - dirX * buttLen;
+  const buttY = gy - dirY * buttLen;
+  const shaftTopX = gx + dirX * shaftLen;
+  const shaftTopY = gy + dirY * shaftLen;
+
+  ctx.save();
+  ctx.lineCap = "round";
+  const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
+    ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  drawShaft(buttX, buttY, shaftTopX, shaftTopY);
+
+  // Upper S-curve crook (soft, small).
+  const crookLen = length * 0.20;
+  const bendAmt = length * 0.09;
+  const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
+  const c1Y = shaftTopY + dirY * crookLen * 0.35 + perpY * bendAmt * 0.7;
+  const c2X = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 0.2;
+  const c2Y = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 0.2;
+  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.4;
+  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.4;
+
+  const drawCurve = (col: string, lw: number) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(shaftTopX, shaftTopY);
+    ctx.bezierCurveTo(c1X, c1Y, c2X, c2Y, endX, endY);
+    ctx.stroke();
+  };
+  drawCurve("#2b1d10", 6);
+  drawCurve("#8a5a34", 4);
+  drawCurve("#b48355", 2);
+
   ctx.fillStyle = "#5a3820";
   ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
-  return { buttX, buttY, topX, topY, endX, endY };
+  return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
 }
 
 
@@ -680,205 +991,375 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
 }
 
 // ---------------- procedural enemy renderers ----------------
+// All humanoid enemies are drawn at "Moses pixel density" (3 screen-pixels
+// per art-pixel), on a shared 16-wide grid whose origin is at the character's
+// feet-center. This keeps size, palette and shading consistent with Moses.
+const PX = 3;
+
 function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
-  const bob = Math.sin(e.animT) * 1;
   const flip = e.facing === -1 ? -1 : 1;
+  const t = e.animT;
+  const now = performance.now() / 1000;
+
+  // 2-step walk cycle; pauses when standing still isn't tracked here, so we
+  // just always bob a hair.
+  const walk = Math.sin(t * 1.2) > 0 ? 1 : 0;
+
+  // Draws a rect on the shared "art-pixel" grid. dx/dy are in art-pixels,
+  // measured from the character's feet-center. Flip mirrors horizontally.
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    const rx = flip === 1 ? x + dx * PX : x - (dx + w) * PX;
+    const ry = y + dy * PX;
+    ctx.fillRect(rx, ry, w * PX, h * PX);
+  };
 
   const shadow = (r: number) => {
-    ctx.fillStyle = "rgba(0,0,0,0.22)";
-    ctx.beginPath(); ctx.ellipse(x, y + 10, r, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 6, r, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
   };
   const hpBar = () => {
     if (e.hp < e.maxHp) {
-      const bw = 22;
-      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(x - bw / 2, y - 30, bw, 3);
-      ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, y - 30, bw * Math.max(0, e.hp / e.maxHp), 3);
+      const bw = 26;
+      ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, y - 20 * PX - 1, bw + 2, 5);
+      ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw, 3);
+      ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
   };
 
-  // Egyptian sword-soldier — bronze helmet, linen kilt, khopesh curved sword.
+  // ---------- Sword soldier (Egyptian infantry, khopesh + shield) ----------
   if (e.kind === "swordsoldier") {
-    shadow(10); ctx.save();
-    // legs
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 5, y + bob, 4, 8);
-    ctx.fillRect(x + 1, y + bob, 4, 8);
-    ctx.fillStyle = "#2b1a08"; ctx.fillRect(x - 5, y + 7 + bob, 4, 2);
-    ctx.fillRect(x + 1, y + 7 + bob, 4, 2);
+    shadow(14);
+    const swinging = now < ((e.data?.swingUntil as number) ?? 0);
+    const swingPhase = swinging ? 1 - Math.max(0, ((e.data!.swingUntil as number) - now) / 0.28) : 0;
+    // legs — alternate step
+    p(-3, -3, 2, 3, "#4a2a14"); p(1, -3, 2, 3, "#4a2a14");
+    if (walk) { p(-3, 0, 2, 1, "#2b1a08"); p(1, 0, 3, 1, "#2b1a08"); }
+    else { p(-4, 0, 3, 1, "#2b1a08"); p(1, 0, 2, 1, "#2b1a08"); }
     // white kilt with red trim
-    ctx.fillStyle = "#f4e2c1"; ctx.fillRect(x - 7, y - 4 + bob, 14, 6);
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 7, y + 1 + bob, 14, 1);
-    // torso — copper-toned skin
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 6, y - 14 + bob, 12, 10);
-    ctx.fillStyle = "#8a5a34"; ctx.fillRect(x - 6, y - 8 + bob, 12, 2); // belt shadow
-    // face
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 5, y - 22 + bob, 10, 8);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 3, y - 18 + bob, 2, 1);
-    ctx.fillRect(x + 1, y - 18 + bob, 2, 1);
-    // bronze helmet
-    ctx.fillStyle = "#b98550"; ctx.fillRect(x - 6, y - 26 + bob, 12, 6);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 6, y - 26 + bob, 12, 2);
-    ctx.fillStyle = "#7a5230"; ctx.fillRect(x - 6, y - 22 + bob, 12, 1);
-    // shield on left arm (facing side)
-    ctx.fillStyle = "#7a5230"; ctx.fillRect(x - flip * 8, y - 15 + bob, -flip * 3, 12);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - flip * 8, y - 12 + bob, -flip * 3, 5);
-    // khopesh — curved sickle-sword
+    p(-5, -6, 10, 3, "#f6efdc");
+    p(-5, -4, 10, 1, "#a12b2b");
+    p(-5, -6, 10, 1, "#d8b98a");
+    // torso — bronze cuirass
+    p(-5, -11, 10, 5, "#c99a6c");
+    p(-5, -11, 10, 1, "#8a5a34");
+    p(-5, -8, 10, 1, "#7a5230");
+    // pectoral gold
+    p(-2, -10, 4, 1, "#e6c261");
+    // arms
+    p(-6, -10, 1, 4, "#c99a6c"); p(5, -10, 1, 4, "#c99a6c");
+    // neck
+    p(-2, -13, 4, 2, "#c99a6c");
+    // head
+    p(-4, -17, 8, 4, "#c99a6c");
+    // face detail
+    p(-2, -15, 1, 1, "#2b1d14"); p(1, -15, 1, 1, "#2b1d14");
+    p(-1, -13, 2, 1, "#8a5a34"); // mouth line
+    // bronze helmet with gold band
+    p(-5, -20, 10, 3, "#b98550");
+    p(-5, -20, 10, 1, "#e6c261");
+    p(-5, -18, 10, 1, "#7a5230");
+    p(-1, -22, 2, 2, "#a12b2b"); // red plume base
+    p(0, -23, 1, 1, "#e05a48");
+    // shield on trailing arm (opposite of weapon)
+    p(-7, -10, 2, 6, "#7a5230");
+    p(-7, -10, 2, 1, "#e6c261");
+    p(-7, -7, 2, 1, "#e6c261");
+    p(-6, -9, 1, 4, "#c9a05a");
+    // khopesh — curved sword, swings on attack
     ctx.save();
-    ctx.translate(x + flip * 8, y - 15 + bob);
-    ctx.scale(flip, 1);
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(10, -4, 12, 6); ctx.stroke();
-    ctx.strokeStyle = "#dbe9f7"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(10, -4, 12, 6); ctx.stroke();
-    ctx.fillStyle = "#8a5a34"; ctx.fillRect(-1, -1, 3, 4);
-    ctx.restore();
-    ctx.restore(); hpBar(); return true;
-  }
-  // Nubian archer — leather cap, linen tunic, quiver on back, recurve bow.
-  if (e.kind === "archer") {
-    shadow(9); ctx.save();
-    // legs
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 4, y + bob, 3, 8); ctx.fillRect(x + 1, y + bob, 3, 8);
-    // tunic
-    ctx.fillStyle = "#d8b98a"; ctx.fillRect(x - 6, y - 12 + bob, 12, 12);
-    ctx.fillStyle = "#a17048"; ctx.fillRect(x - 6, y - 4 + bob, 12, 2);
-    // belt
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 6, y - 6 + bob, 12, 1);
-    // face
-    ctx.fillStyle = "#8a5a34"; ctx.fillRect(x - 5, y - 20 + bob, 10, 8);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 3, y - 16 + bob, 2, 1); ctx.fillRect(x + 1, y - 16 + bob, 2, 1);
-    // leather cap
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 5, y - 24 + bob, 10, 5);
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x - 5, y - 24 + bob, 10, 2);
-    // quiver on back
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x - flip * 7, y - 20 + bob, -flip * 3, 12);
-    ctx.fillStyle = "#f4e2c1"; ctx.fillRect(x - flip * 7, y - 22 + bob, -flip * 3, 2);
-    // recurve bow drawn on facing side
-    ctx.save();
-    ctx.translate(x + flip * 8, y - 12 + bob);
-    ctx.scale(flip, 1);
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, -10); ctx.quadraticCurveTo(9, -5, 6, 0); ctx.quadraticCurveTo(9, 5, 0, 10);
-    ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -10); ctx.quadraticCurveTo(9, -5, 6, 0); ctx.quadraticCurveTo(9, 5, 0, 10);
-    ctx.stroke();
+    const armX = x + flip * 5 * PX;
+    const armY = y - 9 * PX;
+    ctx.translate(armX, armY);
+    const swingAng = swinging
+      ? (-Math.PI * 0.4 + swingPhase * Math.PI * 0.95)
+      : -Math.PI * 0.15 + Math.sin(t) * 0.05;
+    ctx.rotate(flip === 1 ? swingAng : Math.PI - swingAng);
+    // hilt
+    ctx.fillStyle = "#5a3820"; ctx.fillRect(0, -3, 3, 6);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(0, -1, 3, 2);
+    // curved blade
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
+    ctx.strokeStyle = "#dbe9f7"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
     ctx.strokeStyle = "#f6efdc"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
     ctx.restore();
-    ctx.restore(); hpBar(); return true;
-  }
-  // Mounted knight — white/tan horse with brown mane, spear-armed rider.
-  if (e.kind === "knight") {
-    shadow(18); ctx.save();
-    // horse body
-    ctx.fillStyle = "#d8b98a"; ctx.fillRect(x - 14, y - 10 + bob, 28, 10);
-    ctx.fillStyle = "#a17048"; ctx.fillRect(x - 14, y - 3 + bob, 28, 3);
-    // legs
-    ctx.fillStyle = "#c99a6c";
-    ctx.fillRect(x - 12, y + bob, 3, 9); ctx.fillRect(x - 6, y + bob, 3, 9);
-    ctx.fillRect(x + 4, y + bob, 3, 9); ctx.fillRect(x + 10, y + bob, 3, 9);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(x - 12, y + 8 + bob, 3, 2); ctx.fillRect(x - 6, y + 8 + bob, 3, 2);
-    ctx.fillRect(x + 4, y + 8 + bob, 3, 2); ctx.fillRect(x + 10, y + 8 + bob, 3, 2);
-    // head + neck
-    ctx.fillStyle = "#d8b98a"; ctx.fillRect(x + flip * 12, y - 16 + bob, flip * 6, 4);
-    ctx.fillRect(x + flip * 14, y - 20 + bob, flip * 5, 8);
-    // mane
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x + flip * 10, y - 14 + bob, flip * 4, 4);
-    ctx.fillRect(x + flip * 8, y - 12 + bob, flip * 3, 3);
-    // eye + mouth
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x + flip * 17, y - 17 + bob, 1, 1);
-    // rider — Egyptian officer
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 6, y - 22 + bob, 12, 10); // cloak
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 4, y - 28 + bob, 8, 6); // face
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 2, y - 25 + bob, 1, 1); ctx.fillRect(x + 1, y - 25 + bob, 1, 1);
-    ctx.fillStyle = "#b98550"; ctx.fillRect(x - 4, y - 32 + bob, 8, 5); // bronze helm
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 4, y - 32 + bob, 8, 2);
-    // spear held up
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(x - flip * 2, y - 22 + bob); ctx.lineTo(x + flip * 22, y - 34 + bob); ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x - flip * 2, y - 22 + bob); ctx.lineTo(x + flip * 22, y - 34 + bob); ctx.stroke();
-    ctx.fillStyle = "#dbe9f7";
-    ctx.beginPath();
-    ctx.moveTo(x + flip * 22, y - 34 + bob);
-    ctx.lineTo(x + flip * 26, y - 40 + bob);
-    ctx.lineTo(x + flip * 24, y - 32 + bob);
-    ctx.closePath(); ctx.fill();
-    ctx.restore(); hpBar(); return true;
-  }
-  // Egyptian war chariot — two horses, spoked wheel, standing driver with reins.
-  if (e.kind === "chariot") {
-    shadow(22); ctx.save();
-    // twin horse bodies (back + front stacked slightly)
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x + flip * 4, y - 12 + bob, flip * 18, 8);
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x + flip * 4, y - 5 + bob, flip * 18, 3);
-    // horse legs
-    ctx.fillStyle = "#2b1a08";
-    for (let i = 0; i < 4; i++) ctx.fillRect(x + flip * (6 + i * 4), y + bob, 2, 8);
-    // horse heads
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x + flip * 20, y - 18 + bob, flip * 5, 8);
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x + flip * 20, y - 12 + bob, flip * 5, 2);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x + flip * 22, y - 20 + bob, flip * 2, 2); // plume
-    // reins
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x + flip * 20, y - 12 + bob); ctx.lineTo(x - flip * 6, y - 18 + bob); ctx.stroke();
-    // chariot cab (gold + blue Egyptian pattern)
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - flip * 16, y - 16 + bob, flip * 12, 14);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - flip * 16, y - 16 + bob, flip * 12, 3);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - flip * 16, y - 12 + bob, flip * 12, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - flip * 16, y - 3 + bob, flip * 12, 2);
-    // spoked wheel
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 2;
-    const wx = x - flip * 10, wy = y + 4 + bob, wr = 8;
-    ctx.beginPath(); ctx.arc(wx, wy, wr, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 6; i++) {
-      const a = i * Math.PI / 3;
-      ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(a) * wr, wy + Math.sin(a) * wr); ctx.stroke();
-    }
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(wx - 2, wy - 2, 4, 4);
-    // driver
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - flip * 12, y - 30 + bob, 6, 5);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - flip * 12, y - 25 + bob, 6, 10);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - flip * 12, y - 32 + bob, 6, 3); // nemes
-    ctx.restore(); hpBar(); return true;
-  }
-  // Sorcerer/mage — dark hooded robe with glowing staff orb (Egyptian priest-magician).
-  if (e.kind === "mage") {
-    shadow(11); ctx.save();
-    // robe base
-    ctx.fillStyle = "#4d3a5c"; ctx.fillRect(x - 8, y - 24 + bob, 16, 20);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 8, y - 6 + bob, 16, 3);
-    ctx.fillStyle = "#8a6d9e"; ctx.fillRect(x - 8, y - 12 + bob, 16, 2);
-    // hood + shadow face
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 7, y - 30 + bob, 14, 8);
-    ctx.fillStyle = "#8a6d9e"; ctx.fillRect(x - 7, y - 30 + bob, 14, 2);
-    ctx.fillStyle = "#ff4020"; ctx.fillRect(x - 3, y - 25 + bob, 2, 2); ctx.fillRect(x + 1, y - 25 + bob, 2, 2);
-    // ankh amulet
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 1, y - 14 + bob, 2, 4);
-    ctx.fillRect(x - 3, y - 12 + bob, 6, 1);
-    // staff w/ orb
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(x + flip * 9, y - 26 + bob); ctx.lineTo(x + flip * 12, y + 8 + bob); ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x + flip * 9, y - 26 + bob); ctx.lineTo(x + flip * 12, y + 8 + bob); ctx.stroke();
-    ctx.fillStyle = "#c060ff"; ctx.beginPath(); ctx.arc(x + flip * 9, y - 28 + bob, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x + flip * 8, y - 30 + bob, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.restore(); hpBar(); return true;
+    hpBar(); return true;
   }
 
+  // ---------- Nubian archer ----------
+  if (e.kind === "archer") {
+    shadow(13);
+    const windup = now < ((e.data?.windupUntil as number) ?? 0);
+    const justFired = now - ((e.data?.lastAtkAt as number) ?? -99) < 0.18;
+    // legs
+    p(-3, -3, 2, 3, "#4a2a14"); p(1, -3, 2, 3, "#4a2a14");
+    if (walk) { p(-3, 0, 2, 1, "#2b1a08"); p(2, 0, 2, 1, "#2b1a08"); }
+    else { p(-4, 0, 2, 1, "#2b1a08"); p(1, 0, 2, 1, "#2b1a08"); }
+    // linen loincloth
+    p(-4, -6, 8, 3, "#e6c9a1");
+    p(-4, -4, 8, 1, "#a17048");
+    // torso — darker Nubian skin
+    p(-4, -11, 8, 5, "#8a5a34");
+    p(-4, -8, 8, 1, "#4a2c18");
+    // pectoral scar/paint
+    p(-1, -10, 2, 1, "#a12b2b");
+    // arms
+    p(-5, -10, 1, 4, "#8a5a34"); p(4, -10, 1, 4, "#8a5a34");
+    // neck + head
+    p(-2, -13, 4, 2, "#8a5a34");
+    p(-4, -17, 8, 4, "#8a5a34");
+    p(-2, -15, 1, 1, "#f6efdc"); p(1, -15, 1, 1, "#f6efdc"); // eye whites
+    p(-2, -15, 1, 1, "#2b1d14"); p(1, -15, 1, 1, "#2b1d14");
+    // leather headwrap
+    p(-4, -19, 8, 2, "#4a2a14");
+    p(-4, -19, 8, 1, "#7a4a2b");
+    p(-5, -18, 1, 2, "#4a2a14"); p(4, -18, 1, 2, "#4a2a14");
+    // quiver on back
+    p(-6, -14, 2, 6, "#4a2a14");
+    p(-6, -14, 2, 1, "#8a5a34");
+    p(-6, -16, 1, 3, "#f6efdc"); // fletching
+    // Bow — draw string tension changes on windup/release
+    ctx.save();
+    ctx.translate(x + flip * 6 * PX, y - 9 * PX);
+    ctx.scale(flip, 1);
+    const draw = windup ? 4 : justFired ? -2 : 0;
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, -12); ctx.quadraticCurveTo(11, -6, 8, 0); ctx.quadraticCurveTo(11, 6, 0, 12);
+    ctx.stroke();
+    ctx.strokeStyle = "#7a4a2b"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -12); ctx.quadraticCurveTo(11, -6, 8, 0); ctx.quadraticCurveTo(11, 6, 0, 12);
+    ctx.stroke();
+    // string with nocked arrow
+    ctx.strokeStyle = "#f6efdc"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -12); ctx.lineTo(2 - draw, 0); ctx.lineTo(0, 12); ctx.stroke();
+    // arrow shaft while drawn
+    if (windup || justFired) {
+      ctx.strokeStyle = "#5a3820"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(2 - draw, 0); ctx.lineTo(14, 0); ctx.stroke();
+      ctx.fillStyle = "#dbe9f7";
+      ctx.beginPath(); ctx.moveTo(14, -2); ctx.lineTo(18, 0); ctx.lineTo(14, 2); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    hpBar(); return true;
+  }
+
+  // ---------- Mounted knight (Egyptian officer on horse) ----------
+  if (e.kind === "knight") {
+    shadow(20);
+    const windup = now < ((e.data?.windupUntil as number) ?? 0);
+    // horse body
+    p(-9, -9, 18, 5, "#d8b98a");
+    p(-9, -6, 18, 2, "#a17048");
+    p(-9, -9, 18, 1, "#f4e2c1");
+    // horse legs — 2-step canter
+    if (walk) {
+      p(-8, -4, 2, 4, "#c99a6c"); p(-3, -4, 2, 4, "#c99a6c");
+      p(3, -4, 2, 4, "#c99a6c"); p(7, -4, 2, 4, "#c99a6c");
+    } else {
+      p(-7, -4, 2, 4, "#c99a6c"); p(-2, -4, 2, 4, "#c99a6c");
+      p(2, -4, 2, 4, "#c99a6c"); p(6, -4, 2, 4, "#c99a6c");
+    }
+    p(-8, 0, 2, 1, "#2b1d14"); p(-3, 0, 2, 1, "#2b1d14");
+    p(3, 0, 2, 1, "#2b1d14"); p(7, 0, 2, 1, "#2b1d14");
+    // horse head + neck
+    p(7, -13, 4, 3, "#d8b98a");
+    p(9, -16, 4, 4, "#d8b98a");
+    p(9, -16, 4, 1, "#f4e2c1");
+    // mane
+    p(5, -12, 2, 3, "#7a4a2b");
+    p(3, -11, 2, 2, "#7a4a2b");
+    p(11, -17, 1, 2, "#7a4a2b");
+    // eye
+    p(11, -15, 1, 1, "#2b1d14");
+    // reins
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + flip * 11 * PX, y - 14 * PX);
+    ctx.lineTo(x - flip * 2 * PX, y - 17 * PX); ctx.stroke();
+    // rider torso — royal red cloak
+    p(-3, -16, 6, 5, "#a12b2b");
+    p(-3, -16, 6, 1, "#e05a48");
+    p(-3, -12, 6, 1, "#5a1a1a");
+    // gold shoulder strap
+    p(-3, -15, 6, 1, "#e6c261");
+    // rider head
+    p(-2, -20, 4, 3, "#c99a6c");
+    p(-1, -19, 1, 1, "#2b1d14"); p(1, -19, 1, 1, "#2b1d14");
+    // bronze helm with gold trim
+    p(-3, -23, 6, 3, "#b98550");
+    p(-3, -23, 6, 1, "#e6c261");
+    p(-1, -25, 2, 2, "#3060c0"); // blue crest
+    // spear — raises on windup, thrusts on windup expiry
+    ctx.save();
+    ctx.translate(x - flip * 1 * PX, y - 15 * PX);
+    ctx.scale(flip, 1);
+    const spearAng = windup ? -Math.PI * 0.55 : -Math.PI * 0.3;
+    ctx.rotate(spearAng);
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(28, 0); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(28, 0); ctx.stroke();
+    ctx.strokeStyle = "#b48355"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(28, 0); ctx.stroke();
+    // spearhead
+    ctx.fillStyle = "#dbe9f7";
+    ctx.beginPath(); ctx.moveTo(28, -3); ctx.lineTo(35, 0); ctx.lineTo(28, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#f6efdc";
+    ctx.beginPath(); ctx.moveTo(28, -1); ctx.lineTo(32, 0); ctx.lineTo(28, 1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    hpBar(); return true;
+  }
+
+  // ---------- Egyptian war chariot ----------
+  if (e.kind === "chariot") {
+    shadow(24);
+    const d3 = e.data ?? {};
+    const charging = performance.now() / 1000 < ((d3.chargingUntil as number) ?? 0);
+    const winding = performance.now() / 1000 < ((d3.chargeWindupUntil as number) ?? 0);
+    // twin horses running forward of cab
+    for (let horse = 0; horse < 2; horse++) {
+      const oy = -horse * 2;
+      p(2, -9 + oy, 12, 4, "#7a4a2b");
+      p(2, -6 + oy, 12, 1, "#4a2a14");
+      // legs alternate on charge
+      const step = (charging ? (Math.floor(t * 12) % 2) : walk) === 1;
+      const off = step ? 1 : 0;
+      p(3 + off, -3 + oy, 2, 4, "#5a3010"); p(7 + off, -3 + oy, 2, 4, "#5a3010");
+      p(11 - off, -3 + oy, 2, 4, "#5a3010"); p(13 - off, -3 + oy, 1, 4, "#5a3010");
+      // head
+      p(13, -13 + oy, 4, 3, "#7a4a2b");
+      p(15, -16 + oy, 3, 5, "#7a4a2b");
+      p(15, -16 + oy, 3, 1, "#e6c261"); // gold plume
+      p(17, -15 + oy, 1, 1, "#2b1d14");
+    }
+    // reins
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + flip * 15 * PX, y - 12 * PX);
+    ctx.lineTo(x - flip * 5 * PX, y - 14 * PX);
+    ctx.stroke();
+    // Chariot cab — gold with blue Egyptian panel
+    p(-8, -12, 6, 8, "#c9a05a");
+    p(-8, -12, 6, 1, "#e6c261");
+    p(-8, -9, 6, 1, "#3060c0");
+    p(-8, -7, 6, 1, "#a12b2b");
+    p(-8, -5, 6, 1, "#2b1d14");
+    // cab side gold rim
+    p(-2, -12, 1, 8, "#e6c261");
+    // spoked wheel
+    ctx.save();
+    ctx.translate(x - flip * 5 * PX, y);
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
+    const wheelRot = charging ? t * 12 : t * 2;
+    ctx.rotate(wheelRot);
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.stroke();
+    }
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(-2, -2, 4, 4);
+    ctx.restore();
+    // Driver in cab
+    p(-7, -19, 4, 4, "#c99a6c"); // face
+    p(-6, -18, 1, 1, "#2b1d14"); p(-4, -18, 1, 1, "#2b1d14");
+    p(-7, -22, 4, 3, "#e6c261"); // nemes
+    p(-7, -21, 4, 1, "#3060c0");
+    p(-8, -15, 6, 4, "#3060c0"); // torso robe
+    p(-8, -15, 6, 1, "#e6c261");
+    // whip on windup
+    if (winding) {
+      ctx.strokeStyle = "#4a2a14"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - flip * 6 * PX, y - 18 * PX);
+      ctx.quadraticCurveTo(x - flip * 14 * PX, y - 24 * PX, x - flip * 22 * PX, y - 14 * PX);
+      ctx.stroke();
+    }
+    // charge dust trail
+    if (charging) {
+      ctx.fillStyle = "rgba(200,170,120,0.6)";
+      for (let i = 0; i < 6; i++) {
+        const dx = -flip * (12 + i * 5) * PX;
+        ctx.beginPath(); ctx.arc(x + dx, y + 4 + Math.sin(t * 8 + i) * 3, 4 + i * 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    hpBar(); return true;
+  }
+
+  // ---------- Sorcerer / priest-mage ----------
+  if (e.kind === "mage") {
+    shadow(13);
+    const windup = now < ((e.data?.windupUntil as number) ?? 0);
+    const justFired = now - ((e.data?.lastAtkAt as number) ?? -99) < 0.2;
+    // hem of robe (swishes with walk)
+    const hem = walk ? 1 : 0;
+    p(-6 + hem, -4, 12, 4, "#4d3a5c");
+    p(-6 + hem, -4, 12, 1, "#8a6d9e");
+    p(-6 + hem, -1, 12, 1, "#2b1d14");
+    // robe body
+    p(-5, -13, 10, 9, "#4d3a5c");
+    p(-5, -13, 10, 1, "#8a6d9e");
+    p(-5, -9, 10, 1, "#8a6d9e");
+    // gold trim vertical
+    p(-1, -13, 2, 9, "#e6c261");
+    p(0, -13, 1, 9, "#c9700a");
+    // sleeves
+    p(-6, -12, 1, 5, "#4d3a5c"); p(5, -12, 1, 5, "#4d3a5c");
+    // hood shadow face
+    p(-4, -19, 8, 5, "#2b1d14");
+    p(-4, -19, 8, 1, "#8a6d9e");
+    p(-3, -17, 2, 1, "#ff4020"); p(1, -17, 2, 1, "#ff4020"); // glowing eyes
+    // pointy hood
+    p(-4, -21, 8, 2, "#4d3a5c");
+    p(-3, -22, 6, 1, "#4d3a5c");
+    p(-1, -23, 2, 1, "#4d3a5c");
+    // ankh amulet
+    p(-1, -8, 2, 1, "#e6c261");
+    p(0, -7, 1, 2, "#e6c261");
+    p(-1, -6, 2, 1, "#e6c261");
+    // staff with orb — rises on windup, glows brighter, orb enlarges on release
+    ctx.save();
+    const staffX = x + flip * 6 * PX;
+    const staffTopY = y - (windup ? 24 : 20) * PX;
+    const staffBotY = y + 4;
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    // orb
+    const orbR = justFired ? 9 : windup ? 8 : 5 + Math.sin(t * 3) * 0.6;
+    const orbGlow = ctx.createRadialGradient(staffX, staffTopY - 4, 1, staffX, staffTopY - 4, orbR + 4);
+    orbGlow.addColorStop(0, "#ffffff");
+    orbGlow.addColorStop(0.4, "#e0a0ff");
+    orbGlow.addColorStop(1, "rgba(120,40,180,0)");
+    ctx.fillStyle = orbGlow;
+    ctx.beginPath(); ctx.arc(staffX, staffTopY - 4, orbR + 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c060ff";
+    ctx.beginPath(); ctx.arc(staffX, staffTopY - 4, orbR, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(staffX - 1, staffTopY - 6, orbR * 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    hpBar(); return true;
+  }
+
+  // ---------- Animals (kept, minor polish) ----------
+  const bob = Math.sin(t) * 1;
   if (e.kind === "crow") {
     shadow(6); ctx.save();
     const flap = Math.sin(e.animT * 6) > 0;
     ctx.fillStyle = "#0a0a0a";
     ctx.fillRect(x - 5, y - 6 + bob, 10, 6);
-    ctx.fillRect(x + flip * 5, y - 5 + bob, flip * 3, 3); // head
-    ctx.fillStyle = "#e8c040"; ctx.fillRect(x + flip * 8, y - 4 + bob, flip * 2, 1); // beak
-    // wings
+    ctx.fillRect(x + flip * 5, y - 5 + bob, flip * 3, 3);
+    ctx.fillStyle = "#e8c040"; ctx.fillRect(x + flip * 8, y - 4 + bob, flip * 2, 1);
     ctx.fillStyle = "#151515";
     if (flap) { ctx.fillRect(x - 10, y - 10 + bob, 8, 3); ctx.fillRect(x + 2, y - 10 + bob, 8, 3); }
     else { ctx.fillRect(x - 10, y - 2 + bob, 8, 3); ctx.fillRect(x + 2, y - 2 + bob, 8, 3); }
@@ -895,81 +1376,72 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     else { ctx.fillRect(x - 10, y + bob, 7, 4); ctx.fillRect(x + 3, y + bob, 7, 4); }
     ctx.restore(); hpBar(); return true;
   }
-  // Desert wolf — layered fur tones, upright ears, tucked snout.
   if (e.kind === "wolf") {
-    shadow(12); ctx.save();
+    shadow(14);
     // body
-    ctx.fillStyle = "#8a7a68"; ctx.fillRect(x - 12, y - 12 + bob, 24, 10);
-    ctx.fillStyle = "#5a4a38"; ctx.fillRect(x - 12, y - 4 + bob, 24, 4);
-    // fur tufts along back
-    ctx.fillStyle = "#c9b090";
-    ctx.fillRect(x - 10, y - 14 + bob, 3, 2);
-    ctx.fillRect(x - 4, y - 14 + bob, 3, 2);
-    ctx.fillRect(x + 3, y - 14 + bob, 3, 2);
-    ctx.fillRect(x + 9, y - 13 + bob, 2, 2);
-    // legs
-    ctx.fillStyle = "#5a4a38";
-    ctx.fillRect(x - 10, y + bob, 3, 7); ctx.fillRect(x - 3, y + bob, 3, 7);
-    ctx.fillRect(x + 3, y + bob, 3, 7); ctx.fillRect(x + 8, y + bob, 3, 7);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(x - 10, y + 6 + bob, 3, 1); ctx.fillRect(x - 3, y + 6 + bob, 3, 1);
-    ctx.fillRect(x + 3, y + 6 + bob, 3, 1); ctx.fillRect(x + 8, y + 6 + bob, 3, 1);
-    // head + snout
-    ctx.fillStyle = "#8a7a68"; ctx.fillRect(x + flip * 10, y - 15 + bob, flip * 7, 7);
-    ctx.fillStyle = "#c9b090"; ctx.fillRect(x + flip * 14, y - 12 + bob, flip * 4, 4); // snout
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x + flip * 17, y - 11 + bob, 1, 1); // nose
-    // ears (pointed triangles)
-    ctx.fillStyle = "#5a4a38";
-    ctx.fillRect(x + flip * 11, y - 18 + bob, flip * 2, 3);
-    ctx.fillRect(x + flip * 14, y - 18 + bob, flip * 2, 3);
-    // amber eye
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x + flip * 13, y - 13 + bob, 1, 1);
+    p(-7, -6, 14, 5, "#8a7a68");
+    p(-7, -3, 14, 2, "#5a4a38");
+    p(-7, -6, 14, 1, "#c9b090");
+    // fur tufts along spine
+    p(-5, -7, 1, 1, "#c9b090"); p(-2, -7, 1, 1, "#c9b090"); p(2, -7, 1, 1, "#c9b090"); p(5, -7, 1, 1, "#c9b090");
+    // legs — alternate
+    if (walk) {
+      p(-6, -1, 2, 3, "#5a4a38"); p(-2, -1, 2, 3, "#5a4a38");
+      p(2, -1, 2, 3, "#5a4a38"); p(5, -1, 2, 3, "#5a4a38");
+    } else {
+      p(-6, 0, 2, 2, "#5a4a38"); p(-2, 0, 2, 2, "#5a4a38");
+      p(2, 0, 2, 2, "#5a4a38"); p(5, 0, 2, 2, "#5a4a38");
+    }
+    p(-6, 2, 2, 1, "#2b1d14"); p(-2, 2, 2, 1, "#2b1d14"); p(2, 2, 2, 1, "#2b1d14"); p(5, 2, 2, 1, "#2b1d14");
+    // head
+    p(6, -8, 4, 5, "#8a7a68");
+    p(9, -6, 2, 3, "#c9b090"); // snout
+    p(10, -5, 1, 1, "#2b1d14"); // nose
+    p(6, -10, 2, 2, "#5a4a38"); p(9, -10, 1, 2, "#5a4a38"); // ears
+    p(7, -6, 1, 1, "#e6c261"); // amber eye
     // tail
-    ctx.fillStyle = "#8a7a68"; ctx.fillRect(x - flip * 12, y - 13 + bob, -flip * 4, 3);
-    ctx.fillStyle = "#c9b090"; ctx.fillRect(x - flip * 15, y - 12 + bob, -flip * 2, 2);
-    ctx.restore(); hpBar(); return true;
+    p(-9, -6, 2, 2, "#8a7a68");
+    p(-10, -7, 1, 2, "#c9b090");
+    hpBar(); return true;
   }
-  // Desert lion — golden coat, thick tri-tone mane, dark tufted tail.
   if (e.kind === "lion") {
-    shadow(15); ctx.save();
+    shadow(17);
     // body
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 14, y - 12 + bob, 28, 12);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 14, y - 4 + bob, 28, 4);
-    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 14, y - 1 + bob, 28, 2);
+    p(-7, -7, 14, 6, "#e6c261");
+    p(-7, -3, 14, 2, "#c9a05a");
+    p(-7, -1, 14, 1, "#8a5a20");
+    p(-7, -7, 14, 1, "#f6efdc");
     // legs
-    ctx.fillStyle = "#c9a05a";
-    ctx.fillRect(x - 12, y + bob, 3, 8); ctx.fillRect(x - 4, y + bob, 3, 8);
-    ctx.fillRect(x + 3, y + bob, 3, 8); ctx.fillRect(x + 10, y + bob, 3, 8);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(x - 12, y + 7 + bob, 3, 2); ctx.fillRect(x - 4, y + 7 + bob, 3, 2);
-    ctx.fillRect(x + 3, y + 7 + bob, 3, 2); ctx.fillRect(x + 10, y + 7 + bob, 3, 2);
-    // mane — three tones, layered
-    const maneX = x + flip * 14;
-    const maneY = y - 12 + bob;
+    p(-6, -1, 2, 3, "#c9a05a"); p(-2, -1, 2, 3, "#c9a05a");
+    p(2, -1, 2, 3, "#c9a05a"); p(5, -1, 2, 3, "#c9a05a");
+    p(-6, 2, 2, 1, "#2b1d14"); p(-2, 2, 2, 1, "#2b1d14"); p(2, 2, 2, 1, "#2b1d14"); p(5, 2, 2, 1, "#2b1d14");
+    // mane — layered rings
+    const mX = x + flip * 7 * PX;
+    const mY = y - 6 * PX;
     ctx.fillStyle = "#5a3010";
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
-      ctx.fillRect(Math.round(maneX + Math.cos(a) * 9), Math.round(maneY + Math.sin(a) * 9), 3, 3);
+      ctx.fillRect(Math.round(mX + Math.cos(a) * 12) - 2, Math.round(mY + Math.sin(a) * 12) - 2, 5, 5);
     }
     ctx.fillStyle = "#8a5a20";
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2 + 0.3;
-      ctx.fillRect(Math.round(maneX + Math.cos(a) * 6), Math.round(maneY + Math.sin(a) * 6), 3, 3);
+      ctx.fillRect(Math.round(mX + Math.cos(a) * 8) - 2, Math.round(mY + Math.sin(a) * 8) - 2, 4, 4);
     }
     // face
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(maneX - flip * 3, maneY - 3, flip * 8, 8);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(maneX + flip * 2, maneY + 2, flip * 4, 3); // muzzle
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(maneX + flip * 4, maneY + 3, 1, 1); // nose
-    ctx.fillStyle = "#f6efdc"; ctx.fillRect(maneX + flip * 1, maneY - 1, 1, 1); // eye highlight
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(maneX + flip * 2, maneY - 1, 1, 1); // pupil
-    // tail
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - flip * 13, y - 14 + bob, -flip * 3, 3);
-    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - flip * 16, y - 13 + bob, -flip * 3, 4);
-    ctx.fillStyle = "#5a3010"; ctx.fillRect(x - flip * 18, y - 11 + bob, -flip * 2, 3); // tail tuft
-    ctx.restore(); hpBar(); return true;
+    p(7, -8, 4, 4, "#e6c261");
+    p(9, -6, 2, 2, "#c9a05a"); // muzzle
+    p(10, -5, 1, 1, "#2b1d14"); // nose
+    p(7, -7, 1, 1, "#f6efdc"); p(8, -7, 1, 1, "#2b1d14"); // eye
+    // tail with tuft
+    p(-9, -6, 3, 1, "#c9a05a");
+    p(-11, -5, 2, 2, "#8a5a20");
+    p(-12, -4, 2, 2, "#5a3010");
+    hpBar(); return true;
   }
   return false;
 }
+
 
 
 // ---------------- Ramses ----------------
@@ -1005,132 +1477,157 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const seated = !!d.seated;
   const flip = e.facing === -1 ? -1 : 1;
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
+  const walk = Math.sin(e.animT * 0.9) > 0 ? 1 : 0;
 
-  // shadow (bigger — Ramses is roughly twice a human)
-  ctx.fillStyle = "rgba(0,0,0,0.4)";
-  ctx.beginPath(); ctx.ellipse(x, y + 16, 28, 6, 0, 0, Math.PI * 2); ctx.fill();
+  // Shadow — big; Ramses is roughly 2x a normal human.
+  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.beginPath(); ctx.ellipse(x, y + 10, 34, 7, 0, 0, Math.PI * 2); ctx.fill();
 
   let bob = 0;
   if (phase === "airborne") {
     const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.75));
-    bob = -Math.sin(t * Math.PI) * 110;
+    bob = -Math.sin(t * Math.PI) * 130;
   } else if (phase === "telegraph") {
-    bob = -6 - Math.sin(s.now * 20) * 4;
+    bob = -8 - Math.sin(s.now * 20) * 4;
   } else if (seated) {
-    // seated on throne — very small breathing motion.
-    bob = idleBob * 0.4;
+    bob = idleBob * 0.35;
   } else {
     bob = idleBob;
   }
 
-  // ---- body (roughly 2x human height: ~70 tall) ----
-  ctx.save();
-  // Legs / kilt — white with gold trim
-  ctx.fillStyle = "#f6efdc"; ctx.fillRect(x - 12, y - 14 + bob, 24, 20);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 12, y - 14 + bob, 24, 3);
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 12, y + 3 + bob, 24, 3);
-  // gold vertical stripe center of kilt
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 12 + bob, 4, 16);
-  // Legs proper (below kilt)
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 9, y + 6 + bob, 6, 10); ctx.fillRect(x + 3, y + 6 + bob, 6, 10);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 10, y + 14 + bob, 8, 2); ctx.fillRect(x + 2, y + 14 + bob, 8, 2); // anklets
-  // Torso — bare copper skin with gold usekh collar
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 12, y - 32 + bob, 24, 18);
-  ctx.fillStyle = "#8a5a34"; ctx.fillRect(x - 12, y - 16 + bob, 24, 2);
-  // Usekh collar (broad gold necklace)
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 12, y - 32 + bob, 24, 5);
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 12, y - 30 + bob, 24, 2);
-  ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 12, y - 28 + bob, 24, 1);
+  // Draws on the same 3-screen-pixel grid used for humanoids, at 2× Moses scale.
+  const RPX = 3;
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    const rx = flip === 1 ? x + dx * RPX : x - (dx + w) * RPX;
+    const ry = y + (dy + bob / RPX) * RPX;
+    ctx.fillRect(rx, ry, w * RPX, h * RPX);
+  };
+
+  // -------- Legs / kilt (white shendyt with gold trim) --------
+  if (!seated) {
+    // walking legs
+    if (walk) { p(-4, -1, 3, 5, "#c99a6c"); p(1, -1, 3, 5, "#c99a6c"); }
+    else { p(-5, -1, 3, 5, "#c99a6c"); p(2, -1, 3, 5, "#c99a6c"); }
+    // gold anklets
+    p(-5, 3, 4, 1, "#e6c261"); p(1, 3, 4, 1, "#e6c261");
+  } else {
+    // seated legs (sit forward across throne)
+    p(-6, -1, 12, 3, "#c99a6c");
+    p(-6, -1, 12, 1, "#8a5a34");
+  }
+  // Shendyt kilt
+  p(-7, -8, 14, 6, "#f6efdc");
+  p(-7, -8, 14, 1, "#e6c261");
+  p(-7, -3, 14, 1, "#c9a05a");
+  // central gold panel
+  p(-1, -8, 2, 6, "#e6c261");
+  p(0, -8, 1, 6, "#c9700a");
+
+  // -------- Torso (bare copper w/ usekh collar) --------
+  p(-7, -18, 14, 10, "#c99a6c");
+  p(-7, -10, 14, 1, "#8a5a34");
+  // usekh (broad gold necklace)
+  p(-7, -18, 14, 2, "#e6c261");
+  p(-7, -17, 14, 1, "#3060c0");
+  p(-7, -16, 14, 1, "#a12b2b");
   // pectoral scarab
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 3, y - 25 + bob, 6, 4);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 24 + bob, 4, 2);
+  p(-2, -14, 4, 3, "#3060c0");
+  p(-2, -14, 4, 1, "#e6c261");
+  p(-1, -13, 2, 1, "#e6c261");
+  // arms
+  p(-8, -17, 1, 6, "#c99a6c"); p(7, -17, 1, 6, "#c99a6c");
+  p(-8, -11, 1, 3, "#8a5a34"); p(7, -11, 1, 3, "#8a5a34"); // arm shading
 
-  // Neck
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 5, y - 36 + bob, 10, 4);
+  // -------- Neck + head --------
+  p(-3, -20, 6, 2, "#c99a6c");
+  p(-6, -28, 12, 8, "#c99a6c");
+  // kohl eyes
+  p(-5, -25, 4, 1, "#2b1d14"); p(1, -25, 4, 1, "#2b1d14");
+  p(-4, -24, 1, 1, "#f6efdc"); p(2, -24, 1, 1, "#f6efdc");
+  p(-3, -24, 1, 1, "#2b1d14"); p(3, -24, 1, 1, "#2b1d14");
+  // brow / kohl tail
+  p(-6, -26, 6, 1, "#2b1d14"); p(0, -26, 6, 1, "#2b1d14");
+  // pharaoh beard (postiche)
+  p(-1, -20, 2, 4, "#4a2c18");
+  p(-1, -17, 2, 1, "#e6c261");
 
-  // ---- Head — 16x14 face ----
-  ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 8, y - 50 + bob, 16, 14);
-  // eye makeup (Egyptian kohl)
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 6, y - 44 + bob, 5, 2); ctx.fillRect(x + 1, y - 44 + bob, 5, 2);
-  ctx.fillStyle = "#f6efdc"; ctx.fillRect(x - 5, y - 43 + bob, 3, 1); ctx.fillRect(x + 2, y - 43 + bob, 3, 1);
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 4, y - 43 + bob, 1, 1); ctx.fillRect(x + 3, y - 43 + bob, 1, 1);
-  // pharaoh's beard
-  ctx.fillStyle = "#4a2c18"; ctx.fillRect(x - 2, y - 36 + bob, 4, 6);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 30 + bob, 4, 1);
-
-  // ---- Nemes headdress (blue + gold striped) — flares outward at shoulders ----
-  // Top crown of the nemes
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 10, y - 58 + bob, 20, 10);
-  for (let i = 0; i < 5; i++) {
-    ctx.fillStyle = i % 2 === 0 ? "#e6c261" : "#3060c0";
-    ctx.fillRect(x - 10 + i * 4, y - 58 + bob, 4, 10);
+  // -------- Nemes headdress (blue+gold striped) --------
+  // top crown
+  for (let i = 0; i < 8; i++) {
+    p(-8 + i * 2, -34, 2, 6, i % 2 === 0 ? "#3060c0" : "#e6c261");
   }
-  // Nemes side flaps
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 13, y - 48 + bob, 3, 12); ctx.fillRect(x + 10, y - 48 + bob, 3, 12);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 13, y - 48 + bob, 3, 2); ctx.fillRect(x + 10, y - 48 + bob, 3, 2);
-  ctx.fillRect(x - 13, y - 42 + bob, 3, 2); ctx.fillRect(x + 10, y - 42 + bob, 3, 2);
-  // Front brow band
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 10, y - 50 + bob, 20, 3);
-  // Uraeus (cobra) — rearing over brow
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 2, y - 63 + bob, 4, 5);
-  ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 1, y - 62 + bob, 2, 2);
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 2, y - 58 + bob, 4, 1);
+  // front brow band
+  p(-8, -29, 16, 2, "#e6c261");
+  p(-8, -29, 16, 1, "#c9700a");
+  // side flaps flaring outward
+  p(-10, -28, 2, 8, "#3060c0");
+  p(8, -28, 2, 8, "#3060c0");
+  p(-10, -28, 2, 1, "#e6c261"); p(8, -28, 2, 1, "#e6c261");
+  p(-10, -24, 2, 1, "#e6c261"); p(8, -24, 2, 1, "#e6c261");
+  p(-10, -20, 2, 1, "#e6c261"); p(8, -20, 2, 1, "#e6c261");
+  // Uraeus cobra rearing over brow
+  p(-1, -37, 2, 3, "#e6c261");
+  p(-1, -36, 2, 1, "#a12b2b");
+  p(-2, -33, 4, 1, "#e6c261");
+  p(-1, -32, 2, 1, "#2b1d14");
 
-  // ---- Royal staff (was'-scepter with forked base) — held in front unless airborne ----
+  // -------- Was-scepter (held in front unless airborne) --------
   if (phase !== "airborne") {
-    const staffX = x + flip * 14;
-    const topY = y - 62 + bob;
-    const botY = y + 14 + bob;
-    // shaft
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(staffX - 1, topY, 3, botY - topY);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(staffX, topY + 2, 1, botY - topY - 4);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(staffX, topY + 4, 1, 6);
-    // was-scepter head (stylized animal head)
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(staffX - 3, topY - 4, 8, 6);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(staffX - 3, topY - 4, 8, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(staffX + 3, topY - 2, 1, 1); // eye
+    ctx.save();
+    const staffX = x + flip * 10 * RPX;
+    const staffTopY = y + (-36 + bob / RPX) * RPX;
+    const staffBotY = y + (6 + bob / RPX) * RPX;
+    // shaft — layered wood
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 6; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    // was-scepter head (stylized set-animal)
+    ctx.fillStyle = "#e6c261";
+    ctx.fillRect(staffX - flip * 2, staffTopY - 10, flip * 10, 7);
+    ctx.fillStyle = "#3060c0";
+    ctx.fillRect(staffX - flip * 2, staffTopY - 10, flip * 10, 2);
+    ctx.fillStyle = "#2b1d14";
+    ctx.fillRect(staffX + flip * 6, staffTopY - 7, 2, 2); // eye
     // forked base
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(staffX - 3, botY - 2, 3, 3); ctx.fillRect(staffX + 1, botY - 2, 3, 3);
+    ctx.fillStyle = "#2b1d14";
+    ctx.fillRect(staffX - 5, staffBotY - 2, 4, 5);
+    ctx.fillRect(staffX + 1, staffBotY - 2, 4, 5);
+    ctx.restore();
   }
-  ctx.restore();
 
-  // Land shockwave
+  // Land shockwave (unchanged)
   if (phase === "land") {
     const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.4));
     const R = (d.landRadius as number) * (0.4 + t * 1.1);
     ctx.save();
     ctx.globalAlpha = 1 - t;
-    ctx.strokeStyle = "#f5d488"; ctx.lineWidth = 4;
+    ctx.strokeStyle = "#f5d488"; ctx.lineWidth = 5;
     ctx.beginPath(); ctx.arc(x, y + 6, R, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 2;
+    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(x, y + 6, R * 0.75, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 24; i++) {
-      const a = (i / 24) * Math.PI * 2;
+    for (let i = 0; i < 28; i++) {
+      const a = (i / 28) * Math.PI * 2;
       const rr = R * (0.7 + Math.random() * 0.3);
       const dx = Math.round(x + Math.cos(a) * rr);
       const dy = Math.round(y + 6 + Math.sin(a) * rr * 0.5);
       ctx.fillStyle = i % 2 ? "#c9a06a" : "#e6c261";
-      ctx.fillRect(dx - 1, dy - 1, 3, 3);
-    }
-    ctx.strokeStyle = "#3a1810"; ctx.lineWidth = 2;
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2 + 0.4;
-      ctx.beginPath(); ctx.moveTo(x, y + 6);
-      const lx = x + Math.cos(a) * R * 0.85;
-      const ly = y + 6 + Math.sin(a) * R * 0.85;
-      ctx.lineTo(lx, ly); ctx.stroke();
+      ctx.fillRect(dx - 2, dy - 2, 4, 4);
     }
     ctx.restore();
   }
 
-  // HP bar (visible when active only)
+  // HP bar visible when active
   if (d.active) {
-    const bw = 72;
-    ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(x - bw / 2 - 1, y - 74 + bob - 1, bw + 2, 6);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 74 + bob, bw, 4);
-    ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 74 + bob, bw * Math.max(0, e.hp / e.maxHp), 4);
-    ctx.fillStyle = "#ffdd80"; ctx.font = "700 11px Nunito, sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("RAMSES", x, y - 78 + bob);
+    const bw = 80;
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 46 * RPX - 1, bw + 2, 6);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw, 4);
+    ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw * Math.max(0, e.hp / e.maxHp), 4);
+    ctx.fillStyle = "#ffdd80"; ctx.font = "700 12px Nunito, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("RAMSES", x, y - 46 * RPX - 5);
   }
 }
 
@@ -1138,72 +1635,87 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
+  const TPX = 3;
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(x + dx * TPX, y + dy * TPX, w * TPX, h * TPX);
+  };
   ctx.save();
-  // large shadow
-  ctx.fillStyle = "rgba(0,0,0,0.35)";
-  ctx.beginPath(); ctx.ellipse(x, y + 28, 34, 7, 0, 0, Math.PI * 2); ctx.fill();
+  // Big soft shadow
+  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  ctx.beginPath(); ctx.ellipse(x, y + 12 * TPX, 44, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-  // ---- base plinth (stepped) ----
-  ctx.fillStyle = "#a17048"; ctx.fillRect(x - 30, y + 22, 60, 8);
-  ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x - 30, y + 28, 60, 3);
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 30, y + 22, 60, 2);
-
-  // ---- seat block ----
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 26, y + 4, 52, 20);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 26, y + 4, 52, 3);
-  ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 26, y + 20, 52, 3);
-  // side hieroglyph panels (blue + red)
-  ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 24, y + 8, 48, 3);
-  ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 24, y + 15, 48, 2);
-  // hieroglyph symbols on front panel
-  ctx.fillStyle = "#2b1d14";
-  for (let i = 0; i < 4; i++) {
-    const gx = x - 18 + i * 12;
-    ctx.fillRect(gx, y + 12, 2, 3);
-    ctx.fillRect(gx - 1, y + 15, 4, 1);
+  // -------- Stepped stone plinth --------
+  p(-13, 8, 26, 3, "#a17048");
+  p(-13, 8, 26, 1, "#c9a05a");
+  p(-13, 10, 26, 1, "#7a4a2b");
+  // hieroglyph frieze on plinth
+  for (let i = 0; i < 6; i++) {
+    p(-11 + i * 4, 9, 1, 1, "#2b1d14");
+    p(-10 + i * 4, 9, 1, 1, "#2b1d14");
   }
 
-  // ---- backrest — tall, rounded top ----
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 24, y - 52, 48, 56);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 24, y - 52, 48, 3);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 24, y - 46, 48, 2);
-  // rounded corners hint
-  ctx.fillStyle = "#a17048"; ctx.fillRect(x - 24, y - 52, 3, 3); ctx.fillRect(x + 21, y - 52, 3, 3);
-  // Sun disk with rays at top center
-  ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(x, y - 40, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(x, y - 40, 5, 0, Math.PI * 2); ctx.fill();
+  // -------- Backrest (tall gold panel) --------
+  p(-9, -20, 18, 22, "#c9a05a");
+  p(-9, -20, 18, 1, "#e6c261");
+  p(-9, -18, 18, 1, "#e6c261");
+  p(-9, 1, 18, 1, "#8a5a20");
+  // blue-and-gold vertical striping on the backrest
+  for (let i = 0; i < 3; i++) {
+    p(-9 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
+    p(7 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
+  }
+  // Central winged sun-disk emblem
+  ctx.fillStyle = "#e6c261";
+  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 8, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#c9700a";
+  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 5, 0, Math.PI * 2); ctx.fill();
+  // wings
+  ctx.fillStyle = "#3060c0";
+  ctx.fillRect(x - 22, y - 15 * TPX - 2, 14, 3);
+  ctx.fillRect(x + 8, y - 15 * TPX - 2, 14, 3);
+  ctx.fillStyle = "#e6c261";
+  ctx.fillRect(x - 22, y - 15 * TPX + 1, 14, 1);
+  ctx.fillRect(x + 8, y - 15 * TPX + 1, 14, 1);
+  // rays
   ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 1;
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
     ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * 9, y - 40 + Math.sin(a) * 9);
-    ctx.lineTo(x + Math.cos(a) * 13, y - 40 + Math.sin(a) * 13);
+    ctx.moveTo(x + Math.cos(a) * 9, y - 15 * TPX + Math.sin(a) * 9);
+    ctx.lineTo(x + Math.cos(a) * 13, y - 15 * TPX + Math.sin(a) * 13);
     ctx.stroke();
   }
-  // Vertical blue+gold striping on backrest sides
-  for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = i % 2 === 0 ? "#3060c0" : "#e6c261";
-    ctx.fillRect(x - 24 + i * 2, y - 30, 2, 30);
-    ctx.fillRect(x + 16 + i * 2, y - 30, 2, 30);
-  }
 
-  // ---- armrests: cobra-headed ----
-  ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 30, y - 6, 6, 24); ctx.fillRect(x + 24, y - 6, 6, 24);
-  ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 30, y - 6, 6, 3); ctx.fillRect(x + 24, y - 6, 6, 3);
-  // cobra heads on top of armrests
+  // -------- Seat block --------
+  p(-11, 2, 22, 6, "#c9a05a");
+  p(-11, 2, 22, 1, "#e6c261");
+  p(-11, 7, 22, 1, "#8a5a20");
+  // side hieroglyph panels
+  p(-10, 4, 20, 1, "#3060c0");
+  p(-10, 6, 20, 1, "#a12b2b");
+
+  // -------- Armrests with cobra heads --------
+  p(-13, -2, 2, 10, "#c9a05a");
+  p(11, -2, 2, 10, "#c9a05a");
+  p(-13, -2, 2, 1, "#e6c261"); p(11, -2, 2, 1, "#e6c261");
+  // cobra heads
   const cobra = (cx: number) => {
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(cx - 3, y - 14, 6, 8);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(cx - 3, y - 14, 6, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(cx - 2, y - 10, 1, 1); ctx.fillRect(cx + 1, y - 10, 1, 1);
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(cx - 1, y - 7, 2, 1);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 8);
+    ctx.fillStyle = "#3060c0"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 2);
+    ctx.fillStyle = "#2b1d14"; ctx.fillRect(cx - 3, y - 4 * TPX + 2, 2, 2); ctx.fillRect(cx + 1, y - 4 * TPX + 2, 2, 2);
+    ctx.fillStyle = "#a12b2b"; ctx.fillRect(cx - 1, y - 3 * TPX + 3, 2, 1); // forked tongue
   };
-  cobra(x - 27); cobra(x + 27);
+  cobra(x - 12 * TPX); cobra(x + 12 * TPX);
 
-  // ---- legs (lion paws) ----
-  ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 26, y + 24, 6, 6); ctx.fillRect(x + 20, y + 24, 6, 6);
-  ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 26, y + 29, 6, 2); ctx.fillRect(x + 20, y + 29, 6, 2);
+  // -------- Lion-paw legs --------
+  p(-13, 11, 3, 2, "#8a5a20");
+  p(10, 11, 3, 2, "#8a5a20");
+  p(-13, 12, 1, 1, "#2b1d14"); p(-12, 12, 1, 1, "#2b1d14"); p(-11, 12, 1, 1, "#2b1d14");
+  p(10, 12, 1, 1, "#2b1d14"); p(11, 12, 1, 1, "#2b1d14"); p(12, 12, 1, 1, "#2b1d14");
   ctx.restore();
 }
+
 
 
 // ---------------- staff swing effect ----------------
