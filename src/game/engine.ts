@@ -292,6 +292,7 @@ export function update(state: GameState, dt: number) {
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
+        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
         const d = wrapDist2(state, e.pos, n.pos);
         if (d < bestD * 0.7) {
           bestD = d;
@@ -314,6 +315,7 @@ export function update(state: GameState, dt: number) {
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
+        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
         if (wrapDist2(state, e.pos, n.pos) < (e.radius + n.radius) ** 2) {
           const contactDmg = (e.data?.contactDmg as number) ?? 8;
           n.hp -= contactDmg * dt;
@@ -1084,13 +1086,25 @@ const COMPANION_COMBAT: Record<import("./types").NpcId, CompanionCombat> = {
 
 function updateCompanion(state: GameState, e: Entity, dt: number) {
   const d = e.data!;
+  // Summon lockout — companion is invulnerable and frozen for ~1s while the
+  // golden summoning light plays around them.
+  if (d.summonUntil && state.now < (d.summonUntil as number)) {
+    return;
+  }
   if (d.downedUntil) {
     if (state.now >= (d.downedUntil as number)) {
       d.downedUntil = undefined;
+      d.standupUntil = state.now + 0.6; // brief rise animation
       e.hp = e.maxHp;
     } else {
       return;
     }
+  }
+  if (d.standupUntil && state.now < (d.standupUntil as number)) {
+    // Rising — no movement or attack until standup completes.
+    return;
+  } else if (d.standupUntil) {
+    d.standupUntil = undefined;
   }
   const p = state.player;
   const combat = COMPANION_COMBAT[e.kind as import("./types").NpcId] ?? COMPANION_COMBAT.elder;
@@ -1146,9 +1160,16 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
       if (d2 < bestD) { bestD = d2; nearest = en; }
     }
     if (nearest) {
-      spawnCompanionAttack(state, e, nearest, combat);
-      d.attackT = 0.28; // trigger swing animation
-      d.attackTMax = 0.28;
+      // Windup pose plays first; the projectile / hit resolves after windup.
+      const windup = 0.18;
+      const swing = 0.22;
+      d.attackT = windup + swing;
+      d.attackTMax = windup + swing;
+      d.attackWindup = windup;
+      d.attackSwing = swing;
+      d.attackTarget = { x: nearest.pos.x, y: nearest.pos.y };
+      d.attackNearestId = nearest.id;
+      d.attackResolved = false;
       d.atkCd = combat.cooldown;
     } else {
       d.atkCd = 0.3;
@@ -1156,8 +1177,23 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   } else {
     d.atkCd = cd;
   }
-}
 
+  // Resolve the attack the moment the swing peaks (mid-arc), so animation and
+  // damage/projectile spawning are synchronised.
+  if ((d.attackT as number | undefined) != null && !d.attackResolved) {
+    const total = (d.attackTMax as number) ?? 0.4;
+    const windup = (d.attackWindup as number) ?? 0.18;
+    if ((d.attackT as number) <= total - windup) {
+      const tid = d.attackNearestId as number | undefined;
+      const tgt = tid != null ? state.entities.get(tid) : undefined;
+      const fallback = tgt && tgt.hp > 0
+        ? tgt
+        : ({ pos: (d.attackTarget as { x: number; y: number }) ?? e.pos, hp: 1 } as unknown as Entity);
+      spawnCompanionAttack(state, e, fallback, combat);
+      d.attackResolved = true;
+    }
+  }
+}
 
 function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, combat: CompanionCombat) {
   const dx = target.pos.x - ally.pos.x;
@@ -1219,7 +1255,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
-    data: { atkCd: 0.5, wanderT: 0 },
+    data: { atkCd: 1.2, wanderT: 0, summonUntil: state.now + 1.0 },
   };
   state.entities.set(ally.id, ally);
   state.npcs.set(npcId, ally.id);
