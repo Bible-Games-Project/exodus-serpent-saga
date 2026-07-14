@@ -558,48 +558,58 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   drawShepherdStaff(ctx, gripX, gripY, rot, facing, 62);
 }
 
-// Shared shepherd's-crook renderer: grip at (gx,gy), staff extends 25% down
-// (butt) and 75% up (crook). Crook curves back toward the walker like a
-// biblical shepherd's rod.
+// Shared shepherd's-crook renderer: the grip sits at (gx, gy). The staff is a
+// mostly-straight wooden shaft; only the upper ~20% curves in a soft S that
+// ends in a small hooked tip — a classic shepherd's rod, never a "1" shape.
 function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number, tiltRadians: number, facing: number, length: number) {
   const dirX = Math.cos(tiltRadians) * facing;
   const dirY = Math.sin(tiltRadians);
-  const buttLen = length * 0.25;
-  const topLen = length * 0.75;
-  const buttX = gx - dirX * buttLen;
-  const buttY = gy - dirY * buttLen;
-  const topX = gx + dirX * topLen;
-  const topY = gy + dirY * topLen;
-  // main shaft — layered strokes for pixel-art depth
-  ctx.save();
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(topX, topY); ctx.stroke();
-  ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(topX, topY); ctx.stroke();
-  ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(topX, topY); ctx.stroke();
-
-  // shepherd's crook — quadratic curve back toward the walker
   const perpX = -dirY * facing;
   const perpY = dirX * facing;
-  const crookR = length * 0.16;
-  const ctrlX = topX + dirX * crookR - perpX * crookR * 0.4;
-  const ctrlY = topY + dirY * crookR - perpY * crookR * 0.4;
-  const endX = topX + perpX * crookR * 1.9 - dirX * crookR * 0.3;
-  const endY = topY + perpY * crookR * 1.9 - dirY * crookR * 0.3;
-  ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY); ctx.stroke();
-  ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY); ctx.stroke();
-  ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(topX, topY); ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY); ctx.stroke();
 
-  // hand knuckle at the grip
+  const buttLen = length * 0.25;
+  const shaftLen = length * 0.80;
+  const buttX = gx - dirX * buttLen;
+  const buttY = gy - dirY * buttLen;
+  const shaftTopX = gx + dirX * shaftLen;
+  const shaftTopY = gy + dirY * shaftLen;
+
+  ctx.save();
+  ctx.lineCap = "round";
+  const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
+    ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  };
+  drawShaft(buttX, buttY, shaftTopX, shaftTopY);
+
+  // Upper S-curve crook (soft, small).
+  const crookLen = length * 0.20;
+  const bendAmt = length * 0.09;
+  const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
+  const c1Y = shaftTopY + dirY * crookLen * 0.35 + perpY * bendAmt * 0.7;
+  const c2X = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 0.2;
+  const c2Y = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 0.2;
+  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.4;
+  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.4;
+
+  const drawCurve = (col: string, lw: number) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    ctx.beginPath(); ctx.moveTo(shaftTopX, shaftTopY);
+    ctx.bezierCurveTo(c1X, c1Y, c2X, c2Y, endX, endY);
+    ctx.stroke();
+  };
+  drawCurve("#2b1d10", 6);
+  drawCurve("#8a5a34", 4);
+  drawCurve("#b48355", 2);
+
   ctx.fillStyle = "#5a3820";
   ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
-  return { buttX, buttY, topX, topY, endX, endY };
+  return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
 }
 
 
