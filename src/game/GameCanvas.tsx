@@ -774,9 +774,12 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   const shY = shake ? (Math.random() - 0.5) * shake : 0;
   ctx.translate(shX, shY);
 
-  const tileSize = 64;
-  const offX = -((cam.x * 0.5) % tileSize);
-  const offY = -((cam.y * 0.5) % tileSize);
+  // Seamless ground: 1:1 scroll (no parallax) so wrapping the world never
+  // causes a visible jump. World dimensions are a multiple of tileSize.
+  const tileSize = 256;
+  const mod = (v: number, m: number) => ((v % m) + m) % m;
+  const offX = -mod(cam.x, tileSize);
+  const offY = -mod(cam.y, tileSize);
   for (let y = offY - tileSize; y < viewH + tileSize; y += tileSize) {
     for (let x = offX - tileSize; x < viewW + tileSize; x += tileSize) {
       ctx.drawImage(sandTile, x, y);
