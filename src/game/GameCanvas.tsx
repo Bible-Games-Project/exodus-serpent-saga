@@ -30,19 +30,100 @@ const SPRITE_MAP: Record<string, Sprite> = {
 const SCALE = 3;
 
 function makeSandTile(): HTMLCanvasElement {
-  const size = 64;
+  // Large, seamless desert tile with dunes, stones and colour variations.
+  const size = 256;
   const c = document.createElement("canvas");
   c.width = size; c.height = size;
   const g = c.getContext("2d")!;
+  // Base gradient — warm sand
   const grd = g.createLinearGradient(0, 0, 0, size);
   grd.addColorStop(0, "#eccf9e");
-  grd.addColorStop(1, "#dbb47f");
+  grd.addColorStop(0.5, "#e2c088");
+  grd.addColorStop(1, "#d4a973");
   g.fillStyle = grd;
   g.fillRect(0, 0, size, size);
-  g.fillStyle = "rgba(120,80,50,0.08)";
-  for (let i = 0; i < 40; i++) g.fillRect(Math.random() * size, Math.random() * size, 2, 2);
+
+  // Seamless helper: draw with wrap by repeating at ±size on any overflow.
+  const drawSeamless = (fn: (ox: number, oy: number) => void) => {
+    for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) fn(ox, oy);
+  };
+
+  // Dunes — soft elongated arcs of lighter and darker sand.
+  const dunes = 6;
+  for (let i = 0; i < dunes; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const rx = 40 + Math.random() * 60;
+    const ry = 8 + Math.random() * 14;
+    const light = Math.random() < 0.5;
+    drawSeamless((ox, oy) => {
+      const grad = g.createRadialGradient(cx + ox, cy + oy, 2, cx + ox, cy + oy, rx);
+      grad.addColorStop(0, light ? "rgba(255,235,190,0.35)" : "rgba(120,80,40,0.18)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grad;
+      g.beginPath();
+      g.ellipse(cx + ox, cy + oy, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2);
+      g.fill();
+    });
+  }
+
+  // Subtle colour patches
+  for (let i = 0; i < 30; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const r = 12 + Math.random() * 30;
+    const tint = Math.random() < 0.5
+      ? "rgba(180,140,90,0.10)"
+      : "rgba(255,220,170,0.10)";
+    drawSeamless((ox, oy) => {
+      const grad = g.createRadialGradient(cx + ox, cy + oy, 0, cx + ox, cy + oy, r);
+      grad.addColorStop(0, tint);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grad;
+      g.fillRect(cx + ox - r, cy + oy - r, r * 2, r * 2);
+    });
+  }
+
+  // Fine sand grains
+  for (let i = 0; i < 220; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    g.fillStyle = Math.random() < 0.5 ? "rgba(90,60,30,0.10)" : "rgba(255,240,210,0.12)";
+    g.fillRect(x, y, 2, 2);
+  }
+
+  // Scattered pebbles / small stones (pixel-art clusters, seamless)
+  const stones = 14;
+  for (let i = 0; i < stones; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const pieces = 3 + Math.floor(Math.random() * 4);
+    for (let j = 0; j < pieces; j++) {
+      const dx = (Math.random() - 0.5) * 10;
+      const dy = (Math.random() - 0.5) * 6;
+      const sw = 2 + Math.floor(Math.random() * 3);
+      const sh = 2 + Math.floor(Math.random() * 2);
+      drawSeamless((ox, oy) => {
+        g.fillStyle = "#7a5c3c";
+        g.fillRect(cx + ox + dx, cy + oy + dy, sw, sh);
+        g.fillStyle = "#a68356";
+        g.fillRect(cx + ox + dx, cy + oy + dy, sw, 1);
+      });
+    }
+  }
+
+  // Wind ripple lines
+  for (let i = 0; i < 18; i++) {
+    const y = Math.random() * size;
+    const len = 20 + Math.random() * 60;
+    const x = Math.random() * size;
+    g.fillStyle = "rgba(110,80,50,0.12)";
+    drawSeamless((ox, oy) => g.fillRect(x + ox, y + oy, len, 1));
+  }
+
   return c;
 }
+
 
 type Props = {
   onGameOver: (info: { level: number; survivalSeconds: number; kills: number }) => void;
