@@ -30,19 +30,100 @@ const SPRITE_MAP: Record<string, Sprite> = {
 const SCALE = 3;
 
 function makeSandTile(): HTMLCanvasElement {
-  const size = 64;
+  // Large, seamless desert tile with dunes, stones and colour variations.
+  const size = 256;
   const c = document.createElement("canvas");
   c.width = size; c.height = size;
   const g = c.getContext("2d")!;
+  // Base gradient — warm sand
   const grd = g.createLinearGradient(0, 0, 0, size);
   grd.addColorStop(0, "#eccf9e");
-  grd.addColorStop(1, "#dbb47f");
+  grd.addColorStop(0.5, "#e2c088");
+  grd.addColorStop(1, "#d4a973");
   g.fillStyle = grd;
   g.fillRect(0, 0, size, size);
-  g.fillStyle = "rgba(120,80,50,0.08)";
-  for (let i = 0; i < 40; i++) g.fillRect(Math.random() * size, Math.random() * size, 2, 2);
+
+  // Seamless helper: draw with wrap by repeating at ±size on any overflow.
+  const drawSeamless = (fn: (ox: number, oy: number) => void) => {
+    for (const ox of [-size, 0, size]) for (const oy of [-size, 0, size]) fn(ox, oy);
+  };
+
+  // Dunes — soft elongated arcs of lighter and darker sand.
+  const dunes = 6;
+  for (let i = 0; i < dunes; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const rx = 40 + Math.random() * 60;
+    const ry = 8 + Math.random() * 14;
+    const light = Math.random() < 0.5;
+    drawSeamless((ox, oy) => {
+      const grad = g.createRadialGradient(cx + ox, cy + oy, 2, cx + ox, cy + oy, rx);
+      grad.addColorStop(0, light ? "rgba(255,235,190,0.35)" : "rgba(120,80,40,0.18)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grad;
+      g.beginPath();
+      g.ellipse(cx + ox, cy + oy, rx, ry, Math.random() * Math.PI, 0, Math.PI * 2);
+      g.fill();
+    });
+  }
+
+  // Subtle colour patches
+  for (let i = 0; i < 30; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const r = 12 + Math.random() * 30;
+    const tint = Math.random() < 0.5
+      ? "rgba(180,140,90,0.10)"
+      : "rgba(255,220,170,0.10)";
+    drawSeamless((ox, oy) => {
+      const grad = g.createRadialGradient(cx + ox, cy + oy, 0, cx + ox, cy + oy, r);
+      grad.addColorStop(0, tint);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grad;
+      g.fillRect(cx + ox - r, cy + oy - r, r * 2, r * 2);
+    });
+  }
+
+  // Fine sand grains
+  for (let i = 0; i < 220; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    g.fillStyle = Math.random() < 0.5 ? "rgba(90,60,30,0.10)" : "rgba(255,240,210,0.12)";
+    g.fillRect(x, y, 2, 2);
+  }
+
+  // Scattered pebbles / small stones (pixel-art clusters, seamless)
+  const stones = 14;
+  for (let i = 0; i < stones; i++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const pieces = 3 + Math.floor(Math.random() * 4);
+    for (let j = 0; j < pieces; j++) {
+      const dx = (Math.random() - 0.5) * 10;
+      const dy = (Math.random() - 0.5) * 6;
+      const sw = 2 + Math.floor(Math.random() * 3);
+      const sh = 2 + Math.floor(Math.random() * 2);
+      drawSeamless((ox, oy) => {
+        g.fillStyle = "#7a5c3c";
+        g.fillRect(cx + ox + dx, cy + oy + dy, sw, sh);
+        g.fillStyle = "#a68356";
+        g.fillRect(cx + ox + dx, cy + oy + dy, sw, 1);
+      });
+    }
+  }
+
+  // Wind ripple lines
+  for (let i = 0; i < 18; i++) {
+    const y = Math.random() * size;
+    const len = 20 + Math.random() * 60;
+    const x = Math.random() * size;
+    g.fillStyle = "rgba(110,80,50,0.12)";
+    drawSeamless((ox, oy) => g.fillRect(x + ox, y + oy, len, 1));
+  }
+
   return c;
 }
+
 
 type Props = {
   onGameOver: (info: { level: number; survivalSeconds: number; kills: number }) => void;
@@ -211,10 +292,12 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const push = (kind: BonusKind, until?: number) => {
     if (until && state.now < until) buffs.push({ kind, remaining: until - state.now });
   };
+  push("shield", state.shieldUntil);
+  push("lightning", state.speedBoostUntil);
   push("magnet", state.magnetBoostUntil);
   push("star", state.invulnUntil);
-  push("lightning", state.speedBoostUntil);
-  push("shield", state.shieldUntil);
+
+  const notifs = state.notifications ?? [];
 
   return (
     <>
@@ -234,31 +317,64 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
           {Math.max(0, Math.ceil(p.hp))} / {p.maxHp}
         </div>
         {buffs.length > 0 && (
-          <div className="mt-2 flex justify-end gap-1">
+          <div className="mt-2 flex justify-end gap-1.5">
             {buffs.map((b) => (
-              <div key={b.kind} className="rounded bg-black/40 px-1.5 py-0.5 text-[10px] text-white" style={{ borderLeft: `3px solid ${BONUSES[b.kind].color}` }}>
-                {BONUSES[b.kind].emoji} {Math.ceil(b.remaining)}s
+              <div
+                key={b.kind}
+                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1.5 pt-1 pb-0.5 text-white shadow-lg ring-1"
+                style={{ borderTop: `3px solid ${BONUSES[b.kind].color}` }}
+                title={BONUSES[b.kind].name}
+              >
+                <span className="text-base leading-none">{BONUSES[b.kind].emoji}</span>
+                <span className="mt-0.5 text-[10px] font-bold tabular-nums leading-none">
+                  {Math.ceil(b.remaining)}s
+                </span>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Floating notifications */}
+      <div className="pointer-events-none absolute inset-x-0 top-24 flex flex-col items-center gap-1.5">
+        {notifs.map((n) => {
+          const age = state.now - n.born;
+          const life = age / n.ttl;
+          const opacity = life < 0.15 ? life / 0.15 : life > 0.75 ? Math.max(0, (1 - life) / 0.25) : 1;
+          const translateY = life < 0.15 ? (1 - life / 0.15) * 12 : 0;
+          return (
+            <div
+              key={n.id}
+              className="rounded-full px-4 py-1.5 text-sm font-black uppercase tracking-wider text-white shadow-2xl"
+              style={{
+                background: "rgba(0,0,0,0.72)",
+                border: `2px solid ${n.color}`,
+                color: n.color,
+                opacity,
+                transform: `translateY(${translateY}px)`,
+                textShadow: "0 1px 2px rgba(0,0,0,0.9)",
+              }}
+            >
+              {n.text}
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }
 
-function LoadoutBar({ state, tick: _tick, onDismissPlague, onDismissNpc }: {
+// Loadout bar now only surfaces active companions (unlocked plagues are shown
+// via floating notifications when acquired, not as a permanent list).
+function LoadoutBar({ state, tick: _tick, onDismissPlague: _p, onDismissNpc }: {
   state: GameState; tick: number;
   onDismissPlague: (id: PlagueId) => void;
   onDismissNpc: (id: NpcId) => void;
 }) {
-  const plagues = Array.from(state.plagues.entries());
   const npcs = Array.from(state.npcs.keys());
+  if (npcs.length === 0) return null;
   return (
     <div className="absolute inset-x-0 bottom-2 flex flex-wrap items-center justify-center gap-1.5 px-2">
-      {plagues.map(([id, lvl]) => (
-        <LoadoutPill key={id} isNew={state.newPlagues.has(id)} title={PLAGUES[id].name} subtitle={`Lv ${lvl}`} tone="plague" onClick={() => onDismissPlague(id)} />
-      ))}
       {npcs.map((id) => (
         <LoadoutPill key={id} isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
       ))}
@@ -287,6 +403,7 @@ function LoadoutPill({ isNew, title, subtitle, tone, onClick }: {
     </button>
   );
 }
+
 
 // ------------- Pixel-art icon library for the Level-Up cards -------------
 // Each icon is a small string-grid on a shared palette. `.` = transparent.
@@ -693,9 +810,12 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   const shY = shake ? (Math.random() - 0.5) * shake : 0;
   ctx.translate(shX, shY);
 
-  const tileSize = 64;
-  const offX = -((cam.x * 0.5) % tileSize);
-  const offY = -((cam.y * 0.5) % tileSize);
+  // Seamless ground: 1:1 scroll (no parallax) so wrapping the world never
+  // causes a visible jump. World dimensions are a multiple of tileSize.
+  const tileSize = 256;
+  const mod = (v: number, m: number) => ((v % m) + m) % m;
+  const offX = -mod(cam.x, tileSize);
+  const offY = -mod(cam.y, tileSize);
   for (let y = offY - tileSize; y < viewH + tileSize; y += tileSize) {
     for (let x = offX - tileSize; x < viewW + tileSize; x += tileSize) {
       ctx.drawImage(sandTile, x, y);
@@ -1910,9 +2030,10 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   const kind = (e.data?.bonusKind as BonusKind) ?? "heart";
   void BONUSES[kind]; // ensures import is used
   const x = Math.round(e.pos.x - camX);
-  const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 3 + e.id) * 3);
-  // 3× larger pixel art, no glowing halo.
-  const px = 3;
+  const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 2.5 + e.id) * 4);
+  // ~3× larger pixel art (px 3 → 9). No circular halo/glow — just a tiny
+  // ground shadow so the item still reads as being "on the ground".
+  const px = 9;
   const draw = (grid: string[], palette: Record<string, string>, ox: number, oy: number) => {
     for (let ry = 0; ry < grid.length; ry++) {
       for (let rx = 0; rx < grid[ry].length; rx++) {
@@ -1924,9 +2045,9 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
     }
   };
   ctx.save();
-  // soft ground shadow (subtle, not a glow)
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.beginPath(); ctx.ellipse(x, y + 12, 10, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // Faint elliptical ground shadow beneath the item (not a glow).
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.beginPath(); ctx.ellipse(x, y + 34, 22, 5, 0, 0, Math.PI * 2); ctx.fill();
   if (kind === "heart") {
     const H = [
       ".RR.RR.",

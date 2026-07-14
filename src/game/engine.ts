@@ -1,7 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { NPC_ORDER, NPCS } from "./npcs";
-import { BONUSES, rollBonusKind, shieldDamageMul, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
@@ -37,8 +37,8 @@ function wrapDist2(state: GameState, a: Vec2, b: Vec2): number {
 
 // ---------- state factory ----------
 export function createInitialState(): GameState {
-  const worldW = 8000;
-  const worldH = 8000;
+  const worldW = 8192; // multiple of 256 for seamless ground tiling
+  const worldH = 8192;
 
   const player: Entity = {
     id: 1,
@@ -221,6 +221,11 @@ export function update(state: GameState, dt: number) {
   // Screen effect decay
   if (state.screenShake) state.screenShake = Math.max(0, state.screenShake - dt * 20);
   if (state.screenFlash) state.screenFlash = Math.max(0, state.screenFlash - dt * 2);
+
+  // Age & cull floating notifications
+  if (state.notifications && state.notifications.length) {
+    state.notifications = state.notifications.filter((n) => state.now - n.born < n.ttl);
+  }
 
   // Player movement (speed passive + lightning bonus)
   const p = state.player;
@@ -468,7 +473,7 @@ export function update(state: GameState, dt: number) {
         e.pos.x = wrap(e.pos.x + (dx / d) * s * dt, state.worldW);
         e.pos.y = wrap(e.pos.y + (dy / d) * s * dt, state.worldH);
       }
-      if (d < 16) {
+      if (d < 16 || (e.kind?.startsWith("bonus_") && d < 34)) {
         if (e.kind === "gem") {
           state.xp += (e.data?.xp as number) ?? 1;
           while (state.xp >= state.xpToNext) levelUp(state);
@@ -1200,7 +1205,7 @@ function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, co
   const dy = target.pos.y - ally.pos.y;
   const dd = Math.hypot(dx, dy) || 1;
   ally.facing = dx > 0 ? 1 : -1;
-  const dmul = damageMultiplier(state);
+  const dmul = damageMultiplier(state) * 3; // companions hit ×3 harder
   if (combat.boltSpeed === 0) {
     if (dd < combat.attackRange) {
       target.hp -= combat.boltDmg * dmul;
@@ -1251,7 +1256,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
     pos: { x: px, y: py },
     vel: { x: 0, y: 0 },
     radius: 12,
-    hp: 180, maxHp: 180,
+    hp: 2700, maxHp: 2700, // companions are much sturdier (×15)
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
@@ -1261,6 +1266,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
   state.npcs.set(npcId, ally.id);
   state.nextNpcIndex = Math.min(NPC_ORDER.length, state.nextNpcIndex + 1);
   state.newNpcs.add(npcId);
+  pushNotification(state, `+ ${NPCS[npcId].name}`, "#ffd070");
 }
 
 function offerUpgrades(state: GameState) {
@@ -1295,6 +1301,7 @@ function offerUpgrades(state: GameState) {
         s.plagues.set(id, 1);
         s.plagueCooldown.set(id, 0.5);
         s.newPlagues.add(id);
+        pushNotification(s, `Unlocked: ${def.name}`, "#c4a24a");
       },
     });
     break;
