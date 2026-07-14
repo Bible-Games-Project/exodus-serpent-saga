@@ -1,7 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { NPC_ORDER, NPCS } from "./npcs";
-import { BONUSES, rollBonusKind, shieldDamageMul, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
