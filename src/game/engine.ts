@@ -222,6 +222,11 @@ export function update(state: GameState, dt: number) {
   if (state.screenShake) state.screenShake = Math.max(0, state.screenShake - dt * 20);
   if (state.screenFlash) state.screenFlash = Math.max(0, state.screenFlash - dt * 2);
 
+  // Age & cull floating notifications
+  if (state.notifications && state.notifications.length) {
+    state.notifications = state.notifications.filter((n) => state.now - n.born < n.ttl);
+  }
+
   // Player movement (speed passive + lightning bonus)
   const p = state.player;
   const speed = 150 * speedMultiplier(state);
