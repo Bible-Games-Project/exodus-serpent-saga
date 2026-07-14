@@ -292,6 +292,7 @@ export function update(state: GameState, dt: number) {
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
+        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
         const d = wrapDist2(state, e.pos, n.pos);
         if (d < bestD * 0.7) {
           bestD = d;
@@ -314,6 +315,7 @@ export function update(state: GameState, dt: number) {
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
+        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
         if (wrapDist2(state, e.pos, n.pos) < (e.radius + n.radius) ** 2) {
           const contactDmg = (e.data?.contactDmg as number) ?? 8;
           n.hp -= contactDmg * dt;
