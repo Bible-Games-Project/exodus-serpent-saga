@@ -182,23 +182,31 @@ export function enemyTick(
     }
     move((d2.jvx as number) ?? nx * spd, (d2.jvy as number) ?? ny * spd);
   } else if (def.behavior === "ranged") {
-    // hold distance and shoot
     const preferred = (def.attack?.range ?? 200) * 0.7;
     let mvx = nx, mvy = ny;
     if (d < preferred - 20) { mvx = -nx; mvy = -ny; }
-    else if (d < preferred + 20) { mvx = -ny; mvy = nx; } // strafe
+    else if (d < preferred + 20) { mvx = -ny; mvy = nx; }
     move(mvx * spd, mvy * spd);
     const cd = ((e.data!.atkCd as number) ?? 0) - dt;
+    // Trigger a short windup before firing.
+    if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
+      e.data!.windupUntil = state.now + cd;
+    }
     if (cd <= 0 && def.attack && d < def.attack.range) {
       helpers.spawnEnemyProjectile(e, { x: nx, y: ny }, def.attack.projectileKind, def.attack.projectileSpeed, def.attack.projectileDmg, def.attack.projectileTtl);
       e.data!.atkCd = def.attack.cooldown;
+      e.data!.lastAtkAt = state.now;
+      e.data!.windupUntil = 0;
     } else {
       e.data!.atkCd = cd;
     }
   } else if (def.behavior === "charge") {
     const d3 = e.data!;
     const chargingUntil = (d3.chargingUntil as number) ?? 0;
-    if (state.now < chargingUntil) {
+    const windupUntil = (d3.chargeWindupUntil as number) ?? 0;
+    if (state.now < windupUntil) {
+      // Anticipation — stand still and telegraph.
+    } else if (state.now < chargingUntil) {
       const cvx = d3.chargeVx as number;
       const cvy = d3.chargeVy as number;
       move(cvx * freezeMul, cvy * freezeMul);
@@ -207,11 +215,23 @@ export function enemyTick(
       if (cd <= 0 && d < 320) {
         d3.chargeVx = nx * (def.chargeSpeed ?? 240);
         d3.chargeVy = ny * (def.chargeSpeed ?? 240);
-        d3.chargingUntil = state.now + (def.chargeDuration ?? 0.8);
+        d3.chargeWindupUntil = state.now + 0.45;
+        d3.chargingUntil = state.now + 0.45 + (def.chargeDuration ?? 0.8);
         d3.chargeCd = def.chargeCooldown ?? 4;
       } else {
         d3.chargeCd = cd;
         move(nx * spd * 0.6, ny * spd * 0.6);
+      }
+    }
+  } else if (def.behavior === "chase" && def.category === "human") {
+    // Melee swing anim: when within contact range, fire a short swing pulse.
+    if (d < e.radius + 26) {
+      const swingCd = ((e.data!.swingCd as number) ?? 0) - dt;
+      if (swingCd <= 0) {
+        e.data!.swingUntil = state.now + 0.28;
+        e.data!.swingCd = 1.1;
+      } else {
+        e.data!.swingCd = swingCd;
       }
     }
   }
