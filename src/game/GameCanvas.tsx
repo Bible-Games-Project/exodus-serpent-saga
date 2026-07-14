@@ -636,7 +636,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
         <p className="mb-6 text-center text-sm text-muted-foreground">Choose your blessing</p>
         <div className="grid gap-4 sm:grid-cols-3">
           {choices.map((c) => {
-            const icon = iconFor(c);
+            const grid = iconGridFor(c);
             return (
               <button key={c.id} onClick={() => onPick(c)}
                 className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary">
@@ -645,8 +645,8 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
                     NEW
                   </span>
                 )}
-                <div className="mb-3 flex h-20 items-center justify-center rounded-lg text-4xl shadow-inner" style={{ background: icon.bg }}>
-                  <span style={{ filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.4))" }}>{icon.emoji}</span>
+                <div className="mb-3 flex h-20 items-center justify-center">
+                  <PixelIcon grid={grid} size={72} />
                 </div>
                 <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
                 <div className="text-xs text-muted-foreground">{c.description}</div>
