@@ -690,205 +690,375 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
 }
 
 // ---------------- procedural enemy renderers ----------------
+// All humanoid enemies are drawn at "Moses pixel density" (3 screen-pixels
+// per art-pixel), on a shared 16-wide grid whose origin is at the character's
+// feet-center. This keeps size, palette and shading consistent with Moses.
+const PX = 3;
+
 function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
-  const bob = Math.sin(e.animT) * 1;
   const flip = e.facing === -1 ? -1 : 1;
+  const t = e.animT;
+  const now = performance.now() / 1000;
+
+  // 2-step walk cycle; pauses when standing still isn't tracked here, so we
+  // just always bob a hair.
+  const walk = Math.sin(t * 1.2) > 0 ? 1 : 0;
+
+  // Draws a rect on the shared "art-pixel" grid. dx/dy are in art-pixels,
+  // measured from the character's feet-center. Flip mirrors horizontally.
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    const rx = flip === 1 ? x + dx * PX : x - (dx + w) * PX;
+    const ry = y + dy * PX;
+    ctx.fillRect(rx, ry, w * PX, h * PX);
+  };
 
   const shadow = (r: number) => {
-    ctx.fillStyle = "rgba(0,0,0,0.22)";
-    ctx.beginPath(); ctx.ellipse(x, y + 10, r, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 6, r, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
   };
   const hpBar = () => {
     if (e.hp < e.maxHp) {
-      const bw = 22;
-      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(x - bw / 2, y - 30, bw, 3);
-      ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, y - 30, bw * Math.max(0, e.hp / e.maxHp), 3);
+      const bw = 26;
+      ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, y - 20 * PX - 1, bw + 2, 5);
+      ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw, 3);
+      ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
   };
 
-  // Egyptian sword-soldier — bronze helmet, linen kilt, khopesh curved sword.
+  // ---------- Sword soldier (Egyptian infantry, khopesh + shield) ----------
   if (e.kind === "swordsoldier") {
-    shadow(10); ctx.save();
-    // legs
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 5, y + bob, 4, 8);
-    ctx.fillRect(x + 1, y + bob, 4, 8);
-    ctx.fillStyle = "#2b1a08"; ctx.fillRect(x - 5, y + 7 + bob, 4, 2);
-    ctx.fillRect(x + 1, y + 7 + bob, 4, 2);
+    shadow(14);
+    const swinging = now < ((e.data?.swingUntil as number) ?? 0);
+    const swingPhase = swinging ? 1 - Math.max(0, ((e.data!.swingUntil as number) - now) / 0.28) : 0;
+    // legs — alternate step
+    p(-3, -3, 2, 3, "#4a2a14"); p(1, -3, 2, 3, "#4a2a14");
+    if (walk) { p(-3, 0, 2, 1, "#2b1a08"); p(1, 0, 3, 1, "#2b1a08"); }
+    else { p(-4, 0, 3, 1, "#2b1a08"); p(1, 0, 2, 1, "#2b1a08"); }
     // white kilt with red trim
-    ctx.fillStyle = "#f4e2c1"; ctx.fillRect(x - 7, y - 4 + bob, 14, 6);
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 7, y + 1 + bob, 14, 1);
-    // torso — copper-toned skin
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 6, y - 14 + bob, 12, 10);
-    ctx.fillStyle = "#8a5a34"; ctx.fillRect(x - 6, y - 8 + bob, 12, 2); // belt shadow
-    // face
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 5, y - 22 + bob, 10, 8);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 3, y - 18 + bob, 2, 1);
-    ctx.fillRect(x + 1, y - 18 + bob, 2, 1);
-    // bronze helmet
-    ctx.fillStyle = "#b98550"; ctx.fillRect(x - 6, y - 26 + bob, 12, 6);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 6, y - 26 + bob, 12, 2);
-    ctx.fillStyle = "#7a5230"; ctx.fillRect(x - 6, y - 22 + bob, 12, 1);
-    // shield on left arm (facing side)
-    ctx.fillStyle = "#7a5230"; ctx.fillRect(x - flip * 8, y - 15 + bob, -flip * 3, 12);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - flip * 8, y - 12 + bob, -flip * 3, 5);
-    // khopesh — curved sickle-sword
+    p(-5, -6, 10, 3, "#f6efdc");
+    p(-5, -4, 10, 1, "#a12b2b");
+    p(-5, -6, 10, 1, "#d8b98a");
+    // torso — bronze cuirass
+    p(-5, -11, 10, 5, "#c99a6c");
+    p(-5, -11, 10, 1, "#8a5a34");
+    p(-5, -8, 10, 1, "#7a5230");
+    // pectoral gold
+    p(-2, -10, 4, 1, "#e6c261");
+    // arms
+    p(-6, -10, 1, 4, "#c99a6c"); p(5, -10, 1, 4, "#c99a6c");
+    // neck
+    p(-2, -13, 4, 2, "#c99a6c");
+    // head
+    p(-4, -17, 8, 4, "#c99a6c");
+    // face detail
+    p(-2, -15, 1, 1, "#2b1d14"); p(1, -15, 1, 1, "#2b1d14");
+    p(-1, -13, 2, 1, "#8a5a34"); // mouth line
+    // bronze helmet with gold band
+    p(-5, -20, 10, 3, "#b98550");
+    p(-5, -20, 10, 1, "#e6c261");
+    p(-5, -18, 10, 1, "#7a5230");
+    p(-1, -22, 2, 2, "#a12b2b"); // red plume base
+    p(0, -23, 1, 1, "#e05a48");
+    // shield on trailing arm (opposite of weapon)
+    p(-7, -10, 2, 6, "#7a5230");
+    p(-7, -10, 2, 1, "#e6c261");
+    p(-7, -7, 2, 1, "#e6c261");
+    p(-6, -9, 1, 4, "#c9a05a");
+    // khopesh — curved sword, swings on attack
     ctx.save();
-    ctx.translate(x + flip * 8, y - 15 + bob);
-    ctx.scale(flip, 1);
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(10, -4, 12, 6); ctx.stroke();
-    ctx.strokeStyle = "#dbe9f7"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(10, -4, 12, 6); ctx.stroke();
-    ctx.fillStyle = "#8a5a34"; ctx.fillRect(-1, -1, 3, 4);
-    ctx.restore();
-    ctx.restore(); hpBar(); return true;
-  }
-  // Nubian archer — leather cap, linen tunic, quiver on back, recurve bow.
-  if (e.kind === "archer") {
-    shadow(9); ctx.save();
-    // legs
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 4, y + bob, 3, 8); ctx.fillRect(x + 1, y + bob, 3, 8);
-    // tunic
-    ctx.fillStyle = "#d8b98a"; ctx.fillRect(x - 6, y - 12 + bob, 12, 12);
-    ctx.fillStyle = "#a17048"; ctx.fillRect(x - 6, y - 4 + bob, 12, 2);
-    // belt
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 6, y - 6 + bob, 12, 1);
-    // face
-    ctx.fillStyle = "#8a5a34"; ctx.fillRect(x - 5, y - 20 + bob, 10, 8);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 3, y - 16 + bob, 2, 1); ctx.fillRect(x + 1, y - 16 + bob, 2, 1);
-    // leather cap
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x - 5, y - 24 + bob, 10, 5);
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x - 5, y - 24 + bob, 10, 2);
-    // quiver on back
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x - flip * 7, y - 20 + bob, -flip * 3, 12);
-    ctx.fillStyle = "#f4e2c1"; ctx.fillRect(x - flip * 7, y - 22 + bob, -flip * 3, 2);
-    // recurve bow drawn on facing side
-    ctx.save();
-    ctx.translate(x + flip * 8, y - 12 + bob);
-    ctx.scale(flip, 1);
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, -10); ctx.quadraticCurveTo(9, -5, 6, 0); ctx.quadraticCurveTo(9, 5, 0, 10);
-    ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -10); ctx.quadraticCurveTo(9, -5, 6, 0); ctx.quadraticCurveTo(9, 5, 0, 10);
-    ctx.stroke();
+    const armX = x + flip * 5 * PX;
+    const armY = y - 9 * PX;
+    ctx.translate(armX, armY);
+    const swingAng = swinging
+      ? (-Math.PI * 0.4 + swingPhase * Math.PI * 0.95)
+      : -Math.PI * 0.15 + Math.sin(t) * 0.05;
+    ctx.rotate(flip === 1 ? swingAng : Math.PI - swingAng);
+    // hilt
+    ctx.fillStyle = "#5a3820"; ctx.fillRect(0, -3, 3, 6);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(0, -1, 3, 2);
+    // curved blade
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
+    ctx.strokeStyle = "#dbe9f7"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
     ctx.strokeStyle = "#f6efdc"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(0, 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
     ctx.restore();
-    ctx.restore(); hpBar(); return true;
-  }
-  // Mounted knight — white/tan horse with brown mane, spear-armed rider.
-  if (e.kind === "knight") {
-    shadow(18); ctx.save();
-    // horse body
-    ctx.fillStyle = "#d8b98a"; ctx.fillRect(x - 14, y - 10 + bob, 28, 10);
-    ctx.fillStyle = "#a17048"; ctx.fillRect(x - 14, y - 3 + bob, 28, 3);
-    // legs
-    ctx.fillStyle = "#c99a6c";
-    ctx.fillRect(x - 12, y + bob, 3, 9); ctx.fillRect(x - 6, y + bob, 3, 9);
-    ctx.fillRect(x + 4, y + bob, 3, 9); ctx.fillRect(x + 10, y + bob, 3, 9);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(x - 12, y + 8 + bob, 3, 2); ctx.fillRect(x - 6, y + 8 + bob, 3, 2);
-    ctx.fillRect(x + 4, y + 8 + bob, 3, 2); ctx.fillRect(x + 10, y + 8 + bob, 3, 2);
-    // head + neck
-    ctx.fillStyle = "#d8b98a"; ctx.fillRect(x + flip * 12, y - 16 + bob, flip * 6, 4);
-    ctx.fillRect(x + flip * 14, y - 20 + bob, flip * 5, 8);
-    // mane
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x + flip * 10, y - 14 + bob, flip * 4, 4);
-    ctx.fillRect(x + flip * 8, y - 12 + bob, flip * 3, 3);
-    // eye + mouth
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x + flip * 17, y - 17 + bob, 1, 1);
-    // rider — Egyptian officer
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(x - 6, y - 22 + bob, 12, 10); // cloak
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - 4, y - 28 + bob, 8, 6); // face
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 2, y - 25 + bob, 1, 1); ctx.fillRect(x + 1, y - 25 + bob, 1, 1);
-    ctx.fillStyle = "#b98550"; ctx.fillRect(x - 4, y - 32 + bob, 8, 5); // bronze helm
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 4, y - 32 + bob, 8, 2);
-    // spear held up
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(x - flip * 2, y - 22 + bob); ctx.lineTo(x + flip * 22, y - 34 + bob); ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x - flip * 2, y - 22 + bob); ctx.lineTo(x + flip * 22, y - 34 + bob); ctx.stroke();
-    ctx.fillStyle = "#dbe9f7";
-    ctx.beginPath();
-    ctx.moveTo(x + flip * 22, y - 34 + bob);
-    ctx.lineTo(x + flip * 26, y - 40 + bob);
-    ctx.lineTo(x + flip * 24, y - 32 + bob);
-    ctx.closePath(); ctx.fill();
-    ctx.restore(); hpBar(); return true;
-  }
-  // Egyptian war chariot — two horses, spoked wheel, standing driver with reins.
-  if (e.kind === "chariot") {
-    shadow(22); ctx.save();
-    // twin horse bodies (back + front stacked slightly)
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x + flip * 4, y - 12 + bob, flip * 18, 8);
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x + flip * 4, y - 5 + bob, flip * 18, 3);
-    // horse legs
-    ctx.fillStyle = "#2b1a08";
-    for (let i = 0; i < 4; i++) ctx.fillRect(x + flip * (6 + i * 4), y + bob, 2, 8);
-    // horse heads
-    ctx.fillStyle = "#7a4a2b"; ctx.fillRect(x + flip * 20, y - 18 + bob, flip * 5, 8);
-    ctx.fillStyle = "#4a2a14"; ctx.fillRect(x + flip * 20, y - 12 + bob, flip * 5, 2);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x + flip * 22, y - 20 + bob, flip * 2, 2); // plume
-    // reins
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x + flip * 20, y - 12 + bob); ctx.lineTo(x - flip * 6, y - 18 + bob); ctx.stroke();
-    // chariot cab (gold + blue Egyptian pattern)
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - flip * 16, y - 16 + bob, flip * 12, 14);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - flip * 16, y - 16 + bob, flip * 12, 3);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - flip * 16, y - 12 + bob, flip * 12, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - flip * 16, y - 3 + bob, flip * 12, 2);
-    // spoked wheel
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 2;
-    const wx = x - flip * 10, wy = y + 4 + bob, wr = 8;
-    ctx.beginPath(); ctx.arc(wx, wy, wr, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 6; i++) {
-      const a = i * Math.PI / 3;
-      ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(a) * wr, wy + Math.sin(a) * wr); ctx.stroke();
-    }
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(wx - 2, wy - 2, 4, 4);
-    // driver
-    ctx.fillStyle = "#c99a6c"; ctx.fillRect(x - flip * 12, y - 30 + bob, 6, 5);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - flip * 12, y - 25 + bob, 6, 10);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - flip * 12, y - 32 + bob, 6, 3); // nemes
-    ctx.restore(); hpBar(); return true;
-  }
-  // Sorcerer/mage — dark hooded robe with glowing staff orb (Egyptian priest-magician).
-  if (e.kind === "mage") {
-    shadow(11); ctx.save();
-    // robe base
-    ctx.fillStyle = "#4d3a5c"; ctx.fillRect(x - 8, y - 24 + bob, 16, 20);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 8, y - 6 + bob, 16, 3);
-    ctx.fillStyle = "#8a6d9e"; ctx.fillRect(x - 8, y - 12 + bob, 16, 2);
-    // hood + shadow face
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x - 7, y - 30 + bob, 14, 8);
-    ctx.fillStyle = "#8a6d9e"; ctx.fillRect(x - 7, y - 30 + bob, 14, 2);
-    ctx.fillStyle = "#ff4020"; ctx.fillRect(x - 3, y - 25 + bob, 2, 2); ctx.fillRect(x + 1, y - 25 + bob, 2, 2);
-    // ankh amulet
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 1, y - 14 + bob, 2, 4);
-    ctx.fillRect(x - 3, y - 12 + bob, 6, 1);
-    // staff w/ orb
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(x + flip * 9, y - 26 + bob); ctx.lineTo(x + flip * 12, y + 8 + bob); ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x + flip * 9, y - 26 + bob); ctx.lineTo(x + flip * 12, y + 8 + bob); ctx.stroke();
-    ctx.fillStyle = "#c060ff"; ctx.beginPath(); ctx.arc(x + flip * 9, y - 28 + bob, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x + flip * 8, y - 30 + bob, 2, 0, Math.PI * 2); ctx.fill();
-    ctx.restore(); hpBar(); return true;
+    hpBar(); return true;
   }
 
+  // ---------- Nubian archer ----------
+  if (e.kind === "archer") {
+    shadow(13);
+    const windup = now < ((e.data?.windupUntil as number) ?? 0);
+    const justFired = now - ((e.data?.lastAtkAt as number) ?? -99) < 0.18;
+    // legs
+    p(-3, -3, 2, 3, "#4a2a14"); p(1, -3, 2, 3, "#4a2a14");
+    if (walk) { p(-3, 0, 2, 1, "#2b1a08"); p(2, 0, 2, 1, "#2b1a08"); }
+    else { p(-4, 0, 2, 1, "#2b1a08"); p(1, 0, 2, 1, "#2b1a08"); }
+    // linen loincloth
+    p(-4, -6, 8, 3, "#e6c9a1");
+    p(-4, -4, 8, 1, "#a17048");
+    // torso — darker Nubian skin
+    p(-4, -11, 8, 5, "#8a5a34");
+    p(-4, -8, 8, 1, "#4a2c18");
+    // pectoral scar/paint
+    p(-1, -10, 2, 1, "#a12b2b");
+    // arms
+    p(-5, -10, 1, 4, "#8a5a34"); p(4, -10, 1, 4, "#8a5a34");
+    // neck + head
+    p(-2, -13, 4, 2, "#8a5a34");
+    p(-4, -17, 8, 4, "#8a5a34");
+    p(-2, -15, 1, 1, "#f6efdc"); p(1, -15, 1, 1, "#f6efdc"); // eye whites
+    p(-2, -15, 1, 1, "#2b1d14"); p(1, -15, 1, 1, "#2b1d14");
+    // leather headwrap
+    p(-4, -19, 8, 2, "#4a2a14");
+    p(-4, -19, 8, 1, "#7a4a2b");
+    p(-5, -18, 1, 2, "#4a2a14"); p(4, -18, 1, 2, "#4a2a14");
+    // quiver on back
+    p(-6, -14, 2, 6, "#4a2a14");
+    p(-6, -14, 2, 1, "#8a5a34");
+    p(-6, -16, 1, 3, "#f6efdc"); // fletching
+    // Bow — draw string tension changes on windup/release
+    ctx.save();
+    ctx.translate(x + flip * 6 * PX, y - 9 * PX);
+    ctx.scale(flip, 1);
+    const draw = windup ? 4 : justFired ? -2 : 0;
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(0, -12); ctx.quadraticCurveTo(11, -6, 8, 0); ctx.quadraticCurveTo(11, 6, 0, 12);
+    ctx.stroke();
+    ctx.strokeStyle = "#7a4a2b"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -12); ctx.quadraticCurveTo(11, -6, 8, 0); ctx.quadraticCurveTo(11, 6, 0, 12);
+    ctx.stroke();
+    // string with nocked arrow
+    ctx.strokeStyle = "#f6efdc"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -12); ctx.lineTo(2 - draw, 0); ctx.lineTo(0, 12); ctx.stroke();
+    // arrow shaft while drawn
+    if (windup || justFired) {
+      ctx.strokeStyle = "#5a3820"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(2 - draw, 0); ctx.lineTo(14, 0); ctx.stroke();
+      ctx.fillStyle = "#dbe9f7";
+      ctx.beginPath(); ctx.moveTo(14, -2); ctx.lineTo(18, 0); ctx.lineTo(14, 2); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    hpBar(); return true;
+  }
+
+  // ---------- Mounted knight (Egyptian officer on horse) ----------
+  if (e.kind === "knight") {
+    shadow(20);
+    const windup = now < ((e.data?.windupUntil as number) ?? 0);
+    // horse body
+    p(-9, -9, 18, 5, "#d8b98a");
+    p(-9, -6, 18, 2, "#a17048");
+    p(-9, -9, 18, 1, "#f4e2c1");
+    // horse legs — 2-step canter
+    if (walk) {
+      p(-8, -4, 2, 4, "#c99a6c"); p(-3, -4, 2, 4, "#c99a6c");
+      p(3, -4, 2, 4, "#c99a6c"); p(7, -4, 2, 4, "#c99a6c");
+    } else {
+      p(-7, -4, 2, 4, "#c99a6c"); p(-2, -4, 2, 4, "#c99a6c");
+      p(2, -4, 2, 4, "#c99a6c"); p(6, -4, 2, 4, "#c99a6c");
+    }
+    p(-8, 0, 2, 1, "#2b1d14"); p(-3, 0, 2, 1, "#2b1d14");
+    p(3, 0, 2, 1, "#2b1d14"); p(7, 0, 2, 1, "#2b1d14");
+    // horse head + neck
+    p(7, -13, 4, 3, "#d8b98a");
+    p(9, -16, 4, 4, "#d8b98a");
+    p(9, -16, 4, 1, "#f4e2c1");
+    // mane
+    p(5, -12, 2, 3, "#7a4a2b");
+    p(3, -11, 2, 2, "#7a4a2b");
+    p(11, -17, 1, 2, "#7a4a2b");
+    // eye
+    p(11, -15, 1, 1, "#2b1d14");
+    // reins
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + flip * 11 * PX, y - 14 * PX);
+    ctx.lineTo(x - flip * 2 * PX, y - 17 * PX); ctx.stroke();
+    // rider torso — royal red cloak
+    p(-3, -16, 6, 5, "#a12b2b");
+    p(-3, -16, 6, 1, "#e05a48");
+    p(-3, -12, 6, 1, "#5a1a1a");
+    // gold shoulder strap
+    p(-3, -15, 6, 1, "#e6c261");
+    // rider head
+    p(-2, -20, 4, 3, "#c99a6c");
+    p(-1, -19, 1, 1, "#2b1d14"); p(1, -19, 1, 1, "#2b1d14");
+    // bronze helm with gold trim
+    p(-3, -23, 6, 3, "#b98550");
+    p(-3, -23, 6, 1, "#e6c261");
+    p(-1, -25, 2, 2, "#3060c0"); // blue crest
+    // spear — raises on windup, thrusts on windup expiry
+    ctx.save();
+    ctx.translate(x - flip * 1 * PX, y - 15 * PX);
+    ctx.scale(flip, 1);
+    const spearAng = windup ? -Math.PI * 0.55 : -Math.PI * 0.3;
+    ctx.rotate(spearAng);
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(28, 0); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(28, 0); ctx.stroke();
+    ctx.strokeStyle = "#b48355"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(28, 0); ctx.stroke();
+    // spearhead
+    ctx.fillStyle = "#dbe9f7";
+    ctx.beginPath(); ctx.moveTo(28, -3); ctx.lineTo(35, 0); ctx.lineTo(28, 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#f6efdc";
+    ctx.beginPath(); ctx.moveTo(28, -1); ctx.lineTo(32, 0); ctx.lineTo(28, 1); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    hpBar(); return true;
+  }
+
+  // ---------- Egyptian war chariot ----------
+  if (e.kind === "chariot") {
+    shadow(24);
+    const d3 = e.data ?? {};
+    const charging = performance.now() / 1000 < ((d3.chargingUntil as number) ?? 0);
+    const winding = performance.now() / 1000 < ((d3.chargeWindupUntil as number) ?? 0);
+    // twin horses running forward of cab
+    for (let horse = 0; horse < 2; horse++) {
+      const oy = -horse * 2;
+      p(2, -9 + oy, 12, 4, "#7a4a2b");
+      p(2, -6 + oy, 12, 1, "#4a2a14");
+      // legs alternate on charge
+      const step = (charging ? (Math.floor(t * 12) % 2) : walk) === 1;
+      const off = step ? 1 : 0;
+      p(3 + off, -3 + oy, 2, 4, "#5a3010"); p(7 + off, -3 + oy, 2, 4, "#5a3010");
+      p(11 - off, -3 + oy, 2, 4, "#5a3010"); p(13 - off, -3 + oy, 1, 4, "#5a3010");
+      // head
+      p(13, -13 + oy, 4, 3, "#7a4a2b");
+      p(15, -16 + oy, 3, 5, "#7a4a2b");
+      p(15, -16 + oy, 3, 1, "#e6c261"); // gold plume
+      p(17, -15 + oy, 1, 1, "#2b1d14");
+    }
+    // reins
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + flip * 15 * PX, y - 12 * PX);
+    ctx.lineTo(x - flip * 5 * PX, y - 14 * PX);
+    ctx.stroke();
+    // Chariot cab — gold with blue Egyptian panel
+    p(-8, -12, 6, 8, "#c9a05a");
+    p(-8, -12, 6, 1, "#e6c261");
+    p(-8, -9, 6, 1, "#3060c0");
+    p(-8, -7, 6, 1, "#a12b2b");
+    p(-8, -5, 6, 1, "#2b1d14");
+    // cab side gold rim
+    p(-2, -12, 1, 8, "#e6c261");
+    // spoked wheel
+    ctx.save();
+    ctx.translate(x - flip * 5 * PX, y);
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
+    const wheelRot = charging ? t * 12 : t * 2;
+    ctx.rotate(wheelRot);
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * 10, Math.sin(a) * 10); ctx.stroke();
+    }
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(-2, -2, 4, 4);
+    ctx.restore();
+    // Driver in cab
+    p(-7, -19, 4, 4, "#c99a6c"); // face
+    p(-6, -18, 1, 1, "#2b1d14"); p(-4, -18, 1, 1, "#2b1d14");
+    p(-7, -22, 4, 3, "#e6c261"); // nemes
+    p(-7, -21, 4, 1, "#3060c0");
+    p(-8, -15, 6, 4, "#3060c0"); // torso robe
+    p(-8, -15, 6, 1, "#e6c261");
+    // whip on windup
+    if (winding) {
+      ctx.strokeStyle = "#4a2a14"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - flip * 6 * PX, y - 18 * PX);
+      ctx.quadraticCurveTo(x - flip * 14 * PX, y - 24 * PX, x - flip * 22 * PX, y - 14 * PX);
+      ctx.stroke();
+    }
+    // charge dust trail
+    if (charging) {
+      ctx.fillStyle = "rgba(200,170,120,0.6)";
+      for (let i = 0; i < 6; i++) {
+        const dx = -flip * (12 + i * 5) * PX;
+        ctx.beginPath(); ctx.arc(x + dx, y + 4 + Math.sin(t * 8 + i) * 3, 4 + i * 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    hpBar(); return true;
+  }
+
+  // ---------- Sorcerer / priest-mage ----------
+  if (e.kind === "mage") {
+    shadow(13);
+    const windup = now < ((e.data?.windupUntil as number) ?? 0);
+    const justFired = now - ((e.data?.lastAtkAt as number) ?? -99) < 0.2;
+    // hem of robe (swishes with walk)
+    const hem = walk ? 1 : 0;
+    p(-6 + hem, -4, 12, 4, "#4d3a5c");
+    p(-6 + hem, -4, 12, 1, "#8a6d9e");
+    p(-6 + hem, -1, 12, 1, "#2b1d14");
+    // robe body
+    p(-5, -13, 10, 9, "#4d3a5c");
+    p(-5, -13, 10, 1, "#8a6d9e");
+    p(-5, -9, 10, 1, "#8a6d9e");
+    // gold trim vertical
+    p(-1, -13, 2, 9, "#e6c261");
+    p(0, -13, 1, 9, "#c9700a");
+    // sleeves
+    p(-6, -12, 1, 5, "#4d3a5c"); p(5, -12, 1, 5, "#4d3a5c");
+    // hood shadow face
+    p(-4, -19, 8, 5, "#2b1d14");
+    p(-4, -19, 8, 1, "#8a6d9e");
+    p(-3, -17, 2, 1, "#ff4020"); p(1, -17, 2, 1, "#ff4020"); // glowing eyes
+    // pointy hood
+    p(-4, -21, 8, 2, "#4d3a5c");
+    p(-3, -22, 6, 1, "#4d3a5c");
+    p(-1, -23, 2, 1, "#4d3a5c");
+    // ankh amulet
+    p(-1, -8, 2, 1, "#e6c261");
+    p(0, -7, 1, 2, "#e6c261");
+    p(-1, -6, 2, 1, "#e6c261");
+    // staff with orb — rises on windup, glows brighter, orb enlarges on release
+    ctx.save();
+    const staffX = x + flip * 6 * PX;
+    const staffTopY = y - (windup ? 24 : 20) * PX;
+    const staffBotY = y + 4;
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
+    // orb
+    const orbR = justFired ? 9 : windup ? 8 : 5 + Math.sin(t * 3) * 0.6;
+    const orbGlow = ctx.createRadialGradient(staffX, staffTopY - 4, 1, staffX, staffTopY - 4, orbR + 4);
+    orbGlow.addColorStop(0, "#ffffff");
+    orbGlow.addColorStop(0.4, "#e0a0ff");
+    orbGlow.addColorStop(1, "rgba(120,40,180,0)");
+    ctx.fillStyle = orbGlow;
+    ctx.beginPath(); ctx.arc(staffX, staffTopY - 4, orbR + 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c060ff";
+    ctx.beginPath(); ctx.arc(staffX, staffTopY - 4, orbR, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(staffX - 1, staffTopY - 6, orbR * 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    hpBar(); return true;
+  }
+
+  // ---------- Animals (kept, minor polish) ----------
+  const bob = Math.sin(t) * 1;
   if (e.kind === "crow") {
     shadow(6); ctx.save();
     const flap = Math.sin(e.animT * 6) > 0;
     ctx.fillStyle = "#0a0a0a";
     ctx.fillRect(x - 5, y - 6 + bob, 10, 6);
-    ctx.fillRect(x + flip * 5, y - 5 + bob, flip * 3, 3); // head
-    ctx.fillStyle = "#e8c040"; ctx.fillRect(x + flip * 8, y - 4 + bob, flip * 2, 1); // beak
-    // wings
+    ctx.fillRect(x + flip * 5, y - 5 + bob, flip * 3, 3);
+    ctx.fillStyle = "#e8c040"; ctx.fillRect(x + flip * 8, y - 4 + bob, flip * 2, 1);
     ctx.fillStyle = "#151515";
     if (flap) { ctx.fillRect(x - 10, y - 10 + bob, 8, 3); ctx.fillRect(x + 2, y - 10 + bob, 8, 3); }
     else { ctx.fillRect(x - 10, y - 2 + bob, 8, 3); ctx.fillRect(x + 2, y - 2 + bob, 8, 3); }
@@ -905,81 +1075,72 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     else { ctx.fillRect(x - 10, y + bob, 7, 4); ctx.fillRect(x + 3, y + bob, 7, 4); }
     ctx.restore(); hpBar(); return true;
   }
-  // Desert wolf — layered fur tones, upright ears, tucked snout.
   if (e.kind === "wolf") {
-    shadow(12); ctx.save();
+    shadow(14);
     // body
-    ctx.fillStyle = "#8a7a68"; ctx.fillRect(x - 12, y - 12 + bob, 24, 10);
-    ctx.fillStyle = "#5a4a38"; ctx.fillRect(x - 12, y - 4 + bob, 24, 4);
-    // fur tufts along back
-    ctx.fillStyle = "#c9b090";
-    ctx.fillRect(x - 10, y - 14 + bob, 3, 2);
-    ctx.fillRect(x - 4, y - 14 + bob, 3, 2);
-    ctx.fillRect(x + 3, y - 14 + bob, 3, 2);
-    ctx.fillRect(x + 9, y - 13 + bob, 2, 2);
-    // legs
-    ctx.fillStyle = "#5a4a38";
-    ctx.fillRect(x - 10, y + bob, 3, 7); ctx.fillRect(x - 3, y + bob, 3, 7);
-    ctx.fillRect(x + 3, y + bob, 3, 7); ctx.fillRect(x + 8, y + bob, 3, 7);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(x - 10, y + 6 + bob, 3, 1); ctx.fillRect(x - 3, y + 6 + bob, 3, 1);
-    ctx.fillRect(x + 3, y + 6 + bob, 3, 1); ctx.fillRect(x + 8, y + 6 + bob, 3, 1);
-    // head + snout
-    ctx.fillStyle = "#8a7a68"; ctx.fillRect(x + flip * 10, y - 15 + bob, flip * 7, 7);
-    ctx.fillStyle = "#c9b090"; ctx.fillRect(x + flip * 14, y - 12 + bob, flip * 4, 4); // snout
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(x + flip * 17, y - 11 + bob, 1, 1); // nose
-    // ears (pointed triangles)
-    ctx.fillStyle = "#5a4a38";
-    ctx.fillRect(x + flip * 11, y - 18 + bob, flip * 2, 3);
-    ctx.fillRect(x + flip * 14, y - 18 + bob, flip * 2, 3);
-    // amber eye
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x + flip * 13, y - 13 + bob, 1, 1);
+    p(-7, -6, 14, 5, "#8a7a68");
+    p(-7, -3, 14, 2, "#5a4a38");
+    p(-7, -6, 14, 1, "#c9b090");
+    // fur tufts along spine
+    p(-5, -7, 1, 1, "#c9b090"); p(-2, -7, 1, 1, "#c9b090"); p(2, -7, 1, 1, "#c9b090"); p(5, -7, 1, 1, "#c9b090");
+    // legs — alternate
+    if (walk) {
+      p(-6, -1, 2, 3, "#5a4a38"); p(-2, -1, 2, 3, "#5a4a38");
+      p(2, -1, 2, 3, "#5a4a38"); p(5, -1, 2, 3, "#5a4a38");
+    } else {
+      p(-6, 0, 2, 2, "#5a4a38"); p(-2, 0, 2, 2, "#5a4a38");
+      p(2, 0, 2, 2, "#5a4a38"); p(5, 0, 2, 2, "#5a4a38");
+    }
+    p(-6, 2, 2, 1, "#2b1d14"); p(-2, 2, 2, 1, "#2b1d14"); p(2, 2, 2, 1, "#2b1d14"); p(5, 2, 2, 1, "#2b1d14");
+    // head
+    p(6, -8, 4, 5, "#8a7a68");
+    p(9, -6, 2, 3, "#c9b090"); // snout
+    p(10, -5, 1, 1, "#2b1d14"); // nose
+    p(6, -10, 2, 2, "#5a4a38"); p(9, -10, 1, 2, "#5a4a38"); // ears
+    p(7, -6, 1, 1, "#e6c261"); // amber eye
     // tail
-    ctx.fillStyle = "#8a7a68"; ctx.fillRect(x - flip * 12, y - 13 + bob, -flip * 4, 3);
-    ctx.fillStyle = "#c9b090"; ctx.fillRect(x - flip * 15, y - 12 + bob, -flip * 2, 2);
-    ctx.restore(); hpBar(); return true;
+    p(-9, -6, 2, 2, "#8a7a68");
+    p(-10, -7, 1, 2, "#c9b090");
+    hpBar(); return true;
   }
-  // Desert lion — golden coat, thick tri-tone mane, dark tufted tail.
   if (e.kind === "lion") {
-    shadow(15); ctx.save();
+    shadow(17);
     // body
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 14, y - 12 + bob, 28, 12);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 14, y - 4 + bob, 28, 4);
-    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 14, y - 1 + bob, 28, 2);
+    p(-7, -7, 14, 6, "#e6c261");
+    p(-7, -3, 14, 2, "#c9a05a");
+    p(-7, -1, 14, 1, "#8a5a20");
+    p(-7, -7, 14, 1, "#f6efdc");
     // legs
-    ctx.fillStyle = "#c9a05a";
-    ctx.fillRect(x - 12, y + bob, 3, 8); ctx.fillRect(x - 4, y + bob, 3, 8);
-    ctx.fillRect(x + 3, y + bob, 3, 8); ctx.fillRect(x + 10, y + bob, 3, 8);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(x - 12, y + 7 + bob, 3, 2); ctx.fillRect(x - 4, y + 7 + bob, 3, 2);
-    ctx.fillRect(x + 3, y + 7 + bob, 3, 2); ctx.fillRect(x + 10, y + 7 + bob, 3, 2);
-    // mane — three tones, layered
-    const maneX = x + flip * 14;
-    const maneY = y - 12 + bob;
+    p(-6, -1, 2, 3, "#c9a05a"); p(-2, -1, 2, 3, "#c9a05a");
+    p(2, -1, 2, 3, "#c9a05a"); p(5, -1, 2, 3, "#c9a05a");
+    p(-6, 2, 2, 1, "#2b1d14"); p(-2, 2, 2, 1, "#2b1d14"); p(2, 2, 2, 1, "#2b1d14"); p(5, 2, 2, 1, "#2b1d14");
+    // mane — layered rings
+    const mX = x + flip * 7 * PX;
+    const mY = y - 6 * PX;
     ctx.fillStyle = "#5a3010";
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
-      ctx.fillRect(Math.round(maneX + Math.cos(a) * 9), Math.round(maneY + Math.sin(a) * 9), 3, 3);
+      ctx.fillRect(Math.round(mX + Math.cos(a) * 12) - 2, Math.round(mY + Math.sin(a) * 12) - 2, 5, 5);
     }
     ctx.fillStyle = "#8a5a20";
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2 + 0.3;
-      ctx.fillRect(Math.round(maneX + Math.cos(a) * 6), Math.round(maneY + Math.sin(a) * 6), 3, 3);
+      ctx.fillRect(Math.round(mX + Math.cos(a) * 8) - 2, Math.round(mY + Math.sin(a) * 8) - 2, 4, 4);
     }
     // face
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(maneX - flip * 3, maneY - 3, flip * 8, 8);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(maneX + flip * 2, maneY + 2, flip * 4, 3); // muzzle
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(maneX + flip * 4, maneY + 3, 1, 1); // nose
-    ctx.fillStyle = "#f6efdc"; ctx.fillRect(maneX + flip * 1, maneY - 1, 1, 1); // eye highlight
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(maneX + flip * 2, maneY - 1, 1, 1); // pupil
-    // tail
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - flip * 13, y - 14 + bob, -flip * 3, 3);
-    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - flip * 16, y - 13 + bob, -flip * 3, 4);
-    ctx.fillStyle = "#5a3010"; ctx.fillRect(x - flip * 18, y - 11 + bob, -flip * 2, 3); // tail tuft
-    ctx.restore(); hpBar(); return true;
+    p(7, -8, 4, 4, "#e6c261");
+    p(9, -6, 2, 2, "#c9a05a"); // muzzle
+    p(10, -5, 1, 1, "#2b1d14"); // nose
+    p(7, -7, 1, 1, "#f6efdc"); p(8, -7, 1, 1, "#2b1d14"); // eye
+    // tail with tuft
+    p(-9, -6, 3, 1, "#c9a05a");
+    p(-11, -5, 2, 2, "#8a5a20");
+    p(-12, -4, 2, 2, "#5a3010");
+    hpBar(); return true;
   }
   return false;
 }
+
 
 
 // ---------------- Ramses ----------------
