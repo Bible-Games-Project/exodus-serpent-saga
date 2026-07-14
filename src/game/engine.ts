@@ -1205,7 +1205,7 @@ function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, co
   const dy = target.pos.y - ally.pos.y;
   const dd = Math.hypot(dx, dy) || 1;
   ally.facing = dx > 0 ? 1 : -1;
-  const dmul = damageMultiplier(state);
+  const dmul = damageMultiplier(state) * 3; // companions hit ×3 harder
   if (combat.boltSpeed === 0) {
     if (dd < combat.attackRange) {
       target.hp -= combat.boltDmg * dmul;
