@@ -14,16 +14,25 @@ export type BonusDef = {
   apply: (state: GameState) => void;
 };
 
+export function pushNotification(s: GameState, text: string, color: string) {
+  const list = (s.notifications ??= []);
+  s.nextNotifId = (s.nextNotifId ?? 0) + 1;
+  list.push({ id: s.nextNotifId, text, color, born: s.now, ttl: 2.2 });
+  // Keep notifications trimmed to avoid unbounded growth.
+  if (list.length > 8) list.splice(0, list.length - 8);
+}
+
 export const BONUSES: Record<BonusKind, BonusDef> = {
   heart: {
     id: "heart",
-    name: "Heart",
+    name: "Health",
     emoji: "❤",
     color: "#ff5060",
     duration: 0,
     weight: 3,
     apply: (s) => {
-      s.player.hp = Math.min(s.player.maxHp, s.player.hp + 30);
+      s.player.hp = Math.min(s.player.maxHp, s.player.hp + 40);
+      pushNotification(s, "+ Health", "#ff5060");
     },
   },
   magnet: {
@@ -31,43 +40,47 @@ export const BONUSES: Record<BonusKind, BonusDef> = {
     name: "Magnet",
     emoji: "🧲",
     color: "#c04040",
-    duration: 8,
+    duration: 15,
     weight: 2,
     apply: (s) => {
-      s.magnetBoostUntil = Math.max(s.magnetBoostUntil ?? 0, s.now + 8);
+      s.magnetBoostUntil = Math.max(s.magnetBoostUntil ?? 0, s.now + 15);
+      pushNotification(s, "+ Magnet", "#c04040");
     },
   },
   star: {
     id: "star",
-    name: "Star",
+    name: "Invincible",
     emoji: "⭐",
     color: "#ffd54a",
-    duration: 5,
+    duration: 10,
     weight: 1,
     apply: (s) => {
-      s.invulnUntil = Math.max(s.invulnUntil ?? 0, s.now + 5);
+      s.invulnUntil = Math.max(s.invulnUntil ?? 0, s.now + 10);
+      pushNotification(s, "+ Invincible", "#ffd54a");
     },
   },
   lightning: {
     id: "lightning",
-    name: "Lightning",
+    name: "Speed",
     emoji: "⚡",
     color: "#7fd0ff",
-    duration: 6,
+    duration: 12,
     weight: 2,
     apply: (s) => {
-      s.speedBoostUntil = Math.max(s.speedBoostUntil ?? 0, s.now + 6);
+      s.speedBoostUntil = Math.max(s.speedBoostUntil ?? 0, s.now + 12);
+      pushNotification(s, "+ Speed", "#7fd0ff");
     },
   },
   shield: {
     id: "shield",
-    name: "Shield of Faith",
+    name: "Shield",
     emoji: "🛡",
     color: "#8ec8ff",
-    duration: 10,
+    duration: 18,
     weight: 2,
     apply: (s) => {
-      s.shieldUntil = Math.max(s.shieldUntil ?? 0, s.now + 10);
+      s.shieldUntil = Math.max(s.shieldUntil ?? 0, s.now + 18);
+      pushNotification(s, "+ Shield", "#8ec8ff");
     },
   },
 };
