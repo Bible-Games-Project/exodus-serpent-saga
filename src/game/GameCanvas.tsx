@@ -322,7 +322,7 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
               <div
                 key={b.kind}
                 className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1.5 pt-1 pb-0.5 text-white shadow-lg ring-1"
-                style={{ borderTop: `3px solid ${BONUSES[b.kind].color}`, ringColor: `${BONUSES[b.kind].color}` } as React.CSSProperties}
+                style={{ borderTop: `3px solid ${BONUSES[b.kind].color}` }}
                 title={BONUSES[b.kind].name}
               >
                 <span className="text-base leading-none">{BONUSES[b.kind].emoji}</span>
