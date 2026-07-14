@@ -292,10 +292,12 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const push = (kind: BonusKind, until?: number) => {
     if (until && state.now < until) buffs.push({ kind, remaining: until - state.now });
   };
+  push("shield", state.shieldUntil);
+  push("lightning", state.speedBoostUntil);
   push("magnet", state.magnetBoostUntil);
   push("star", state.invulnUntil);
-  push("lightning", state.speedBoostUntil);
-  push("shield", state.shieldUntil);
+
+  const notifs = state.notifications ?? [];
 
   return (
     <>
@@ -315,31 +317,64 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
           {Math.max(0, Math.ceil(p.hp))} / {p.maxHp}
         </div>
         {buffs.length > 0 && (
-          <div className="mt-2 flex justify-end gap-1">
+          <div className="mt-2 flex justify-end gap-1.5">
             {buffs.map((b) => (
-              <div key={b.kind} className="rounded bg-black/40 px-1.5 py-0.5 text-[10px] text-white" style={{ borderLeft: `3px solid ${BONUSES[b.kind].color}` }}>
-                {BONUSES[b.kind].emoji} {Math.ceil(b.remaining)}s
+              <div
+                key={b.kind}
+                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1.5 pt-1 pb-0.5 text-white shadow-lg ring-1"
+                style={{ borderTop: `3px solid ${BONUSES[b.kind].color}`, ringColor: `${BONUSES[b.kind].color}` } as React.CSSProperties}
+                title={BONUSES[b.kind].name}
+              >
+                <span className="text-base leading-none">{BONUSES[b.kind].emoji}</span>
+                <span className="mt-0.5 text-[10px] font-bold tabular-nums leading-none">
+                  {Math.ceil(b.remaining)}s
+                </span>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Floating notifications */}
+      <div className="pointer-events-none absolute inset-x-0 top-24 flex flex-col items-center gap-1.5">
+        {notifs.map((n) => {
+          const age = state.now - n.born;
+          const life = age / n.ttl;
+          const opacity = life < 0.15 ? life / 0.15 : life > 0.75 ? Math.max(0, (1 - life) / 0.25) : 1;
+          const translateY = life < 0.15 ? (1 - life / 0.15) * 12 : 0;
+          return (
+            <div
+              key={n.id}
+              className="rounded-full px-4 py-1.5 text-sm font-black uppercase tracking-wider text-white shadow-2xl"
+              style={{
+                background: "rgba(0,0,0,0.72)",
+                border: `2px solid ${n.color}`,
+                color: n.color,
+                opacity,
+                transform: `translateY(${translateY}px)`,
+                textShadow: "0 1px 2px rgba(0,0,0,0.9)",
+              }}
+            >
+              {n.text}
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }
 
-function LoadoutBar({ state, tick: _tick, onDismissPlague, onDismissNpc }: {
+// Loadout bar now only surfaces active companions (unlocked plagues are shown
+// via floating notifications when acquired, not as a permanent list).
+function LoadoutBar({ state, tick: _tick, onDismissPlague: _p, onDismissNpc }: {
   state: GameState; tick: number;
   onDismissPlague: (id: PlagueId) => void;
   onDismissNpc: (id: NpcId) => void;
 }) {
-  const plagues = Array.from(state.plagues.entries());
   const npcs = Array.from(state.npcs.keys());
+  if (npcs.length === 0) return null;
   return (
     <div className="absolute inset-x-0 bottom-2 flex flex-wrap items-center justify-center gap-1.5 px-2">
-      {plagues.map(([id, lvl]) => (
-        <LoadoutPill key={id} isNew={state.newPlagues.has(id)} title={PLAGUES[id].name} subtitle={`Lv ${lvl}`} tone="plague" onClick={() => onDismissPlague(id)} />
-      ))}
       {npcs.map((id) => (
         <LoadoutPill key={id} isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
       ))}
@@ -368,6 +403,7 @@ function LoadoutPill({ isNew, title, subtitle, tone, onClick }: {
     </button>
   );
 }
+
 
 // ------------- Pixel-art icon library for the Level-Up cards -------------
 // Each icon is a small string-grid on a shared palette. `.` = transparent.
