@@ -1084,13 +1084,25 @@ const COMPANION_COMBAT: Record<import("./types").NpcId, CompanionCombat> = {
 
 function updateCompanion(state: GameState, e: Entity, dt: number) {
   const d = e.data!;
+  // Summon lockout — companion is invulnerable and frozen for ~1s while the
+  // golden summoning light plays around them.
+  if (d.summonUntil && state.now < (d.summonUntil as number)) {
+    return;
+  }
   if (d.downedUntil) {
     if (state.now >= (d.downedUntil as number)) {
       d.downedUntil = undefined;
+      d.standupUntil = state.now + 0.6; // brief rise animation
       e.hp = e.maxHp;
     } else {
       return;
     }
+  }
+  if (d.standupUntil && state.now < (d.standupUntil as number)) {
+    // Rising — no movement or attack until standup completes.
+    return;
+  } else if (d.standupUntil) {
+    d.standupUntil = undefined;
   }
   const p = state.player;
   const combat = COMPANION_COMBAT[e.kind as import("./types").NpcId] ?? COMPANION_COMBAT.elder;
