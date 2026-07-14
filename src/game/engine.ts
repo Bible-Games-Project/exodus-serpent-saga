@@ -37,8 +37,8 @@ function wrapDist2(state: GameState, a: Vec2, b: Vec2): number {
 
 // ---------- state factory ----------
 export function createInitialState(): GameState {
-  const worldW = 8000;
-  const worldH = 8000;
+  const worldW = 8192; // multiple of 256 for seamless ground tiling
+  const worldH = 8192;
 
   const player: Entity = {
     id: 1,
