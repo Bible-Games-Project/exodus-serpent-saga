@@ -1256,7 +1256,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
     pos: { x: px, y: py },
     vel: { x: 0, y: 0 },
     radius: 12,
-    hp: 180, maxHp: 180,
+    hp: 2700, maxHp: 2700, // companions are much sturdier (×15)
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
@@ -1266,6 +1266,7 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
   state.npcs.set(npcId, ally.id);
   state.nextNpcIndex = Math.min(NPC_ORDER.length, state.nextNpcIndex + 1);
   state.newNpcs.add(npcId);
+  pushNotification(state, `+ ${NPCS[npcId].name}`, "#ffd070");
 }
 
 function offerUpgrades(state: GameState) {
