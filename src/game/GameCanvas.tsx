@@ -288,43 +288,344 @@ function LoadoutPill({ isNew, title, subtitle, tone, onClick }: {
   );
 }
 
-const PLAGUE_ICONS: Partial<Record<PlagueId, { emoji: string; bg: string }>> = {
-  staff:     { emoji: "🪄", bg: "linear-gradient(135deg,#8a5a34,#c9a05a)" },
-  serpent:   { emoji: "🐍", bg: "linear-gradient(135deg,#4d7a3e,#7fa96b)" },
-  blood:     { emoji: "🩸", bg: "linear-gradient(135deg,#5a1a1a,#a12b2b)" },
-  frogs:     { emoji: "🐸", bg: "linear-gradient(135deg,#2d5a3d,#5a8a5c)" },
-  gnats:     { emoji: "🦟", bg: "linear-gradient(135deg,#2b1d14,#7a5a2a)" },
-  flies:     { emoji: "🪰", bg: "linear-gradient(135deg,#2b1d14,#4a2c18)" },
-  livestock: { emoji: "🐂", bg: "linear-gradient(135deg,#2d5a3d,#4d7a3e)" },
-  boils:     { emoji: "🫧", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" },
-  hail:      { emoji: "❄️", bg: "linear-gradient(135deg,#2b4a7a,#8ec8ff)" },
-  fire:      { emoji: "🔥", bg: "linear-gradient(135deg,#5a1a1a,#e05a48)" },
-  locusts:   { emoji: "🦗", bg: "linear-gradient(135deg,#4a2c18,#c9a05a)" },
-  darkness:  { emoji: "🌑", bg: "linear-gradient(135deg,#0a0805,#2b1d14)" },
-  firstborn: { emoji: "💀", bg: "linear-gradient(135deg,#2b1d14,#a17048)" },
-  pillar:    { emoji: "🔆", bg: "linear-gradient(135deg,#c9700a,#e6c261)" },
-  redsea:    { emoji: "🌊", bg: "linear-gradient(135deg,#0f1b3d,#3060c0)" },
+// ------------- Pixel-art icon library for the Level-Up cards -------------
+// Each icon is a small string-grid on a shared palette. `.` = transparent.
+// Icons are rendered on a transparent canvas — no background, no gradient.
+const ICON_PAL: Record<string, string> = {
+  ".": "transparent",
+  K: "#181410", W: "#f6efdc",
+  // wood / staff
+  w: "#8a5a34", d: "#b48355",
+  // greens (serpent / frog / livestock / locust)
+  g: "#4d7a3e", G: "#7fa96b", y: "#c5d99a", v: "#2f4a1a",
+  // reds (blood / fire)
+  r: "#a12b2b", R: "#e05a48",
+  // gnat / fly (dark)
+  n: "#3a2f24", N: "#645445",
+  // hail (blue)
+  b: "#3060c0", B: "#8ec8ff",
+  // sun / gold
+  o: "#e6c261", O: "#c9700a",
+  // darkness / firstborn (purple / bone)
+  p: "#4d3a5c", P: "#8a6d9e", s: "#c99a6c",
+  // water sea
+  u: "#0f1b3d", U: "#3060c0",
+  // heart / speed / magnet
+  m: "#3a2f4a",
 };
 
-const NPC_ICON: Record<NpcId, string> = {
-  bithiah: "👸", aaron: "🧙", miriam: "🎶", jethro: "🧓",
-  zipporah: "🌿", joshua: "🗡", hur: "🛡", elder: "📜",
+const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
+  staff: [
+    "..dddK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+    "..dwdK..",
+  ],
+  serpent: [
+    "..GGGG..",
+    ".Ggggyy.",
+    ".GgWGGyy",
+    ".GggggG.",
+    "..GGGGGG",
+    ".....GGG",
+    "....GGG.",
+    "...GG...",
+  ],
+  blood: [
+    "....r...",
+    "...rRr..",
+    "..rRRRr.",
+    ".rRRRRRr",
+    ".rRRRRRr",
+    ".rrRRRrr",
+    "..rrrrr.",
+    "...rrr..",
+  ],
+  frogs: [
+    "..gggg..",
+    ".gWgWgg.",
+    ".gggggg.",
+    "gggggggg",
+    "GG.gg.GG",
+    ".G.gg.G.",
+    "..gggg..",
+    "..K..K..",
+  ],
+  gnats: [
+    "n..n..n.",
+    ".n.n.nn.",
+    "n.nnnn..",
+    ".nnKnn.n",
+    "n.nnnn..",
+    ".n.n.nn.",
+    "n..n..n.",
+    "..n..n..",
+  ],
+  flies: [
+    ".n..n...",
+    "N.nnnN..",
+    ".nnnn...",
+    "..K.....",
+    "....n..n",
+    "...NnnnN",
+    "....nnnn",
+    ".....K..",
+  ],
+  livestock: [
+    "..gg..gg",
+    ".gvgggvg",
+    ".ggWWgg.",
+    "gggggggg",
+    "ggvvvvgg",
+    ".g.gg.g.",
+    ".K.KK.K.",
+    "........",
+  ],
+  boils: [
+    "..pp.pp.",
+    ".pPPpPP.",
+    ".pWPpWP.",
+    ".pPP.PP.",
+    "pp.....p",
+    "pPP..pP.",
+    "pWP.pPP.",
+    ".p...p..",
+  ],
+  hail: [
+    ".b.bBb.b",
+    "b.BbbbB.",
+    ".BWBBWB.",
+    "b.BBBB.b",
+    ".BWBBWB.",
+    "b.BBBB.b",
+    ".b.bbb.b",
+    "b..bBb..",
+  ],
+  fire: [
+    "...r....",
+    "..rR....",
+    ".rRRr.r.",
+    "rRoORrR.",
+    "rooOORr.",
+    ".oOOoRr.",
+    "..oOo...",
+    "..oo....",
+  ],
+  locusts: [
+    ".g..g..g",
+    "G.gGgGg.",
+    ".GggWgg.",
+    "GGggggGG",
+    ".GgggggG",
+    "..GggG..",
+    "g..GG..g",
+    "..g..g..",
+  ],
+  darkness: [
+    "..pppp..",
+    ".pKKKKp.",
+    "pKKKKKKp",
+    "pKKKKKPp",
+    "pKKKKPPp",
+    "pKKKPPPp",
+    ".pKPPpp.",
+    "..pppp..",
+  ],
+  firstborn: [
+    "..sWWs..",
+    ".sWWWWs.",
+    "sWKWWKWs",
+    "sWWWWWWs",
+    "sWWKKWWs",
+    ".sWWWWs.",
+    "..sWWs..",
+    "..K..K..",
+  ],
+  pillar: [
+    "...O....",
+    "..OoO...",
+    ".OoOoO..",
+    "OoOOOoO.",
+    "OoWWWoO.",
+    ".OoOoO..",
+    "..OoO...",
+    "...O....",
+  ],
+  redsea: [
+    "uUuuUuuU",
+    "UUUUUUUU",
+    "bUbUbUbU",
+    "BUBUBUBU",
+    ".W.W.W.W",
+    "..W.W.W.",
+    "uuUuUuuU",
+    "UUUUUUUU",
+  ],
 };
 
-const PASSIVE_ICON: Record<string, { emoji: string; bg: string }> = {
-  maxHp:  { emoji: "❤️", bg: "linear-gradient(135deg,#a12b2b,#e05a48)" },
-  speed:  { emoji: "👟", bg: "linear-gradient(135deg,#2b4a7a,#8ec8ff)" },
-  damage: { emoji: "⚔️", bg: "linear-gradient(135deg,#5a1a1a,#c9700a)" },
-  magnet: { emoji: "🧲", bg: "linear-gradient(135deg,#4d3a5c,#c04040)" },
+const ICON_PASSIVE: Record<string, string[]> = {
+  maxHp: [
+    ".rr..rr.",
+    "rRRrrRRr",
+    "rRRRRRRr",
+    "rRRRRRRr",
+    "rRRRRRRr",
+    ".rRRRRr.",
+    "..rRRr..",
+    "...rr...",
+  ],
+  speed: [
+    "....BBBB",
+    "...BbbbB",
+    "..Bbb..B",
+    ".Bbb...B",
+    "Bbb....B",
+    "BbBBBBB.",
+    "B.....B.",
+    "B....B..",
+  ],
+  damage: [
+    "......Kw",
+    ".....KWw",
+    "....KWw.",
+    "...KWw..",
+    "..KWw...",
+    ".KWw....",
+    "KKw.....",
+    "Kw......",
+  ],
+  magnet: [
+    "rrr..rrr",
+    "rRr..rRr",
+    "rRr..rRr",
+    "rRrKKrRr",
+    "rRKKKKRr",
+    ".RKKKKR.",
+    "..KKKK..",
+    "..K..K..",
+  ],
 };
 
-function iconFor(c: UpgradeChoice): { emoji: string; bg: string } {
-  if (c.npc) return { emoji: NPC_ICON[c.npc] ?? "✨", bg: "linear-gradient(135deg,#0f3460,#3b82f6)" };
-  if (c.plague) return PLAGUE_ICONS[c.plague] ?? { emoji: "✨", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" };
-  // passive — infer id from choice id "passive-<id>-..."
+const ICON_NPC: Record<NpcId, string[]> = {
+  bithiah: [
+    "..ooooo.",
+    ".osssso.",
+    "osKsKsso",
+    "osssssso",
+    ".sssssss",
+    ".sbbbbss",
+    "..bbbbss",
+    "..K..K..",
+  ],
+  aaron: [
+    "..KKKK..",
+    ".KwwwwK.",
+    ".KsWWsK.",
+    "..sssss.",
+    "..RRRRR.",
+    "..RwRwR.",
+    "..RRRRR.",
+    "..K..K..",
+  ],
+  miriam: [
+    "..bbbb..",
+    ".bsssss.",
+    ".sKsKss.",
+    "..sssss.",
+    ".mrrrm..",
+    ".mrrrm..",
+    ".mmmmm..",
+    "..K..K..",
+  ],
+  jethro: [
+    "..WWWW..",
+    ".WsssWW.",
+    ".sKsKss.",
+    "..sWWs..",
+    "..bbbbbb",
+    "..dwwwdb",
+    "..bbbbb.",
+    "..K..K..",
+  ],
+  zipporah: [
+    "..gggg..",
+    ".gsssss.",
+    ".sKsKss.",
+    "..sssss.",
+    ".vggggv.",
+    ".vggggv.",
+    "..vvvv..",
+    "..K..K..",
+  ],
+  joshua: [
+    "..KKKK..",
+    ".KssssK.",
+    ".sKsKss.",
+    "..sssss.",
+    "wKssssKw",
+    ".Kssss..",
+    ".K..K...",
+    "K...K...",
+  ],
+  hur: [
+    "..KKKK..",
+    ".KssssK.",
+    ".sKsKss.",
+    ".KsssK..",
+    ".oooooo.",
+    ".oOOOOo.",
+    ".oOOOOo.",
+    "..K..K..",
+  ],
+  elder: [
+    "..WWWW..",
+    ".WWWWWW.",
+    ".sKsKss.",
+    "..sWWs..",
+    ".WWWWWW.",
+    ".KWWWWK.",
+    ".KKKKKK.",
+    "..K..K..",
+  ],
+};
+
+function drawPixelIcon(cnv: HTMLCanvasElement, grid: string[], scale: number) {
+  const w = grid[0].length;
+  const h = grid.length;
+  cnv.width = w * scale;
+  cnv.height = h * scale;
+  const ctx = cnv.getContext("2d")!;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, cnv.width, cnv.height);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const ch = grid[y][x];
+      const c = ICON_PAL[ch];
+      if (!c || c === "transparent") continue;
+      ctx.fillStyle = c;
+      ctx.fillRect(x * scale, y * scale, scale, scale);
+    }
+  }
+}
+
+function PixelIcon({ grid, size = 64 }: { grid: string[]; size?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    if (ref.current) drawPixelIcon(ref.current, grid, Math.floor(size / grid.length));
+  }, [grid, size]);
+  return <canvas ref={ref} className="pixel-crisp" style={{ imageRendering: "pixelated", width: size, height: size }} />;
+}
+
+function iconGridFor(c: UpgradeChoice): string[] {
+  if (c.npc) return ICON_NPC[c.npc];
+  if (c.plague && ICON_PLAGUE[c.plague]) return ICON_PLAGUE[c.plague]!;
   const m = /^passive-([a-zA-Z]+)-/.exec(c.id);
-  if (m && PASSIVE_ICON[m[1]]) return PASSIVE_ICON[m[1]];
-  return { emoji: "✨", bg: "linear-gradient(135deg,#4d3a5c,#8a6d9e)" };
+  if (m && ICON_PASSIVE[m[1]]) return ICON_PASSIVE[m[1]];
+  return ICON_PASSIVE.damage;
 }
 
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
