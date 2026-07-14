@@ -233,17 +233,6 @@ export function enemyTick(
         move(nx * spd * 0.6, ny * spd * 0.6);
       }
     }
-  } else if (def.behavior === "chase" && def.category === "human") {
-    // Melee swing anim: when within contact range, fire a short swing pulse.
-    if (d < e.radius + 26) {
-      const swingCd = ((e.data!.swingCd as number) ?? 0) - dt;
-      if (swingCd <= 0) {
-        e.data!.swingUntil = state.now + 0.28;
-        e.data!.swingCd = 1.1;
-      } else {
-        e.data!.swingCd = swingCd;
-      }
-    }
   }
 
   // facing
