@@ -167,6 +167,16 @@ export function enemyTick(
       }
     }
     move(mvx * spd, mvy * spd);
+    // Melee swing anim for humans in close range.
+    if (def.category === "human" && d < e.radius + 26) {
+      const swingCd = ((e.data!.swingCd as number) ?? 0) - dt;
+      if (swingCd <= 0) {
+        e.data!.swingUntil = state.now + 0.28;
+        e.data!.swingCd = 1.1;
+      } else {
+        e.data!.swingCd = swingCd;
+      }
+    }
   } else if (def.behavior === "flyover") {
     move(nx * spd, ny * spd);
     // gentle vertical bob
