@@ -1301,6 +1301,7 @@ function offerUpgrades(state: GameState) {
         s.plagues.set(id, 1);
         s.plagueCooldown.set(id, 0.5);
         s.newPlagues.add(id);
+        pushNotification(s, `Unlocked: ${def.name}`, "#c4a24a");
       },
     });
     break;
