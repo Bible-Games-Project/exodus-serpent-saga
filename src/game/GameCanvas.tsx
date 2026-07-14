@@ -2251,214 +2251,529 @@ function drawGnatSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
 }
 
 // ---------------- Companions (per-NPC procedural renderer) ----------------
-// Each companion has a distinct silhouette, colours and weapon. When their
-// `attackT` counter is active, an extra weapon-swing pose is drawn overlaying
-// the base body so the player sees the actual attack motion.
-type CompanionStyle = {
-  robe: string; robeShade: string;
-  head: string;      // head cover colour
-  headTop: string;   // highlight
-  weapon: (ctx: CanvasRenderingContext2D, x: number, y: number, bob: number, flip: number, swing: number) => void;
+// Every companion is drawn on the same 3-pixel grid used for Moses so silhouettes
+// share pixel density, palette weight and shading language. Each companion has
+// its own body + headgear + weapon so no two can be confused at a glance.
+//
+// Animation states, all driven from `e.data`:
+//   - walking: alternates leg positions each animation half-step
+//   - attack:  windup pose (arm cocked) -> swing pose (weapon extended)
+//   - downed:  flat body + red X marker, sinks to the ground
+//   - standup: brief kneeling rise before returning to normal
+//   - summon:  1s golden light with sparkles; companion is invulnerable
+type NpcIdT = import("./types").NpcId;
+
+const CPX = 3; // one companion pixel = 3 screen pixels (same as Moses)
+
+// Per-companion palette + drawer selectors.
+type CompanionArt = {
+  robe: string; robeShade: string; trim: string;
+  skin: string; skinShade: string;
+  hair: string; hairShade: string;
+  head: string; headAcc: string;
+  drawHead: (px: PxDraw, walk: number) => void;
+  drawWeapon: (ctx: CanvasRenderingContext2D, x: number, y: number, bob: number, flip: number, pose: AttackPose) => void;
+  // If true, this companion has a broader torso silhouette (warriors).
+  broad?: boolean;
 };
 
-const COMPANION_STYLES: Partial<Record<import("./types").NpcId, CompanionStyle>> = {
+type PxDraw = (dx: number, dy: number, w: number, h: number, color: string) => void;
+
+type AttackPose = {
+  /** -1..0 during windup (arm cocked back), 0..1 during swing (arm forward). */
+  swing: number;
+  /** true while windup is playing. */
+  windup: boolean;
+  /** true while swing is playing. */
+  active: boolean;
+};
+
+const COMPANION_ART: Partial<Record<NpcIdT, CompanionArt>> = {
   bithiah: {
-    robe: "#c9a05a", robeShade: "#8a5a20", head: "#3060c0", headTop: "#e6c261",
-    weapon: (ctx, x, y, bob, flip, swing) => {
-      // Reed staff — thin gold rod with lotus tip
-      const angle = -0.3 + swing * 1.6;
+    robe: "#e6c261", robeShade: "#a17048", trim: "#3060c0",
+    skin: "#e6c39a", skinShade: "#c99a6c",
+    hair: "#2b1d14", hairShade: "#4a2c18",
+    head: "#3060c0", headAcc: "#e6c261",
+    drawHead: (px) => {
+      // Egyptian princess nemes — blue+gold striped
+      for (let i = 0; i < 8; i++) px(-4 + i, -27, 1, 5, i % 2 === 0 ? "#3060c0" : "#e6c261");
+      px(-5, -22, 10, 1, "#e6c261"); px(-5, -22, 10, 1, "#c9700a");
+      // Side flaps
+      px(-6, -22, 1, 5, "#3060c0"); px(5, -22, 1, 5, "#3060c0");
+      px(-6, -20, 1, 1, "#e6c261"); px(5, -20, 1, 1, "#e6c261");
+      // Face — kohl eyes
+      px(-3, -22, 6, 6, "#e6c39a");
+      px(-3, -20, 6, 1, "#c99a6c");
+      px(-3, -21, 2, 1, "#2b1d14"); px(1, -21, 2, 1, "#2b1d14");
+      // Uraeus
+      px(-1, -29, 2, 2, "#e6c261"); px(-1, -28, 2, 1, "#a12b2b");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Papyrus/reed sceptre — tall gold rod ending in a lotus flower.
+      const cocked = pose.windup ? -0.6 : (pose.active ? -0.3 + pose.swing * 1.4 : -0.25);
       ctx.save();
-      ctx.translate(x + flip * 6, y - 14 + bob);
-      ctx.rotate(angle * flip);
-      ctx.fillStyle = "#c9a05a"; ctx.fillRect(0, -1, 22, 2);
-      ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(22, 0, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.translate(x + flip * 8 * CPX, y + (-14 * CPX) + bob);
+      ctx.rotate(cocked * flip);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(0, -1, 42, 3);
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(0, 0, 42, 1);
+      // Lotus tip
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(38, -6, 8, 3);
+      ctx.fillStyle = "#c9700a"; ctx.fillRect(38, -3, 8, 2);
+      ctx.fillStyle = "#3060c0"; ctx.fillRect(40, -8, 4, 3);
       ctx.restore();
     },
   },
   aaron: {
-    robe: "#d06544", robeShade: "#8f3a26", head: "#f6efdc", headTop: "#e6c261",
-    weapon: (ctx, x, y, bob, flip, swing) => {
-      // Overhead staff swing (sacred rod)
-      const angle = -1.4 + swing * 2.2;
+    robe: "#d06544", robeShade: "#8f3a26", trim: "#e6c261",
+    skin: "#e6c39a", skinShade: "#c99a6c",
+    hair: "#f6efdc", hairShade: "#c9a05a",
+    head: "#f6efdc", headAcc: "#3060c0",
+    drawHead: (px) => {
+      // White high-priest turban with gold band + blue plaque (Exodus 28)
+      px(-5, -27, 10, 2, "#f6efdc");
+      px(-6, -25, 12, 3, "#f6efdc");
+      px(-6, -25, 12, 1, "#d8b98a");
+      // Gold band + blue tzitz
+      px(-6, -23, 12, 1, "#e6c261");
+      px(-2, -22, 4, 1, "#3060c0");
+      // Face + full grey beard
+      px(-3, -22, 6, 5, "#e6c39a");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      px(-4, -17, 8, 4, "#f6efdc");
+      px(-4, -17, 8, 1, "#d8b98a");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Sacred rod that budded (Numbers 17) — dark wood with gold band + almond bud
+      const ang = pose.windup ? -2.0 : (pose.active ? -1.8 + pose.swing * 2.4 : -1.2);
       ctx.save();
-      ctx.translate(x + flip * 4, y - 18 + bob);
-      ctx.rotate(angle * flip);
-      ctx.fillStyle = "#2b1d14"; ctx.fillRect(-2, -1, 28, 3);
-      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-2, 0, 28, 1);
-      ctx.fillStyle = "#e6c261"; ctx.fillRect(24, -3, 4, 6);
+      ctx.translate(x + flip * 5 * CPX, y + (-18 * CPX) + bob);
+      ctx.rotate(ang * flip);
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(-3, -2, 44, 4);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-3, -1, 44, 2);
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(18, -2, 3, 4); // gold band
+      ctx.fillStyle = "#f4e2c1"; ctx.fillRect(40, -4, 5, 4); // almond bud
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(40, -6, 5, 2);
       ctx.restore();
     },
   },
   miriam: {
-    robe: "#d97e8c", robeShade: "#8a4753", head: "#f4e2c1", headTop: "#c9a05a",
-    weapon: (ctx, x, y, bob, flip, _swing) => {
-      // Water bowl — held forward, sloshing during attack
-      const wobble = _swing > 0 ? Math.sin(_swing * 8) * 2 : 0;
-      const bx = x + flip * 9;
-      const by = y - 14 + bob;
-      ctx.fillStyle = "#7a4a2b"; ctx.fillRect(bx - 4, by, 8, 5);
-      ctx.fillStyle = "#3060c0"; ctx.fillRect(bx - 3, by + 1, 6, 3);
-      ctx.fillStyle = "#8ec8ff"; ctx.fillRect(bx - 3, by + 1 + wobble, 6, 1);
-      if (_swing > 0) {
-        ctx.fillStyle = "#8ec8ff";
-        for (let i = 0; i < 4; i++) {
-          ctx.fillRect(bx + flip * (4 + i * 3), by - 2 - i, 2, 2);
+    robe: "#d97e8c", robeShade: "#8a4753", trim: "#e6c261",
+    skin: "#e6c39a", skinShade: "#c99a6c",
+    hair: "#4a2c18", hairShade: "#2b1d14",
+    head: "#c94a6a", headAcc: "#e6c261",
+    drawHead: (px) => {
+      // Rose veil covering hair, gold trim
+      px(-5, -27, 10, 3, "#c94a6a");
+      px(-5, -27, 10, 1, "#e6c261");
+      px(-6, -24, 12, 4, "#d97e8c");
+      px(-6, -24, 12, 1, "#c94a6a");
+      // Face
+      px(-3, -22, 6, 5, "#e6c39a");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      // Braid falling on shoulder
+      px(4, -19, 2, 5, "#4a2c18");
+      px(4, -19, 2, 1, "#2b1d14");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Bronze bowl of water held forward, sloshes then splashes on swing.
+      const bx = x + flip * 9 * CPX;
+      const by = y + (-14 * CPX) + bob;
+      const tilt = pose.active ? pose.swing * 0.6 * flip : 0;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(tilt);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-9, 0, 18, 3);
+      ctx.fillStyle = "#c9700a"; ctx.fillRect(-9, 2, 18, 2);
+      ctx.fillStyle = "#3060c0"; ctx.fillRect(-8, -3, 16, 4);
+      ctx.fillStyle = "#7fc7ff"; ctx.fillRect(-8, -3, 16, 1);
+      ctx.restore();
+      // Splash arc during swing
+      if (pose.active && pose.swing > 0.1) {
+        ctx.save();
+        ctx.globalAlpha = 1 - pose.swing * 0.5;
+        for (let i = 0; i < 6; i++) {
+          const t = i / 5;
+          const rx = bx + flip * (6 + t * 40);
+          const ry = by - 2 - Math.sin(t * Math.PI) * (14 + pose.swing * 8);
+          ctx.fillStyle = i % 2 ? "#7fc7ff" : "#dbe9f7";
+          ctx.fillRect(Math.round(rx - 2), Math.round(ry - 2), 4, 4);
         }
+        ctx.restore();
       }
     },
   },
   jethro: {
-    robe: "#8a6d9e", robeShade: "#4d3a5c", head: "#f6efdc", headTop: "#8a5a34",
-    weapon: (ctx, x, y, bob, flip, swing) => {
-      // Walking stick — curved, planted; slight raise on swing
-      const angle = 0.15 - swing * 0.6;
+    robe: "#8a6d9e", robeShade: "#4d3a5c", trim: "#c9a05a",
+    skin: "#d8b98a", skinShade: "#a17048",
+    hair: "#e6dcc0", hairShade: "#a17048",
+    head: "#4d3a5c", headAcc: "#c9a05a",
+    drawHead: (px) => {
+      // Wrapped Midianite hood — earthy purple with sand trim.
+      px(-5, -27, 10, 2, "#4d3a5c");
+      px(-6, -26, 12, 4, "#4d3a5c");
+      px(-6, -22, 12, 1, "#c9a05a");
+      // Old face
+      px(-3, -22, 6, 5, "#d8b98a");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      // Long white beard
+      px(-4, -17, 8, 6, "#f6efdc");
+      px(-4, -17, 8, 1, "#d8b98a");
+      px(-3, -12, 6, 2, "#f6efdc");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Tall pilgrim walking staff with wrapped grip; rises on swing.
+      const ang = pose.windup ? 0.4 : (pose.active ? 0.15 - pose.swing * 0.9 : 0.1);
       ctx.save();
-      ctx.translate(x + flip * 8, y - 14 + bob);
-      ctx.rotate(angle * flip);
-      ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -18, 8, -16); ctx.stroke();
-      ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, 12); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(0, -14); ctx.quadraticCurveTo(3, -18, 8, -16); ctx.stroke();
+      ctx.translate(x + flip * 8 * CPX, y + (-14 * CPX) + bob);
+      ctx.rotate(ang * flip);
+      ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 6; ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(0, 30); ctx.stroke();
+      ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(0, 30); ctx.stroke();
+      ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(0, 30); ctx.stroke();
+      // Leather wrap grip
+      ctx.fillStyle = "#4d3a5c"; ctx.fillRect(-3, 4, 6, 8);
+      ctx.fillStyle = "#c9a05a"; ctx.fillRect(-3, 5, 6, 1); ctx.fillRect(-3, 9, 6, 1);
+      // Rounded top knob
+      ctx.fillStyle = "#5a3820"; ctx.beginPath(); ctx.arc(0, -18, 3, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     },
   },
   zipporah: {
-    robe: "#5a8a5c", robeShade: "#2d5a3d", head: "#a12b2b", headTop: "#e6c261",
-    weapon: (ctx, x, y, bob, flip, swing) => {
-      // Flint knife — quick chop
-      const angle = -0.8 + swing * 1.8;
+    robe: "#4d7a3e", robeShade: "#2d5a3d", trim: "#c9a05a",
+    skin: "#c99a6c", skinShade: "#8a5a34",
+    hair: "#2b1d14", hairShade: "#4a2c18",
+    head: "#a12b2b", headAcc: "#e6c261",
+    drawHead: (px) => {
+      // Red desert scarf with gold coins on brow.
+      px(-5, -27, 10, 3, "#a12b2b");
+      px(-6, -25, 12, 3, "#a12b2b");
+      px(-5, -24, 10, 1, "#e6c261");
+      // Coin fringe
+      px(-4, -23, 1, 1, "#e6c261"); px(-1, -23, 1, 1, "#e6c261"); px(2, -23, 1, 1, "#e6c261");
+      // Face
+      px(-3, -22, 6, 5, "#c99a6c");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      // Loose hair on shoulder
+      px(-6, -19, 2, 6, "#2b1d14"); px(4, -19, 2, 6, "#2b1d14");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Curved bronze dagger — quick slash.
+      const ang = pose.windup ? -1.5 : (pose.active ? -1.2 + pose.swing * 2.6 : -0.6);
       ctx.save();
-      ctx.translate(x + flip * 6, y - 12 + bob);
-      ctx.rotate(angle * flip);
-      ctx.fillStyle = "#8a5a34"; ctx.fillRect(0, -1, 4, 3);
-      ctx.fillStyle = "#dbe9f7"; ctx.fillRect(4, -2, 10, 4);
-      ctx.fillStyle = "#a0a0a0"; ctx.fillRect(4, -2, 10, 1);
+      ctx.translate(x + flip * 6 * CPX, y + (-12 * CPX) + bob);
+      ctx.rotate(ang * flip);
+      // handle
+      ctx.fillStyle = "#4d3a5c"; ctx.fillRect(-2, -2, 8, 4);
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(-2, -2, 8, 1);
+      // curved blade
+      ctx.fillStyle = "#dbe9f7";
+      ctx.beginPath();
+      ctx.moveTo(6, -3); ctx.quadraticCurveTo(20, -8, 26, -2);
+      ctx.lineTo(26, 2); ctx.quadraticCurveTo(20, -3, 6, 3);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#a0a0a0";
+      ctx.beginPath();
+      ctx.moveTo(6, -3); ctx.quadraticCurveTo(20, -8, 26, -2);
+      ctx.lineTo(26, 0); ctx.quadraticCurveTo(20, -5, 6, -1);
+      ctx.closePath(); ctx.fill();
       ctx.restore();
     },
   },
   joshua: {
-    robe: "#3060c0", robeShade: "#0f1b3d", head: "#b98550", headTop: "#e6c261",
-    weapon: (ctx, x, y, bob, flip, swing) => {
-      // Spear — held level, thrust forward during swing
-      const push = swing * 8;
+    robe: "#3060c0", robeShade: "#0f1b3d", trim: "#e6c261",
+    skin: "#c99a6c", skinShade: "#8a5a34",
+    hair: "#2b1d14", hairShade: "#4a2c18",
+    head: "#b98550", headAcc: "#e6c261",
+    broad: true,
+    drawHead: (px) => {
+      // Bronze conical warrior helmet with cheek guards.
+      px(-4, -28, 8, 2, "#b98550");
+      px(-5, -26, 10, 4, "#b98550");
+      px(-5, -26, 10, 1, "#e6c261");
+      px(-5, -23, 10, 1, "#7a5230");
+      // Cheek guards
+      px(-6, -22, 1, 4, "#b98550"); px(5, -22, 1, 4, "#b98550");
+      px(-6, -22, 1, 1, "#7a5230"); px(5, -22, 1, 1, "#7a5230");
+      // Face
+      px(-3, -22, 6, 5, "#c99a6c");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      // Short warrior beard
+      px(-3, -17, 6, 2, "#2b1d14");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Iron-tipped spear — pulled back on windup, thrust forward on swing.
+      const push = pose.windup ? -6 : (pose.active ? -4 + pose.swing * 22 : 0);
       ctx.save();
-      ctx.translate(x + flip * (6 + push), y - 14 + bob);
+      ctx.translate(x + flip * (6 * CPX + push), y + (-14 * CPX) + bob);
       ctx.scale(flip, 1);
-      ctx.fillStyle = "#8a5a34"; ctx.fillRect(0, -1, 22, 2);
-      ctx.fillStyle = "#4a2c18"; ctx.fillRect(0, 0, 22, 1);
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(-6, -2, 44, 4);
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-6, -1, 44, 2);
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(24, -2, 3, 4); // grip band
+      // Leaf-shaped blade
       ctx.fillStyle = "#dbe9f7";
       ctx.beginPath();
-      ctx.moveTo(22, -1); ctx.lineTo(30, -3); ctx.lineTo(30, 3); ctx.lineTo(22, 2);
-      ctx.closePath(); ctx.fill();
+      ctx.moveTo(38, -2); ctx.lineTo(50, -5); ctx.lineTo(56, 0);
+      ctx.lineTo(50, 5); ctx.lineTo(38, 2); ctx.closePath(); ctx.fill();
       ctx.fillStyle = "#a0a0a0";
       ctx.beginPath();
-      ctx.moveTo(22, -1); ctx.lineTo(30, -3); ctx.lineTo(30, 0); ctx.lineTo(22, 0);
-      ctx.closePath(); ctx.fill();
+      ctx.moveTo(38, -2); ctx.lineTo(50, -5); ctx.lineTo(56, 0);
+      ctx.lineTo(50, 0); ctx.lineTo(38, 0); ctx.closePath(); ctx.fill();
       ctx.restore();
     },
   },
   hur: {
-    robe: "#a12b2b", robeShade: "#5a1a1a", head: "#2b4a7a", headTop: "#e6c261",
-    weapon: (ctx, x, y, bob, flip, swing) => {
-      // Sword — overhead slash
-      const angle = -1.3 + swing * 2.2;
+    robe: "#a12b2b", robeShade: "#5a1a1a", trim: "#e6c261",
+    skin: "#c99a6c", skinShade: "#8a5a34",
+    hair: "#e6dcc0", hairShade: "#a17048",
+    head: "#a12b2b", headAcc: "#e6c261",
+    broad: true,
+    drawHead: (px) => {
+      // Red warrior headband, salt-and-pepper hair, full beard.
+      px(-5, -27, 10, 3, "#a17048"); // hair
+      px(-5, -27, 10, 1, "#7a5230");
+      px(-5, -24, 10, 1, "#a12b2b"); // headband
+      px(-5, -24, 10, 1, "#e6c261");
+      // Face
+      px(-3, -22, 6, 5, "#c99a6c");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      // Grey beard
+      px(-4, -17, 8, 5, "#d8b98a");
+      px(-4, -17, 8, 1, "#a17048");
+      px(-3, -14, 6, 2, "#f6efdc");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Bronze sword — vertical cock, wide diagonal slash.
+      const ang = pose.windup ? -1.9 : (pose.active ? -1.6 + pose.swing * 2.5 : -1.0);
       ctx.save();
-      ctx.translate(x + flip * 6, y - 16 + bob);
-      ctx.rotate(angle * flip);
-      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-1, 0, 3, 4); // hilt
-      ctx.fillStyle = "#e6c261"; ctx.fillRect(-3, 4, 7, 2); // guard
-      ctx.fillStyle = "#dbe9f7"; ctx.fillRect(-1, 6, 3, 18); // blade
-      ctx.fillStyle = "#a0a0a0"; ctx.fillRect(-1, 6, 1, 18);
+      ctx.translate(x + flip * 6 * CPX, y + (-16 * CPX) + bob);
+      ctx.rotate(ang * flip);
+      // hilt
+      ctx.fillStyle = "#4d3a5c"; ctx.fillRect(-2, 0, 4, 6);
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(-4, 6, 8, 3); // crossguard
+      ctx.fillStyle = "#c9700a"; ctx.fillRect(-4, 8, 8, 1);
+      // pommel
+      ctx.fillStyle = "#e6c261"; ctx.fillRect(-2, -2, 4, 2);
+      // blade
+      ctx.fillStyle = "#dbe9f7"; ctx.fillRect(-2, 9, 4, 28);
+      ctx.fillStyle = "#a0a0a0"; ctx.fillRect(-2, 9, 2, 28);
+      ctx.fillStyle = "#f6efdc"; ctx.fillRect(1, 9, 1, 28);
+      // Swing arc
+      if (pose.active && pose.swing > 0.1) {
+        ctx.globalAlpha = (1 - pose.swing) * 0.6;
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(0, 20, 22, -Math.PI / 3, Math.PI / 3); ctx.stroke();
+      }
       ctx.restore();
     },
   },
   elder: {
-    robe: "#4d3a5c", robeShade: "#2b1d14", head: "#f6efdc", headTop: "#c9a05a",
-    weapon: (ctx, x, y, bob, flip, _swing) => {
-      // Prayer scroll held forward with glow on attack
-      const bx = x + flip * 8;
-      const by = y - 14 + bob;
-      ctx.fillStyle = "#f4e2c1"; ctx.fillRect(bx - 3, by, 8, 8);
-      ctx.fillStyle = "#8a5a34"; ctx.fillRect(bx - 3, by, 8, 1);
-      ctx.fillStyle = "#2b1d14";
-      ctx.fillRect(bx - 1, by + 3, 4, 1); ctx.fillRect(bx - 1, by + 5, 4, 1);
-      if (_swing > 0) {
-        ctx.globalAlpha = _swing;
-        ctx.fillStyle = "#fff8b0"; ctx.beginPath(); ctx.arc(bx + 2, by + 4, 6, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = 1;
-      }
+    robe: "#4d3a5c", robeShade: "#2b1d14", trim: "#c9a05a",
+    skin: "#d8b98a", skinShade: "#a17048",
+    hair: "#f6efdc", hairShade: "#c9a05a",
+    head: "#7a5230", headAcc: "#c9a05a",
+    drawHead: (px) => {
+      // Dark shepherd's hood, deep-set face, long white beard.
+      px(-6, -27, 12, 3, "#4d3a5c");
+      px(-6, -25, 12, 4, "#4d3a5c");
+      px(-6, -25, 12, 1, "#2b1d14");
+      px(-6, -21, 12, 1, "#c9a05a");
+      // Face (in hood shadow)
+      px(-3, -22, 6, 4, "#d8b98a");
+      px(-3, -22, 6, 1, "#a17048");
+      px(-3, -20, 2, 1, "#2b1d14"); px(1, -20, 2, 1, "#2b1d14");
+      // Long beard
+      px(-4, -18, 8, 6, "#f6efdc");
+      px(-4, -18, 8, 1, "#d8b98a");
+      px(-3, -12, 6, 3, "#f6efdc");
+    },
+    drawWeapon: (ctx, x, y, bob, flip, pose) => {
+      // Shepherd's crook (older, weathered) — planted normally, small overhead lift on swing.
+      const ang = pose.windup ? -0.6 : (pose.active ? -0.35 + pose.swing * 0.7 : -0.2);
+      ctx.save();
+      ctx.translate(x + flip * 7 * CPX, y + (-14 * CPX) + bob);
+      const facing = flip === -1 ? -1 : 1;
+      ctx.rotate(ang * facing);
+      // Reuse shared shepherd staff renderer at length 54.
+      drawShepherdStaff(ctx, 0, 0, 0, facing, 54);
+      ctx.restore();
     },
   },
 };
 
 function drawCompanion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState): boolean {
-  const style = COMPANION_STYLES[e.kind as import("./types").NpcId];
-  if (!style) return false;
+  const art = COMPANION_ART[e.kind as NpcIdT];
+  if (!art) return false;
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
-  const walking = Math.hypot(e.vel.x, e.vel.y) > 5 || Math.abs(Math.sin(e.animT)) > 0.4;
-  const bob = walking ? Math.round(Math.sin(e.animT * 1.2) * 1.4) : 0;
   const flip = e.facing === -1 ? -1 : 1;
-  const downed = e.data?.downedUntil != null;
-  const attackT = (e.data?.attackT as number | undefined) ?? 0;
-  const attackTMax = (e.data?.attackTMax as number | undefined) ?? 0.28;
-  const swing = attackT > 0 ? 1 - attackT / attackTMax : 0; // 0..1 progress
+  const d = e.data ?? {};
 
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  const summonUntil = d.summonUntil as number | undefined;
+  const inSummon = !!summonUntil && s.now < summonUntil;
+  const downed = d.downedUntil != null;
+  const standupUntil = d.standupUntil as number | undefined;
+  const standing = !!standupUntil && s.now < standupUntil && !downed;
 
+  const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
+  const walkFrame = walking ? (Math.floor(e.animT * 1.2) & 1) : 0;
+  const bob = walking ? (walkFrame === 0 ? 0 : -1) * CPX : 0;
+
+  // Attack pose extraction
+  const attackT = (d.attackT as number | undefined) ?? 0;
+  const attackTMax = (d.attackTMax as number | undefined) ?? 0.4;
+  const windupDur = (d.attackWindup as number | undefined) ?? 0.18;
+  const swingDur = (d.attackSwing as number | undefined) ?? 0.22;
+  let pose: AttackPose = { swing: 0, windup: false, active: false };
+  if (attackT > 0) {
+    if (attackT > attackTMax - windupDur) {
+      // Windup phase
+      pose = { swing: 0, windup: true, active: false };
+    } else {
+      // Swing phase (progress 0..1)
+      const p = 1 - attackT / swingDur;
+      pose = { swing: Math.max(0, Math.min(1, p)), windup: false, active: true };
+    }
+  }
+
+  // Shadow
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.beginPath(); ctx.ellipse(x, y + 10, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+
+  // ---------- Downed pose ----------
   if (downed) {
-    // Fallen — draw a small rotated body on the ground
+    const px: PxDraw = (dx, dy, w, h, color) => {
+      ctx.fillStyle = color;
+      const rx = flip === 1 ? x + dx * CPX : x - (dx + w) * CPX;
+      // Rotated: draw body horizontally low on the ground.
+      ctx.fillRect(rx, y + (dy + 4) * CPX, w * CPX, h * CPX);
+    };
     ctx.save();
-    ctx.globalAlpha = 0.6;
-    ctx.translate(x, y + 4);
-    ctx.rotate(Math.PI / 2);
-    ctx.fillStyle = style.robe; ctx.fillRect(-8, -6, 16, 12);
-    ctx.fillStyle = style.robeShade; ctx.fillRect(-8, 0, 16, 6);
-    ctx.fillStyle = style.head; ctx.fillRect(-4, -12, 8, 6);
+    ctx.globalAlpha = 0.75;
+    // Simple prone silhouette using palette
+    for (let i = 0; i < 14; i++) px(-7 + i, 0, 1, 3, i < 3 || i > 10 ? art.skin : art.robe);
+    for (let i = 0; i < 14; i++) px(-7 + i, 3, 1, 1, art.robeShade);
     ctx.restore();
+    // Red X marker
+    ctx.strokeStyle = "#e04030"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x - 6, y - 4); ctx.lineTo(x + 6, y + 4);
+    ctx.moveTo(x + 6, y - 4); ctx.lineTo(x - 6, y + 4); ctx.stroke();
     ctx.fillStyle = "#f0e0a0"; ctx.font = "700 10px Nunito, sans-serif"; ctx.textAlign = "center";
-    const remain = Math.max(0, Math.ceil((e.data!.downedUntil as number) - s.now));
-    ctx.fillText(`${remain}s`, x, y - 4);
+    const remain = Math.max(0, Math.ceil((d.downedUntil as number) - s.now));
+    ctx.fillText(`${remain}s`, x, y - 12);
     return true;
   }
 
-  ctx.save();
-  // legs
-  ctx.fillStyle = style.robeShade;
-  ctx.fillRect(x - 4, y + bob, 3, 8); ctx.fillRect(x + 1, y + bob, 3, 8);
-  ctx.fillStyle = "#2b1d14";
-  ctx.fillRect(x - 4, y + 7 + bob, 3, 2); ctx.fillRect(x + 1, y + 7 + bob, 3, 2);
-  // robe/torso
-  ctx.fillStyle = style.robe; ctx.fillRect(x - 7, y - 14 + bob, 14, 18);
-  ctx.fillStyle = style.robeShade; ctx.fillRect(x - 7, y - 6 + bob, 14, 3);
-  ctx.fillRect(x - 7, y + 1 + bob, 14, 2);
-  // trim band
-  ctx.fillStyle = style.headTop; ctx.fillRect(x - 7, y - 14 + bob, 14, 2);
-  // face (kept generic; head cover distinguishes)
-  ctx.fillStyle = "#e6c39a"; ctx.fillRect(x - 5, y - 22 + bob, 10, 8);
-  ctx.fillStyle = "#2b1d14";
-  ctx.fillRect(x - 3, y - 18 + bob, 1, 1); ctx.fillRect(x + 2, y - 18 + bob, 1, 1);
-  // head cover (silhouette differentiator)
-  ctx.fillStyle = style.head; ctx.fillRect(x - 6, y - 26 + bob, 12, 6);
-  ctx.fillStyle = style.headTop; ctx.fillRect(x - 6, y - 26 + bob, 12, 2);
-  // side flaps for headdress feel
-  ctx.fillStyle = style.head; ctx.fillRect(x - 7, y - 22 + bob, 2, 4); ctx.fillRect(x + 5, y - 22 + bob, 2, 4);
-  ctx.restore();
+  // ---------- Standup: rising / kneeling ----------
+  const crouch = standing ? Math.round((1 - (standupUntil! - s.now) / 0.6) * -8) + 8 : 0;
+  const bodyBob = bob + crouch * CPX;
 
-  // Weapon — drawn on top; passes swing progress for attack pose
-  style.weapon(ctx, x, y, bob, flip, swing);
+  const px: PxDraw = (dx, dy, w, h, color) => {
+    ctx.fillStyle = color;
+    const rx = flip === 1 ? x + dx * CPX : x - (dx + w) * CPX;
+    ctx.fillRect(rx, y + dy * CPX + bodyBob, w * CPX, h * CPX);
+  };
 
-  // ally HP bar
-  const bw = 26;
-  const bx = x - bw / 2;
-  const by = y - 32;
-  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
-  ctx.fillStyle = "#1e5a1e"; ctx.fillRect(bx, by, bw, 3);
-  ctx.fillStyle = "#4ec24e"; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  // ---------- Legs (walk cycle) ----------
+  if (!standing) {
+    if (walkFrame === 0) {
+      px(-4, 0, 3, 6, art.robeShade); px(1, 0, 3, 6, art.robeShade);
+    } else {
+      px(-5, 0, 3, 6, art.robeShade); px(2, 0, 3, 6, art.robeShade);
+    }
+    // Feet / sandals
+    px(-4 - (walkFrame === 0 ? 0 : 1), 6, 3, 1, "#2b1d14");
+    px(1 + (walkFrame === 0 ? 0 : 1), 6, 3, 1, "#2b1d14");
+  } else {
+    // Kneeling
+    px(-5, 2, 4, 4, art.robeShade); px(1, 2, 4, 4, art.robeShade);
+    px(-5, 6, 10, 1, "#2b1d14");
+  }
+
+  // ---------- Robe / torso ----------
+  const bw = art.broad ? 15 : 14;
+  const bx = art.broad ? -7 : -7;
+  px(bx, -14, bw, 15, art.robe);
+  // Vertical crease shading
+  px(bx + 1, -12, 1, 12, art.robeShade);
+  px(bx + bw - 2, -12, 1, 12, art.robeShade);
+  // Waist sash / trim band
+  px(bx, -5, bw, 1, art.trim);
+  px(bx, -4, bw, 1, art.robeShade);
+  // Hem
+  px(bx, 0, bw, 1, art.robeShade);
+  // Chest highlight
+  px(bx + 3, -13, bw - 6, 1, "#ffffff");
+  ctx.globalAlpha = 0.15; px(bx + 3, -13, bw - 6, 1, "#ffffff"); ctx.globalAlpha = 1;
+
+  // ---------- Arms ----------
+  const armY = pose.windup ? -12 : (pose.active ? -13 + pose.swing * -1 : -12);
+  // Rear arm always hangs
+  px(bx - 1, armY, 2, 8, art.robe);
+  px(bx - 1, armY + 6, 2, 2, art.skinShade);
+  // Front arm — cocks back on windup, extends forward on swing
+  const frontArmDx = pose.windup ? bx + bw - 3 : (pose.active ? bx + bw : bx + bw - 1);
+  px(frontArmDx, armY, 2, 6, art.robe);
+  px(frontArmDx, armY + 5, 2, 2, art.skin); // hand
+
+  // ---------- Head ----------
+  art.drawHead(px, walkFrame);
+
+  // ---------- Weapon ----------
+  if (!standing) {
+    art.drawWeapon(ctx, x, y, bodyBob, flip, pose);
+  }
+
+  // ---------- Summon glow ----------
+  if (inSummon) {
+    const t = 1 - (summonUntil! - s.now) / 1.0; // 0..1
+    ctx.save();
+    // Vertical light pillar (fades in then out)
+    const alpha = Math.sin(Math.min(1, t * 1.4) * Math.PI) * 0.85;
+    ctx.globalAlpha = alpha * 0.45;
+    const grad = ctx.createLinearGradient(x, y - 90, x, y + 12);
+    grad.addColorStop(0, "rgba(255,240,150,0)");
+    grad.addColorStop(0.5, "rgba(255,225,120,0.9)");
+    grad.addColorStop(1, "rgba(255,200,80,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x - 22, y - 90, 44, 100);
+    // Pulsing ring at feet
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = "#ffe680"; ctx.lineWidth = 3;
+    const rr = 10 + Math.sin(t * Math.PI * 3) * 4 + t * 14;
+    ctx.beginPath(); ctx.ellipse(x, y + 10, rr, rr * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "#fff4b0"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(x, y + 10, rr * 0.7, rr * 0.24, 0, 0, Math.PI * 2); ctx.stroke();
+    // Rising sparkles
+    for (let i = 0; i < 10; i++) {
+      const seed = i * 0.6180339;
+      const px2 = (seed + t * 0.35) % 1;
+      const sx0 = x + Math.round((seed * 30 - 15));
+      const sy0 = y + 8 - Math.round(px2 * 70);
+      const sz = ((i + Math.floor(t * 6)) & 1) ? 3 : 2;
+      ctx.globalAlpha = alpha * (1 - px2);
+      ctx.fillStyle = i % 3 === 0 ? "#fff4b0" : "#ffcf60";
+      ctx.fillRect(sx0 - sz / 2, sy0 - sz / 2, sz, sz);
+    }
+    // Bright flash at spawn moment
+    if (t < 0.15) {
+      ctx.globalAlpha = 1 - t / 0.15;
+      ctx.fillStyle = "#fffbe0";
+      ctx.beginPath(); ctx.arc(x, y - 12, 30 * (t / 0.15 + 0.4), 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ---------- HP bar ----------
+  const barW = 28;
+  const barX = x - barW / 2;
+  const barY = y - 34 * CPX / 3 - 6; // just above head
+  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(barX - 1, barY - 1, barW + 2, 5);
+  ctx.fillStyle = "#1e5a1e"; ctx.fillRect(barX, barY, barW, 3);
+  ctx.fillStyle = "#4ec24e"; ctx.fillRect(barX, barY, barW * Math.max(0, e.hp / e.maxHp), 3);
 
   return true;
 }
+
 
