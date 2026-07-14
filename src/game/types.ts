@@ -157,4 +157,8 @@ export type GameState = {
 
   // Ramses world boss (ramses.ts).
   ramsesId?: number;
+
+  // Floating notifications (bonus pickups, plague unlocks, etc.)
+  notifications?: Array<{ id: number; text: string; color: string; born: number; ttl: number }>;
+  nextNotifId?: number;
 };
