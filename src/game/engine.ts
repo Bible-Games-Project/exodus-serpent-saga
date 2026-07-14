@@ -468,7 +468,7 @@ export function update(state: GameState, dt: number) {
         e.pos.x = wrap(e.pos.x + (dx / d) * s * dt, state.worldW);
         e.pos.y = wrap(e.pos.y + (dy / d) * s * dt, state.worldH);
       }
-      if (d < 16) {
+      if (d < 16 || (e.kind?.startsWith("bonus_") && d < 34)) {
         if (e.kind === "gem") {
           state.xp += (e.data?.xp as number) ?? 1;
           while (state.xp >= state.xpToNext) levelUp(state);
