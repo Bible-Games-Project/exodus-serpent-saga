@@ -2198,31 +2198,36 @@ function drawHailstone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
 function drawHailImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const maxTtl = (e.data?.maxTtl as number) ?? 0.45;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
-  const cx = e.pos.x - camX;
-  const cy = e.pos.y - camY;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
   const R = (e.data?.radius as number) ?? 60;
-  const rNow = R * (1 - life * 0.7) + 6;
+  const t = 1 - life;
   ctx.save();
-  ctx.globalAlpha = life * 0.55;
-  const grd = ctx.createRadialGradient(cx, cy, rNow * 0.2, cx, cy, rNow);
-  grd.addColorStop(0, "rgba(220,240,255,0.9)");
-  grd.addColorStop(0.6, "rgba(140,180,220,0.5)");
-  grd.addColorStop(1, "rgba(140,180,220,0)");
-  ctx.fillStyle = grd;
-  ctx.beginPath(); ctx.arc(cx, cy, rNow, 0, Math.PI * 2); ctx.fill();
-  ctx.globalAlpha = life * 0.9;
-  ctx.strokeStyle = "#eaf4ff"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(cx, cy, rNow * 0.9, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = life;
-  const N = 14;
-  for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    const rr = rNow * (0.6 + 0.35 * ((i * 7) % 5) / 5);
-    const sx = Math.round(cx + Math.cos(a) * rr);
-    const sy = Math.round(cy + Math.sin(a) * rr);
-    ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#b8d4ec";
-    ctx.fillRect(sx - 1, sy - 1, 3, 3);
-    ctx.fillStyle = "#4a6a90"; ctx.fillRect(sx, sy, 1, 1);
+  // Pixel-art icy shards radiating outward — no radial gradient.
+  const shards = 10;
+  for (let i = 0; i < shards; i++) {
+    const a = (i / shards) * Math.PI * 2 + t * 0.6;
+    const len = R * (0.35 + t * 0.55);
+    const steps = Math.max(3, Math.floor(len / 6));
+    for (let s = 0; s < steps; s++) {
+      const rr = (s / steps) * len;
+      const px = Math.round(cx + Math.cos(a) * rr);
+      const py = Math.round(cy + Math.sin(a) * rr);
+      const size = s < 2 ? 4 : s < 4 ? 3 : 2;
+      const shade = s < 2 ? "#ffffff" : s < 5 ? "#dbe9f7" : s < 8 ? "#8fb0d4" : "#4a6a90";
+      ctx.fillStyle = shade;
+      ctx.fillRect(px - size / 2, py - size / 2, size, size);
+    }
+  }
+  // Central shatter cluster — chunky ice pixels
+  const cluster: Array<[number, number, string]> = [
+    [-2, -2, "#dbe9f7"], [1, -3, "#ffffff"], [3, 0, "#8fb0d4"],
+    [-3, 1, "#8fb0d4"], [0, 2, "#dbe9f7"], [-4, -1, "#4a6a90"], [2, 3, "#4a6a90"],
+  ];
+  for (const [dx, dy, col] of cluster) {
+    ctx.fillStyle = col;
+    ctx.fillRect(cx + dx * 2, cy + dy * 2, 3, 3);
   }
   ctx.restore();
 }
