@@ -337,16 +337,22 @@ export function update(state: GameState, dt: number) {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
         if (e.kind === "fireball") {
-          const R = (e.data?.radius as number) ?? 55;
+          const R = (e.data?.radius as number) ?? 110;
+          const fireDmg = e.dmg ?? 60;
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
-            if (en.data?.immuneFire) continue;
             if (dist2(en.pos, e.pos) < R * R) {
-              en.hp -= e.dmg ?? 0;
+              if (en.kind === "ramses") {
+                // Ramses takes damage but is never instakilled.
+                en.hp -= fireDmg;
+              } else {
+                en.hp = 0;
+              }
               if (en.hp <= 0) killEnemy(state, en);
             }
           }
-          spawnVisualHazard(state, "fireexplosion", e.pos, 0.4, { radius: R });
+          spawnVisualHazard(state, "fireexplosion", e.pos, 0.55, { radius: R });
+          state.screenShake = Math.max(state.screenShake ?? 0, 10);
         } else if (e.kind === "hailstone") {
           const R = (e.data?.radius as number) ?? 60;
           const freezeDur = (e.data?.freeze as number) ?? 2.5;
