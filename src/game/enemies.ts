@@ -38,6 +38,8 @@ export type EnemyDef = {
 };
 
 export const ENEMY_DEFS: Record<string, EnemyDef> = {
+  // Enemy introduction is deliberately slow — new types appear at roughly the
+  // same cadence as plague unlocks so the player has time to master each foe.
   soldier: {
     kind: "soldier", category: "human",
     radius: 12, baseHp: 26, hpPerMinute: 24, speed: 55, contactDmg: 10, xp: 3,
@@ -46,56 +48,56 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   jackal: {
     kind: "jackal", category: "animal",
     radius: 10, baseHp: 14, hpPerMinute: 14, speed: 95, contactDmg: 12, xp: 2,
-    minMinute: 0.5, weight: 5, behavior: "chase",
+    minMinute: 1.5, weight: 5, behavior: "chase",
   },
   swordsoldier: {
     kind: "swordsoldier", category: "human",
     radius: 12, baseHp: 42, hpPerMinute: 26, speed: 70, contactDmg: 14, xp: 4,
-    minMinute: 1.2, weight: 4, behavior: "chase",
-  },
-  archer: {
-    kind: "archer", category: "human",
-    radius: 11, baseHp: 24, hpPerMinute: 18, speed: 45, contactDmg: 6, xp: 4,
-    minMinute: 2, weight: 3, behavior: "ranged",
-    attack: { cooldown: 2.2, range: 260, projectileSpeed: 320, projectileDmg: 10, projectileKind: "arrow", projectileTtl: 1.4 },
+    minMinute: 3, weight: 4, behavior: "chase",
   },
   crow: {
     kind: "crow", category: "animal",
     radius: 8, baseHp: 10, hpPerMinute: 8, speed: 130, contactDmg: 6, xp: 2,
-    minMinute: 1.5, weight: 3, behavior: "flyover", ignoresObstacles: true,
+    minMinute: 4, weight: 3, behavior: "flyover", ignoresObstacles: true,
+  },
+  archer: {
+    kind: "archer", category: "human",
+    radius: 11, baseHp: 24, hpPerMinute: 18, speed: 45, contactDmg: 6, xp: 4,
+    minMinute: 5, weight: 3, behavior: "ranged",
+    attack: { cooldown: 2.2, range: 260, projectileSpeed: 320, projectileDmg: 10, projectileKind: "arrow", projectileTtl: 1.4 },
   },
   bat: {
     kind: "bat", category: "animal",
     radius: 7, baseHp: 8, hpPerMinute: 8, speed: 150, contactDmg: 8, xp: 2,
-    minMinute: 2.5, weight: 3, behavior: "erratic", ignoresObstacles: true,
+    minMinute: 6.5, weight: 3, behavior: "erratic", ignoresObstacles: true,
   },
   wolf: {
     kind: "wolf", category: "animal",
     radius: 11, baseHp: 30, hpPerMinute: 20, speed: 115, contactDmg: 14, xp: 4,
-    minMinute: 3, weight: 4, behavior: "pack",
+    minMinute: 8, weight: 4, behavior: "pack",
   },
   knight: {
     kind: "knight", category: "human",
     radius: 16, baseHp: 90, hpPerMinute: 40, speed: 65, contactDmg: 18, xp: 8,
-    minMinute: 4, weight: 2, behavior: "ranged",
+    minMinute: 10, weight: 2, behavior: "ranged",
     attack: { cooldown: 2.6, range: 240, projectileSpeed: 300, projectileDmg: 14, projectileKind: "spear_e", projectileTtl: 1.4 },
   },
   chariot: {
     kind: "chariot", category: "human",
     radius: 18, baseHp: 120, hpPerMinute: 45, speed: 90, contactDmg: 22, xp: 10,
-    minMinute: 5, weight: 2, behavior: "charge",
+    minMinute: 12, weight: 2, behavior: "charge",
     chargeCooldown: 4, chargeSpeed: 260, chargeDuration: 0.9,
   },
   lion: {
     kind: "lion", category: "animal",
     radius: 14, baseHp: 90, hpPerMinute: 30, speed: 80, contactDmg: 20, xp: 6,
-    minMinute: 5, weight: 2, behavior: "charge",
+    minMinute: 13, weight: 2, behavior: "charge",
     chargeCooldown: 5, chargeSpeed: 280, chargeDuration: 0.8,
   },
   mage: {
     kind: "mage", category: "human",
     radius: 12, baseHp: 50, hpPerMinute: 22, speed: 40, contactDmg: 8, xp: 6,
-    minMinute: 6, weight: 2, behavior: "ranged",
+    minMinute: 15, weight: 2, behavior: "ranged",
     attack: { cooldown: 2.4, range: 280, projectileSpeed: 240, projectileDmg: 16, projectileKind: "magebolt", projectileTtl: 1.8 },
   },
 };
