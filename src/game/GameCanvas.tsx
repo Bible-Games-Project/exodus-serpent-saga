@@ -1600,8 +1600,9 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const walk = Math.sin(e.animT * 0.9) > 0 ? 1 : 0;
 
   // Shadow — big; Ramses is roughly 2x a normal human.
+  const chariot = !!d.chariot && !seated;
   ctx.fillStyle = "rgba(0,0,0,0.42)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, 34, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y + 10, chariot ? 54 : 34, chariot ? 9 : 7, 0, 0, Math.PI * 2); ctx.fill();
 
   let bob = 0;
   if (phase === "airborne") {
