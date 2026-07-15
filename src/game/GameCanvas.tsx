@@ -864,7 +864,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "bolt") { drawBolt(ctx, e, camX, camY); continue; }
     if (e.kind === "gnatswarm") { drawGnatSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "livestockcloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(60,110,40,0.9)", particle: "#2f4a1a", highlight: "#8ab24a" }); continue; }
-    if (e.kind === "boilscloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(96,40,120,0.9)", particle: "#3a1240", highlight: "#c078e0" }); continue; }
+    if (e.kind === "boilscloud") { drawBoilsCloud(ctx, e, camX, camY); continue; }
     if (e.kind === "firstborncloud") { drawFirstbornCloud(ctx, e, camX, camY); continue; }
     if (e.kind === "locustswarm") { drawLocustSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "hailstone") { drawHailstone(ctx, e, camX, camY); continue; }
