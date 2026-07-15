@@ -1947,9 +1947,65 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     ctx.strokeStyle = `rgba(200,100,255,${0.6 + Math.sin(t * 20) * 0.3})`;
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
+  } else if (e.kind === "flamingspear") {
+    // Ramses' flaming war spear (pixel-art)
+    const t = e.animT;
+    // Trailing flame
+    for (let i = 0; i < 5; i++) {
+      const k = i / 5;
+      ctx.fillStyle = i < 2 ? "#fff2b0" : i < 3 ? "#ff8020" : "#c02010";
+      ctx.fillRect(-14 - i * 3, -2 + Math.sin(t * 20 + i) * 1, 4, 4 - i);
+    }
+    // Shaft
+    ctx.fillStyle = "#3a2010"; ctx.fillRect(-12, -1, 20, 2);
+    ctx.fillStyle = "#7a4a20"; ctx.fillRect(-12, -1, 20, 1);
+    // Bronze spearhead
+    ctx.fillStyle = "#c9700a"; ctx.fillRect(6, -3, 7, 6);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(6, -3, 7, 2);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(12, -1, 2, 2);
+    // Fire tongue at the tip
+    ctx.fillStyle = "#ffb040"; ctx.fillRect(13, -2, 3, 4);
+    ctx.fillStyle = "#fff2b0"; ctx.fillRect(14, -1, 2, 2);
   }
   ctx.restore();
 }
+
+// Pixel-art bubble field for the plague of boils. No auxiliary FX.
+function drawBoilsCloud(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> | undefined;
+  if (!particles) return;
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  const maxTtl = (e.data?.maxTtl as number) ?? 6;
+  const remaining = (e.ttl ?? 0) / maxTtl;
+  let fade = 1;
+  if (remaining > 0.85) fade = (1 - remaining) / 0.15;
+  else if (remaining < 0.3) fade = remaining / 0.3;
+  fade = Math.max(0, Math.min(1, fade));
+  ctx.save();
+  for (const p of particles) {
+    const jx = Math.cos(t * 1.6 + p.phase) * p.amp * 0.4;
+    const jy = Math.sin(t * 1.9 + p.phase * 1.3) * p.amp * 0.4;
+    // Individual bubble grows & pops rhythmically
+    const grow = 0.7 + 0.3 * Math.sin(t * 2.4 + p.phase * 2);
+    const bs = Math.max(3, Math.round((p.size + 3) * grow));
+    const x = Math.round(cx + p.ox + jx);
+    const y = Math.round(cy + p.oy + jy);
+    ctx.globalAlpha = fade * 0.95;
+    // Base (angry red/purple boil)
+    ctx.fillStyle = "#5a1030"; ctx.fillRect(x - bs / 2, y - bs / 2, bs, bs);
+    ctx.fillStyle = "#8a2050"; ctx.fillRect(x - bs / 2 + 1, y - bs / 2 + 1, bs - 2, bs - 2);
+    ctx.fillStyle = "#c0407a"; ctx.fillRect(x - bs / 2 + 2, y - bs / 2 + 2, Math.max(1, bs - 4), Math.max(1, bs - 4));
+    // Highlight (top-left) — makes it read as a rounded bubble
+    ctx.fillStyle = "#ffc0d8";
+    ctx.fillRect(x - bs / 2 + 1, y - bs / 2 + 1, Math.max(1, Math.floor(bs / 3)), 1);
+    ctx.fillRect(x - bs / 2 + 1, y - bs / 2 + 2, 1, Math.max(1, Math.floor(bs / 3) - 1));
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 
 // ---------------- Red Sea ----------------
 function drawRedSeaWall(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
