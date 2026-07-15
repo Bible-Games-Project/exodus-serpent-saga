@@ -459,12 +459,22 @@ export function update(state: GameState, dt: number) {
           d.tickAcc = (d.tickAcc as number) - tick;
           const r = (d.radius as number) ?? 90;
           const target = d.targetKind as string | undefined;
+          // Locust swarm is a horizontal band, not a circle.
+          const isBand = e.kind === "locustswarm";
+          const bw = (d.bandW as number) ?? 0;
+          const bh = (d.bandH as number) ?? 0;
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
             const cat = (en.data?.category as string | undefined) ?? "human";
             if (target === "animal" && cat !== "animal") continue;
             if (target === "human" && cat !== "human") continue;
-            if (dist2(en.pos, e.pos) < r * r) {
+            let hit = false;
+            if (isBand) {
+              hit = Math.abs(en.pos.x - e.pos.x) < bw / 2 && Math.abs(en.pos.y - e.pos.y) < bh / 2;
+            } else {
+              hit = dist2(en.pos, e.pos) < r * r;
+            }
+            if (hit) {
               en.hp -= dps * tick;
               if (en.hp <= 0) killEnemy(state, en);
             }
