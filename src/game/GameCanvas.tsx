@@ -1631,7 +1631,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   if (chariot) {
     const wheelR = 22;
     const cartY = y + 8;
-    const spin = state.now * 8 * flip;
+    const spin = s.now * 8 * flip;
     // Cart body (gold with blue trim)
     ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
     ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
@@ -1665,7 +1665,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.stroke();
     // Twin horses ahead of the cart
     const horseX = x + flip * 78;
-    const gallop = Math.sin(state.now * 14) > 0 ? 1 : -1;
+    const gallop = Math.sin(s.now * 14) > 0 ? 1 : -1;
     for (const hy of [cartY - 14, cartY + 6]) {
       // Body
       ctx.fillStyle = "#4a2a10"; ctx.fillRect(horseX - flip * 22, hy - 6, flip * 26, 10);
