@@ -259,7 +259,10 @@ export function update(state: GameState, dt: number) {
   spawnEnemies(state, dt, spawnRate);
 
   // Ramses boss AI
-  tickRamses(state, dt, { resolveObstacles: (pos, r) => resolveObstacles(pos, r, state) });
+  tickRamses(state, dt, {
+    resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
+    spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
+  });
 
   // Orbiting flies
   syncOrbitFlies(state, dt);
@@ -334,16 +337,22 @@ export function update(state: GameState, dt: number) {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
         if (e.kind === "fireball") {
-          const R = (e.data?.radius as number) ?? 55;
+          const R = (e.data?.radius as number) ?? 110;
+          const fireDmg = e.dmg ?? 60;
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
-            if (en.data?.immuneFire) continue;
             if (dist2(en.pos, e.pos) < R * R) {
-              en.hp -= e.dmg ?? 0;
+              if (en.kind === "ramses") {
+                // Ramses takes damage but is never instakilled.
+                en.hp -= fireDmg;
+              } else {
+                en.hp = 0;
+              }
               if (en.hp <= 0) killEnemy(state, en);
             }
           }
-          spawnVisualHazard(state, "fireexplosion", e.pos, 0.4, { radius: R });
+          spawnVisualHazard(state, "fireexplosion", e.pos, 0.55, { radius: R });
+          state.screenShake = Math.max(state.screenShake ?? 0, 10);
         } else if (e.kind === "hailstone") {
           const R = (e.data?.radius as number) ?? 60;
           const freezeDur = (e.data?.freeze as number) ?? 2.5;
@@ -450,12 +459,22 @@ export function update(state: GameState, dt: number) {
           d.tickAcc = (d.tickAcc as number) - tick;
           const r = (d.radius as number) ?? 90;
           const target = d.targetKind as string | undefined;
+          // Locust swarm is a horizontal band, not a circle.
+          const isBand = e.kind === "locustswarm";
+          const bw = (d.bandW as number) ?? 0;
+          const bh = (d.bandH as number) ?? 0;
           for (const en of state.entities.values()) {
             if (en.team !== "enemy") continue;
             const cat = (en.data?.category as string | undefined) ?? "human";
             if (target === "animal" && cat !== "animal") continue;
             if (target === "human" && cat !== "human") continue;
-            if (dist2(en.pos, e.pos) < r * r) {
+            let hit = false;
+            if (isBand) {
+              hit = Math.abs(en.pos.x - e.pos.x) < bw / 2 && Math.abs(en.pos.y - e.pos.y) < bh / 2;
+            } else {
+              hit = dist2(en.pos, e.pos) < r * r;
+            }
+            if (hit) {
               en.hp -= dps * tick;
               if (en.hp <= 0) killEnemy(state, en);
             }
@@ -923,38 +942,39 @@ function spawnVisualHazard(state: GameState, kind: string, pos: Vec2, ttl: numbe
   state.entities.set(e.id, e);
 }
 
-function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, radius: number) {
+function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, _radius: number) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const cam = state.camera;
-  const edge = Math.floor(Math.random() * 4);
-  let sx = 0, sy = 0, tx = 0, ty = 0;
-  const off = radius + 40;
-  const jitter = 0.5;
-  if (edge === 0) { sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y - vh / 2 - off; tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y + vh / 2 + off; }
-  else if (edge === 1) { sx = cam.x + vw / 2 + off; sy = cam.y + rand(-vh / 2, vh / 2); tx = cam.x - vw / 2 - off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter; }
-  else if (edge === 2) { sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y + vh / 2 + off; tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y - vh / 2 - off; }
-  else { sx = cam.x - vw / 2 - off; sy = cam.y + rand(-vh / 2, vh / 2); tx = cam.x + vw / 2 + off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter; }
-  const dx = tx - sx, dy = ty - sy;
-  const d = Math.hypot(dx, dy) || 1;
-  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }> = [];
-  const nP = 100 + Math.floor(Math.random() * 40);
+  // Horizontal band the width of the visible field, travelling top → bottom.
+  const bandW = vw + 120;
+  const bandH = 140;
+  const sx = cam.x;
+  const sy = cam.y - vh / 2 - bandH;
+  const ty = cam.y + vh / 2 + bandH;
+  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number; hopPhase: number }> = [];
+  const nP = 220 + Math.floor(Math.random() * 80);
   for (let i = 0; i < nP; i++) {
-    const rr = Math.sqrt(Math.random()) * radius;
-    const aa = Math.random() * Math.PI * 2;
-    particles.push({ ox: Math.cos(aa) * rr, oy: Math.sin(aa) * rr * 0.7, phase: Math.random() * Math.PI * 2, amp: 2 + Math.random() * 4, wing: Math.random() * Math.PI * 2 });
+    particles.push({
+      ox: (Math.random() - 0.5) * bandW,
+      oy: (Math.random() - 0.5) * bandH,
+      phase: Math.random() * Math.PI * 2,
+      amp: 1.5 + Math.random() * 3,
+      wing: Math.random() * Math.PI * 2,
+      hopPhase: Math.random() * Math.PI * 2,
+    });
   }
   const e: Entity = {
     id: state.nextId++,
     pos: { x: sx, y: sy },
-    vel: { x: (dx / d) * stats.speed, y: (dy / d) * stats.speed },
-    radius,
+    vel: { x: 0, y: (ty - sy) / stats.ttl },
+    radius: Math.max(bandW, bandH) / 2,
     hp: 1, maxHp: 1,
     team: "hazard", facing: 1,
     animT: 0, born: state.now,
     ttl: stats.ttl,
     kind: "locustswarm",
-    data: { radius, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+    data: { bandW, bandH, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
   };
   state.entities.set(e.id, e);
 }

@@ -864,7 +864,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "bolt") { drawBolt(ctx, e, camX, camY); continue; }
     if (e.kind === "gnatswarm") { drawGnatSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "livestockcloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(60,110,40,0.9)", particle: "#2f4a1a", highlight: "#8ab24a" }); continue; }
-    if (e.kind === "boilscloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(96,40,120,0.9)", particle: "#3a1240", highlight: "#c078e0" }); continue; }
+    if (e.kind === "boilscloud") { drawBoilsCloud(ctx, e, camX, camY); continue; }
     if (e.kind === "firstborncloud") { drawFirstbornCloud(ctx, e, camX, camY); continue; }
     if (e.kind === "locustswarm") { drawLocustSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "hailstone") { drawHailstone(ctx, e, camX, camY); continue; }
@@ -874,7 +874,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "redseawall") { drawRedSeaWall(ctx, e, camX, camY); continue; }
     if (e.kind === "redseaburst") { drawRedSeaBurst(ctx, e, camX, camY); continue; }
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
-    if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
+    if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
     if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, staffSwinging); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
@@ -1600,8 +1600,9 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const walk = Math.sin(e.animT * 0.9) > 0 ? 1 : 0;
 
   // Shadow — big; Ramses is roughly 2x a normal human.
+  const chariot = !!d.chariot && !seated;
   ctx.fillStyle = "rgba(0,0,0,0.42)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, 34, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y + 10, chariot ? 54 : 34, chariot ? 9 : 7, 0, 0, Math.PI * 2); ctx.fill();
 
   let bob = 0;
   if (phase === "airborne") {
@@ -1623,6 +1624,69 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     const ry = y + (dy + bob / RPX) * RPX;
     ctx.fillRect(rx, ry, w * RPX, h * RPX);
   };
+
+  // -------- Egyptian war chariot (level 50+) --------
+  // Drawn beneath Ramses so his torso rises above the cart. Simple pixel-art
+  // silhouette in Ramses' palette: gold-edged cart, spoked wheels, twin horses.
+  if (chariot) {
+    const wheelR = 22;
+    const cartY = y + 8;
+    const spin = s.now * 8 * flip;
+    // Cart body (gold with blue trim)
+    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
+    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 28, cartY - 16, 56, 2);
+    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 28, cartY - 8, 56, 2);
+    ctx.fillStyle = "#c9700a"; ctx.fillRect(x - 28, cartY - 4, 56, 2);
+    // Front panel emblem (sun disk)
+    ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 2, 0, Math.PI * 2); ctx.fill();
+    // Wheels — bronze rim, spokes rotating
+    for (const wx of [x - 22, x + 22]) {
+      ctx.fillStyle = "#2b1d14"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR - 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR - 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3;
+      for (let i = 0; i < 6; i++) {
+        const a = spin + (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(wx, cartY + 4);
+        ctx.lineTo(wx + Math.cos(a) * (wheelR - 4), cartY + 4 + Math.sin(a) * (wheelR - 4));
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#2b1d14"; ctx.beginPath(); ctx.arc(wx, cartY + 4, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(wx, cartY + 4, 2, 0, Math.PI * 2); ctx.fill();
+    }
+    // Yoke pole reaching forward toward horses
+    ctx.strokeStyle = "#5a3820"; ctx.lineWidth = 4; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x + flip * 26, cartY - 6);
+    ctx.lineTo(x + flip * 70, cartY - 4);
+    ctx.stroke();
+    // Twin horses ahead of the cart
+    const horseX = x + flip * 78;
+    const gallop = Math.sin(s.now * 14) > 0 ? 1 : -1;
+    for (const hy of [cartY - 14, cartY + 6]) {
+      // Body
+      ctx.fillStyle = "#4a2a10"; ctx.fillRect(horseX - flip * 22, hy - 6, flip * 26, 10);
+      ctx.fillStyle = "#7a4a20"; ctx.fillRect(horseX - flip * 22, hy - 6, flip * 26, 3);
+      // Head
+      ctx.fillStyle = "#4a2a10"; ctx.fillRect(horseX, hy - 10, flip * 10, 8);
+      ctx.fillStyle = "#7a4a20"; ctx.fillRect(horseX, hy - 10, flip * 10, 2);
+      // Mane
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(horseX - flip * 3, hy - 10, flip * 3, 6);
+      // Eye
+      ctx.fillStyle = "#ffdd80"; ctx.fillRect(horseX + flip * 6, hy - 7, 2, 2);
+      // Legs (gallop)
+      ctx.fillStyle = "#2b1d14";
+      ctx.fillRect(horseX - flip * 20, hy + 4, 3, 8 + gallop * 2);
+      ctx.fillRect(horseX - flip * 10, hy + 4, 3, 8 - gallop * 2);
+      ctx.fillRect(horseX - flip * 4, hy + 4, 3, 8 + gallop * 2);
+      ctx.fillRect(horseX - flip * 14, hy + 4, 3, 8 - gallop * 2);
+      // Tail
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(horseX - flip * 24, hy - 4, flip * 2, 10);
+    }
+  }
 
   // -------- Legs / kilt (white shendyt with gold trim) --------
   if (!seated) {
@@ -1947,41 +2011,132 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     ctx.strokeStyle = `rgba(200,100,255,${0.6 + Math.sin(t * 20) * 0.3})`;
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
+  } else if (e.kind === "flamingspear") {
+    // Ramses' flaming war spear (pixel-art)
+    const t = e.animT;
+    // Trailing flame
+    for (let i = 0; i < 5; i++) {
+      const k = i / 5;
+      ctx.fillStyle = i < 2 ? "#fff2b0" : i < 3 ? "#ff8020" : "#c02010";
+      ctx.fillRect(-14 - i * 3, -2 + Math.sin(t * 20 + i) * 1, 4, 4 - i);
+    }
+    // Shaft
+    ctx.fillStyle = "#3a2010"; ctx.fillRect(-12, -1, 20, 2);
+    ctx.fillStyle = "#7a4a20"; ctx.fillRect(-12, -1, 20, 1);
+    // Bronze spearhead
+    ctx.fillStyle = "#c9700a"; ctx.fillRect(6, -3, 7, 6);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(6, -3, 7, 2);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(12, -1, 2, 2);
+    // Fire tongue at the tip
+    ctx.fillStyle = "#ffb040"; ctx.fillRect(13, -2, 3, 4);
+    ctx.fillStyle = "#fff2b0"; ctx.fillRect(14, -1, 2, 2);
   }
   ctx.restore();
 }
+
+// Pixel-art bubble field for the plague of boils. No auxiliary FX.
+function drawBoilsCloud(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> | undefined;
+  if (!particles) return;
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  const maxTtl = (e.data?.maxTtl as number) ?? 6;
+  const remaining = (e.ttl ?? 0) / maxTtl;
+  let fade = 1;
+  if (remaining > 0.85) fade = (1 - remaining) / 0.15;
+  else if (remaining < 0.3) fade = remaining / 0.3;
+  fade = Math.max(0, Math.min(1, fade));
+  ctx.save();
+  for (const p of particles) {
+    const jx = Math.cos(t * 1.6 + p.phase) * p.amp * 0.4;
+    const jy = Math.sin(t * 1.9 + p.phase * 1.3) * p.amp * 0.4;
+    // Individual bubble grows & pops rhythmically
+    const grow = 0.7 + 0.3 * Math.sin(t * 2.4 + p.phase * 2);
+    const bs = Math.max(3, Math.round((p.size + 3) * grow));
+    const x = Math.round(cx + p.ox + jx);
+    const y = Math.round(cy + p.oy + jy);
+    ctx.globalAlpha = fade * 0.95;
+    // Base (angry red/purple boil)
+    ctx.fillStyle = "#5a1030"; ctx.fillRect(x - bs / 2, y - bs / 2, bs, bs);
+    ctx.fillStyle = "#8a2050"; ctx.fillRect(x - bs / 2 + 1, y - bs / 2 + 1, bs - 2, bs - 2);
+    ctx.fillStyle = "#c0407a"; ctx.fillRect(x - bs / 2 + 2, y - bs / 2 + 2, Math.max(1, bs - 4), Math.max(1, bs - 4));
+    // Highlight (top-left) — makes it read as a rounded bubble
+    ctx.fillStyle = "#ffc0d8";
+    ctx.fillRect(x - bs / 2 + 1, y - bs / 2 + 1, Math.max(1, Math.floor(bs / 3)), 1);
+    ctx.fillRect(x - bs / 2 + 1, y - bs / 2 + 2, 1, Math.max(1, Math.floor(bs / 3) - 1));
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 
 // ---------------- Red Sea ----------------
 function drawRedSeaWall(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const d = e.data!;
   const height = (d.height as number) * 2;
-  const wallW = 80;
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
+  const sign = (d.sign as number) ?? (e.vel.x > 0 ? 1 : -1);
+  // Everything behind the advancing wave is ocean — extend a huge rectangle
+  // back to the far edge of the screen. sign=+1 means moving right, so the
+  // ocean fills to the LEFT of the wall.
+  const oceanFar = 4000; // enough to cover any viewport
+  const oceanX = sign > 0 ? x - oceanFar : x;
+  const oceanW = oceanFar;
   ctx.save();
-  // main wall — layered low-poly slabs of water
-  const layers = 5;
-  for (let i = 0; i < layers; i++) {
-    const t = i / (layers - 1);
-    ctx.globalAlpha = 0.7 + 0.3 * (1 - t);
-    ctx.fillStyle = `rgb(${20 + t * 30}, ${60 + t * 40}, ${140 + t * 60})`;
-    const w = wallW - i * 8;
-    ctx.fillRect(x - w / 2, y - height / 2, w, height);
+  // Layered water bands (low-poly ocean)
+  const bands = [
+    { c: "#0e2a5c", a: 1.0 },
+    { c: "#164694", a: 1.0 },
+    { c: "#1e6ac0", a: 1.0 },
+    { c: "#3f97dc", a: 1.0 },
+  ];
+  const bandH = height / bands.length;
+  for (let i = 0; i < bands.length; i++) {
+    ctx.globalAlpha = bands[i].a;
+    ctx.fillStyle = bands[i].c;
+    ctx.fillRect(oceanX, y - height / 2 + i * bandH, oceanW, bandH + 1);
   }
-  // foam crests
-  ctx.globalAlpha = 1;
+  // Animated pixel-art waves scattered through the ocean field
+  const t = e.animT;
+  ctx.fillStyle = "rgba(180,220,255,0.55)";
+  for (let ry = -Math.floor(height / 2); ry < Math.floor(height / 2); ry += 14) {
+    for (let rx = 0; rx < oceanW; rx += 28) {
+      const wob = Math.sin((rx + t * 40) * 0.05 + ry * 0.1) * 3;
+      const wx = oceanX + rx + wob;
+      const wy = y + ry;
+      ctx.fillRect(Math.round(wx), Math.round(wy), 6, 2);
+      ctx.fillRect(Math.round(wx + 8), Math.round(wy + 4), 4, 2);
+    }
+  }
+  // Whitecaps
   ctx.fillStyle = "#ffffff";
-  const crests = 12;
-  for (let i = 0; i < crests; i++) {
-    const yy = y - height / 2 + (i / crests) * height + Math.sin(e.animT * 3 + i) * 2;
-    ctx.fillRect(x - wallW / 2 - 2, Math.round(yy), 4, 3);
-    ctx.fillRect(x + wallW / 2 - 2, Math.round(yy), 4, 3);
+  for (let ry = -Math.floor(height / 2); ry < Math.floor(height / 2); ry += 22) {
+    for (let rx = 0; rx < oceanW; rx += 46) {
+      const wob = Math.sin((rx + t * 60) * 0.04 + ry * 0.08) * 4;
+      ctx.fillRect(Math.round(oceanX + rx + wob), Math.round(y + ry), 3, 2);
+    }
   }
-  // spray droplets flying ahead
-  ctx.fillStyle = "rgba(200,230,255,0.8)";
-  for (let i = 0; i < 20; i++) {
+
+  // Cresting wave-front (bright foam + spray)
+  const crestW = 24;
+  ctx.fillStyle = "#4fb0ff";
+  ctx.fillRect(x - (sign > 0 ? crestW : 0), y - height / 2, crestW, height);
+  ctx.fillStyle = "#a8d8ff";
+  ctx.fillRect(x - (sign > 0 ? crestW - 4 : 4), y - height / 2, 4, height);
+  ctx.fillStyle = "#ffffff";
+  // Foam scallops along the crest
+  const crests = Math.floor(height / 10);
+  for (let i = 0; i < crests; i++) {
+    const yy = y - height / 2 + i * 10 + Math.sin(t * 4 + i) * 2;
+    ctx.fillRect(x - (sign > 0 ? 4 : 0), Math.round(yy), 4, 5);
+  }
+  // Spray droplets flying forward
+  ctx.fillStyle = "rgba(220,240,255,0.85)";
+  for (let i = 0; i < 26; i++) {
     const yy = y - height / 2 + Math.random() * height;
-    const xx = x + (Math.sign(e.vel.x)) * (wallW / 2 + 4 + Math.random() * 40);
+    const xx = x + sign * (4 + Math.random() * 60);
     ctx.fillRect(Math.round(xx), Math.round(yy), 2, 2);
   }
   ctx.restore();
@@ -2143,31 +2298,43 @@ function drawParticleCloud(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
 }
 
 function drawLocustSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
-  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }> | undefined;
+  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; wing: number; hopPhase: number }> | undefined;
   if (!particles) return;
   const cx = e.pos.x - camX;
   const cy = e.pos.y - camY;
   const t = e.animT;
-  const r = (e.data?.radius as number) ?? 130;
+  const bw = (e.data?.bandW as number) ?? 800;
+  const bh = (e.data?.bandH as number) ?? 140;
   ctx.save();
-  ctx.globalAlpha = 0.35;
-  const grd = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
-  grd.addColorStop(0, "rgba(50,40,20,0.9)");
-  grd.addColorStop(1, "rgba(50,40,20,0)");
+  // Darkened band behind the swarm — the sky itself dims where they pass.
+  const grd = ctx.createLinearGradient(0, cy - bh / 2, 0, cy + bh / 2);
+  grd.addColorStop(0, "rgba(30,20,10,0)");
+  grd.addColorStop(0.5, "rgba(30,20,10,0.35)");
+  grd.addColorStop(1, "rgba(30,20,10,0)");
   ctx.fillStyle = grd;
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
   ctx.restore();
   for (const p of particles) {
     const jx = Math.cos(t * 5 + p.phase) * p.amp;
-    const jy = Math.sin(t * 6.4 + p.phase * 1.1) * p.amp;
+    // Slight up-down hop while streaming down the screen.
+    const hop = Math.sin(t * 9 + p.hopPhase) * 3;
     const x = Math.round(cx + p.ox + jx);
-    const y = Math.round(cy + p.oy + jy);
-    ctx.fillStyle = "#7a5a20"; ctx.fillRect(x, y, 3, 2);
-    ctx.fillStyle = "#3a2a10"; ctx.fillRect(x, y + 1, 3, 1);
-    const flap = Math.sin(t * 22 + p.wing) > 0;
-    ctx.fillStyle = "rgba(220,200,120,0.85)";
-    if (flap) { ctx.fillRect(x - 1, y - 1, 2, 1); ctx.fillRect(x + 2, y - 1, 2, 1); }
-    else { ctx.fillRect(x - 1, y, 2, 1); ctx.fillRect(x + 2, y, 2, 1); }
+    const y = Math.round(cy + p.oy + hop);
+    // Brown locust body — 4-wide pixel art with head accent
+    ctx.fillStyle = "#3a2410"; ctx.fillRect(x, y + 1, 4, 2);
+    ctx.fillStyle = "#7a5220"; ctx.fillRect(x, y, 4, 1);
+    ctx.fillStyle = "#a87830"; ctx.fillRect(x + 3, y, 1, 1); // head
+    // Wings (flap)
+    const flap = Math.sin(t * 26 + p.wing) > 0;
+    ctx.fillStyle = "rgba(210,180,110,0.9)";
+    if (flap) {
+      ctx.fillRect(x - 2, y - 2, 2, 2); ctx.fillRect(x + 4, y - 2, 2, 2);
+    } else {
+      ctx.fillRect(x - 2, y, 2, 1); ctx.fillRect(x + 4, y, 2, 1);
+    }
+    // Legs
+    ctx.fillStyle = "#2a1808";
+    ctx.fillRect(x + 1, y + 3, 1, 1); ctx.fillRect(x + 3, y + 3, 1, 1);
   }
 }
 
@@ -2186,31 +2353,36 @@ function drawHailstone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
 function drawHailImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const maxTtl = (e.data?.maxTtl as number) ?? 0.45;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
-  const cx = e.pos.x - camX;
-  const cy = e.pos.y - camY;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
   const R = (e.data?.radius as number) ?? 60;
-  const rNow = R * (1 - life * 0.7) + 6;
+  const t = 1 - life;
   ctx.save();
-  ctx.globalAlpha = life * 0.55;
-  const grd = ctx.createRadialGradient(cx, cy, rNow * 0.2, cx, cy, rNow);
-  grd.addColorStop(0, "rgba(220,240,255,0.9)");
-  grd.addColorStop(0.6, "rgba(140,180,220,0.5)");
-  grd.addColorStop(1, "rgba(140,180,220,0)");
-  ctx.fillStyle = grd;
-  ctx.beginPath(); ctx.arc(cx, cy, rNow, 0, Math.PI * 2); ctx.fill();
-  ctx.globalAlpha = life * 0.9;
-  ctx.strokeStyle = "#eaf4ff"; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(cx, cy, rNow * 0.9, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = life;
-  const N = 14;
-  for (let i = 0; i < N; i++) {
-    const a = (i / N) * Math.PI * 2;
-    const rr = rNow * (0.6 + 0.35 * ((i * 7) % 5) / 5);
-    const sx = Math.round(cx + Math.cos(a) * rr);
-    const sy = Math.round(cy + Math.sin(a) * rr);
-    ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#b8d4ec";
-    ctx.fillRect(sx - 1, sy - 1, 3, 3);
-    ctx.fillStyle = "#4a6a90"; ctx.fillRect(sx, sy, 1, 1);
+  // Pixel-art icy shards radiating outward — no radial gradient.
+  const shards = 10;
+  for (let i = 0; i < shards; i++) {
+    const a = (i / shards) * Math.PI * 2 + t * 0.6;
+    const len = R * (0.35 + t * 0.55);
+    const steps = Math.max(3, Math.floor(len / 6));
+    for (let s = 0; s < steps; s++) {
+      const rr = (s / steps) * len;
+      const px = Math.round(cx + Math.cos(a) * rr);
+      const py = Math.round(cy + Math.sin(a) * rr);
+      const size = s < 2 ? 4 : s < 4 ? 3 : 2;
+      const shade = s < 2 ? "#ffffff" : s < 5 ? "#dbe9f7" : s < 8 ? "#8fb0d4" : "#4a6a90";
+      ctx.fillStyle = shade;
+      ctx.fillRect(px - size / 2, py - size / 2, size, size);
+    }
+  }
+  // Central shatter cluster — chunky ice pixels
+  const cluster: Array<[number, number, string]> = [
+    [-2, -2, "#dbe9f7"], [1, -3, "#ffffff"], [3, 0, "#8fb0d4"],
+    [-3, 1, "#8fb0d4"], [0, 2, "#dbe9f7"], [-4, -1, "#4a6a90"], [2, 3, "#4a6a90"],
+  ];
+  for (const [dx, dy, col] of cluster) {
+    ctx.fillStyle = col;
+    ctx.fillRect(cx + dx * 2, cy + dy * 2, 3, 3);
   }
   ctx.restore();
 }

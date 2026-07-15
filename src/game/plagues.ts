@@ -131,7 +131,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     scripture:
       "Exodus 9:23-24 — The LORD sent thunder and hail, very grievous. Ice pelts anything caught beneath the sky.",
     unlockLevel: 16,
-    base: { level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9, extra: { radius: 70, freeze: 2.5 } },
+    base: { level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9, extra: { radius: 70, freeze: 1.5 } },
     scale: scale({ level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9 }, {
       cooldown: 0.15,
       dmg: 6,
@@ -141,20 +141,20 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   fire: {
     id: "fire",
     name: "Fire from Heaven",
-    description: "Fireballs fall from the sky and explode on impact, scorching all enemies nearby.",
+    description: "Fireballs fall from the sky. Every foe caught in the blast dies instantly — even Pharaoh's chariots.",
     scripture:
       "Exodus 9:24 — There was hail, and fire mingled with the hail, very grievous. The LORD's fire ran along the ground.",
-    unlockLevel: 17,
-    base: { level: 1, cooldown: 3.5, dmg: 45, count: 1, speed: 560, ttl: 0.9, extra: { radius: 55 } },
-    scale: scale({ level: 1, cooldown: 3.5, dmg: 45, count: 1, speed: 560, ttl: 0.9 }, {
+    unlockLevel: 26,
+    base: { level: 1, cooldown: 3.5, dmg: 60, count: 1, speed: 560, ttl: 0.9, extra: { radius: 110 } },
+    scale: scale({ level: 1, cooldown: 3.5, dmg: 60, count: 1, speed: 560, ttl: 0.9 }, {
       cooldown: 0.15,
-      dmg: 10,
+      dmg: 15,
     }),
   },
   locusts: {
     id: "locusts",
     name: "Plague of Locusts",
-    description: "A massive swarm sweeps across the visible field, devouring everything it touches.",
+    description: "A massive swarm sweeps down the screen from top to bottom, devouring everything it touches.",
     scripture:
       "Exodus 10:13-15 — The east wind brought the locusts... they covered the face of the whole earth, so that the land was darkened.",
     unlockLevel: 18,
@@ -194,7 +194,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A guardian pillar follows Moses, scorching foes that draw near.",
     scripture:
       "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, and by night in a pillar of fire, to give them light.",
-    unlockLevel: 25,
+    unlockLevel: 28,
     base: { level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999, extra: { radius: 70 } },
     scale: scale({ level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
       dmg: 2,
@@ -206,7 +206,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Walls of water rush in from both sides and collide at Moses, sweeping the field.",
     scripture:
       "Exodus 14:21-28 — Moses stretched out his hand over the sea; the waters returned and covered the chariots of Pharaoh.",
-    unlockLevel: 13,
+    unlockLevel: 24,
     base: { level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6, extra: { centerDmg: 220 } },
     scale: scale({ level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6 }, {
       dmg: 20,
@@ -215,6 +215,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   },
 };
 
+// Biblical order. Only after Death of the Firstborn do the miracles appear.
 export const PLAGUE_ORDER: PlagueId[] = [
   "staff",
   "serpent",
@@ -223,12 +224,14 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "gnats",
   "flies",
   "livestock",
-  "redsea",
   "boils",
   "hail",
-  "fire",
   "locusts",
   "darkness",
   "firstborn",
+  // Miracles (post-plagues):
+  "redsea",
+  "fire",
   "pillar",
 ];
+
