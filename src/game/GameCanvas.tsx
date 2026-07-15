@@ -1625,6 +1625,69 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.fillRect(rx, ry, w * RPX, h * RPX);
   };
 
+  // -------- Egyptian war chariot (level 50+) --------
+  // Drawn beneath Ramses so his torso rises above the cart. Simple pixel-art
+  // silhouette in Ramses' palette: gold-edged cart, spoked wheels, twin horses.
+  if (chariot) {
+    const wheelR = 22;
+    const cartY = y + 8;
+    const spin = state.now * 8 * flip;
+    // Cart body (gold with blue trim)
+    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
+    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
+    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 28, cartY - 16, 56, 2);
+    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 28, cartY - 8, 56, 2);
+    ctx.fillStyle = "#c9700a"; ctx.fillRect(x - 28, cartY - 4, 56, 2);
+    // Front panel emblem (sun disk)
+    ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 2, 0, Math.PI * 2); ctx.fill();
+    // Wheels — bronze rim, spokes rotating
+    for (const wx of [x - 22, x + 22]) {
+      ctx.fillStyle = "#2b1d14"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR - 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR - 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 3;
+      for (let i = 0; i < 6; i++) {
+        const a = spin + (i / 6) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(wx, cartY + 4);
+        ctx.lineTo(wx + Math.cos(a) * (wheelR - 4), cartY + 4 + Math.sin(a) * (wheelR - 4));
+        ctx.stroke();
+      }
+      ctx.fillStyle = "#2b1d14"; ctx.beginPath(); ctx.arc(wx, cartY + 4, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(wx, cartY + 4, 2, 0, Math.PI * 2); ctx.fill();
+    }
+    // Yoke pole reaching forward toward horses
+    ctx.strokeStyle = "#5a3820"; ctx.lineWidth = 4; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x + flip * 26, cartY - 6);
+    ctx.lineTo(x + flip * 70, cartY - 4);
+    ctx.stroke();
+    // Twin horses ahead of the cart
+    const horseX = x + flip * 78;
+    const gallop = Math.sin(state.now * 14) > 0 ? 1 : -1;
+    for (const hy of [cartY - 14, cartY + 6]) {
+      // Body
+      ctx.fillStyle = "#4a2a10"; ctx.fillRect(horseX - flip * 22, hy - 6, flip * 26, 10);
+      ctx.fillStyle = "#7a4a20"; ctx.fillRect(horseX - flip * 22, hy - 6, flip * 26, 3);
+      // Head
+      ctx.fillStyle = "#4a2a10"; ctx.fillRect(horseX, hy - 10, flip * 10, 8);
+      ctx.fillStyle = "#7a4a20"; ctx.fillRect(horseX, hy - 10, flip * 10, 2);
+      // Mane
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(horseX - flip * 3, hy - 10, flip * 3, 6);
+      // Eye
+      ctx.fillStyle = "#ffdd80"; ctx.fillRect(horseX + flip * 6, hy - 7, 2, 2);
+      // Legs (gallop)
+      ctx.fillStyle = "#2b1d14";
+      ctx.fillRect(horseX - flip * 20, hy + 4, 3, 8 + gallop * 2);
+      ctx.fillRect(horseX - flip * 10, hy + 4, 3, 8 - gallop * 2);
+      ctx.fillRect(horseX - flip * 4, hy + 4, 3, 8 + gallop * 2);
+      ctx.fillRect(horseX - flip * 14, hy + 4, 3, 8 - gallop * 2);
+      // Tail
+      ctx.fillStyle = "#2b1d14"; ctx.fillRect(horseX - flip * 24, hy - 4, flip * 2, 10);
+    }
+  }
+
   // -------- Legs / kilt (white shendyt with gold trim) --------
   if (!seated) {
     // walking legs
