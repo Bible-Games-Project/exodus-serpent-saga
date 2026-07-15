@@ -8,7 +8,7 @@ const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
 export function spawnRamses(state: GameState): void {
   const cx = state.player.pos.x + 180;
-  const cy = state.player.pos.y - 40; // sits on the throne (throne y=-60), his feet in front
+  const cy = state.player.pos.y - 40;
 
   const r: Entity = {
     id: state.nextId++,
@@ -26,20 +26,22 @@ export function spawnRamses(state: GameState): void {
       speed: 70,
       contactDmg: 20,
       xp: 0,
-      seated: true,     // sits and is invulnerable until level 10
+      seated: true,
       active: false,
       throneX: cx,
       throneY: cy,
       leapCd: 8,
-      leapUnlocked: false, // unlocks with the firstborn plague
-      leapPhase: "idle", // "idle" | "telegraph" | "airborne" | "land"
+      leapUnlocked: false,   // unlocks at player level 30
+      chariot: false,        // mounts war chariot at player level 50
+      spearCd: 0,
+      leapPhase: "idle",
       leapT: 0,
       leapTarget: { x: cx, y: cy } as Vec2,
       leapFrom: { x: cx, y: cy } as Vec2,
       landRadius: 100,
       landDmg: 45,
       immuneFirstborn: true,
-      immuneFire: true,
+      immuneFire: false,     // Fire from Heaven damages but does not kill Ramses
     },
   };
   state.entities.set(r.id, r);
@@ -47,7 +49,7 @@ export function spawnRamses(state: GameState): void {
 }
 
 // Called every frame in engine update.
-export function tickRamses(state: GameState, dt: number, helpers: { resolveObstacles: (pos: Vec2, r: number) => void }): void {
+export function tickRamses(state: GameState, dt: number, helpers: { resolveObstacles: (pos: Vec2, r: number) => void; spawnEnemyProjectile: (owner: Entity, dir: Vec2, kind: string, spd: number, dmg: number, ttl: number) => void }): void {
   const id = state.ramsesId;
   if (id == null) return;
   const r = state.entities.get(id);
@@ -61,23 +63,30 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     d.seated = false;
     d.leapCd = 5;
   }
-  // Leap unlocks with the final plague.
-  if (!d.leapUnlocked && state.plagues.has("firstborn")) {
+  // Leap unlocks at player level 30 (Biblical progression, no longer tied to plague).
+  if (!d.leapUnlocked && state.level >= 30) {
     d.leapUnlocked = true;
   }
+  // Chariot unlocks at player level 50 — Ramses mounts a war chariot.
+  if (!d.chariot && state.level >= 50) {
+    d.chariot = true;
+    r.radius = 34;
+    d.spearCd = 2;
+    d.contactDmg = 32;
+  }
   if (!d.active) {
-    // Seated idle bob (visual only handled in renderer).
     return;
   }
 
   const phase = d.leapPhase as string;
+  const chariot = !!d.chariot;
 
   if (phase === "idle") {
-    // Slowly walk toward Moses.
+    // Chase Moses. Faster and heavier when mounted on the chariot.
     const dx = p.pos.x - r.pos.x;
     const dy = p.pos.y - r.pos.y;
     const dd = Math.hypot(dx, dy) || 1;
-    const spd = 70;
+    const spd = chariot ? 140 : 70;
     r.pos.x += (dx / dd) * spd * dt;
     r.pos.y += (dy / dd) * spd * dt;
     helpers.resolveObstacles(r.pos, r.radius);
@@ -85,8 +94,19 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
 
     // Contact damage
     if (dist2(r.pos, p.pos) < (r.radius + p.radius) ** 2 && !isInvuln(state)) {
-      p.hp -= 30 * dt * shieldDamageMul(state);
+      p.hp -= (chariot ? 45 : 30) * dt * shieldDamageMul(state);
       if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+    }
+
+    // Chariot: throw flaming spears at Moses.
+    if (chariot) {
+      const scd = ((d.spearCd as number) ?? 2) - dt;
+      if (scd <= 0 && dd < 520) {
+        helpers.spawnEnemyProjectile(r, { x: dx / dd, y: dy / dd }, "flamingspear", 340, 22, 1.6);
+        d.spearCd = 2.4 + Math.random() * 0.9;
+      } else {
+        d.spearCd = scd;
+      }
     }
 
     if (d.leapUnlocked) {
@@ -148,3 +168,4 @@ function isInvuln(state: GameState): boolean {
 export function ramsesImmune(e: Entity): boolean {
   return !!(e.data && e.data.seated);
 }
+
