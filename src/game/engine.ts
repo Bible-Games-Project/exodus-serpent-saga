@@ -932,38 +932,39 @@ function spawnVisualHazard(state: GameState, kind: string, pos: Vec2, ttl: numbe
   state.entities.set(e.id, e);
 }
 
-function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, radius: number) {
+function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, _radius: number) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const cam = state.camera;
-  const edge = Math.floor(Math.random() * 4);
-  let sx = 0, sy = 0, tx = 0, ty = 0;
-  const off = radius + 40;
-  const jitter = 0.5;
-  if (edge === 0) { sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y - vh / 2 - off; tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y + vh / 2 + off; }
-  else if (edge === 1) { sx = cam.x + vw / 2 + off; sy = cam.y + rand(-vh / 2, vh / 2); tx = cam.x - vw / 2 - off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter; }
-  else if (edge === 2) { sx = cam.x + rand(-vw / 2, vw / 2); sy = cam.y + vh / 2 + off; tx = cam.x + rand(-vw / 2, vw / 2) * jitter; ty = cam.y - vh / 2 - off; }
-  else { sx = cam.x - vw / 2 - off; sy = cam.y + rand(-vh / 2, vh / 2); tx = cam.x + vw / 2 + off; ty = cam.y + rand(-vh / 2, vh / 2) * jitter; }
-  const dx = tx - sx, dy = ty - sy;
-  const d = Math.hypot(dx, dy) || 1;
-  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }> = [];
-  const nP = 100 + Math.floor(Math.random() * 40);
+  // Horizontal band the width of the visible field, travelling top → bottom.
+  const bandW = vw + 120;
+  const bandH = 140;
+  const sx = cam.x;
+  const sy = cam.y - vh / 2 - bandH;
+  const ty = cam.y + vh / 2 + bandH;
+  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number; hopPhase: number }> = [];
+  const nP = 220 + Math.floor(Math.random() * 80);
   for (let i = 0; i < nP; i++) {
-    const rr = Math.sqrt(Math.random()) * radius;
-    const aa = Math.random() * Math.PI * 2;
-    particles.push({ ox: Math.cos(aa) * rr, oy: Math.sin(aa) * rr * 0.7, phase: Math.random() * Math.PI * 2, amp: 2 + Math.random() * 4, wing: Math.random() * Math.PI * 2 });
+    particles.push({
+      ox: (Math.random() - 0.5) * bandW,
+      oy: (Math.random() - 0.5) * bandH,
+      phase: Math.random() * Math.PI * 2,
+      amp: 1.5 + Math.random() * 3,
+      wing: Math.random() * Math.PI * 2,
+      hopPhase: Math.random() * Math.PI * 2,
+    });
   }
   const e: Entity = {
     id: state.nextId++,
     pos: { x: sx, y: sy },
-    vel: { x: (dx / d) * stats.speed, y: (dy / d) * stats.speed },
-    radius,
+    vel: { x: 0, y: (ty - sy) / stats.ttl },
+    radius: Math.max(bandW, bandH) / 2,
     hp: 1, maxHp: 1,
     team: "hazard", facing: 1,
     animT: 0, born: state.now,
     ttl: stats.ttl,
     kind: "locustswarm",
-    data: { radius, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+    data: { bandW, bandH, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
   };
   state.entities.set(e.id, e);
 }
