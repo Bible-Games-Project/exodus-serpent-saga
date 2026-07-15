@@ -2143,31 +2143,43 @@ function drawParticleCloud(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
 }
 
 function drawLocustSwarm(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
-  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; wing: number }> | undefined;
+  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; wing: number; hopPhase: number }> | undefined;
   if (!particles) return;
   const cx = e.pos.x - camX;
   const cy = e.pos.y - camY;
   const t = e.animT;
-  const r = (e.data?.radius as number) ?? 130;
+  const bw = (e.data?.bandW as number) ?? 800;
+  const bh = (e.data?.bandH as number) ?? 140;
   ctx.save();
-  ctx.globalAlpha = 0.35;
-  const grd = ctx.createRadialGradient(cx, cy, r * 0.15, cx, cy, r);
-  grd.addColorStop(0, "rgba(50,40,20,0.9)");
-  grd.addColorStop(1, "rgba(50,40,20,0)");
+  // Darkened band behind the swarm — the sky itself dims where they pass.
+  const grd = ctx.createLinearGradient(0, cy - bh / 2, 0, cy + bh / 2);
+  grd.addColorStop(0, "rgba(30,20,10,0)");
+  grd.addColorStop(0.5, "rgba(30,20,10,0.35)");
+  grd.addColorStop(1, "rgba(30,20,10,0)");
   ctx.fillStyle = grd;
-  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(cx - bw / 2, cy - bh / 2, bw, bh);
   ctx.restore();
   for (const p of particles) {
     const jx = Math.cos(t * 5 + p.phase) * p.amp;
-    const jy = Math.sin(t * 6.4 + p.phase * 1.1) * p.amp;
+    // Slight up-down hop while streaming down the screen.
+    const hop = Math.sin(t * 9 + p.hopPhase) * 3;
     const x = Math.round(cx + p.ox + jx);
-    const y = Math.round(cy + p.oy + jy);
-    ctx.fillStyle = "#7a5a20"; ctx.fillRect(x, y, 3, 2);
-    ctx.fillStyle = "#3a2a10"; ctx.fillRect(x, y + 1, 3, 1);
-    const flap = Math.sin(t * 22 + p.wing) > 0;
-    ctx.fillStyle = "rgba(220,200,120,0.85)";
-    if (flap) { ctx.fillRect(x - 1, y - 1, 2, 1); ctx.fillRect(x + 2, y - 1, 2, 1); }
-    else { ctx.fillRect(x - 1, y, 2, 1); ctx.fillRect(x + 2, y, 2, 1); }
+    const y = Math.round(cy + p.oy + hop);
+    // Brown locust body — 4-wide pixel art with head accent
+    ctx.fillStyle = "#3a2410"; ctx.fillRect(x, y + 1, 4, 2);
+    ctx.fillStyle = "#7a5220"; ctx.fillRect(x, y, 4, 1);
+    ctx.fillStyle = "#a87830"; ctx.fillRect(x + 3, y, 1, 1); // head
+    // Wings (flap)
+    const flap = Math.sin(t * 26 + p.wing) > 0;
+    ctx.fillStyle = "rgba(210,180,110,0.9)";
+    if (flap) {
+      ctx.fillRect(x - 2, y - 2, 2, 2); ctx.fillRect(x + 4, y - 2, 2, 2);
+    } else {
+      ctx.fillRect(x - 2, y, 2, 1); ctx.fillRect(x + 4, y, 2, 1);
+    }
+    // Legs
+    ctx.fillStyle = "#2a1808";
+    ctx.fillRect(x + 1, y + 3, 1, 1); ctx.fillRect(x + 3, y + 3, 1, 1);
   }
 }
 
