@@ -1955,33 +1955,68 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
 function drawRedSeaWall(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const d = e.data!;
   const height = (d.height as number) * 2;
-  const wallW = 80;
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY);
+  const sign = (d.sign as number) ?? (e.vel.x > 0 ? 1 : -1);
+  // Everything behind the advancing wave is ocean — extend a huge rectangle
+  // back to the far edge of the screen. sign=+1 means moving right, so the
+  // ocean fills to the LEFT of the wall.
+  const oceanFar = 4000; // enough to cover any viewport
+  const oceanX = sign > 0 ? x - oceanFar : x;
+  const oceanW = oceanFar;
   ctx.save();
-  // main wall — layered low-poly slabs of water
-  const layers = 5;
-  for (let i = 0; i < layers; i++) {
-    const t = i / (layers - 1);
-    ctx.globalAlpha = 0.7 + 0.3 * (1 - t);
-    ctx.fillStyle = `rgb(${20 + t * 30}, ${60 + t * 40}, ${140 + t * 60})`;
-    const w = wallW - i * 8;
-    ctx.fillRect(x - w / 2, y - height / 2, w, height);
+  // Layered water bands (low-poly ocean)
+  const bands = [
+    { c: "#0e2a5c", a: 1.0 },
+    { c: "#164694", a: 1.0 },
+    { c: "#1e6ac0", a: 1.0 },
+    { c: "#3f97dc", a: 1.0 },
+  ];
+  const bandH = height / bands.length;
+  for (let i = 0; i < bands.length; i++) {
+    ctx.globalAlpha = bands[i].a;
+    ctx.fillStyle = bands[i].c;
+    ctx.fillRect(oceanX, y - height / 2 + i * bandH, oceanW, bandH + 1);
   }
-  // foam crests
-  ctx.globalAlpha = 1;
+  // Animated pixel-art waves scattered through the ocean field
+  const t = e.animT;
+  ctx.fillStyle = "rgba(180,220,255,0.55)";
+  for (let ry = -Math.floor(height / 2); ry < Math.floor(height / 2); ry += 14) {
+    for (let rx = 0; rx < oceanW; rx += 28) {
+      const wob = Math.sin((rx + t * 40) * 0.05 + ry * 0.1) * 3;
+      const wx = oceanX + rx + wob;
+      const wy = y + ry;
+      ctx.fillRect(Math.round(wx), Math.round(wy), 6, 2);
+      ctx.fillRect(Math.round(wx + 8), Math.round(wy + 4), 4, 2);
+    }
+  }
+  // Whitecaps
   ctx.fillStyle = "#ffffff";
-  const crests = 12;
-  for (let i = 0; i < crests; i++) {
-    const yy = y - height / 2 + (i / crests) * height + Math.sin(e.animT * 3 + i) * 2;
-    ctx.fillRect(x - wallW / 2 - 2, Math.round(yy), 4, 3);
-    ctx.fillRect(x + wallW / 2 - 2, Math.round(yy), 4, 3);
+  for (let ry = -Math.floor(height / 2); ry < Math.floor(height / 2); ry += 22) {
+    for (let rx = 0; rx < oceanW; rx += 46) {
+      const wob = Math.sin((rx + t * 60) * 0.04 + ry * 0.08) * 4;
+      ctx.fillRect(Math.round(oceanX + rx + wob), Math.round(y + ry), 3, 2);
+    }
   }
-  // spray droplets flying ahead
-  ctx.fillStyle = "rgba(200,230,255,0.8)";
-  for (let i = 0; i < 20; i++) {
+
+  // Cresting wave-front (bright foam + spray)
+  const crestW = 24;
+  ctx.fillStyle = "#4fb0ff";
+  ctx.fillRect(x - (sign > 0 ? crestW : 0), y - height / 2, crestW, height);
+  ctx.fillStyle = "#a8d8ff";
+  ctx.fillRect(x - (sign > 0 ? crestW - 4 : 4), y - height / 2, 4, height);
+  ctx.fillStyle = "#ffffff";
+  // Foam scallops along the crest
+  const crests = Math.floor(height / 10);
+  for (let i = 0; i < crests; i++) {
+    const yy = y - height / 2 + i * 10 + Math.sin(t * 4 + i) * 2;
+    ctx.fillRect(x - (sign > 0 ? 4 : 0), Math.round(yy), 4, 5);
+  }
+  // Spray droplets flying forward
+  ctx.fillStyle = "rgba(220,240,255,0.85)";
+  for (let i = 0; i < 26; i++) {
     const yy = y - height / 2 + Math.random() * height;
-    const xx = x + (Math.sign(e.vel.x)) * (wallW / 2 + 4 + Math.random() * 40);
+    const xx = x + sign * (4 + Math.random() * 60);
     ctx.fillRect(Math.round(xx), Math.round(yy), 2, 2);
   }
   ctx.restore();
