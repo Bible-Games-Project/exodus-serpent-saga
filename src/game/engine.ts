@@ -259,7 +259,10 @@ export function update(state: GameState, dt: number) {
   spawnEnemies(state, dt, spawnRate);
 
   // Ramses boss AI
-  tickRamses(state, dt, { resolveObstacles: (pos, r) => resolveObstacles(pos, r, state) });
+  tickRamses(state, dt, {
+    resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
+    spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
+  });
 
   // Orbiting flies
   syncOrbitFlies(state, dt);
