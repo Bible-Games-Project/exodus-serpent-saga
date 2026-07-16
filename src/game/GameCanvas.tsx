@@ -410,305 +410,424 @@ function LoadoutPill({ isNew, title, subtitle, tone, onClick }: {
 // Icons are rendered on a transparent canvas — no background, no gradient.
 const ICON_PAL: Record<string, string> = {
   ".": "transparent",
-  K: "#181410", W: "#f6efdc",
-  // wood / staff
-  w: "#8a5a34", d: "#b48355",
-  // greens (serpent / frog / livestock / locust)
-  g: "#4d7a3e", G: "#7fa96b", y: "#c5d99a", v: "#2f4a1a",
-  // reds (blood / fire)
-  r: "#a12b2b", R: "#e05a48",
-  // gnat / fly (dark)
-  n: "#3a2f24", N: "#645445",
-  // hail (blue)
-  b: "#3060c0", B: "#8ec8ff",
-  // sun / gold
-  o: "#e6c261", O: "#c9700a",
-  // darkness / firstborn (purple / bone)
-  p: "#4d3a5c", P: "#8a6d9e", s: "#c99a6c",
-  // water sea
-  u: "#0f1b3d", U: "#3060c0",
-  // heart / speed / magnet
-  m: "#3a2f4a",
+  // Neutral
+  K: "#1a1410",  // deep outline
+  k: "#3a2b1e",  // soft outline
+  W: "#f6efdc",  // linen white
+  // Wood / staff
+  w: "#5a3820", d: "#8a5a34", D: "#b48355", t: "#e4b98a",
+  // Greens (serpent / frog / livestock / locust)
+  v: "#2f4a1a", g: "#4d7a3e", G: "#7fa96b", y: "#c5d99a",
+  // Reds (blood / fire / heart)
+  r: "#7a1f24", R: "#c93a3a", H: "#ff6a6a", h: "#ffb0b8",
+  // Fire yellows / gold
+  o: "#c9700a", O: "#e6c261", Y: "#ffe694",
+  // Blues (hail / speed / water shallow)
+  b: "#1e3a72", B: "#3060c0", L: "#8ec8ff", V: "#d6ecff",
+  // Insects / darkness
+  n: "#2a2018", N: "#5a4a3a",
+  // Purples (boils / darkness / firstborn)
+  p: "#2f223e", P: "#6b5482", Q: "#b8a5c9",
+  // Skin
+  s: "#c99a6c", S: "#e6c39a",
+  // Deep water
+  u: "#1a3a5a", U: "#2f6a90", z: "#66b0c8",
+  // Bone / robe
+  c: "#e0d5b8", C: "#a89876",
+  // Rose / cloth accents
+  m: "#c94e6a", M: "#7a2a3a",
 };
 
+// Larger 12x12 grids for the level-up blessing icons.
+// Cleaner silhouettes, softer outlines, dedicated highlight tones —
+// designed to read instantly at the card size without background chrome.
 const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
   staff: [
-    "..dddK..",
-    "..dwdK..",
-    "..dwdK..",
-    "..dwdK..",
-    "..dwdK..",
-    "..dwdK..",
-    "..dwdK..",
-    "..dwdK..",
+    "......ktD...",
+    ".....kdDDk..",
+    "....kddDdk..",
+    ".....kdDk...",
+    ".....kdDk...",
+    ".....kdDk...",
+    ".....kdDk...",
+    ".....kdDk...",
+    ".....kdDk...",
+    ".....kdDk...",
+    ".....kddk...",
+    ".....kwwk...",
   ],
   serpent: [
-    "..GGGG..",
-    ".Ggggyy.",
-    ".GgWGGyy",
-    ".GggggG.",
-    "..GGGGGG",
-    ".....GGG",
-    "....GGG.",
-    "...GG...",
+    "....gGGg....",
+    "...gGyGGg...",
+    "..gGGWGyGg..",
+    "..gGGGGGGg..",
+    "...gGGGGg...",
+    "....gGGg....",
+    "...gGGGGg...",
+    "..gGGgGGGg..",
+    ".gGGg..gGGg.",
+    "gGGg....gGGg",
+    "gGg......gGg",
+    ".g........g.",
   ],
   blood: [
-    "....r...",
-    "...rRr..",
-    "..rRRRr.",
-    ".rRRRRRr",
-    ".rRRRRRr",
-    ".rrRRRrr",
-    "..rrrrr.",
-    "...rrr..",
+    ".....R......",
+    "....RRR.....",
+    "...RHHRR....",
+    "..RHHHHRR...",
+    ".RHHhHHHRR..",
+    ".RHhhHHHHR..",
+    "RHhWhHHHHR..",
+    "RHHhHHHHHRR.",
+    "RRHHHHHHHRR.",
+    ".RRHHHHHRR..",
+    "..RRRRRRR...",
+    "...RRRRR....",
   ],
   frogs: [
-    "..gggg..",
-    ".gWgWgg.",
-    ".gggggg.",
-    "gggggggg",
-    "GG.gg.GG",
-    ".G.gg.G.",
-    "..gggg..",
-    "..K..K..",
+    "..gGGg.gGGg.",
+    ".gGWGg.gGWGg",
+    "gGGGGGGGGGGg",
+    "gGGgGGGGgGGg",
+    "gGGGGGGGGGGg",
+    ".gGGGGGGGGg.",
+    "..gGGGGGGg..",
+    "..vGGGGGGv..",
+    ".v.gGGGGg.v.",
+    "vv..v..v..vv",
+    ".k...k.k....",
+    ".K...K.K...K",
   ],
   gnats: [
-    "n..n..n.",
-    ".n.n.nn.",
-    "n.nnnn..",
-    ".nnKnn.n",
-    "n.nnnn..",
-    ".n.n.nn.",
-    "n..n..n.",
-    "..n..n..",
+    "n..N..n..N..",
+    ".n..n..n..n.",
+    "N..n.Nn..n..",
+    ".n.N.nn.N.n.",
+    "n.n.NnN.n.n.",
+    ".Nn.n.n.nN..",
+    "n.n.NnN.n.n.",
+    ".n.N.nn.N.n.",
+    "N..n.Nn..n..",
+    ".n..n..n..n.",
+    "n..N..n..N..",
+    "..n....n....",
   ],
   flies: [
-    ".n..n...",
-    "N.nnnN..",
-    ".nnnn...",
-    "..K.....",
-    "....n..n",
-    "...NnnnN",
-    "....nnnn",
-    ".....K..",
+    "..W.W.......",
+    ".WNnnNW.....",
+    "..nnnn......",
+    "...K........",
+    "...K........",
+    ".......W.W..",
+    "......WNnnNW",
+    ".......nnnn.",
+    "........K...",
+    "........K...",
+    "............",
+    "............",
   ],
   livestock: [
-    "..gg..gg",
-    ".gvgggvg",
-    ".ggWWgg.",
-    "gggggggg",
-    "ggvvvvgg",
-    ".g.gg.g.",
-    ".K.KK.K.",
-    "........",
+    "..gg......gg",
+    ".gGg......gGg",
+    ".gGGGGGGGGg.",
+    "gGGWGGGGWGGg",
+    "gGGGGGGGGGGg",
+    "gGvGGGGGGvGg",
+    "gGGGGGGGGGGg",
+    ".gGGGGGGGGg.",
+    ".gG.gGGg.Gg.",
+    ".K...KK...K.",
+    ".K...KK...K.",
+    "............",
   ],
   boils: [
-    "..pp.pp.",
-    ".pPPpPP.",
-    ".pWPpWP.",
-    ".pPP.PP.",
-    "pp.....p",
-    "pPP..pP.",
-    "pWP.pPP.",
-    ".p...p..",
+    "..pPP.......",
+    ".pPQPp..pPp.",
+    ".pQWPp.pPQPp",
+    ".pPPPp.pPQPp",
+    "..pPp...pPp.",
+    "....pPp.....",
+    "...pPQPp....",
+    "...pQWPp.pPp",
+    "...pPPPp.pPp",
+    "....pPp.....",
+    "..pPp...pPp.",
+    ".pPQPp.pPQPp",
   ],
   hail: [
-    ".b.bBb.b",
-    "b.BbbbB.",
-    ".BWBBWB.",
-    "b.BBBB.b",
-    ".BWBBWB.",
-    "b.BBBB.b",
-    ".b.bbb.b",
-    "b..bBb..",
+    "..LBL.......",
+    ".LWBBL...LBL",
+    ".BBBBB..LWBB",
+    "..LBL...BBBB",
+    "............",
+    ".......LBL..",
+    "..LBL.LWBBL.",
+    ".LWBBL.BBBBB",
+    ".BBBBB..LBL.",
+    "..LBL.......",
+    "............",
+    "...LBL.LBL..",
   ],
   fire: [
-    "...r....",
-    "..rR....",
-    ".rRRr.r.",
-    "rRoORrR.",
-    "rooOORr.",
-    ".oOOoRr.",
-    "..oOo...",
-    "..oo....",
+    "......o.....",
+    ".....oO.....",
+    ".....OoO....",
+    "....oOOOo...",
+    "....oOYOo...",
+    "...roOYOor..",
+    "..rRoOYOoRr.",
+    ".rRRoOOoRRr.",
+    "rRHRoOOoRHRr",
+    "rRRRRoOoRRRr",
+    ".rRRRRRRRRr.",
+    "..rrrrrrrr..",
   ],
   locusts: [
-    ".g..g..g",
-    "G.gGgGg.",
-    ".GggWgg.",
-    "GGggggGG",
-    ".GgggggG",
-    "..GggG..",
-    "g..GG..g",
-    "..g..g..",
+    ".g..G..G..g.",
+    "Gg.Gg.gG.gG.",
+    "gGgGgWgGgGgG",
+    "gGGGGGGGGGGg",
+    ".gGGGGGGGGg.",
+    "..gGGgGGgg..",
+    "..v.v..v.v..",
+    ".g..g..g..g.",
+    "Gg.Gg.gG.gG.",
+    "gGgGgWgGgGgG",
+    "gGGGGGGGGGGg",
+    ".gGGGGGGGGg.",
   ],
   darkness: [
-    "..pppp..",
-    ".pKKKKp.",
-    "pKKKKKKp",
-    "pKKKKKPp",
-    "pKKKKPPp",
-    "pKKKPPPp",
-    ".pKPPpp.",
-    "..pppp..",
+    "....pPPp....",
+    "..pPPPPPPp..",
+    ".pPPPPPPPPp.",
+    "pPPPPKKPPPPp",
+    "pPPPKKKKPPPp",
+    "pPPKKKKKKPPp",
+    "pPPKKKKKKPPp",
+    "pPPPKKKKPPPp",
+    "pPPPPKKPPPPp",
+    ".pPPPPPPPPp.",
+    "..pPPPPPPp..",
+    "....pPPp....",
   ],
   firstborn: [
-    "..sWWs..",
-    ".sWWWWs.",
-    "sWKWWKWs",
-    "sWWWWWWs",
-    "sWWKKWWs",
-    ".sWWWWs.",
-    "..sWWs..",
-    "..K..K..",
+    "...ccccc....",
+    "..cWWWWWc...",
+    ".cWKKcKKWc..",
+    ".cWKKcKKWc..",
+    ".cWWcccWWc..",
+    ".cWWcccWWc..",
+    "..cWWWWWc...",
+    "...cWWWc....",
+    "....c.c.....",
+    "...cCCCc....",
+    "..cCCCCCc...",
+    ".K.......K..",
   ],
   pillar: [
-    "...O....",
-    "..OoO...",
-    ".OoOoO..",
-    "OoOOOoO.",
-    "OoWWWoO.",
-    ".OoOoO..",
-    "..OoO...",
-    "...O....",
+    "....OYO.....",
+    "...OYOoO....",
+    "..oOYOoOo...",
+    ".OoOYOoOoO..",
+    ".oOoYYOOoO..",
+    ".OoWWWWOoO..",
+    ".oOYYYYOoO..",
+    "..OoOYOoO...",
+    "...OoYoO....",
+    "....OoO.....",
+    ".....O......",
+    "...CCCCC....",
   ],
   redsea: [
-    "uUuuUuuU",
-    "UUUUUUUU",
-    "bUbUbUbU",
-    "BUBUBUBU",
-    ".W.W.W.W",
-    "..W.W.W.",
-    "uuUuUuuU",
-    "UUUUUUUU",
+    "uUuUuUuUuUuU",
+    "UuUuUuUuUuUu",
+    "bBbBbBbBbBbB",
+    "BLBLBLBLBLBL",
+    "VW.V.W.V.W.V",
+    ".V..W.V.W..V",
+    "u..........U",
+    "uu........Uu",
+    "UuUuuuuuuUuU",
+    "bBbBbBbBbBbB",
+    "BLBLBLBLBLBL",
+    "VVLBBBBBBLVV",
   ],
 };
 
 const ICON_PASSIVE: Record<string, string[]> = {
   maxHp: [
-    ".rr..rr.",
-    "rRRrrRRr",
-    "rRRRRRRr",
-    "rRRRRRRr",
-    "rRRRRRRr",
-    ".rRRRRr.",
-    "..rRRr..",
-    "...rr...",
+    "..RRR..RRR..",
+    ".RHHHRRHHHR.",
+    "RHhhHRRHhhHR",
+    "RHhWHHHHhhHR",
+    "RHHHHHHHHHHR",
+    "RHHHHHHHHHHR",
+    ".RHHHHHHHHR.",
+    ".RHHHHHHHHR.",
+    "..RHHHHHHR..",
+    "...RHHHHR...",
+    "....RHHR....",
+    ".....RR.....",
   ],
   speed: [
-    "....BBBB",
-    "...BbbbB",
-    "..Bbb..B",
-    ".Bbb...B",
-    "Bbb....B",
-    "BbBBBBB.",
-    "B.....B.",
-    "B....B..",
+    ".......LLL..",
+    "......LWWL..",
+    ".....LWBBL..",
+    "....LWBBBL..",
+    "...LWBBBBL..",
+    "..LBBBBBBL..",
+    "LLLLLBBBL...",
+    ".....LBBL...",
+    "....LBBL....",
+    "....LBL.....",
+    "...LBL......",
+    "...LL.......",
   ],
   damage: [
-    "......Kw",
-    ".....KWw",
-    "....KWw.",
-    "...KWw..",
-    "..KWw...",
-    ".KWw....",
-    "KKw.....",
-    "Kw......",
+    "..........Kt",
+    ".........KWD",
+    "........KWD.",
+    ".......KWD..",
+    "......KWD...",
+    ".....KWD....",
+    "....KWD.....",
+    "...KWD......",
+    "..KKD.......",
+    ".KwK........",
+    "Kww.........",
+    "KK..........",
   ],
   magnet: [
-    "rrr..rrr",
-    "rRr..rRr",
-    "rRr..rRr",
-    "rRrKKrRr",
-    "rRKKKKRr",
-    ".RKKKKR.",
-    "..KKKK..",
-    "..K..K..",
+    "..RRR..RRR..",
+    ".RHHR..RHHR.",
+    ".RHHR..RHHR.",
+    ".RHHR..RHHR.",
+    ".RHHRkkRHHR.",
+    ".RHHKKKKHHR.",
+    ".RKKKKKKKKR.",
+    ".KKKKKKKKKK.",
+    "..K......K..",
+    "..KK....KK..",
+    "..K......K..",
+    ".KK......KK.",
   ],
 };
 
 const ICON_NPC: Record<NpcId, string[]> = {
   bithiah: [
-    "..ooooo.",
-    ".osssso.",
-    "osKsKsso",
-    "osssssso",
-    ".sssssss",
-    ".sbbbbss",
-    "..bbbbss",
-    "..K..K..",
+    "....OYYO....",
+    "...OYYYYO...",
+    "..OYYYYYYO..",
+    "..kSssssSk..",
+    "..kSKssKSk..",
+    "..kSSSSSSk..",
+    "..kSSWWSSk..",
+    "...kSSSSk...",
+    "...MMmmMM...",
+    "..MmmmmmmM..",
+    "..M..MM..M..",
+    "..K...K...K.",
   ],
   aaron: [
-    "..KKKK..",
-    ".KwwwwK.",
-    ".KsWWsK.",
-    "..sssss.",
-    "..RRRRR.",
-    "..RwRwR.",
-    "..RRRRR.",
-    "..K..K..",
+    "...kkkkkk...",
+    "..kwwwwwwk..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kSSSSk...",
+    "....kSSk....",
+    "...RRRRRR...",
+    "..RRoRRRoRR.",
+    "..RRRRRRRR..",
+    "..RRoOOoRR..",
+    "..K.RRRR..K.",
+    "..K...K...K.",
   ],
   miriam: [
-    "..bbbb..",
-    ".bsssss.",
-    ".sKsKss.",
-    "..sssss.",
-    ".mrrrm..",
-    ".mrrrm..",
-    ".mmmmm..",
-    "..K..K..",
+    "...bbbbbb...",
+    "..bLLLLLLb..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kSSSSk...",
+    "....kSSk....",
+    "...mmmmmm...",
+    "..mmMmmmMmm.",
+    "..bLLLLLLb..",
+    "..BLLVLLLB..",
+    "..BLLLLLLB..",
+    "..K......K..",
   ],
   jethro: [
-    "..WWWW..",
-    ".WsssWW.",
-    ".sKsKss.",
-    "..sWWs..",
-    "..bbbbbb",
-    "..dwwwdb",
-    "..bbbbb.",
-    "..K..K..",
+    "...cccccc...",
+    "..cWWWWWWc..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kWWWWk...",
+    "...kWWWWk...",
+    "...KKKKKK...",
+    "..KwwdDdwK..",
+    "...KKKKKK...",
+    "...cCCCCc...",
+    "..cCCCCCCc..",
+    "..K......K..",
   ],
   zipporah: [
-    "..gggg..",
-    ".gsssss.",
-    ".sKsKss.",
-    "..sssss.",
-    ".vggggv.",
-    ".vggggv.",
-    "..vvvv..",
-    "..K..K..",
+    "...gGGGGg...",
+    "..gGGGGGGg..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kSSSSk...",
+    "....kSSk....",
+    "...vggggv...",
+    "..vgGGGGgv..",
+    "..vGGyyGGv..",
+    "..vgGGGGgv..",
+    "...vvvvvv...",
+    "..K......K..",
   ],
   joshua: [
-    "..KKKK..",
-    ".KssssK.",
-    ".sKsKss.",
-    "..sssss.",
-    "wKssssKw",
-    ".Kssss..",
-    ".K..K...",
-    "K...K...",
+    "...KKKKKK...",
+    "..KzzzzzzK..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kSSSSk...",
+    "....kSSk....",
+    "d..KKKKKK..d",
+    ".d.KzzzzK.d.",
+    "..d.KKKK.d..",
+    "...dkKKkd...",
+    "....dKKd....",
+    "....K..K....",
   ],
   hur: [
-    "..KKKK..",
-    ".KssssK.",
-    ".sKsKss.",
-    ".KsssK..",
-    ".oooooo.",
-    ".oOOOOo.",
-    ".oOOOOo.",
-    "..K..K..",
+    "...kkkkkk...",
+    "..kbbbbbbk..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kSSSSk...",
+    "....kSSk....",
+    "...OOOOOOO..",
+    "..OoYYYYoO..",
+    "..OoOOOOoO..",
+    "..OoYYYYoO..",
+    "..OOOOOOOO..",
+    "..K......K..",
   ],
   elder: [
-    "..WWWW..",
-    ".WWWWWW.",
-    ".sKsKss.",
-    "..sWWs..",
-    ".WWWWWW.",
-    ".KWWWWK.",
-    ".KKKKKK.",
-    "..K..K..",
+    "...WWWWWW...",
+    "..WWWWWWWW..",
+    "..kSSssSSk..",
+    "..kSKssKSk..",
+    "...kSWWSk...",
+    "....kSSk....",
+    "...WWWWWW...",
+    "..WWCCCCWW..",
+    "..WCCCCCCW..",
+    "..WCCCCCCW..",
+    "...CCCCCC...",
+    "..K......K..",
   ],
 };
+
 
 function drawPixelIcon(cnv: HTMLCanvasElement, grid: string[], scale: number) {
   const w = grid[0].length;
@@ -995,19 +1114,31 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const shaftTopX = gx + dirX * shaftLen;
   const shaftTopY = gy + dirY * shaftLen;
 
+  // Softer palette matched to Moses' staff column (K=#2b1d14, w=#8a5a34,
+  // d=#b48355). Thinner warm outline, wood body, offset highlight streak.
+  const OUTLINE = "#3a2618";
+  const WOOD_MID = "#8a5a34";
+  const WOOD_HI  = "#c69063";
+  const WOOD_TOP = "#e4b98a";
+
   ctx.save();
   ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
   const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
+    ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
+    ctx.strokeStyle = WOOD_MID; ctx.lineWidth = 2.6;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = WOOD_HI; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x1 - perpX * 0.9, y1 - perpY * 0.9);
+    ctx.lineTo(x2 - perpX * 0.9, y2 - perpY * 0.9);
+    ctx.stroke();
   };
   drawShaft(buttX, buttY, shaftTopX, shaftTopY);
 
-  // Upper S-curve crook (soft, small).
+  // Upper S-curve crook — softer strokes to match the shaft.
   const crookLen = length * 0.20;
   const bendAmt = length * 0.09;
   const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
@@ -1017,18 +1148,28 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.4;
   const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.4;
 
-  const drawCurve = (col: string, lw: number) => {
+  const drawCurve = (col: string, lw: number, offset = 0) => {
     ctx.strokeStyle = col; ctx.lineWidth = lw;
-    ctx.beginPath(); ctx.moveTo(shaftTopX, shaftTopY);
-    ctx.bezierCurveTo(c1X, c1Y, c2X, c2Y, endX, endY);
+    ctx.beginPath();
+    ctx.moveTo(shaftTopX - perpX * offset, shaftTopY - perpY * offset);
+    ctx.bezierCurveTo(
+      c1X - perpX * offset, c1Y - perpY * offset,
+      c2X - perpX * offset, c2Y - perpY * offset,
+      endX - perpX * offset, endY - perpY * offset,
+    );
     ctx.stroke();
   };
-  drawCurve("#2b1d10", 6);
-  drawCurve("#8a5a34", 4);
-  drawCurve("#b48355", 2);
+  drawCurve(OUTLINE, 4);
+  drawCurve(WOOD_MID, 2.6);
+  drawCurve(WOOD_HI, 1, 0.9);
 
-  ctx.fillStyle = "#5a3820";
-  ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI * 2); ctx.fill();
+  // Warm tip cap + soft leather grip wrap.
+  ctx.fillStyle = WOOD_TOP;
+  ctx.beginPath(); ctx.arc(endX, endY, 1.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = OUTLINE;
+  ctx.beginPath(); ctx.arc(gx, gy, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#6b4326";
+  ctx.beginPath(); ctx.arc(gx, gy, 1.4, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
   return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
 }
@@ -2186,9 +2327,10 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   void BONUSES[kind]; // ensures import is used
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 2.5 + e.id) * 4);
-  // ~3× larger pixel art (px 3 → 9). No circular halo/glow — just a tiny
-  // ground shadow so the item still reads as being "on the ground".
-  const px = 9;
+  // ~2× pixel scale (down from 3× — the previous size was too dominant).
+  // No circular halo/glow — just a small ground shadow so the item still
+  // reads as being "on the ground".
+  const px = 6;
   const draw = (grid: string[], palette: Record<string, string>, ox: number, oy: number) => {
     for (let ry = 0; ry < grid.length; ry++) {
       for (let rx = 0; rx < grid[ry].length; rx++) {
@@ -2202,7 +2344,7 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   ctx.save();
   // Faint elliptical ground shadow beneath the item (not a glow).
   ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.beginPath(); ctx.ellipse(x, y + 34, 22, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y + 22, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
   if (kind === "heart") {
     const H = [
       ".RR.RR.",
