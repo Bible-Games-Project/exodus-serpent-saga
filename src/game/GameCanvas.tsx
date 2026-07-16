@@ -2344,7 +2344,7 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   ctx.save();
   // Faint elliptical ground shadow beneath the item (not a glow).
   ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.beginPath(); ctx.ellipse(x, y + 34, 22, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x, y + 22, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
   if (kind === "heart") {
     const H = [
       ".RR.RR.",
