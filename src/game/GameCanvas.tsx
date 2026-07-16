@@ -2208,9 +2208,10 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   void BONUSES[kind]; // ensures import is used
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 2.5 + e.id) * 4);
-  // ~3× larger pixel art (px 3 → 9). No circular halo/glow — just a tiny
-  // ground shadow so the item still reads as being "on the ground".
-  const px = 9;
+  // ~2× pixel scale (down from 3× — the previous size was too dominant).
+  // No circular halo/glow — just a small ground shadow so the item still
+  // reads as being "on the ground".
+  const px = 6;
   const draw = (grid: string[], palette: Record<string, string>, ox: number, oy: number) => {
     for (let ry = 0; ry < grid.length; ry++) {
       for (let rx = 0; rx < grid[ry].length; rx++) {
