@@ -995,19 +995,31 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const shaftTopX = gx + dirX * shaftLen;
   const shaftTopY = gy + dirY * shaftLen;
 
+  // Softer palette matched to Moses' staff column (K=#2b1d14, w=#8a5a34,
+  // d=#b48355). Thinner warm outline, wood body, offset highlight streak.
+  const OUTLINE = "#3a2618";
+  const WOOD_MID = "#8a5a34";
+  const WOOD_HI  = "#c69063";
+  const WOOD_TOP = "#e4b98a";
+
   ctx.save();
   ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
   const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.strokeStyle = "#2b1d10"; ctx.lineWidth = 6;
+    ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = "#8a5a34"; ctx.lineWidth = 4;
+    ctx.strokeStyle = WOOD_MID; ctx.lineWidth = 2.6;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = "#b48355"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.strokeStyle = WOOD_HI; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x1 - perpX * 0.9, y1 - perpY * 0.9);
+    ctx.lineTo(x2 - perpX * 0.9, y2 - perpY * 0.9);
+    ctx.stroke();
   };
   drawShaft(buttX, buttY, shaftTopX, shaftTopY);
 
-  // Upper S-curve crook (soft, small).
+  // Upper S-curve crook — softer strokes to match the shaft.
   const crookLen = length * 0.20;
   const bendAmt = length * 0.09;
   const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
@@ -1017,18 +1029,28 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.4;
   const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.4;
 
-  const drawCurve = (col: string, lw: number) => {
+  const drawCurve = (col: string, lw: number, offset = 0) => {
     ctx.strokeStyle = col; ctx.lineWidth = lw;
-    ctx.beginPath(); ctx.moveTo(shaftTopX, shaftTopY);
-    ctx.bezierCurveTo(c1X, c1Y, c2X, c2Y, endX, endY);
+    ctx.beginPath();
+    ctx.moveTo(shaftTopX - perpX * offset, shaftTopY - perpY * offset);
+    ctx.bezierCurveTo(
+      c1X - perpX * offset, c1Y - perpY * offset,
+      c2X - perpX * offset, c2Y - perpY * offset,
+      endX - perpX * offset, endY - perpY * offset,
+    );
     ctx.stroke();
   };
-  drawCurve("#2b1d10", 6);
-  drawCurve("#8a5a34", 4);
-  drawCurve("#b48355", 2);
+  drawCurve(OUTLINE, 4);
+  drawCurve(WOOD_MID, 2.6);
+  drawCurve(WOOD_HI, 1, 0.9);
 
-  ctx.fillStyle = "#5a3820";
-  ctx.beginPath(); ctx.arc(gx, gy, 3, 0, Math.PI * 2); ctx.fill();
+  // Warm tip cap + soft leather grip wrap.
+  ctx.fillStyle = WOOD_TOP;
+  ctx.beginPath(); ctx.arc(endX, endY, 1.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = OUTLINE;
+  ctx.beginPath(); ctx.arc(gx, gy, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#6b4326";
+  ctx.beginPath(); ctx.arc(gx, gy, 1.4, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
   return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
 }
