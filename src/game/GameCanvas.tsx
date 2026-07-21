@@ -1098,49 +1098,55 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   drawShepherdStaff(ctx, gripX, gripY, rot, facing, 62);
 }
 
-// Shared shepherd's-crook renderer: the grip sits at (gx, gy). The staff is a
-// mostly-straight wooden shaft; only the upper ~20% curves in a soft S that
-// ends in a small hooked tip — a classic shepherd's rod, never a "1" shape.
+// Shared shepherd's-crook renderer at Moses' pixel density. Every stroke is
+// sized in whole Moses pixels (SCALE=3 CSS px): 3px outline, 2px wood body,
+// 1px highlight streak — matching MOSES sprite's `wdw` staff column exactly.
+// lineCap="butt" keeps the ends blocky like the rest of Moses' art.
 function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number, tiltRadians: number, facing: number, length: number) {
   const dirX = Math.cos(tiltRadians) * facing;
   const dirY = Math.sin(tiltRadians);
   const perpX = -dirY * facing;
   const perpY = dirX * facing;
 
-  const buttLen = length * 0.25;
-  const shaftLen = length * 0.80;
+  const buttLen = length * 0.22;
+  const shaftLen = length * 0.78;
   const buttX = gx - dirX * buttLen;
   const buttY = gy - dirY * buttLen;
   const shaftTopX = gx + dirX * shaftLen;
   const shaftTopY = gy + dirY * shaftLen;
 
-  // Softer palette matched to Moses' staff column (K=#2b1d14, w=#8a5a34,
-  // d=#b48355). Thinner warm outline, wood body, offset highlight streak.
-  const OUTLINE = "#3a2618";
-  const WOOD_MID = "#8a5a34";
-  const WOOD_HI  = "#c69063";
-  const WOOD_TOP = "#e4b98a";
+  // Palette lifted directly from Moses' PALETTE (K, w, d) so the staff looks
+  // painted onto him rather than pasted over him.
+  const OUTLINE = "#2b1d14";   // K
+  const WOOD_MID = "#8a5a34";  // w
+  const WOOD_HI  = "#b48355";  // d
+
+  // Match Moses' sprite pixel grid (1 sprite-px = SCALE=3 CSS px).
+  const PX = 3;
+  const OUT_W = PX * 3;   // 9 — full staff width incl. outline
+  const BODY_W = PX * 2;  // 6 — wood body
+  const HI_W  = PX;       // 3 — highlight streak
 
   ctx.save();
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap = "butt";
+  ctx.lineJoin = "miter";
 
   const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.strokeStyle = OUTLINE; ctx.lineWidth = 4;
+    ctx.strokeStyle = OUTLINE; ctx.lineWidth = OUT_W;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = WOOD_MID; ctx.lineWidth = 2.6;
+    ctx.strokeStyle = WOOD_MID; ctx.lineWidth = BODY_W;
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = WOOD_HI; ctx.lineWidth = 1;
+    ctx.strokeStyle = WOOD_HI; ctx.lineWidth = HI_W;
     ctx.beginPath();
-    ctx.moveTo(x1 - perpX * 0.9, y1 - perpY * 0.9);
-    ctx.lineTo(x2 - perpX * 0.9, y2 - perpY * 0.9);
+    ctx.moveTo(x1 - perpX * PX, y1 - perpY * PX);
+    ctx.lineTo(x2 - perpX * PX, y2 - perpY * PX);
     ctx.stroke();
   };
   drawShaft(buttX, buttY, shaftTopX, shaftTopY);
 
-  // Upper S-curve crook — softer strokes to match the shaft.
-  const crookLen = length * 0.20;
-  const bendAmt = length * 0.09;
+  // Gentle S-crook at the top. Same three-stroke pixel-grid palette.
+  const crookLen = length * 0.22;
+  const bendAmt = length * 0.10;
   const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
   const c1Y = shaftTopY + dirY * crookLen * 0.35 + perpY * bendAmt * 0.7;
   const c2X = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 0.2;
@@ -1159,17 +1165,15 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
     );
     ctx.stroke();
   };
-  drawCurve(OUTLINE, 4);
-  drawCurve(WOOD_MID, 2.6);
-  drawCurve(WOOD_HI, 1, 0.9);
+  drawCurve(OUTLINE, OUT_W);
+  drawCurve(WOOD_MID, BODY_W);
+  drawCurve(WOOD_HI, HI_W, PX);
 
-  // Warm tip cap + soft leather grip wrap.
-  ctx.fillStyle = WOOD_TOP;
-  ctx.beginPath(); ctx.arc(endX, endY, 1.2, 0, Math.PI * 2); ctx.fill();
+  // Chunky grip wrap sized to the pixel grid.
   ctx.fillStyle = OUTLINE;
-  ctx.beginPath(); ctx.arc(gx, gy, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(Math.round(gx - PX * 1.5), Math.round(gy - PX * 1.5), PX * 3, PX * 3);
   ctx.fillStyle = "#6b4326";
-  ctx.beginPath(); ctx.arc(gx, gy, 1.4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(Math.round(gx - PX * 0.5), Math.round(gy - PX * 0.5), PX, PX);
   ctx.restore();
   return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
 }
