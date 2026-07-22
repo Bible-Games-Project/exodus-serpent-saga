@@ -1368,37 +1368,45 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const WOOD_HI  = "#b48355";  // d
 
   // Match Moses' sprite pixel grid (1 sprite-px = SCALE=3 CSS px).
+  // Thicker than a plain pole — reads as a hewn branch, not a dowel.
   const PX = 3;
-  const OUT_W = PX * 3;   // 9 — full staff width incl. outline
-  const BODY_W = PX * 2;  // 6 — wood body
-  const HI_W  = PX;       // 3 — highlight streak
+  const OUT_W = PX * 4;   // 12 — outline
+  const BODY_W = PX * 3;  // 9  — wood body
+  const HI_W  = PX;       // 3  — highlight streak
 
   ctx.save();
   ctx.lineCap = "butt";
-  ctx.lineJoin = "miter";
+  ctx.lineJoin = "round";
 
-  const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.strokeStyle = OUTLINE; ctx.lineWidth = OUT_W;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = WOOD_MID; ctx.lineWidth = BODY_W;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = WOOD_HI; ctx.lineWidth = HI_W;
+  // Slight organic bend along the shaft — a quadratic bezier with a small
+  // perpendicular bulge in the mid-shaft, so it never looks perfectly straight.
+  const bendMid = length * 0.06;
+  const midX = (buttX + shaftTopX) / 2 + perpX * bendMid;
+  const midY = (buttY + shaftTopY) / 2 + perpY * bendMid;
+
+  const drawShaft = (col: string, lw: number, offset = 0) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
     ctx.beginPath();
-    ctx.moveTo(x1 - perpX * PX, y1 - perpY * PX);
-    ctx.lineTo(x2 - perpX * PX, y2 - perpY * PX);
+    ctx.moveTo(buttX - perpX * offset, buttY - perpY * offset);
+    ctx.quadraticCurveTo(
+      midX - perpX * offset, midY - perpY * offset,
+      shaftTopX - perpX * offset, shaftTopY - perpY * offset,
+    );
     ctx.stroke();
   };
-  drawShaft(buttX, buttY, shaftTopX, shaftTopY);
+  drawShaft(OUTLINE, OUT_W);
+  drawShaft(WOOD_MID, BODY_W);
+  drawShaft(WOOD_HI, HI_W, PX);
 
-  // Gentle S-crook at the top. Same three-stroke pixel-grid palette.
-  const crookLen = length * 0.22;
-  const bendAmt = length * 0.10;
-  const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
-  const c1Y = shaftTopY + dirY * crookLen * 0.35 + perpY * bendAmt * 0.7;
-  const c2X = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 0.2;
-  const c2Y = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 0.2;
-  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.4;
-  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.4;
+  // Chunkier shepherd's crook at the top.
+  const crookLen = length * 0.24;
+  const bendAmt = length * 0.14;
+  const c1X = shaftTopX + dirX * crookLen * 0.4 + perpX * bendAmt * 0.7;
+  const c1Y = shaftTopY + dirY * crookLen * 0.4 + perpY * bendAmt * 0.7;
+  const c2X = shaftTopX + dirX * crookLen * 0.6 - perpX * bendAmt * 0.3;
+  const c2Y = shaftTopY + dirY * crookLen * 0.6 - perpY * bendAmt * 0.3;
+  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.6;
+  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.6;
 
   const drawCurve = (col: string, lw: number, offset = 0) => {
     ctx.strokeStyle = col; ctx.lineWidth = lw;
