@@ -282,6 +282,33 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
   );
 }
 
+function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const cnv = ref.current;
+    if (!cnv) return;
+    const art = BONUS_ART[kind];
+    const gw = art.grid[0].length;
+    const gh = art.grid.length;
+    const px = Math.max(1, Math.floor(size / Math.max(gw, gh)));
+    cnv.width = gw * px;
+    cnv.height = gh * px;
+    const ctx = cnv.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, cnv.width, cnv.height);
+    for (let ry = 0; ry < gh; ry++) {
+      const row = art.grid[ry];
+      for (let rx = 0; rx < gw; rx++) {
+        const c = art.palette[row[rx]];
+        if (!c) continue;
+        ctx.fillStyle = c;
+        ctx.fillRect(rx * px, ry * px, px, px);
+      }
+    }
+  }, [kind, size]);
+  return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+}
+
 function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const p = state.player;
   const xpPct = Math.min(1, state.xp / state.xpToNext);
@@ -321,11 +348,11 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             {buffs.map((b) => (
               <div
                 key={b.kind}
-                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1.5 pt-1 pb-0.5 text-white shadow-lg ring-1"
+                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1 pt-1 pb-0.5 text-white shadow-lg ring-1"
                 style={{ borderTop: `3px solid ${BONUSES[b.kind].color}` }}
                 title={BONUSES[b.kind].name}
               >
-                <span className="text-base leading-none">{BONUSES[b.kind].emoji}</span>
+                <BonusHudIcon kind={b.kind} size={28} />
                 <span className="mt-0.5 text-[10px] font-bold tabular-nums leading-none">
                   {Math.ceil(b.remaining)}s
                 </span>
@@ -1314,13 +1341,13 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   // Grip at Moses' hand — sits ~25% up from the butt end of the staff.
   const gripX = e.pos.x - camX + facing * 8;
   const gripY = e.pos.y - camY - 18 + bob;
-  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 62);
+  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 52);
 }
 
-// Shared shepherd's-crook renderer at Moses' pixel density. Every stroke is
-// sized in whole Moses pixels (SCALE=3 CSS px): 3px outline, 2px wood body,
-// 1px highlight streak — matching MOSES sprite's `wdw` staff column exactly.
-// lineCap="butt" keeps the ends blocky like the rest of Moses' art.
+// Shared shepherd's-crook renderer at Moses' pixel density. Thicker than a
+// pole (4 sprite-px body) so it reads as a hewn tree branch. The shaft has a
+// subtle organic bend and a chunky crook + gnarled knot near the top so it
+// feels carved from a small tree rather than milled from a dowel.
 function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number, tiltRadians: number, facing: number, length: number) {
   const dirX = Math.cos(tiltRadians) * facing;
   const dirY = Math.sin(tiltRadians);
@@ -1341,37 +1368,45 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const WOOD_HI  = "#b48355";  // d
 
   // Match Moses' sprite pixel grid (1 sprite-px = SCALE=3 CSS px).
+  // Thicker than a plain pole — reads as a hewn branch, not a dowel.
   const PX = 3;
-  const OUT_W = PX * 3;   // 9 — full staff width incl. outline
-  const BODY_W = PX * 2;  // 6 — wood body
-  const HI_W  = PX;       // 3 — highlight streak
+  const OUT_W = PX * 4;   // 12 — outline
+  const BODY_W = PX * 3;  // 9  — wood body
+  const HI_W  = PX;       // 3  — highlight streak
 
   ctx.save();
   ctx.lineCap = "butt";
-  ctx.lineJoin = "miter";
+  ctx.lineJoin = "round";
 
-  const drawShaft = (x1: number, y1: number, x2: number, y2: number) => {
-    ctx.strokeStyle = OUTLINE; ctx.lineWidth = OUT_W;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = WOOD_MID; ctx.lineWidth = BODY_W;
-    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-    ctx.strokeStyle = WOOD_HI; ctx.lineWidth = HI_W;
+  // Slight organic bend along the shaft — a quadratic bezier with a small
+  // perpendicular bulge in the mid-shaft, so it never looks perfectly straight.
+  const bendMid = length * 0.035;
+  const midX = (buttX + shaftTopX) / 2 + perpX * bendMid;
+  const midY = (buttY + shaftTopY) / 2 + perpY * bendMid;
+
+  const drawShaft = (col: string, lw: number, offset = 0) => {
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
     ctx.beginPath();
-    ctx.moveTo(x1 - perpX * PX, y1 - perpY * PX);
-    ctx.lineTo(x2 - perpX * PX, y2 - perpY * PX);
+    ctx.moveTo(buttX - perpX * offset, buttY - perpY * offset);
+    ctx.quadraticCurveTo(
+      midX - perpX * offset, midY - perpY * offset,
+      shaftTopX - perpX * offset, shaftTopY - perpY * offset,
+    );
     ctx.stroke();
   };
-  drawShaft(buttX, buttY, shaftTopX, shaftTopY);
+  drawShaft(OUTLINE, OUT_W);
+  drawShaft(WOOD_MID, BODY_W);
+  drawShaft(WOOD_HI, HI_W, PX);
 
-  // Gentle S-crook at the top. Same three-stroke pixel-grid palette.
-  const crookLen = length * 0.22;
-  const bendAmt = length * 0.10;
-  const c1X = shaftTopX + dirX * crookLen * 0.35 + perpX * bendAmt * 0.7;
-  const c1Y = shaftTopY + dirY * crookLen * 0.35 + perpY * bendAmt * 0.7;
-  const c2X = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 0.2;
-  const c2Y = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 0.2;
-  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.4;
-  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.4;
+  // Chunkier shepherd's crook at the top.
+  const crookLen = length * 0.24;
+  const bendAmt = length * 0.14;
+  const c1X = shaftTopX + dirX * crookLen * 0.4 + perpX * bendAmt * 0.7;
+  const c1Y = shaftTopY + dirY * crookLen * 0.4 + perpY * bendAmt * 0.7;
+  const c2X = shaftTopX + dirX * crookLen * 0.6 - perpX * bendAmt * 0.3;
+  const c2Y = shaftTopY + dirY * crookLen * 0.6 - perpY * bendAmt * 0.3;
+  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.6;
+  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.6;
 
   const drawCurve = (col: string, lw: number, offset = 0) => {
     ctx.strokeStyle = col; ctx.lineWidth = lw;
@@ -2273,7 +2308,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   const progress = 1 - life;
   const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
   const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
-  const staffLen = 62;
+  const staffLen = 52;
   const gx = s.player.pos.x - camX + facing * 8;
   const gy = s.player.pos.y - camY - 18;
   const swingAng = startA + (endA - startA) * progress;
@@ -2545,86 +2580,142 @@ function drawRedSeaBurst(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 }
 
 // ---------------- Bonus pickups ----------------
+// Shared pixel-art registry — the ground pickup AND the HUD active-buff icon
+// render from the exact same grid so the visual language stays consistent.
+// Grids are ~14 wide, drawn at half the previous pixel size so each icon
+// carries ~2× the detail while keeping the same on-screen footprint.
+export const BONUS_ART: Record<BonusKind, { grid: string[]; palette: Record<string, string> }> = {
+  heart: {
+    grid: [
+      "..KKK....KKK..",
+      ".KRRRK..KRRRK.",
+      "KRhhRKKKKRhhRK",
+      "KRWWhRRRRhhhRK",
+      "KRWhhhhhhhhhRK",
+      "KRhhhhhhhhhhRK",
+      "KRRhhhhhhhhRRK",
+      ".KRhhhhhhhhRK.",
+      "..KRhhhhhhRK..",
+      "...KRhhhhRK...",
+      "....KRhhRK....",
+      ".....KRRK.....",
+      "......KK......",
+      "..............",
+    ],
+    palette: { K: "#3a0a12", R: "#e12038", h: "#ff5566", W: "#ffd0d6" },
+  },
+  magnet: {
+    grid: [
+      "..KKKKKKKKKK..",
+      ".KRRRRRRRRRRK.",
+      "KRhhhhhhhhhhRK",
+      "KRhhWhhhhWhhRK",
+      "KRhhhKKKKhhhRK",
+      "KRhhRK..KRhhRK",
+      "KRhhRK..KRhhRK",
+      "KRhhRK..KRhhRK",
+      "KRRRRK..KRRRRK",
+      "KSSSSK..KSSSSK",
+      "KSwwSK..KSwwSK",
+      "KSSSSK..KSSSSK",
+      "KKKKKK..KKKKKK",
+      "..............",
+    ],
+    palette: { K: "#2a0810", R: "#d02030", h: "#ff5060", W: "#ffd0d6", S: "#8a8f96", w: "#e6ecef" },
+  },
+  star: {
+    grid: [
+      "......KK......",
+      ".....KYYK.....",
+      ".....KYyK.....",
+      "KKKKKKYyKKKKKK",
+      "KYyyyyYyyyyyYK",
+      ".KYyyyyyyyyYK.",
+      "..KYyyWWyyYK..",
+      "..KYyyyyyyYK..",
+      ".KYyyYYYYyyYK.",
+      "KYyYK....KYyYK",
+      "KYYK......KYYK",
+      "KKK........KKK",
+      "..............",
+      "..............",
+    ],
+    palette: { K: "#3a2a08", Y: "#e8a820", y: "#ffd54a", W: "#fff8c0" },
+  },
+  lightning: {
+    grid: [
+      "........KKK...",
+      ".......KYYK...",
+      "......KYyYK...",
+      "KKKKKKYyyYK...",
+      "KYyyyyyyYK....",
+      "KYyyWyyyK.....",
+      "KYyyyyYK......",
+      ".KKKKKYYKKKKK.",
+      "....KYyyyyyyYK",
+      "....KYyyWyyyYK",
+      "....KYyyyyyYK.",
+      ".....KYyyyYK..",
+      "......KYyYK...",
+      ".......KKK....",
+    ],
+    palette: { K: "#3a2a08", Y: "#e8a820", y: "#ffe040", W: "#fffbaa" },
+  },
+  shield: {
+    grid: [
+      "..KKKKKKKKKK..",
+      ".KBBBBBBBBBBK.",
+      "KBWWWWWWWWWWBK",
+      "KBWWCCCCCCWWBK",
+      "KBWCCGCCGCCWBK",
+      "KBWCGGGGGGCWBK",
+      "KBWCCGGGGCCWBK",
+      "KBWCCCGGCCCWBK",
+      "KBWCCCCCCCCWBK",
+      "KBWWCCCCCCWWBK",
+      "KBBWWWWWWWWBBK",
+      ".KBBBBBBBBBBK.",
+      "..KKBBBBBBKK..",
+      "....KKKKKK....",
+    ],
+    palette: { K: "#101828", B: "#2b4a7a", W: "#dbe9f7", C: "#8ec8ff", G: "#e6c261" },
+  },
+};
+
+function drawBonusArt(
+  ctx: CanvasRenderingContext2D,
+  kind: BonusKind,
+  cx: number,
+  cy: number,
+  px: number,
+) {
+  const art = BONUS_ART[kind];
+  const gw = art.grid[0].length;
+  const gh = art.grid.length;
+  const ox = cx - Math.floor((gw * px) / 2);
+  const oy = cy - Math.floor((gh * px) / 2);
+  for (let ry = 0; ry < gh; ry++) {
+    const row = art.grid[ry];
+    for (let rx = 0; rx < gw; rx++) {
+      const c = art.palette[row[rx]];
+      if (!c) continue;
+      ctx.fillStyle = c;
+      ctx.fillRect(ox + rx * px, oy + ry * px, px, px);
+    }
+  }
+}
+
 function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState) {
   const kind = (e.data?.bonusKind as BonusKind) ?? "heart";
   void BONUSES[kind]; // ensures import is used
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 2.5 + e.id) * 4);
-  // ~2× pixel scale (down from 3× — the previous size was too dominant).
-  // No circular halo/glow — just a small ground shadow so the item still
-  // reads as being "on the ground".
-  const px = 6;
-  const draw = (grid: string[], palette: Record<string, string>, ox: number, oy: number) => {
-    for (let ry = 0; ry < grid.length; ry++) {
-      for (let rx = 0; rx < grid[ry].length; rx++) {
-        const c = palette[grid[ry][rx]];
-        if (!c) continue;
-        ctx.fillStyle = c;
-        ctx.fillRect(x + (rx + ox) * px, y + (ry + oy) * px, px, px);
-      }
-    }
-  };
   ctx.save();
-  // Faint elliptical ground shadow beneath the item (not a glow).
   ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.beginPath(); ctx.ellipse(x, y + 22, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-  if (kind === "heart") {
-    const H = [
-      ".RR.RR.",
-      "RHRRRHR",
-      "RHRRRRR",
-      "RRRRRRR",
-      ".RRRRR.",
-      "..RRR..",
-      "...R...",
-    ];
-    draw(H, { R: "#ff3050", H: "#ffb0b8" }, -3, -3);
-  } else if (kind === "magnet") {
-    const M = [
-      "RR...RR",
-      "RR...RR",
-      "RRW.WRR",
-      "RRW.WRR",
-      "SS...SS",
-      "SS...SS",
-    ];
-    draw(M, { R: "#c02030", W: "#ffffff", S: "#a0a0a0" }, -3, -3);
-  } else if (kind === "star") {
-    const S = [
-      "...Y...",
-      "..YHY..",
-      "YYYHYYY",
-      ".YYYYY.",
-      "..YHY..",
-      ".Y...Y.",
-    ];
-    draw(S, { Y: "#ffd54a", H: "#fff8b0" }, -3, -3);
-  } else if (kind === "lightning") {
-    const L = [
-      "..YYY.",
-      ".YYY..",
-      "YYY...",
-      "WYYYY.",
-      "...YY.",
-      "..YY..",
-      ".YY...",
-      "YY....",
-    ];
-    draw(L, { Y: "#ffe040", W: "#fffbaa" }, -3, -4);
-  } else if (kind === "shield") {
-    // Egyptian round shield with cross emblem
-    const D = [
-      ".BBBBB.",
-      "BWWWWWB",
-      "BWCGCWB",
-      "BWGGGWB",
-      "BWCGCWB",
-      "BWWWWWB",
-      ".BBBBB.",
-      "..BBB..",
-    ];
-    draw(D, { B: "#2b4a7a", W: "#dbe9f7", C: "#e6c261", G: "#8ec8ff" }, -3, -4);
-  }
+  // Half the previous pixel size (3 instead of 6) — same on-screen size,
+  // ~2× the pixel detail per icon.
+  drawBonusArt(ctx, kind, x, y, 3);
   ctx.restore();
 }
 
