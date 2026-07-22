@@ -282,6 +282,33 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
   );
 }
 
+function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const cnv = ref.current;
+    if (!cnv) return;
+    const art = BONUS_ART[kind];
+    const gw = art.grid[0].length;
+    const gh = art.grid.length;
+    const px = Math.max(1, Math.floor(size / Math.max(gw, gh)));
+    cnv.width = gw * px;
+    cnv.height = gh * px;
+    const ctx = cnv.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, cnv.width, cnv.height);
+    for (let ry = 0; ry < gh; ry++) {
+      const row = art.grid[ry];
+      for (let rx = 0; rx < gw; rx++) {
+        const c = art.palette[row[rx]];
+        if (!c) continue;
+        ctx.fillStyle = c;
+        ctx.fillRect(rx * px, ry * px, px, px);
+      }
+    }
+  }, [kind, size]);
+  return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+}
+
 function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const p = state.player;
   const xpPct = Math.min(1, state.xp / state.xpToNext);
