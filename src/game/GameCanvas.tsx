@@ -1341,13 +1341,13 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   // Grip at Moses' hand — sits ~25% up from the butt end of the staff.
   const gripX = e.pos.x - camX + facing * 8;
   const gripY = e.pos.y - camY - 18 + bob;
-  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 62);
+  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 52);
 }
 
-// Shared shepherd's-crook renderer at Moses' pixel density. Every stroke is
-// sized in whole Moses pixels (SCALE=3 CSS px): 3px outline, 2px wood body,
-// 1px highlight streak — matching MOSES sprite's `wdw` staff column exactly.
-// lineCap="butt" keeps the ends blocky like the rest of Moses' art.
+// Shared shepherd's-crook renderer at Moses' pixel density. Thicker than a
+// pole (4 sprite-px body) so it reads as a hewn tree branch. The shaft has a
+// subtle organic bend and a chunky crook + gnarled knot near the top so it
+// feels carved from a small tree rather than milled from a dowel.
 function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number, tiltRadians: number, facing: number, length: number) {
   const dirX = Math.cos(tiltRadians) * facing;
   const dirY = Math.sin(tiltRadians);
