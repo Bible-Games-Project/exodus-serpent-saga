@@ -2545,86 +2545,142 @@ function drawRedSeaBurst(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 }
 
 // ---------------- Bonus pickups ----------------
+// Shared pixel-art registry — the ground pickup AND the HUD active-buff icon
+// render from the exact same grid so the visual language stays consistent.
+// Grids are ~14 wide, drawn at half the previous pixel size so each icon
+// carries ~2× the detail while keeping the same on-screen footprint.
+export const BONUS_ART: Record<BonusKind, { grid: string[]; palette: Record<string, string> }> = {
+  heart: {
+    grid: [
+      "..KKKK....KKKK",
+      ".KRRRRK..KRRRRK",
+      "KRhhhhRKKRhhhhR",
+      "KRhWWhRRRRhhhhR",
+      "KRhWhhhhhhhhhhR",
+      "KRhhhhhhhhhhhhR",
+      "KRRhhhhhhhhhhRK",
+      ".KRhhhhhhhhhRK.",
+      "..KRhhhhhhhRK..",
+      "...KRhhhhhRK...",
+      "....KRhhhRK....",
+      ".....KRhRK.....",
+      "......KRK......",
+      ".......K.......",
+    ],
+    palette: { K: "#3a0a12", R: "#e12038", h: "#ff5566", W: "#ffd0d6" },
+  },
+  magnet: {
+    grid: [
+      "..KKKKKKKKKK..",
+      ".KRRRRRRRRRRK.",
+      "KRhhhhhhhhhhRK",
+      "KRhhWhhhhWhhRK",
+      "KRhhhKKKKhhhRK",
+      "KRhhRK..KRhhRK",
+      "KRhhRK..KRhhRK",
+      "KRhhRK..KRhhRK",
+      "KRRRRK..KRRRRK",
+      "KSSSSK..KSSSSK",
+      "KSwwSK..KSwwSK",
+      "KSSSSK..KSSSSK",
+      "KKKKKK..KKKKKK",
+      "..............",
+    ],
+    palette: { K: "#2a0810", R: "#d02030", h: "#ff5060", W: "#ffd0d6", S: "#8a8f96", w: "#e6ecef" },
+  },
+  star: {
+    grid: [
+      "......KK......",
+      ".....KYYK.....",
+      ".....KYyK.....",
+      "KKKKKKYyKKKKKK",
+      "KYyyyyYyyyyyYK",
+      ".KYyyyyyyyyYK.",
+      "..KYyyWWyyYK..",
+      "..KYyyyyyyYK..",
+      ".KYyyYYYYyyYK.",
+      "KYyYK....KYyYK",
+      "KYYK......KYYK",
+      "KKK........KKK",
+      "..............",
+      "..............",
+    ],
+    palette: { K: "#3a2a08", Y: "#e8a820", y: "#ffd54a", W: "#fff8c0" },
+  },
+  lightning: {
+    grid: [
+      "........KKK...",
+      ".......KYYK...",
+      "......KYyYK...",
+      "KKKKKKYyyYK...",
+      "KYyyyyyyYK....",
+      "KYyyWyyyK.....",
+      "KYyyyyYK......",
+      ".KKKKKYYKKKKK.",
+      "....KYyyyyyyYK",
+      "....KYyyWyyyYK",
+      "....KYyyyyyYK.",
+      ".....KYyyyYK..",
+      "......KYyYK...",
+      ".......KKK....",
+    ],
+    palette: { K: "#3a2a08", Y: "#e8a820", y: "#ffe040", W: "#fffbaa" },
+  },
+  shield: {
+    grid: [
+      "..KKKKKKKKKK..",
+      ".KBBBBBBBBBBK.",
+      "KBWWWWWWWWWWBK",
+      "KBWWCCCCCCWWBK",
+      "KBWCCGCCGCCWBK",
+      "KBWCGGGGGGCWBK",
+      "KBWCCGGGGCCWBK",
+      "KBWCCCGGCCCWBK",
+      "KBWCCCCCCCCWBK",
+      "KBWWCCCCCCWWBK",
+      "KBBWWWWWWWWBBK",
+      ".KBBBBBBBBBBK.",
+      "..KKBBBBBBKK..",
+      "....KKKKKK....",
+    ],
+    palette: { K: "#101828", B: "#2b4a7a", W: "#dbe9f7", C: "#8ec8ff", G: "#e6c261" },
+  },
+};
+
+function drawBonusArt(
+  ctx: CanvasRenderingContext2D,
+  kind: BonusKind,
+  cx: number,
+  cy: number,
+  px: number,
+) {
+  const art = BONUS_ART[kind];
+  const gw = art.grid[0].length;
+  const gh = art.grid.length;
+  const ox = cx - Math.floor((gw * px) / 2);
+  const oy = cy - Math.floor((gh * px) / 2);
+  for (let ry = 0; ry < gh; ry++) {
+    const row = art.grid[ry];
+    for (let rx = 0; rx < gw; rx++) {
+      const c = art.palette[row[rx]];
+      if (!c) continue;
+      ctx.fillStyle = c;
+      ctx.fillRect(ox + rx * px, oy + ry * px, px, px);
+    }
+  }
+}
+
 function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState) {
   const kind = (e.data?.bonusKind as BonusKind) ?? "heart";
   void BONUSES[kind]; // ensures import is used
   const x = Math.round(e.pos.x - camX);
   const y = Math.round(e.pos.y - camY) + Math.round(Math.sin(s.now * 2.5 + e.id) * 4);
-  // ~2× pixel scale (down from 3× — the previous size was too dominant).
-  // No circular halo/glow — just a small ground shadow so the item still
-  // reads as being "on the ground".
-  const px = 6;
-  const draw = (grid: string[], palette: Record<string, string>, ox: number, oy: number) => {
-    for (let ry = 0; ry < grid.length; ry++) {
-      for (let rx = 0; rx < grid[ry].length; rx++) {
-        const c = palette[grid[ry][rx]];
-        if (!c) continue;
-        ctx.fillStyle = c;
-        ctx.fillRect(x + (rx + ox) * px, y + (ry + oy) * px, px, px);
-      }
-    }
-  };
   ctx.save();
-  // Faint elliptical ground shadow beneath the item (not a glow).
   ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.beginPath(); ctx.ellipse(x, y + 22, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-  if (kind === "heart") {
-    const H = [
-      ".RR.RR.",
-      "RHRRRHR",
-      "RHRRRRR",
-      "RRRRRRR",
-      ".RRRRR.",
-      "..RRR..",
-      "...R...",
-    ];
-    draw(H, { R: "#ff3050", H: "#ffb0b8" }, -3, -3);
-  } else if (kind === "magnet") {
-    const M = [
-      "RR...RR",
-      "RR...RR",
-      "RRW.WRR",
-      "RRW.WRR",
-      "SS...SS",
-      "SS...SS",
-    ];
-    draw(M, { R: "#c02030", W: "#ffffff", S: "#a0a0a0" }, -3, -3);
-  } else if (kind === "star") {
-    const S = [
-      "...Y...",
-      "..YHY..",
-      "YYYHYYY",
-      ".YYYYY.",
-      "..YHY..",
-      ".Y...Y.",
-    ];
-    draw(S, { Y: "#ffd54a", H: "#fff8b0" }, -3, -3);
-  } else if (kind === "lightning") {
-    const L = [
-      "..YYY.",
-      ".YYY..",
-      "YYY...",
-      "WYYYY.",
-      "...YY.",
-      "..YY..",
-      ".YY...",
-      "YY....",
-    ];
-    draw(L, { Y: "#ffe040", W: "#fffbaa" }, -3, -4);
-  } else if (kind === "shield") {
-    // Egyptian round shield with cross emblem
-    const D = [
-      ".BBBBB.",
-      "BWWWWWB",
-      "BWCGCWB",
-      "BWGGGWB",
-      "BWCGCWB",
-      "BWWWWWB",
-      ".BBBBB.",
-      "..BBB..",
-    ];
-    draw(D, { B: "#2b4a7a", W: "#dbe9f7", C: "#e6c261", G: "#8ec8ff" }, -3, -4);
-  }
+  // Half the previous pixel size (3 instead of 6) — same on-screen size,
+  // ~2× the pixel detail per icon.
+  drawBonusArt(ctx, kind, x, y, 3);
   ctx.restore();
 }
 
