@@ -1380,7 +1380,7 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
 
   // Slight organic bend along the shaft — a quadratic bezier with a small
   // perpendicular bulge in the mid-shaft, so it never looks perfectly straight.
-  const bendMid = length * 0.06;
+  const bendMid = length * 0.035;
   const midX = (buttX + shaftTopX) / 2 + perpX * bendMid;
   const midY = (buttY + shaftTopY) / 2 + perpY * bendMid;
 
