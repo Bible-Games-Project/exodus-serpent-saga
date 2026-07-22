@@ -321,11 +321,11 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             {buffs.map((b) => (
               <div
                 key={b.kind}
-                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1.5 pt-1 pb-0.5 text-white shadow-lg ring-1"
+                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1 pt-1 pb-0.5 text-white shadow-lg ring-1"
                 style={{ borderTop: `3px solid ${BONUSES[b.kind].color}` }}
                 title={BONUSES[b.kind].name}
               >
-                <span className="text-base leading-none">{BONUSES[b.kind].emoji}</span>
+                <BonusHudIcon kind={b.kind} size={28} />
                 <span className="mt-0.5 text-[10px] font-bold tabular-nums leading-none">
                   {Math.ceil(b.remaining)}s
                 </span>
