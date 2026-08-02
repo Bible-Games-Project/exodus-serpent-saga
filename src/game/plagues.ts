@@ -51,10 +51,10 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     scripture:
       "Exodus 7:20-21 — Moses lifted the rod and smote the waters of the river, and all the waters were turned to blood. The fish died and the Egyptians could not drink.",
     unlockLevel: 4,
-    base: { level: 1, cooldown: 5, dmg: 6, count: 1, speed: 0, ttl: 3.5, extra: { radius: 65 } },
-    scale: scale({ level: 1, cooldown: 5, dmg: 6, count: 1, speed: 0, ttl: 3.5 }, {
+    base: { level: 1, cooldown: 5, dmg: 60, count: 1, speed: 0, ttl: 3.5, extra: { radius: 65 } },
+    scale: scale({ level: 1, cooldown: 5, dmg: 60, count: 1, speed: 0, ttl: 3.5 }, {
       cooldown: 0.2,
-      dmg: 3,
+      dmg: 30,
       ttl: 0.25,
     }),
   },
