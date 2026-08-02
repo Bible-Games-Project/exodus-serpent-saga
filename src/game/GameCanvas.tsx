@@ -1295,15 +1295,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.fillRect(0, 0, viewW, viewH);
   }
 
-  // 5) Invulnerability aura around Moses
-  if (s.now < (s.invulnUntil ?? 0)) {
-    const px = s.player.pos.x - camX;
-    const py = s.player.pos.y - camY;
-    const t = s.now * 8;
-    ctx.strokeStyle = `rgba(255,220,80,${0.6 + Math.sin(t) * 0.25})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(px, py - 4, 28, 0, Math.PI * 2); ctx.stroke();
-  }
+  // 5) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
+
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
