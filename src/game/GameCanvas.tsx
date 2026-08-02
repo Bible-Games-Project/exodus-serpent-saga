@@ -2316,9 +2316,9 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   const progress = 1 - life;
   const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
   const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
-  const staffLen = 52;
+  const staffLen = 46;
   const gx = s.player.pos.x - camX + facing * 8;
-  const gy = s.player.pos.y - camY - 18;
+  const gy = s.player.pos.y - camY - 14;
   const swingAng = startA + (endA - startA) * progress;
   const relAng = facing === 1 ? swingAng : Math.PI - swingAng;
 
