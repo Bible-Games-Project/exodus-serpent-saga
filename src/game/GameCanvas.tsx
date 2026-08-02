@@ -1360,80 +1360,82 @@ function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number
   const perpX = -dirY * facing;
   const perpY = dirX * facing;
 
-  const buttLen = length * 0.22;
-  const shaftLen = length * 0.78;
+  const buttLen = length * 0.24;
+  const shaftLen = length * 0.76;
   const buttX = gx - dirX * buttLen;
   const buttY = gy - dirY * buttLen;
   const shaftTopX = gx + dirX * shaftLen;
   const shaftTopY = gy + dirY * shaftLen;
 
-  // Palette lifted directly from Moses' PALETTE (K, w, d) so the staff looks
-  // painted onto him rather than pasted over him.
+  // Palette lifted directly from Moses' PALETTE (K, w, d).
   const OUTLINE = "#2b1d14";   // K
   const WOOD_MID = "#8a5a34";  // w
-  const WOOD_HI  = "#b48355";  // d
+  const WOOD_HI = "#b48355";   // d
 
-  // Match Moses' sprite pixel grid (1 sprite-px = SCALE=3 CSS px).
-  // Thicker than a plain pole — reads as a hewn branch, not a dowel.
+  // One staff pixel == one Moses sprite pixel (SCALE = 3 CSS px). The staff is
+  // stamped cell-by-cell onto that grid so it reads as hand-drawn pixel art
+  // rather than a smooth vector stroke. Two cells wide (wood + shaded edge),
+  // i.e. half the width of the previous version.
   const PX = 3;
-  const OUT_W = PX * 4;   // 12 — outline
-  const BODY_W = PX * 3;  // 9  — wood body
-  const HI_W  = PX;       // 3  — highlight streak
 
-  ctx.save();
-  ctx.lineCap = "butt";
-  ctx.lineJoin = "round";
-
-  // Slight organic bend along the shaft — a quadratic bezier with a small
-  // perpendicular bulge in the mid-shaft, so it never looks perfectly straight.
-  const bendMid = length * 0.035;
+  // Organic bend: quadratic shaft with a small perpendicular bulge.
+  const bendMid = length * 0.05;
   const midX = (buttX + shaftTopX) / 2 + perpX * bendMid;
   const midY = (buttY + shaftTopY) / 2 + perpY * bendMid;
 
-  const drawShaft = (col: string, lw: number, offset = 0) => {
-    ctx.strokeStyle = col; ctx.lineWidth = lw;
-    ctx.beginPath();
-    ctx.moveTo(buttX - perpX * offset, buttY - perpY * offset);
-    ctx.quadraticCurveTo(
-      midX - perpX * offset, midY - perpY * offset,
-      shaftTopX - perpX * offset, shaftTopY - perpY * offset,
-    );
-    ctx.stroke();
+  // Shepherd's crook at the top.
+  const crookLen = length * 0.22;
+  const bendAmt = length * 0.13;
+  const c1X = shaftTopX + dirX * crookLen * 0.5 + perpX * bendAmt * 0.6;
+  const c1Y = shaftTopY + dirY * crookLen * 0.5 + perpY * bendAmt * 0.6;
+  const c2X = shaftTopX + dirX * crookLen * 0.65 - perpX * bendAmt * 0.4;
+  const c2Y = shaftTopY + dirY * crookLen * 0.65 - perpY * bendAmt * 0.4;
+  const endX = shaftTopX + dirX * crookLen * 0.45 - perpX * bendAmt * 1.5;
+  const endY = shaftTopY + dirY * crookLen * 0.45 - perpY * bendAmt * 1.5;
+
+  const body = new Map<string, [number, number, number]>(); // key -> [x, y, order]
+  const edge = new Map<string, [number, number]>();
+  const snap = (v: number) => Math.round(v / PX) * PX;
+  let order = 0;
+  const stamp = (x: number, y: number) => {
+    const cx = snap(x), cy = snap(y);
+    const k = `${cx},${cy}`;
+    if (!body.has(k)) body.set(k, [cx, cy, order++]);
+    const ex = snap(x + perpX * PX), ey = snap(y + perpY * PX);
+    edge.set(`${ex},${ey}`, [ex, ey]);
   };
-  drawShaft(OUTLINE, OUT_W);
-  drawShaft(WOOD_MID, BODY_W);
-  drawShaft(WOOD_HI, HI_W, PX);
 
-  // Chunkier shepherd's crook at the top.
-  const crookLen = length * 0.24;
-  const bendAmt = length * 0.14;
-  const c1X = shaftTopX + dirX * crookLen * 0.4 + perpX * bendAmt * 0.7;
-  const c1Y = shaftTopY + dirY * crookLen * 0.4 + perpY * bendAmt * 0.7;
-  const c2X = shaftTopX + dirX * crookLen * 0.6 - perpX * bendAmt * 0.3;
-  const c2Y = shaftTopY + dirY * crookLen * 0.6 - perpY * bendAmt * 0.3;
-  const endX = shaftTopX + dirX * crookLen * 0.55 - perpX * bendAmt * 1.6;
-  const endY = shaftTopY + dirY * crookLen * 0.55 - perpY * bendAmt * 1.6;
-
-  const drawCurve = (col: string, lw: number, offset = 0) => {
-    ctx.strokeStyle = col; ctx.lineWidth = lw;
-    ctx.beginPath();
-    ctx.moveTo(shaftTopX - perpX * offset, shaftTopY - perpY * offset);
-    ctx.bezierCurveTo(
-      c1X - perpX * offset, c1Y - perpY * offset,
-      c2X - perpX * offset, c2Y - perpY * offset,
-      endX - perpX * offset, endY - perpY * offset,
+  const STEPS = 48;
+  for (let i = 0; i <= STEPS; i++) {
+    const t = i / STEPS, u = 1 - t;
+    stamp(
+      u * u * buttX + 2 * u * t * midX + t * t * shaftTopX,
+      u * u * buttY + 2 * u * t * midY + t * t * shaftTopY,
     );
-    ctx.stroke();
-  };
-  drawCurve(OUTLINE, OUT_W);
-  drawCurve(WOOD_MID, BODY_W);
-  drawCurve(WOOD_HI, HI_W, PX);
+  }
+  for (let i = 1; i <= STEPS; i++) {
+    const t = i / STEPS, u = 1 - t;
+    stamp(
+      u * u * u * shaftTopX + 3 * u * u * t * c1X + 3 * u * t * t * c2X + t * t * t * endX,
+      u * u * u * shaftTopY + 3 * u * u * t * c1Y + 3 * u * t * t * c2Y + t * t * t * endY,
+    );
+  }
 
-  // Chunky grip wrap sized to the pixel grid.
+  ctx.save();
+  // Shaded edge first (skip anywhere the wood body already sits).
   ctx.fillStyle = OUTLINE;
-  ctx.fillRect(Math.round(gx - PX * 1.5), Math.round(gy - PX * 1.5), PX * 3, PX * 3);
+  for (const [k, [ex, ey]] of edge) {
+    if (body.has(k)) continue;
+    ctx.fillRect(ex, ey, PX, PX);
+  }
+  // Wood body, with a sparse highlight speckle for hand-carved grain.
+  for (const [, [cx, cy, o]] of body) {
+    ctx.fillStyle = o % 5 === 1 ? WOOD_HI : WOOD_MID;
+    ctx.fillRect(cx, cy, PX, PX);
+  }
+  // Grip knot at Moses' hand.
   ctx.fillStyle = "#6b4326";
-  ctx.fillRect(Math.round(gx - PX * 0.5), Math.round(gy - PX * 0.5), PX, PX);
+  ctx.fillRect(snap(gx), snap(gy), PX, PX);
   ctx.restore();
   return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
 }
