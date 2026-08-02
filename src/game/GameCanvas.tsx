@@ -1323,6 +1323,19 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
   ctx.ellipse(sx + drawW / 2, Math.round(e.pos.y - camY + 8), img.width * 0.35, 4, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.drawImage(img, sx, sy, drawW, drawH);
+  // Invincibility (Star bonus): Moses flashes between his normal colours and a
+  // brighter, gold-tinted version — no ring, no overlay covering him.
+  if (s.now < (s.invulnUntil ?? 0)) {
+    const pulse = 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14));
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = pulse;
+    ctx.drawImage(img, sx, sy, drawW, drawH);
+    ctx.globalAlpha = pulse * 0.5;
+    ctx.fillStyle = "rgba(255,225,140,1)";
+    ctx.globalCompositeOperation = "source-atop";
+    ctx.restore();
+  }
   // Programmatic staff — animated bob/rotate synced to walk cycle.
   if (!staffSwinging) drawMosesIdleStaff(ctx, e, s, camX, camY);
 }
@@ -1332,11 +1345,12 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
   const t = e.animT;
   const bob = walking ? Math.sin(t) * 1.4 : 0;
-  const rot = -0.18 + (walking ? Math.sin(t) * 0.06 : 0);
+  // Mostly vertical at rest (−90°), with a small sway while walking.
+  const rot = -Math.PI / 2 + 0.10 + (walking ? Math.sin(t) * 0.07 : 0);
   // Grip at Moses' hand — sits ~25% up from the butt end of the staff.
   const gripX = e.pos.x - camX + facing * 8;
-  const gripY = e.pos.y - camY - 18 + bob;
-  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 52);
+  const gripY = e.pos.y - camY - 14 + bob;
+  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 46);
 }
 
 // Shared shepherd's-crook renderer at Moses' pixel density. Thicker than a
