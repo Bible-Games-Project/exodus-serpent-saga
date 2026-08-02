@@ -1331,9 +1331,6 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     ctx.globalCompositeOperation = "lighter";
     ctx.globalAlpha = pulse;
     ctx.drawImage(img, sx, sy, drawW, drawH);
-    ctx.globalAlpha = pulse * 0.5;
-    ctx.fillStyle = "rgba(255,225,140,1)";
-    ctx.globalCompositeOperation = "source-atop";
     ctx.restore();
   }
   // Programmatic staff — animated bob/rotate synced to walk cycle.
