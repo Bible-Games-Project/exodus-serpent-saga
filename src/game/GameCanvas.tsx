@@ -5,6 +5,10 @@ import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
+import desertTileAsset from "@/assets/tile-desert.png.asset.json";
+
+const DESERT_TILE_URL = desertTileAsset.url;
+
 
 const SPRITE_MAP: Record<string, Sprite> = {
   serpent: SERPENT,
