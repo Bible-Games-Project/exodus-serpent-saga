@@ -1122,6 +1122,15 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
   }
 
+  // Ground colour wash — softens the desert saturation. Sits above the ground
+  // tiles and below every gameplay element. Tune GROUND_WASH_OPACITY only.
+  if (GROUND_WASH_OPACITY > 0) {
+    ctx.fillStyle = `rgba(255,255,255,${GROUND_WASH_OPACITY})`;
+    ctx.fillRect(0, 0, viewW, viewH);
+  }
+
+
+
   const grd = ctx.createRadialGradient(viewW / 2, viewH / 2, viewH * 0.2, viewW / 2, viewH / 2, viewH * 0.9);
   grd.addColorStop(0, "rgba(255,220,170,0)");
   grd.addColorStop(1, "rgba(140,80,40,0.28)");
