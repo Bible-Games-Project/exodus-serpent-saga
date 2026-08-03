@@ -9,6 +9,10 @@ import desertTileAsset from "@/assets/tile-desert.png.asset.json";
 
 const DESERT_TILE_URL = desertTileAsset.url;
 
+/** Opacity of the white wash drawn over the ground texture only (0–1). */
+const GROUND_WASH_OPACITY = 0.42;
+
+
 
 const SPRITE_MAP: Record<string, Sprite> = {
   serpent: SERPENT,
@@ -1121,6 +1125,15 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.drawImage(sandTile, x, y);
     }
   }
+
+  // Ground colour wash — softens the desert saturation. Sits above the ground
+  // tiles and below every gameplay element. Tune GROUND_WASH_OPACITY only.
+  if (GROUND_WASH_OPACITY > 0) {
+    ctx.fillStyle = `rgba(255,255,255,${GROUND_WASH_OPACITY})`;
+    ctx.fillRect(0, 0, viewW, viewH);
+  }
+
+
 
   const grd = ctx.createRadialGradient(viewW / 2, viewH / 2, viewH * 0.2, viewW / 2, viewH / 2, viewH * 0.9);
   grd.addColorStop(0, "rgba(255,220,170,0)");
