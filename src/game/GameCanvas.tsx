@@ -9,6 +9,10 @@ import desertTileAsset from "@/assets/tile-desert.png.asset.json";
 
 const DESERT_TILE_URL = desertTileAsset.url;
 
+/** Opacity of the white wash drawn over the ground texture only (0–1). */
+const GROUND_WASH_OPACITY = 0.42;
+
+
 
 const SPRITE_MAP: Record<string, Sprite> = {
   serpent: SERPENT,
