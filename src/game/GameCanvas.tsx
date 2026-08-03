@@ -1112,7 +1112,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // Seamless ground: 1:1 scroll (no parallax) so wrapping the world never
   // causes a visible jump. World dimensions are a multiple of tileSize.
-  const tileSize = 256;
+  const tileSize = sandTile.width;
   const mod = (v: number, m: number) => ((v % m) + m) % m;
   const offX = -mod(cam.x, tileSize);
   const offY = -mod(cam.y, tileSize);
