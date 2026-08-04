@@ -290,7 +290,7 @@ function StatRow({
   remaining?: number;
 }) {
   return (
-    <div className="flex items-center justify-end gap-2" title={label}>
+    <div className="flex items-center justify-end gap-1" title={label}>
       <span
         className="flex items-center transition-all duration-300"
         style={{
@@ -302,7 +302,7 @@ function StatRow({
         <StatPixelIcon art={art} size={18} />
       </span>
       <span
-        className="min-w-[64px] text-right text-xs font-bold tabular-nums transition-colors duration-300"
+        className="text-right text-xs font-bold tabular-nums transition-colors duration-300"
         style={{ color: active ? color : "rgba(255,255,255,0.92)", textShadow: "0 1px 2px rgba(0,0,0,0.85)" }}
       >
         {value}
