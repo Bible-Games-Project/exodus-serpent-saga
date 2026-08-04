@@ -329,6 +329,7 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const pickupRadius = Math.round((60 + state.level * 3) * magnetMultiplier(state));
   const moveSpeed = Math.round(100 * speedMultiplier(state));
   const dmgMul = damageMultiplier(state);
+  const meleeMul = meleeMultiplier(state, state.plagues.get("staff") ?? 1);
   const shieldPct = Math.round((1 - shieldDamageMul(state)) * 100);
 
   const notifs = state.notifications ?? [];
@@ -344,25 +345,27 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         <div className="text-xs opacity-80">Kills {state.kills}</div>
       </div>
 
-      {/* Player stats panel */}
-      <div className="absolute right-3 top-3 w-44 rounded-md bg-black/35 px-2.5 py-2">
+      {/* Player stats panel — no background, drawn directly over the game */}
+      <div className="absolute right-3 top-3 w-40">
         <div className="h-2 overflow-hidden rounded bg-black/40">
           <div className="h-full bg-destructive transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
         </div>
-        <div className="mt-1.5 space-y-1">
+        <div className="mt-1.5 space-y-1.5">
           <StatRow
             art={BONUS_ART.heart}
             label="Health"
             value={`${Math.max(0, Math.ceil(p.hp))} / ${p.maxHp}`}
           />
           <StatRow
-            art={BONUS_ART.magnet}
-            label="Pickup radius"
-            value={`${pickupRadius}`}
-            active={magnetActive}
-            color={BONUSES.magnet.color}
-            remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
+            art={BONUS_ART.shield}
+            label="Shield (damage reduction)"
+            value={`${shieldPct}%`}
+            active={shieldActive}
+            color={BONUSES.shield.color}
+            remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
           />
+          <StatRow art={STAFF_ART} label="Staff of Moses (melee strike)" value={`x${meleeMul.toFixed(2)}`} />
+          <StatRow art={SWORD_ART} label="Plague damage" value={`x${dmgMul.toFixed(2)}`} />
           <StatRow
             art={BONUS_ART.lightning}
             label="Movement speed"
@@ -371,14 +374,13 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             color={BONUSES.lightning.color}
             remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
           />
-          <StatRow art={SWORD_ART} label="Damage" value={`x${dmgMul.toFixed(2)}`} />
           <StatRow
-            art={BONUS_ART.shield}
-            label="Damage reduction"
-            value={`${shieldPct}%`}
-            active={shieldActive}
-            color={BONUSES.shield.color}
-            remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
+            art={BONUS_ART.magnet}
+            label="Pickup radius"
+            value={`${pickupRadius}`}
+            active={magnetActive}
+            color={BONUSES.magnet.color}
+            remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
           />
           {starActive && (
             <StatRow
