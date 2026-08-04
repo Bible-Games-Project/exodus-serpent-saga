@@ -3,7 +3,7 @@ import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERP
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
-import { BONUSES, shieldDamageMul, type BonusKind } from "./bonuses";
+import { BONUSES, shieldDamageMul } from "./bonuses";
 import { damageMultiplier, magnetMultiplier, speedMultiplier } from "./passives";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
 import desertTileAsset from "@/assets/tile-desert.png.asset.json";
@@ -271,10 +271,6 @@ function StatPixelIcon({
     }
   }, [art, size]);
   return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
-}
-
-function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
-  return <StatPixelIcon art={BONUS_ART[kind]} size={size} />;
 }
 
 /** One row of the player stats panel. Glows while a temporary bonus is active. */
