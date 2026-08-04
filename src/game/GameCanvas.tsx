@@ -857,6 +857,29 @@ const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
 };
 
 const ICON_PASSIVE: Record<string, string[]> = {
+  // Shield of Faith — kite shield with a golden cross boss.
+  shield: [
+    "....................",
+    "...KKKKKKKKKKKKKK...",
+    "..KLLLLLLLLLLLLLLK..",
+    "..KLVVVVVVVVVVVVLK..",
+    "..KLVBBBBBBBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBOOOOOOBBVLK..",
+    "..KLVBBOOYYOOBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "...KLVBBBBBBBBVLK...",
+    "....KLVBBBBBBVLK....",
+    ".....KLVBBBBVLK.....",
+    "......KLVBBVLK......",
+    ".......KLVVLK.......",
+    "........KLLK........",
+    ".........KK.........",
+    "....................",
+  ],
   maxHp: [
     "....................",
     "....RRRR....RRRR....",
