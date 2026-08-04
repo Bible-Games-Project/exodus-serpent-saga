@@ -220,6 +220,27 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
   );
 }
 
+// Pixel-art shepherd's staff for the melee-strike stat row (14x14).
+const STAFF_ART: { grid: string[]; palette: Record<string, string> } = {
+  palette: { K: "#2b1d14", w: "#8a5a34", d: "#b48355", W: "#f6efdc" },
+  grid: [
+    "....KKKK......",
+    "...KddwwK.....",
+    "..KdWK.KwK....",
+    "..KdK...KwK...",
+    "..KdK...KwK...",
+    "..KdWK.KwK....",
+    "...KdwwK......",
+    "....KdWK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KKKK......",
+  ],
+};
+
 // Pixel-art sword for the damage stat row (14x14, same density as BONUS_ART).
 const SWORD_ART: { grid: string[]; palette: Record<string, string> } = {
   palette: { K: "#2b1d14", W: "#f6efdc", S: "#b9c4cf", s: "#7e8b99", o: "#e6c261", O: "#b48836", b: "#7a4a2b" },
