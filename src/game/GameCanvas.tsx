@@ -220,15 +220,41 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
   );
 }
 
-function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
+// Pixel-art sword for the damage stat row (14x14, same density as BONUS_ART).
+const SWORD_ART: { grid: string[]; palette: Record<string, string> } = {
+  palette: { K: "#2b1d14", W: "#f6efdc", S: "#b9c4cf", s: "#7e8b99", o: "#e6c261", O: "#b48836", b: "#7a4a2b" },
+  grid: [
+    "..........KKK.",
+    ".........KWSK.",
+    "........KWSSK.",
+    ".......KWSSK..",
+    "......KWSSK...",
+    ".....KWSSK....",
+    "....KWSSK.....",
+    "...KWSSK......",
+    "..KWSSK.......",
+    ".KoOoOoOK.....",
+    "KoOK.KOoK.....",
+    ".KbK..KK......",
+    ".KbK..........",
+    ".KKK..........",
+  ],
+};
+
+function PixelIcon({
+  art,
+  size,
+}: {
+  art: { grid: string[]; palette: Record<string, string> };
+  size: number;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const cnv = ref.current;
     if (!cnv) return;
-    const art = BONUS_ART[kind];
     const gw = art.grid[0].length;
     const gh = art.grid.length;
-    const px = Math.max(1, Math.floor(size / Math.max(gw, gh)));
+    const px = Math.max(1, Math.floor((size * 2) / Math.max(gw, gh)));
     cnv.width = gw * px;
     cnv.height = gh * px;
     const ctx = cnv.getContext("2d")!;
@@ -243,9 +269,55 @@ function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
         ctx.fillRect(rx * px, ry * px, px, px);
       }
     }
-  }, [kind, size]);
+  }, [art, size]);
   return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
 }
+
+function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
+  return <PixelIcon art={BONUS_ART[kind]} size={size} />;
+}
+
+/** One row of the player stats panel. Glows while a temporary bonus is active. */
+function StatRow({
+  art,
+  label,
+  value,
+  active,
+  color,
+  remaining,
+}: {
+  art: { grid: string[]; palette: Record<string, string> };
+  label: string;
+  value: string;
+  active?: boolean;
+  color?: string;
+  remaining?: number;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2" title={label}>
+      <span
+        className="flex items-center transition-all duration-300"
+        style={{
+          filter: active
+            ? `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) brightness(1.15)`
+            : "none",
+        }}
+      >
+        <PixelIcon art={art} size={18} />
+      </span>
+      <span
+        className="min-w-[64px] text-right text-xs font-bold tabular-nums transition-colors duration-300"
+        style={{ color: active ? color : "rgba(255,255,255,0.92)", textShadow: "0 1px 2px rgba(0,0,0,0.85)" }}
+      >
+        {value}
+        {active && remaining !== undefined && (
+          <span className="ml-1 text-[10px] opacity-80">{Math.ceil(remaining)}s</span>
+        )}
+      </span>
+    </div>
+  );
+}
+
 
 function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const p = state.player;
