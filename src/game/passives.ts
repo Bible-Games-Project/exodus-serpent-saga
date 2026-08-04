@@ -55,9 +55,19 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
       p.magnet = (p.magnet ?? 0) + 1;
     },
   },
+  shield: {
+    id: "shield",
+    title: "Shield of Faith",
+    description: "+5% permanent damage reduction.",
+    maxRank: 8,
+    apply: (s) => {
+      const p = (s.passives ??= {});
+      p.shield = (p.shield ?? 0) + 1;
+    },
+  },
 };
 
-export const PASSIVE_ORDER: PassiveId[] = ["maxHp", "speed", "damage", "magnet"];
+export const PASSIVE_ORDER: PassiveId[] = ["maxHp", "speed", "damage", "magnet", "shield"];
 
 export function passiveRank(state: GameState, id: PassiveId): number {
   return state.passives?.[id] ?? 0;
