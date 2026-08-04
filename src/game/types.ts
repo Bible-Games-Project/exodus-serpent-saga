@@ -139,7 +139,7 @@ export type GameState = {
   obstacles?: Array<{ pos: Vec2; r: number }>;
 
   // Player-progression modular systems.
-  passives?: { maxHp?: number; speed?: number; damage?: number; magnet?: number };
+  passives?: { maxHp?: number; speed?: number; damage?: number; magnet?: number; shield?: number };
   nextCompanionLevel?: number; // gate for offering a companion pick
 
   // Bonus-drop timed effects (bonuses.ts).
