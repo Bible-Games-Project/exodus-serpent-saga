@@ -98,7 +98,9 @@ export function rollBonusKind(): BonusKind {
   return "heart";
 }
 
-// Damage taken multiplier when shield is active.
+// Damage taken multiplier: permanent Shield of Faith blessing + temporary shield bonus.
 export function shieldDamageMul(state: GameState): number {
-  return state.now < (state.shieldUntil ?? 0) ? 0.4 : 1;
+  const passive = Math.min(0.5, 0.05 * (state.passives?.shield ?? 0));
+  const temp = state.now < (state.shieldUntil ?? 0) ? 0.6 : 0;
+  return 1 - Math.min(0.85, passive + temp);
 }
