@@ -325,14 +325,15 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const hpPct = Math.max(0, p.hp / p.maxHp);
   const mins = Math.floor(state.survivalSeconds / 60);
   const secs = Math.floor(state.survivalSeconds % 60);
-  const buffs: Array<{ kind: BonusKind; remaining: number }> = [];
-  const push = (kind: BonusKind, until?: number) => {
-    if (until && state.now < until) buffs.push({ kind, remaining: until - state.now });
-  };
-  push("shield", state.shieldUntil);
-  push("lightning", state.speedBoostUntil);
-  push("magnet", state.magnetBoostUntil);
-  push("star", state.invulnUntil);
+  const magnetActive = state.now < (state.magnetBoostUntil ?? 0);
+  const speedActive = state.now < (state.speedBoostUntil ?? 0);
+  const shieldActive = state.now < (state.shieldUntil ?? 0);
+  const starActive = state.now < (state.invulnUntil ?? 0);
+
+  const pickupRadius = Math.round((60 + state.level * 3) * magnetMultiplier(state));
+  const moveSpeed = Math.round(100 * speedMultiplier(state));
+  const dmgMul = damageMultiplier(state);
+  const shieldPct = Math.round((1 - shieldDamageMul(state)) * 100);
 
   const notifs = state.notifications ?? [];
 
@@ -346,30 +347,54 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         <div className="text-xs opacity-80">Time {mins}:{secs.toString().padStart(2, "0")}</div>
         <div className="text-xs opacity-80">Kills {state.kills}</div>
       </div>
-      <div className="absolute right-3 top-3 w-40">
-        <div className="h-2 overflow-hidden rounded bg-black/30">
+
+      {/* Player stats panel */}
+      <div className="absolute right-3 top-3 w-44 rounded-md bg-black/35 px-2.5 py-2">
+        <div className="h-2 overflow-hidden rounded bg-black/40">
           <div className="h-full bg-destructive transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
         </div>
-        <div className="mt-1 text-right text-xs font-medium text-white/90 drop-shadow">
-          {Math.max(0, Math.ceil(p.hp))} / {p.maxHp}
+        <div className="mt-1.5 space-y-1">
+          <StatRow
+            art={BONUS_ART.heart}
+            label="Health"
+            value={`${Math.max(0, Math.ceil(p.hp))} / ${p.maxHp}`}
+          />
+          <StatRow
+            art={BONUS_ART.magnet}
+            label="Pickup radius"
+            value={`${pickupRadius}`}
+            active={magnetActive}
+            color={BONUSES.magnet.color}
+            remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
+          />
+          <StatRow
+            art={BONUS_ART.lightning}
+            label="Movement speed"
+            value={`${moveSpeed}`}
+            active={speedActive}
+            color={BONUSES.lightning.color}
+            remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
+          />
+          <StatRow art={SWORD_ART} label="Damage" value={`x${dmgMul.toFixed(2)}`} />
+          <StatRow
+            art={BONUS_ART.shield}
+            label="Damage reduction"
+            value={`${shieldPct}%`}
+            active={shieldActive}
+            color={BONUSES.shield.color}
+            remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
+          />
+          {starActive && (
+            <StatRow
+              art={BONUS_ART.star}
+              label="Invincible"
+              value="Invincible"
+              active
+              color={BONUSES.star.color}
+              remaining={(state.invulnUntil ?? 0) - state.now}
+            />
+          )}
         </div>
-        {buffs.length > 0 && (
-          <div className="mt-2 flex justify-end gap-1.5">
-            {buffs.map((b) => (
-              <div
-                key={b.kind}
-                className="flex flex-col items-center justify-center rounded-md bg-black/55 px-1 pt-1 pb-0.5 text-white shadow-lg ring-1"
-                style={{ borderTop: `3px solid ${BONUSES[b.kind].color}` }}
-                title={BONUSES[b.kind].name}
-              >
-                <BonusHudIcon kind={b.kind} size={28} />
-                <span className="mt-0.5 text-[10px] font-bold tabular-nums leading-none">
-                  {Math.ceil(b.remaining)}s
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Floating notifications */}
