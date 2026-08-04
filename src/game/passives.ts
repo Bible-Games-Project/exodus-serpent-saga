@@ -2,7 +2,7 @@
 // companion picks. Data-driven and easy to extend.
 import type { GameState } from "./types";
 
-export type PassiveId = "maxHp" | "speed" | "damage" | "magnet";
+export type PassiveId = "maxHp" | "speed" | "damage" | "magnet" | "shield";
 
 export type PassiveDef = {
   id: PassiveId;
@@ -55,9 +55,19 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
       p.magnet = (p.magnet ?? 0) + 1;
     },
   },
+  shield: {
+    id: "shield",
+    title: "Shield of Faith",
+    description: "+5% permanent damage reduction.",
+    maxRank: 8,
+    apply: (s) => {
+      const p = (s.passives ??= {});
+      p.shield = (p.shield ?? 0) + 1;
+    },
+  },
 };
 
-export const PASSIVE_ORDER: PassiveId[] = ["maxHp", "speed", "damage", "magnet"];
+export const PASSIVE_ORDER: PassiveId[] = ["maxHp", "speed", "damage", "magnet", "shield"];
 
 export function passiveRank(state: GameState, id: PassiveId): number {
   return state.passives?.[id] ?? 0;
@@ -71,4 +81,14 @@ export function damageMultiplier(state: GameState): number {
 }
 export function magnetMultiplier(state: GameState): number {
   return 1 + 0.25 * passiveRank(state, "magnet") + (state.now < (state.magnetBoostUntil ?? 0) ? 2.5 : 0);
+}
+
+// Permanent shield damage reduction from the "Shield of Faith" blessing.
+export function shieldPassiveReduction(state: GameState): number {
+  return Math.min(0.5, 0.05 * passiveRank(state, "shield"));
+}
+
+// Melee strength of Moses' staff strike — plague level scaling × damage passives.
+export function meleeMultiplier(state: GameState, staffLevel: number): number {
+  return (1 + 0.3125 * (staffLevel - 1)) * damageMultiplier(state);
 }

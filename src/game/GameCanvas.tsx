@@ -4,7 +4,7 @@ import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, upda
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, shieldDamageMul, type BonusKind } from "./bonuses";
-import { damageMultiplier, magnetMultiplier, speedMultiplier } from "./passives";
+import { damageMultiplier, magnetMultiplier, meleeMultiplier, speedMultiplier } from "./passives";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
 import desertTileAsset from "@/assets/tile-desert.png.asset.json";
 
@@ -220,6 +220,27 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
   );
 }
 
+// Pixel-art shepherd's staff for the melee-strike stat row (14x14).
+const STAFF_ART: { grid: string[]; palette: Record<string, string> } = {
+  palette: { K: "#2b1d14", w: "#8a5a34", d: "#b48355", W: "#f6efdc" },
+  grid: [
+    "....KKKK......",
+    "...KddwwK.....",
+    "..KdWK.KwK....",
+    "..KdK...KwK...",
+    "..KdK...KwK...",
+    "..KdWK.KwK....",
+    "...KdwwK......",
+    "....KdWK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KdwK......",
+    "....KKKK......",
+  ],
+};
+
 // Pixel-art sword for the damage stat row (14x14, same density as BONUS_ART).
 const SWORD_ART: { grid: string[]; palette: Record<string, string> } = {
   palette: { K: "#2b1d14", W: "#f6efdc", S: "#b9c4cf", s: "#7e8b99", o: "#e6c261", O: "#b48836", b: "#7a4a2b" },
@@ -290,7 +311,7 @@ function StatRow({
   remaining?: number;
 }) {
   return (
-    <div className="flex items-center justify-end gap-2" title={label}>
+    <div className="flex items-center justify-end gap-1" title={label}>
       <span
         className="flex items-center transition-all duration-300"
         style={{
@@ -302,7 +323,7 @@ function StatRow({
         <StatPixelIcon art={art} size={18} />
       </span>
       <span
-        className="min-w-[64px] text-right text-xs font-bold tabular-nums transition-colors duration-300"
+        className="text-right text-xs font-bold tabular-nums transition-colors duration-300"
         style={{ color: active ? color : "rgba(255,255,255,0.92)", textShadow: "0 1px 2px rgba(0,0,0,0.85)" }}
       >
         {value}
@@ -329,6 +350,7 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const pickupRadius = Math.round((60 + state.level * 3) * magnetMultiplier(state));
   const moveSpeed = Math.round(100 * speedMultiplier(state));
   const dmgMul = damageMultiplier(state);
+  const meleeMul = meleeMultiplier(state, state.plagues.get("staff") ?? 1);
   const shieldPct = Math.round((1 - shieldDamageMul(state)) * 100);
 
   const notifs = state.notifications ?? [];
@@ -344,25 +366,27 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         <div className="text-xs opacity-80">Kills {state.kills}</div>
       </div>
 
-      {/* Player stats panel */}
-      <div className="absolute right-3 top-3 w-44 rounded-md bg-black/35 px-2.5 py-2">
+      {/* Player stats panel — no background, drawn directly over the game */}
+      <div className="absolute right-3 top-3 w-40">
         <div className="h-2 overflow-hidden rounded bg-black/40">
           <div className="h-full bg-destructive transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
         </div>
-        <div className="mt-1.5 space-y-1">
+        <div className="mt-1.5 space-y-1.5">
           <StatRow
             art={BONUS_ART.heart}
             label="Health"
             value={`${Math.max(0, Math.ceil(p.hp))} / ${p.maxHp}`}
           />
           <StatRow
-            art={BONUS_ART.magnet}
-            label="Pickup radius"
-            value={`${pickupRadius}`}
-            active={magnetActive}
-            color={BONUSES.magnet.color}
-            remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
+            art={BONUS_ART.shield}
+            label="Shield (damage reduction)"
+            value={`${shieldPct}%`}
+            active={shieldActive}
+            color={BONUSES.shield.color}
+            remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
           />
+          <StatRow art={STAFF_ART} label="Staff of Moses (melee strike)" value={`x${meleeMul.toFixed(2)}`} />
+          <StatRow art={SWORD_ART} label="Plague damage" value={`x${dmgMul.toFixed(2)}`} />
           <StatRow
             art={BONUS_ART.lightning}
             label="Movement speed"
@@ -371,14 +395,13 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             color={BONUSES.lightning.color}
             remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
           />
-          <StatRow art={SWORD_ART} label="Damage" value={`x${dmgMul.toFixed(2)}`} />
           <StatRow
-            art={BONUS_ART.shield}
-            label="Damage reduction"
-            value={`${shieldPct}%`}
-            active={shieldActive}
-            color={BONUSES.shield.color}
-            remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
+            art={BONUS_ART.magnet}
+            label="Pickup radius"
+            value={`${pickupRadius}`}
+            active={magnetActive}
+            color={BONUSES.magnet.color}
+            remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
           />
           {starActive && (
             <StatRow
@@ -834,6 +857,29 @@ const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
 };
 
 const ICON_PASSIVE: Record<string, string[]> = {
+  // Shield of Faith — kite shield with a golden cross boss.
+  shield: [
+    "....................",
+    "...KKKKKKKKKKKKKK...",
+    "..KLLLLLLLLLLLLLLK..",
+    "..KLVVVVVVVVVVVVLK..",
+    "..KLVBBBBBBBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBOOOOOOBBVLK..",
+    "..KLVBBOOYYOOBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "..KLVBBBBOOBBBBVLK..",
+    "...KLVBBBBBBBBVLK...",
+    "....KLVBBBBBBVLK....",
+    ".....KLVBBBBVLK.....",
+    "......KLVBBVLK......",
+    ".......KLVVLK.......",
+    "........KLLK........",
+    ".........KK.........",
+    "....................",
+  ],
   maxHp: [
     "....................",
     "....RRRR....RRRR....",
