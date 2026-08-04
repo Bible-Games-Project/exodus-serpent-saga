@@ -2,7 +2,7 @@
 // companion picks. Data-driven and easy to extend.
 import type { GameState } from "./types";
 
-export type PassiveId = "maxHp" | "speed" | "damage" | "magnet";
+export type PassiveId = "maxHp" | "speed" | "damage" | "magnet" | "shield";
 
 export type PassiveDef = {
   id: PassiveId;
