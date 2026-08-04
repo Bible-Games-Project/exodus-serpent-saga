@@ -241,7 +241,7 @@ const SWORD_ART: { grid: string[]; palette: Record<string, string> } = {
   ],
 };
 
-function PixelIcon({
+function StatPixelIcon({
   art,
   size,
 }: {
@@ -274,7 +274,7 @@ function PixelIcon({
 }
 
 function BonusHudIcon({ kind, size }: { kind: BonusKind; size: number }) {
-  return <PixelIcon art={BONUS_ART[kind]} size={size} />;
+  return <StatPixelIcon art={BONUS_ART[kind]} size={size} />;
 }
 
 /** One row of the player stats panel. Glows while a temporary bonus is active. */
@@ -303,7 +303,7 @@ function StatRow({
             : "none",
         }}
       >
-        <PixelIcon art={art} size={18} />
+        <StatPixelIcon art={art} size={18} />
       </span>
       <span
         className="min-w-[64px] text-right text-xs font-bold tabular-nums transition-colors duration-300"
