@@ -126,7 +126,7 @@ function MainMenu() {
             </PixelLink>
             <PixelLink to="/leaderboard">Leaderboard</PixelLink>
             <PixelLink to="/more-games">More Games</PixelLink>
-            <PixelButton onClick={() => setSettingsOpen(true)}>Settings</PixelButton>
+            <PixelButton variant="ghost" onClick={() => setSettingsOpen(true)}>Settings</PixelButton>
           </nav>
         </div>
 
