@@ -5,6 +5,7 @@ import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, shieldDamageMul, type BonusKind } from "./bonuses";
 import { damageMultiplier, magnetMultiplier, meleeMultiplier, speedMultiplier } from "./passives";
+import { drawShepherdStaff } from "./staff";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
 import desertTileAsset from "@/assets/tile-desert.png.asset.json";
 
@@ -310,10 +311,13 @@ function StatRow({
   color?: string;
   remaining?: number;
 }) {
+  // Renders as two grid cells (icon column + right-aligned value column) so
+  // every row lines up on the same two vertical axes.
   return (
-    <div className="flex items-center justify-end gap-1" title={label}>
+    <>
       <span
-        className="flex items-center transition-all duration-300"
+        className="flex items-center justify-center transition-all duration-300"
+        title={label}
         style={{
           filter: active
             ? `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) brightness(1.15)`
@@ -323,7 +327,8 @@ function StatRow({
         <StatPixelIcon art={art} size={18} />
       </span>
       <span
-        className="text-right text-xs font-bold tabular-nums transition-colors duration-300"
+        className="text-right text-xs font-bold tabular-nums leading-[18px] transition-colors duration-300"
+        title={label}
         style={{ color: active ? color : "rgba(255,255,255,0.92)", textShadow: "0 1px 2px rgba(0,0,0,0.85)" }}
       >
         {value}
@@ -331,9 +336,10 @@ function StatRow({
           <span className="ml-1 text-[10px] opacity-80">{Math.ceil(remaining)}s</span>
         )}
       </span>
-    </div>
+    </>
   );
 }
+
 
 
 function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
@@ -366,12 +372,14 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         <div className="text-xs opacity-80">Kills {state.kills}</div>
       </div>
 
-      {/* Player stats panel — no background, drawn directly over the game */}
-      <div className="absolute right-3 top-3 w-40">
+      {/* Player stats panel — no background, drawn directly over the game.
+          Two aligned columns: icons, then right-aligned values. */}
+      <div className="absolute right-3 top-3 w-32">
         <div className="h-2 overflow-hidden rounded bg-black/40">
           <div className="h-full bg-destructive transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
         </div>
-        <div className="mt-1.5 space-y-1.5">
+        <div className="mt-1.5 grid grid-cols-[18px_1fr] items-center gap-x-1 gap-y-1">
+
           <StatRow
             art={BONUS_ART.heart}
             label="Health"
@@ -1437,95 +1445,8 @@ function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameSt
   drawShepherdStaff(ctx, gripX, gripY, rot, facing, 46);
 }
 
-// Shared shepherd's-crook renderer at Moses' pixel density. Thicker than a
-// pole (4 sprite-px body) so it reads as a hewn tree branch. The shaft has a
-// subtle organic bend and a chunky crook + gnarled knot near the top so it
-// feels carved from a small tree rather than milled from a dowel.
-function drawShepherdStaff(ctx: CanvasRenderingContext2D, gx: number, gy: number, tiltRadians: number, facing: number, length: number) {
-  const dirX = Math.cos(tiltRadians) * facing;
-  const dirY = Math.sin(tiltRadians);
-  const perpX = -dirY * facing;
-  const perpY = dirX * facing;
+// Shepherd's-crook renderer lives in ./staff so the main menu can reuse it.
 
-  const buttLen = length * 0.24;
-  const shaftLen = length * 0.76;
-  const buttX = gx - dirX * buttLen;
-  const buttY = gy - dirY * buttLen;
-  const shaftTopX = gx + dirX * shaftLen;
-  const shaftTopY = gy + dirY * shaftLen;
-
-  // Palette lifted directly from Moses' PALETTE (K, w, d).
-  const OUTLINE = "#2b1d14";   // K
-  const WOOD_MID = "#8a5a34";  // w
-  const WOOD_HI = "#b48355";   // d
-
-  // One staff pixel == one Moses sprite pixel (SCALE = 3 CSS px). The staff is
-  // stamped cell-by-cell onto that grid so it reads as hand-drawn pixel art
-  // rather than a smooth vector stroke. Two cells wide (wood + shaded edge),
-  // i.e. half the width of the previous version.
-  const PX = 3;
-
-  // Organic bend: quadratic shaft with a small perpendicular bulge.
-  const bendMid = length * 0.05;
-  const midX = (buttX + shaftTopX) / 2 + perpX * bendMid;
-  const midY = (buttY + shaftTopY) / 2 + perpY * bendMid;
-
-  // Shepherd's crook at the top.
-  const crookLen = length * 0.22;
-  const bendAmt = length * 0.13;
-  const c1X = shaftTopX + dirX * crookLen * 0.5 + perpX * bendAmt * 0.6;
-  const c1Y = shaftTopY + dirY * crookLen * 0.5 + perpY * bendAmt * 0.6;
-  const c2X = shaftTopX + dirX * crookLen * 0.65 - perpX * bendAmt * 0.4;
-  const c2Y = shaftTopY + dirY * crookLen * 0.65 - perpY * bendAmt * 0.4;
-  const endX = shaftTopX + dirX * crookLen * 0.45 - perpX * bendAmt * 1.5;
-  const endY = shaftTopY + dirY * crookLen * 0.45 - perpY * bendAmt * 1.5;
-
-  const body = new Map<string, [number, number, number]>(); // key -> [x, y, order]
-  const edge = new Map<string, [number, number]>();
-  const snap = (v: number) => Math.round(v / PX) * PX;
-  let order = 0;
-  const stamp = (x: number, y: number) => {
-    const cx = snap(x), cy = snap(y);
-    const k = `${cx},${cy}`;
-    if (!body.has(k)) body.set(k, [cx, cy, order++]);
-    const ex = snap(x + perpX * PX), ey = snap(y + perpY * PX);
-    edge.set(`${ex},${ey}`, [ex, ey]);
-  };
-
-  const STEPS = 48;
-  for (let i = 0; i <= STEPS; i++) {
-    const t = i / STEPS, u = 1 - t;
-    stamp(
-      u * u * buttX + 2 * u * t * midX + t * t * shaftTopX,
-      u * u * buttY + 2 * u * t * midY + t * t * shaftTopY,
-    );
-  }
-  for (let i = 1; i <= STEPS; i++) {
-    const t = i / STEPS, u = 1 - t;
-    stamp(
-      u * u * u * shaftTopX + 3 * u * u * t * c1X + 3 * u * t * t * c2X + t * t * t * endX,
-      u * u * u * shaftTopY + 3 * u * u * t * c1Y + 3 * u * t * t * c2Y + t * t * t * endY,
-    );
-  }
-
-  ctx.save();
-  // Shaded edge first (skip anywhere the wood body already sits).
-  ctx.fillStyle = OUTLINE;
-  for (const [k, [ex, ey]] of edge) {
-    if (body.has(k)) continue;
-    ctx.fillRect(ex, ey, PX, PX);
-  }
-  // Wood body, with a sparse highlight speckle for hand-carved grain.
-  for (const [, [cx, cy, o]] of body) {
-    ctx.fillStyle = o % 5 === 1 ? WOOD_HI : WOOD_MID;
-    ctx.fillRect(cx, cy, PX, PX);
-  }
-  // Grip knot at Moses' hand.
-  ctx.fillStyle = "#6b4326";
-  ctx.fillRect(snap(gx), snap(gy), PX, PX);
-  ctx.restore();
-  return { buttX, buttY, topX: shaftTopX, topY: shaftTopY, endX, endY };
-}
 
 
 // ---------------- generic sprite entity fallback ----------------
