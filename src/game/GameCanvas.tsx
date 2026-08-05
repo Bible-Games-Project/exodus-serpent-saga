@@ -311,10 +311,13 @@ function StatRow({
   color?: string;
   remaining?: number;
 }) {
+  // Renders as two grid cells (icon column + right-aligned value column) so
+  // every row lines up on the same two vertical axes.
   return (
-    <div className="flex items-center justify-end gap-1" title={label}>
+    <>
       <span
-        className="flex items-center transition-all duration-300"
+        className="flex items-center justify-center transition-all duration-300"
+        title={label}
         style={{
           filter: active
             ? `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) brightness(1.15)`
@@ -324,7 +327,8 @@ function StatRow({
         <StatPixelIcon art={art} size={18} />
       </span>
       <span
-        className="text-right text-xs font-bold tabular-nums transition-colors duration-300"
+        className="text-right text-xs font-bold tabular-nums leading-[18px] transition-colors duration-300"
+        title={label}
         style={{ color: active ? color : "rgba(255,255,255,0.92)", textShadow: "0 1px 2px rgba(0,0,0,0.85)" }}
       >
         {value}
@@ -332,9 +336,10 @@ function StatRow({
           <span className="ml-1 text-[10px] opacity-80">{Math.ceil(remaining)}s</span>
         )}
       </span>
-    </div>
+    </>
   );
 }
+
 
 
 function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
