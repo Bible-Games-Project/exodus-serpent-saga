@@ -38,8 +38,12 @@
   --color-nile: var(--nile);
   --color-papyrus: var(--papyrus);
   --color-gold: var(--gold);
-  --font-display: "Cinzel", "Trajan Pro", Georgia, serif;
+  /* Pixel-art typography — Silkscreen for titles/buttons, Pixelify Sans for
+     supporting menu copy. Both are bitmap-style, unrounded and highly legible. */
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-pixel: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
   --font-body: "Nunito", "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+
 }
 
 :root {
