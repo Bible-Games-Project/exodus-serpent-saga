@@ -59,9 +59,11 @@ export function PixelIcon({ art, size }: { art: PixelArt; size: number }) {
     if (!cnv) return;
     const gw = art.grid[0].length;
     const gh = art.grid.length;
-    const px = Math.max(1, Math.floor((size * 2) / Math.max(gw, gh)));
+    // Integer pixel scale so the sprite is never resampled by the browser.
+    const px = Math.max(1, Math.ceil(size / Math.max(gw, gh)));
     cnv.width = gw * px;
     cnv.height = gh * px;
+
     const ctx = cnv.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, cnv.width, cnv.height);
