@@ -276,7 +276,7 @@ function StatPixelIcon({
     if (!cnv) return;
     const gw = art.grid[0].length;
     const gh = art.grid.length;
-    const px = Math.max(1, Math.floor((size * 2) / Math.max(gw, gh)));
+    const px = Math.max(1, Math.ceil(size / Math.max(gw, gh)));
     cnv.width = gw * px;
     cnv.height = gh * px;
     const ctx = cnv.getContext("2d")!;
@@ -291,8 +291,12 @@ function StatPixelIcon({
         ctx.fillRect(rx * px, ry * px, px, px);
       }
     }
+    // Integer scale only — never let the browser resample the sprite.
+    cnv.style.width = `${cnv.width}px`;
+    cnv.style.height = `${cnv.height}px`;
   }, [art, size]);
   return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+
 }
 
 // Run-info pixel icons (14x14) — medal, hourglass clock, skull.
