@@ -374,11 +374,12 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 
       {/* Player stats panel — no background, drawn directly over the game.
           Two aligned columns: icons, then right-aligned values. */}
-      <div className="absolute right-3 top-3 w-32">
-        <div className="h-2 overflow-hidden rounded bg-black/40">
+      <div className="absolute right-3 top-3 flex flex-col items-end">
+        <div className="h-2 w-24 overflow-hidden rounded bg-black/40">
           <div className="h-full bg-destructive transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
         </div>
-        <div className="mt-1.5 grid grid-cols-[18px_1fr] items-center gap-x-1 gap-y-1">
+        <div className="mt-1.5 grid grid-cols-[18px_auto] items-center gap-x-0.5 gap-y-0.5">
+
 
           <StatRow
             art={BONUS_ART.heart}
