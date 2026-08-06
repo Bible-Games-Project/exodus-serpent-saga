@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameCanvas } from "@/game/GameCanvas";
 import { submitScore } from "@/lib/leaderboard";
 import { PixelIcon, HOME_ART, GEAR_ART } from "@/components/PixelIcon";
@@ -30,7 +30,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="pixel-btn pixel-btn-press flex h-9 w-9 items-center justify-center bg-[#f6e2ad] p-0"
+      className="pixel-btn pixel-btn-press flex h-11 w-11 items-center justify-center bg-[#f6e2ad] p-0"
     >
       {children}
     </button>
@@ -48,8 +48,31 @@ function PlayPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Keep the game at its intended scale: block ctrl+wheel zoom, pinch-zoom and
+  // Safari zoom gestures while the play route is mounted.
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => { if (e.ctrlKey) e.preventDefault(); };
+    const onGesture = (e: Event) => e.preventDefault();
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && ["+", "-", "=", "_", "0"].includes(e.key)) e.preventDefault();
+    };
+    const onTouch = (e: TouchEvent) => { if (e.touches.length > 1) e.preventDefault(); };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("touchmove", onTouch, { passive: false });
+    document.addEventListener("gesturestart", onGesture as EventListener);
+    document.addEventListener("gesturechange", onGesture as EventListener);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("touchmove", onTouch);
+      document.removeEventListener("gesturestart", onGesture as EventListener);
+      document.removeEventListener("gesturechange", onGesture as EventListener);
+    };
+  }, []);
+
   return (
-    <main className="fixed inset-0 flex flex-col bg-background">
+    <main className="fixed inset-0 flex flex-col bg-background" style={{ touchAction: "none" }}>
       <div className="relative flex-1">
         <GameCanvas
           paused={paused || homeOpen || settingsOpen}
@@ -57,15 +80,18 @@ function PlayPage() {
           onGameOver={(info) => setGameOver(info)}
         />
 
-        {/* Minimal always-visible controls */}
-        <div className="absolute bottom-3 left-3 z-20 flex gap-2">
+        {/* Corner controls */}
+        <div className="absolute left-3 top-3 z-20">
           <IconButton label="Return to home menu" onClick={() => setHomeOpen(true)}>
-            <PixelIcon art={HOME_ART} size={20} />
-          </IconButton>
-          <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
-            <PixelIcon art={GEAR_ART} size={20} />
+            <PixelIcon art={HOME_ART} size={24} />
           </IconButton>
         </div>
+        <div className="absolute right-3 top-3 z-20">
+          <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
+            <PixelIcon art={GEAR_ART} size={24} />
+          </IconButton>
+        </div>
+
 
         <PixelModal open={homeOpen} onClose={() => setHomeOpen(false)} title="Return to Home?">
           <p className="font-pixel mb-5 text-center text-sm text-[#6b4520]">Your current run will be lost.</p>

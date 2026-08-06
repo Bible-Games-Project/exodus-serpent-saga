@@ -25,28 +25,32 @@ export const HOME_ART: PixelArt = {
   ],
 };
 
-// Pixel-art gear — bronze teeth with a dark core, same density as the home icon.
+// Pixel-art gear — 8 clearly separated teeth, thick bronze ring, open center hole.
 export const GEAR_ART: PixelArt = {
-  palette: { K: "#2b1d14", z: "#b98550", Z: "#7a5230", W: "#f6efdc", d: "#4a2c18" },
+  palette: { K: "#2b1d14", z: "#c8944f", Z: "#8a5f33", W: "#f0dcae" },
   grid: [
-    "....K..KK..K....",
-    "...KzK.KzK.KzK..",
-    "...KzKKKzKKKzK..",
-    "..KKzzzzzzzzKK..",
-    ".KzzzzZZZZzzzzK.",
-    ".KzzzZKKKKZzzzK.",
-    "KKzzZKddddKZzzKK",
-    "KzzzZKdddKKZzzzK",
-    "KzzzZKdddKKZzzzK",
-    "KKzzZKddddKZzzKK",
-    ".KzzzZKKKKZzzzK.",
-    ".KzzzzZZZZzzzzK.",
-    "..KKzzzzzzzzKK..",
-    "...KzKKKzKKKzK..",
-    "...KzK.KzK.KzK..",
-    "....K..KK..K....",
+    "..................",
+    "........KK........",
+    "........KK........",
+    "...KK.KKZZKK.KK...",
+    "...KZKZzzzzZKZK...",
+    "....KZzKKKKzZK....",
+    "...KZzK....KzZK...",
+    "...KzK......KzK...",
+    ".KKZzK......KzZKK.",
+    ".KKZzK......KzZKK.",
+    "...KzK......KzK...",
+    "...KZzK....KzZK...",
+    "....KZzKKKKzZK....",
+    "...KZKZzzzzZKZK...",
+    "...KK.KKZZKK.KK...",
+    "........KK........",
+    "........KK........",
+    "..................",
   ],
+
 };
+
 
 export function PixelIcon({ art, size }: { art: PixelArt; size: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
@@ -55,9 +59,11 @@ export function PixelIcon({ art, size }: { art: PixelArt; size: number }) {
     if (!cnv) return;
     const gw = art.grid[0].length;
     const gh = art.grid.length;
-    const px = Math.max(1, Math.floor((size * 2) / Math.max(gw, gh)));
+    // Integer pixel scale so the sprite is never resampled by the browser.
+    const px = Math.max(1, Math.ceil(size / Math.max(gw, gh)));
     cnv.width = gw * px;
     cnv.height = gh * px;
+
     const ctx = cnv.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, cnv.width, cnv.height);
@@ -69,6 +75,9 @@ export function PixelIcon({ art, size }: { art: PixelArt; size: number }) {
         ctx.fillRect(x * px, y * px, px, px);
       }
     }
+    cnv.style.width = `${cnv.width}px`;
+    cnv.style.height = `${cnv.height}px`;
   }, [art, size]);
   return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+
 }
