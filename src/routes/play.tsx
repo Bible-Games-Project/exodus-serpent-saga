@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GameCanvas } from "@/game/GameCanvas";
 import { submitScore } from "@/lib/leaderboard";
 import { PixelIcon, HOME_ART, GEAR_ART } from "@/components/PixelIcon";
