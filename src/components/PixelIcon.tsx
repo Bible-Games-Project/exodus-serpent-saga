@@ -75,6 +75,9 @@ export function PixelIcon({ art, size }: { art: PixelArt; size: number }) {
         ctx.fillRect(x * px, y * px, px, px);
       }
     }
+    cnv.style.width = `${cnv.width}px`;
+    cnv.style.height = `${cnv.height}px`;
   }, [art, size]);
   return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
+
 }
