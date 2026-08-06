@@ -295,8 +295,69 @@ function StatPixelIcon({
   return <canvas ref={ref} style={{ width: size, height: size, imageRendering: "pixelated" }} />;
 }
 
-/** One row of the player stats panel. Glows while a temporary bonus is active. */
-function StatRow({
+// Run-info pixel icons (14x14) — medal, hourglass clock, skull.
+const MEDAL_ART: { grid: string[]; palette: Record<string, string> } = {
+  palette: { K: "#2b1d14", r: "#a12b2b", R: "#e05a48", o: "#e6c261", O: "#b48836", W: "#f6efdc" },
+  grid: [
+    "..KK......KK..",
+    "..KRK....KRK..",
+    "..KrRK..KRrK..",
+    "...KrRKKRrK...",
+    "...KrrRRrrK...",
+    "....KKKKKK....",
+    "...KKoooKK....",
+    "..KoOoWoOoK...",
+    ".KoOoWWWoOoK..",
+    ".KoOoWWWoOoK..",
+    ".KoOooWooOoK..",
+    "..KoOoooOoK...",
+    "...KKoooKK....",
+    ".....KKKK.....",
+  ],
+};
+
+const CLOCK_ART: { grid: string[]; palette: Record<string, string> } = {
+  palette: { K: "#2b1d14", t: "#c9b090", T: "#9a7f5c", W: "#f6efdc", o: "#e6c261" },
+  grid: [
+    "....KKKKKK....",
+    "...KooooooK...",
+    "..KKKKKKKKKK..",
+    "..KtWTTTTWtK..",
+    "...KtWTTWtK...",
+    "....KtWWtK....",
+    ".....KttK.....",
+    ".....KttK.....",
+    "....KtWWtK....",
+    "...KtWooWtK...",
+    "..KtWoooooWK..",
+    "..KKKKKKKKKK..",
+    "...KooooooK...",
+    "....KKKKKK....",
+  ],
+};
+
+const SKULL_ART: { grid: string[]; palette: Record<string, string> } = {
+  palette: { K: "#2b1d14", W: "#f6efdc", L: "#d8b98a" },
+  grid: [
+    "...KKKKKKKK...",
+    "..KWWWWWWWWK..",
+    ".KWWWWWWWWWWK.",
+    ".KWKKWWWWKKWK.",
+    ".KWKKWWWWKKWK.",
+    ".KWWWWWWWWWWK.",
+    ".KWWWWKKWWWWK.",
+    ".KWWWKWWKWWWK.",
+    "..KWWWWWWWWK..",
+    "...KWKWWKWK...",
+    "...KWKWWKWK...",
+    "...KKKKKKKK...",
+    "....KLLLLK....",
+    ".....KKKK.....",
+  ],
+};
+
+/** One HUD cell: pixel icon above its value. Glows while a bonus is active. */
+function StatCell({
   art,
   label,
   value,
@@ -311,36 +372,30 @@ function StatRow({
   color?: string;
   remaining?: number;
 }) {
-  // Renders as two grid cells (icon column + right-aligned value column) so
-  // every row lines up on the same two vertical axes.
   return (
-    <>
+    <div className="flex min-w-[3.25rem] flex-col items-center gap-1" title={label}>
       <span
         className="flex items-center justify-center transition-all duration-300"
-        title={label}
         style={{
           filter: active
-            ? `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) brightness(1.15)`
+            ? `drop-shadow(0 0 8px ${color}) drop-shadow(0 0 16px ${color}) brightness(1.15)`
             : "none",
         }}
       >
-        <StatPixelIcon art={art} size={18} />
+        <StatPixelIcon art={art} size={36} />
       </span>
       <span
-        className="text-right text-xs font-bold tabular-nums leading-[18px] transition-colors duration-300"
-        title={label}
-        style={{ color: active ? color : "rgba(255,255,255,0.92)", textShadow: "0 1px 2px rgba(0,0,0,0.85)" }}
+        className="font-pixel whitespace-nowrap text-center text-lg font-bold leading-none tabular-nums transition-colors duration-300"
+        style={{ color: active ? color : "rgba(255,255,255,0.94)", textShadow: "0 2px 3px rgba(0,0,0,0.9)" }}
       >
         {value}
         {active && remaining !== undefined && (
-          <span className="ml-1 text-[10px] opacity-80">{Math.ceil(remaining)}s</span>
+          <span className="ml-1 text-xs opacity-80">{Math.ceil(remaining)}s</span>
         )}
       </span>
-    </>
+    </div>
   );
 }
-
-
 
 function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const p = state.player;
@@ -363,65 +418,76 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 
   return (
     <>
-      <div className="absolute inset-x-0 top-0 h-2 bg-black/20">
-        <div className="h-full bg-gold transition-[width] duration-100" style={{ width: `${xpPct * 100}%` }} />
-      </div>
-      <div className="absolute left-3 top-4 space-y-1 rounded-md bg-black/25 px-3 py-2 text-sm font-semibold text-white">
-        <div>Lv. {state.level}</div>
-        <div className="text-xs opacity-80">Time {mins}:{secs.toString().padStart(2, "0")}</div>
-        <div className="text-xs opacity-80">Kills {state.kills}</div>
-      </div>
+      {/* Subtle bottom gradient for HUD contrast — never hides gameplay. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-52"
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.45) 100%)" }}
+      />
 
-      {/* Player stats panel — no background, drawn directly over the game.
-          Two aligned columns: icons, then right-aligned values. */}
-      <div className="absolute right-3 top-3 flex flex-col items-end">
-        <div className="h-2 w-24 overflow-hidden rounded bg-black/40">
-          <div className="h-full bg-destructive transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
-        </div>
-        <div className="mt-1.5 grid grid-cols-[18px_auto] items-center gap-x-0.5 gap-y-0.5">
+      {/* Single bottom HUD: run info | player stats */}
+      <div className="absolute inset-x-0 bottom-7 flex items-end justify-center px-3">
+        <div className="flex items-end gap-6">
+          <div className="flex items-end gap-4">
+            <StatCell art={MEDAL_ART} label="Level" value={`${state.level}`} />
+            <StatCell art={CLOCK_ART} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
+            <StatCell art={SKULL_ART} label="Kills" value={`${state.kills}`} />
+          </div>
 
+          <div className="mb-2 h-14 w-[3px] bg-white/25" />
 
-          <StatRow
-            art={BONUS_ART.heart}
-            label="Health"
-            value={`${Math.max(0, Math.ceil(p.hp))} / ${p.maxHp}`}
-          />
-          <StatRow
-            art={BONUS_ART.shield}
-            label="Shield (damage reduction)"
-            value={`${shieldPct}%`}
-            active={shieldActive}
-            color={BONUSES.shield.color}
-            remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
-          />
-          <StatRow art={STAFF_ART} label="Staff of Moses (melee strike)" value={`x${meleeMul.toFixed(2)}`} />
-          <StatRow art={SWORD_ART} label="Plague damage" value={`x${dmgMul.toFixed(2)}`} />
-          <StatRow
-            art={BONUS_ART.lightning}
-            label="Movement speed"
-            value={`${moveSpeed}`}
-            active={speedActive}
-            color={BONUSES.lightning.color}
-            remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
-          />
-          <StatRow
-            art={BONUS_ART.magnet}
-            label="Pickup radius"
-            value={`${pickupRadius}`}
-            active={magnetActive}
-            color={BONUSES.magnet.color}
-            remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
-          />
-          {starActive && (
-            <StatRow
-              art={BONUS_ART.star}
-              label="Invincible"
-              value="Invincible"
-              active
-              color={BONUSES.star.color}
-              remaining={(state.invulnUntil ?? 0) - state.now}
+          <div className="flex items-end gap-4">
+            <StatCell
+              art={BONUS_ART.heart}
+              label="Health"
+              value={`${Math.max(0, Math.ceil(p.hp))}/${p.maxHp}`}
             />
-          )}
+            <StatCell
+              art={BONUS_ART.shield}
+              label="Shield (damage reduction)"
+              value={`${shieldPct}%`}
+              active={shieldActive}
+              color={BONUSES.shield.color}
+              remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
+            />
+            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`x${meleeMul.toFixed(2)}`} />
+            <StatCell art={SWORD_ART} label="Plague damage" value={`x${dmgMul.toFixed(2)}`} />
+            <StatCell
+              art={BONUS_ART.lightning}
+              label="Movement speed"
+              value={`${moveSpeed}`}
+              active={speedActive}
+              color={BONUSES.lightning.color}
+              remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
+            />
+            <StatCell
+              art={BONUS_ART.magnet}
+              label="Pickup radius"
+              value={`${pickupRadius}`}
+              active={magnetActive}
+              color={BONUSES.magnet.color}
+              remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
+            />
+            {starActive && (
+              <StatCell
+                art={BONUS_ART.star}
+                label="Invincible"
+                value="INV"
+                active
+                color={BONUSES.star.color}
+                remaining={(state.invulnUntil ?? 0) - state.now}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Life & experience bars — full width, pixel-art, at the very bottom. */}
+      <div className="absolute inset-x-0 bottom-0">
+        <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
+          <div className="h-full bg-[#d13a2a] transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
+        </div>
+        <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
+          <div className="h-full bg-[#e6c261] transition-[width] duration-100" style={{ width: `${xpPct * 100}%` }} />
         </div>
       </div>
 
@@ -453,6 +519,7 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
     </>
   );
 }
+
 
 // Loadout bar now only surfaces active companions (unlocked plagues are shown
 // via floating notifications when acquired, not as a permanent list).
