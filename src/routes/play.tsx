@@ -1,7 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { GameCanvas } from "@/game/GameCanvas";
 import { submitScore } from "@/lib/leaderboard";
+import { PixelIcon, HOME_ART, GEAR_ART } from "@/components/PixelIcon";
+import { PixelModal, PixelActionButton, GameSettingsDialog } from "@/components/GameSettingsDialog";
 
 export const Route = createFileRoute("/play")({
   head: () => ({
@@ -14,6 +16,27 @@ export const Route = createFileRoute("/play")({
   component: PlayPage,
 });
 
+function IconButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="pixel-btn pixel-btn-press flex h-9 w-9 items-center justify-center bg-[#f6e2ad] p-0"
+    >
+      {children}
+    </button>
+  );
+}
+
 function PlayPage() {
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState<null | { level: number; survivalSeconds: number; kills: number }>(null);
@@ -21,27 +44,42 @@ function PlayPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [homeOpen, setHomeOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
 
   return (
     <main className="fixed inset-0 flex flex-col bg-background">
-      <header className="flex items-center justify-between border-b border-border bg-card/80 px-4 py-2 backdrop-blur">
-        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← Menu</Link>
-        <div className="text-xs uppercase tracking-widest text-muted-foreground">Exodus Survivors</div>
-        <button
-          onClick={() => setPaused((p) => !p)}
-          className="rounded-md border border-border bg-background px-3 py-1 text-xs hover:bg-secondary"
-        >
-          {paused ? "Resume" : "Pause"}
-        </button>
-      </header>
       <div className="relative flex-1">
         <GameCanvas
-          paused={paused}
+          paused={paused || homeOpen || settingsOpen}
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
+
+        {/* Minimal always-visible controls */}
+        <div className="absolute bottom-3 left-3 z-20 flex gap-2">
+          <IconButton label="Return to home menu" onClick={() => setHomeOpen(true)}>
+            <PixelIcon art={HOME_ART} size={20} />
+          </IconButton>
+          <IconButton label="Settings" onClick={() => setSettingsOpen(true)}>
+            <PixelIcon art={GEAR_ART} size={20} />
+          </IconButton>
+        </div>
+
+        <PixelModal open={homeOpen} onClose={() => setHomeOpen(false)} title="Return to Home?">
+          <p className="font-pixel mb-5 text-center text-sm text-[#6b4520]">Your current run will be lost.</p>
+          <div className="flex gap-3">
+            <PixelActionButton onClick={() => setHomeOpen(false)}>Cancel</PixelActionButton>
+            <PixelActionButton variant="primary" onClick={() => navigate({ to: "/" })}>
+              Return to Home
+            </PixelActionButton>
+          </div>
+        </PixelModal>
+
+        <GameSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       </div>
+
 
       {gameOver && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-sm">
