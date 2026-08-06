@@ -30,7 +30,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="pixel-btn pixel-btn-press flex h-9 w-9 items-center justify-center bg-[#f6e2ad] p-0"
+      className="pixel-btn pixel-btn-press flex h-11 w-11 items-center justify-center bg-[#f6e2ad] p-0"
     >
       {children}
     </button>
