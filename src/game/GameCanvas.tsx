@@ -531,7 +531,7 @@ function LoadoutBar({ state, tick: _tick, onDismissPlague: _p, onDismissNpc }: {
   const npcs = Array.from(state.npcs.keys());
   if (npcs.length === 0) return null;
   return (
-    <div className="absolute inset-x-0 bottom-2 flex flex-wrap items-center justify-center gap-1.5 px-2">
+    <div className="absolute inset-x-0 top-14 flex flex-wrap items-center justify-center gap-1.5 px-2">
       {npcs.map((id) => (
         <LoadoutPill key={id} isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
       ))}
