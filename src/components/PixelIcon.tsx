@@ -25,28 +25,29 @@ export const HOME_ART: PixelArt = {
   ],
 };
 
-// Pixel-art gear — bronze teeth with a dark core, same density as the home icon.
+// Pixel-art gear — 8 clearly separated teeth, thick bronze ring, open center hole.
 export const GEAR_ART: PixelArt = {
-  palette: { K: "#2b1d14", z: "#b98550", Z: "#7a5230", W: "#f6efdc", d: "#4a2c18" },
+  palette: { K: "#2b1d14", z: "#c8944f", Z: "#8a5f33", W: "#f0dcae" },
   grid: [
-    "....K..KK..K....",
-    "...KzK.KzK.KzK..",
-    "...KzKKKzKKKzK..",
-    "..KKzzzzzzzzKK..",
-    ".KzzzzZZZZzzzzK.",
-    ".KzzzZKKKKZzzzK.",
-    "KKzzZKddddKZzzKK",
-    "KzzzZKdddKKZzzzK",
-    "KzzzZKdddKKZzzzK",
-    "KKzzZKddddKZzzKK",
-    ".KzzzZKKKKZzzzK.",
-    ".KzzzzZZZZzzzzK.",
-    "..KKzzzzzzzzKK..",
-    "...KzKKKzKKKzK..",
-    "...KzK.KzK.KzK..",
-    "....K..KK..K....",
+    "....K.KKKK.K....",
+    "...KzK.KK.KzK...",
+    "KK.KzKKKKKKzK.KK",
+    "KzKKzzzzzzzzKKzK",
+    "KzzzzWWWWWWzzzzK",
+    "KKzzWWZZZZWWzzKK",
+    ".KzzWZK..KZWzzK.",
+    ".KzzWZK..KZWzzK.",
+    ".KzzWZK..KZWzzK.",
+    ".KzzWZK..KZWzzK.",
+    "KKzzWWZZZZWWzzKK",
+    "KzzzzWWWWWWzzzzK",
+    "KzKKzzzzzzzzKKzK",
+    "KK.KzKKKKKKzK.KK",
+    "...KzK.KK.KzK...",
+    "....K.KKKK.K....",
   ],
 };
+
 
 export function PixelIcon({ art, size }: { art: PixelArt; size: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
