@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 
 export type Settings = {
   language: "en";
+  /** Master sound switch. */
   volume: boolean;
+  /** 0-100 volume level, used when sound is on. */
+  volumeLevel: number;
   devMode: boolean;
 };
 
 const KEY = "exodus-survivors:settings";
-const DEFAULT: Settings = { language: "en", volume: true, devMode: false };
+const DEFAULT: Settings = { language: "en", volume: true, volumeLevel: 70, devMode: false };
 
 export function loadSettings(): Settings {
   if (typeof window === "undefined") return DEFAULT;
