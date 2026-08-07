@@ -2415,10 +2415,12 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   }
 
   // -------- Tall backrest --------
+  // Kept a shade darker (stone/beige) than Ramses himself so his ivory linen
+  // silhouette reads clearly against the throne behind him.
   p(-10, -22, 20, 25, OUT);
-  p(-9, -21, 18, 23, IVO);
-  p(-9, -21, 18, 2, IVL);
-  p(-9, 0, 18, 2, BES);
+  p(-9, -21, 18, 23, STN);
+  p(-9, -21, 18, 2, BEI);
+  p(-9, 0, 18, 2, STS);
   // gilded frame
   p(-9, -21, 18, 1, GLD);
   p(-9, -19, 18, 1, GDS);
