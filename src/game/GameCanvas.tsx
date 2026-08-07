@@ -2283,21 +2283,25 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   p(-9, armY + 2, 2, 1, GLD); p(7, armY + 2, 2, 1, GLD);
 
   // -------- Neck + head --------
+  // Slightly narrower skull than the nemes above it, with tighter-set kohl eyes
+  // so the face stays readable at gameplay distance (Moses' proportions).
   p(-3, -21, 6, 2, SKS);
-  p(-6, -29, 12, 9, OUT);
-  p(-6, -29, 12, 8, SKN);
-  p(-6, -23, 12, 2, SKS);   // jaw shadow
-  p(-5, -28, 4, 4, IVL);    // soft cheek light
+  p(-5, -29, 10, 9, OUT);
+  p(-5, -29, 10, 8, SKN);
+  p(-5, -23, 10, 2, SKS);   // jaw shadow
+  p(-4, -28, 3, 3, IVL);    // soft cheek light
   // kohl-lined eyes
-  p(-5, -26, 4, 1, OUT); p(1, -26, 4, 1, OUT);
+  p(-4, -26, 3, 1, OUT); p(1, -26, 3, 1, OUT);
   p(-4, -25, 2, 1, IVL); p(2, -25, 2, 1, IVL);
   p(-3, -25, 1, 1, OUT); p(3, -25, 1, 1, OUT);
+  // kohl tails
+  p(-5, -26, 1, 1, OUT); p(4, -26, 1, 1, OUT);
   // mouth
-  p(-1, -22, 3, 1, SKS);
-  // pharaoh's postiche beard — braided ivory-gold
-  p(-1, -21, 3, 5, GDS);
-  p(-1, -21, 3, 4, GLD);
-  p(-1, -17, 3, 1, IVO);
+  p(-1, -22, 2, 1, SKS);
+  // pharaoh's postiche beard — braided ivory-gold, hanging off the chin
+  p(-1, -21, 2, 5, GDS);
+  p(-1, -21, 2, 4, GLD);
+  p(-1, -17, 2, 1, IVO);
 
   // -------- Nemes headdress — ivory with soft gold stripes --------
   p(-8, -36, 16, 8, OUT);
