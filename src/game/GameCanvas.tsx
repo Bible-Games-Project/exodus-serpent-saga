@@ -405,6 +405,20 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const p = state.player;
   const xpPct = Math.min(1, state.xp / state.xpToNext);
   const hpPct = Math.max(0, p.hp / p.maxHp);
+
+  // Health bar feedback: a short flash on every hit, plus a continuous
+  // heartbeat flash whenever health sits at or below 10%.
+  const prevHp = useRef(p.hp);
+  const hurtUntil = useRef(0);
+  if (p.hp < prevHp.current - 0.01) hurtUntil.current = state.now + 0.45;
+  prevHp.current = p.hp;
+  const hurting = state.now < hurtUntil.current;
+  const critical = hpPct > 0 && hpPct <= 0.1;
+  // 2.4 Hz pulse — clearly visible, gentle enough to not be distracting.
+  const pulse = 0.5 + 0.5 * Math.sin(state.now * Math.PI * 2 * 2.4);
+  const hpFlash = critical ? 0.35 + pulse * 0.65 : hurting ? 1 : 0;
+  const hpColor = hpFlash > 0 ? (critical ? "#ff5a44" : "#ff8a72") : "#d13a2a";
+
   const mins = Math.floor(state.survivalSeconds / 60);
   const secs = Math.floor(state.survivalSeconds % 60);
   const magnetActive = state.now < (state.magnetBoostUntil ?? 0);
