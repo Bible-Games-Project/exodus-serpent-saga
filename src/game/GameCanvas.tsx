@@ -502,7 +502,15 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
       {/* Life & experience bars — full width, pixel-art, at the very bottom. */}
       <div className="absolute inset-x-0 bottom-0">
         <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
-          <div className="h-full bg-[#d13a2a] transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
+          <div
+            className="h-full transition-[width] duration-100"
+            style={{
+              width: `${hpPct * 100}%`,
+              background: hpColor,
+              boxShadow: hpFlash > 0 ? `0 0 ${8 + hpFlash * 12}px rgba(255,90,68,${0.35 + hpFlash * 0.5})` : "none",
+              filter: hpFlash > 0 ? `brightness(${1 + hpFlash * 0.55})` : "none",
+            }}
+          />
         </div>
         <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
           <div className="h-full bg-[#e6c261] transition-[width] duration-100" style={{ width: `${xpPct * 100}%` }} />
