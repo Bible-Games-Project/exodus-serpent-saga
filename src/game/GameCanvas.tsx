@@ -458,7 +458,10 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
               art={BONUS_ART.heart}
               label="Health"
               value={`${Math.max(0, Math.ceil(p.hp))}/${p.maxHp}`}
+              active={hpFlash > 0.35}
+              color="#ff6a52"
             />
+
             <StatCell
               art={BONUS_ART.shield}
               label="Shield (damage reduction)"
