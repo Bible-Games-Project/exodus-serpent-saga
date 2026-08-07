@@ -79,10 +79,10 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     scripture:
       "Exodus 8:16-17 — Aaron smote the dust of the earth, and it became lice throughout all the land of Egypt.",
     unlockLevel: 8,
-    base: { level: 1, cooldown: 3.5, dmg: 5, count: 1, speed: 70, ttl: 5, extra: { radius: 55 } },
-    scale: scale({ level: 1, cooldown: 3.5, dmg: 5, count: 1, speed: 70, ttl: 5 }, {
+    base: { level: 1, cooldown: 3.5, dmg: 10, count: 1, speed: 70, ttl: 5, extra: { radius: 55 } },
+    scale: scale({ level: 1, cooldown: 3.5, dmg: 10, count: 1, speed: 70, ttl: 5 }, {
       cooldown: 0.15,
-      dmg: 2,
+      dmg: 4,
       count: 0.4,
     }),
   },

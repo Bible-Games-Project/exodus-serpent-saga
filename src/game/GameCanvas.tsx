@@ -405,6 +405,20 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const p = state.player;
   const xpPct = Math.min(1, state.xp / state.xpToNext);
   const hpPct = Math.max(0, p.hp / p.maxHp);
+
+  // Health bar feedback: a short flash on every hit, plus a continuous
+  // heartbeat flash whenever health sits at or below 10%.
+  const prevHp = useRef(p.hp);
+  const hurtUntil = useRef(0);
+  if (p.hp < prevHp.current - 0.01) hurtUntil.current = state.now + 0.45;
+  prevHp.current = p.hp;
+  const hurting = state.now < hurtUntil.current;
+  const critical = hpPct > 0 && hpPct <= 0.1;
+  // 2.4 Hz pulse — clearly visible, gentle enough to not be distracting.
+  const pulse = 0.5 + 0.5 * Math.sin(state.now * Math.PI * 2 * 2.4);
+  const hpFlash = critical ? 0.35 + pulse * 0.65 : hurting ? 1 : 0;
+  const hpColor = hpFlash > 0 ? (critical ? "#ff5a44" : "#ff8a72") : "#d13a2a";
+
   const mins = Math.floor(state.survivalSeconds / 60);
   const secs = Math.floor(state.survivalSeconds % 60);
   const magnetActive = state.now < (state.magnetBoostUntil ?? 0);
@@ -444,7 +458,10 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
               art={BONUS_ART.heart}
               label="Health"
               value={`${Math.max(0, Math.ceil(p.hp))}/${p.maxHp}`}
+              active={hpFlash > 0.35}
+              color="#ff6a52"
             />
+
             <StatCell
               art={BONUS_ART.shield}
               label="Shield (damage reduction)"
@@ -488,7 +505,15 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
       {/* Life & experience bars — full width, pixel-art, at the very bottom. */}
       <div className="absolute inset-x-0 bottom-0">
         <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
-          <div className="h-full bg-[#d13a2a] transition-[width] duration-100" style={{ width: `${hpPct * 100}%` }} />
+          <div
+            className="h-full transition-[width] duration-100"
+            style={{
+              width: `${hpPct * 100}%`,
+              background: hpColor,
+              boxShadow: hpFlash > 0 ? `0 0 ${8 + hpFlash * 12}px rgba(255,90,68,${0.35 + hpFlash * 0.5})` : "none",
+              filter: hpFlash > 0 ? `brightness(${1 + hpFlash * 0.55})` : "none",
+            }}
+          />
         </div>
         <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
           <div className="h-full bg-[#e6c261] transition-[width] duration-100" style={{ width: `${xpPct * 100}%` }} />
@@ -1390,7 +1415,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "staffswing") staffSwinging = true;
     drawList.push(e);
   }
-  drawList.sort((a, b) => a.pos.y - b.pos.y);
+  // Thrones are furniture: always behind whoever sits on them, even at equal depth.
+  const depthOf = (e: Entity) => e.pos.y - (e.kind === "throne" ? 1 : 0);
+  drawList.sort((a, b) => depthOf(a) - depthOf(b));
 
   for (const e of drawList) {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
@@ -2084,7 +2111,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const seated = !!d.seated;
   const flip = e.facing === -1 ? -1 : 1;
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
-  const walk = Math.sin(e.animT * 0.9) > 0 ? 1 : 0;
+  
 
   // Shadow — big; Ramses is roughly 2x a normal human.
   const chariot = !!d.chariot && !seated;
@@ -2119,15 +2146,15 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     const wheelR = 22;
     const cartY = y + 8;
     const spin = s.now * 8 * flip;
-    // Cart body (gold with blue trim)
-    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 28, cartY - 16, 56, 2);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 28, cartY - 8, 56, 2);
-    ctx.fillStyle = "#c9700a"; ctx.fillRect(x - 28, cartY - 4, 56, 2);
+    // Cart body — ivory panels with soft gold trim (matches Ramses' palette)
+    ctx.fillStyle = "#6b5537"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
+    ctx.fillStyle = "#f6ecd6"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
+    ctx.fillStyle = "#e8cf95"; ctx.fillRect(x - 28, cartY - 16, 56, 2);
+    ctx.fillStyle = "#93b3ad"; ctx.fillRect(x - 28, cartY - 8, 56, 2);
+    ctx.fillStyle = "#c78e73"; ctx.fillRect(x - 28, cartY - 4, 56, 2);
     // Front panel emblem (sun disk)
-    ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#e8cf95"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c1a468"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 2, 0, Math.PI * 2); ctx.fill();
     // Wheels — bronze rim, spokes rotating
     for (const wx of [x - 22, x + 22]) {
       ctx.fillStyle = "#2b1d14"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR, 0, Math.PI * 2); ctx.fill();
@@ -2175,99 +2202,150 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     }
   }
 
-  // -------- Legs / kilt (white shendyt with gold trim) --------
-  if (!seated) {
-    // walking legs
-    if (walk) { p(-4, -1, 3, 5, "#c99a6c"); p(1, -1, 3, 5, "#c99a6c"); }
-    else { p(-5, -1, 3, 5, "#c99a6c"); p(2, -1, 3, 5, "#c99a6c"); }
-    // gold anklets
-    p(-5, 3, 4, 1, "#e6c261"); p(1, 3, 4, 1, "#e6c261");
-  } else {
-    // seated legs (sit forward across throne)
-    p(-6, -1, 12, 3, "#c99a6c");
-    p(-6, -1, 12, 1, "#8a5a34");
-  }
-  // Shendyt kilt
-  p(-7, -8, 14, 6, "#f6efdc");
-  p(-7, -8, 14, 1, "#e6c261");
-  p(-7, -3, 14, 1, "#c9a05a");
-  // central gold panel
-  p(-1, -8, 2, 6, "#e6c261");
-  p(0, -8, 1, 6, "#c9700a");
+  // ---- Ramses palette: white / ivory / warm beige / soft gold, with muted
+  // desert-complementary accents (dusty teal + soft terracotta). Shading is
+  // soft: one light, one mid, one shadow tone per material, and the outline is
+  // a warm brown rather than black — exactly like Moses and the soldiers.
+  const OUT = "#6b5537";  // warm outline
+  const IVL = "#fffaf0";  // ivory highlight
+  const IVO = "#f6ecd6";  // ivory
+  const BEI = "#e4d3ad";  // warm beige
+  const BES = "#c9b286";  // beige shadow
+  const GLD = "#e8cf95";  // soft gold
+  const GDS = "#c1a468";  // gold shadow
+  const SKN = "#e3c49b";  // warm skin
+  const SKS = "#c39e75";  // skin shadow
+  const TEA = "#93b3ad";  // dusty teal accent
+  const TER = "#c78e73";  // soft terracotta accent
 
-  // -------- Torso (bare copper w/ usekh collar) --------
-  p(-7, -18, 14, 10, "#c99a6c");
-  p(-7, -10, 14, 1, "#8a5a34");
-  // usekh (broad gold necklace)
-  p(-7, -18, 14, 2, "#e6c261");
-  p(-7, -17, 14, 1, "#3060c0");
-  p(-7, -16, 14, 1, "#a12b2b");
+  // Moses-style stepped walk: two readable poses, no smooth sliding.
+  const step = Math.sin(e.animT * 0.9);
+  const frame = step > 0 ? 1 : 0;
+
+  // -------- Legs / shendyt kilt --------
+  if (!seated) {
+    if (frame === 0) {
+      p(-5, -1, 3, 5, SKN); p(-5, 1, 3, 3, SKS);
+      p(2, -1, 3, 5, SKN); p(2, 1, 3, 3, SKS);
+      p(-5, 4, 3, 1, OUT); p(2, 4, 3, 1, OUT);
+    } else {
+      p(-4, -1, 3, 5, SKN); p(-4, 1, 3, 3, SKS);
+      p(1, -1, 3, 5, SKN); p(1, 1, 3, 3, SKS);
+      p(-4, 4, 3, 1, OUT); p(1, 4, 3, 1, OUT);
+    }
+    // gold anklets
+    p(frame === 0 ? -5 : -4, 3, 3, 1, GLD);
+    p(frame === 0 ? 2 : 1, 3, 3, 1, GLD);
+  } else {
+    // seated: legs forward across the throne seat
+    p(-6, -1, 12, 3, SKN);
+    p(-6, 1, 12, 1, SKS);
+    p(-6, 2, 12, 1, OUT);
+  }
+
+  // Shendyt kilt — white linen with soft folds and a gold hem
+  p(-7, -9, 14, 8, OUT);
+  p(-7, -9, 14, 7, IVO);
+  p(-6, -9, 12, 3, IVL);
+  p(-7, -3, 14, 1, BEI);
+  p(-7, -2, 14, 1, BES);
+  p(-7, -9, 14, 1, GLD);
+  // central pleated panel
+  p(-1, -9, 2, 7, GLD);
+  p(0, -9, 1, 7, GDS);
+
+  // -------- Torso — ivory shawl over warm skin --------
+  p(-7, -19, 14, 11, OUT);
+  p(-7, -19, 14, 10, SKN);
+  p(-7, -12, 14, 2, SKS);      // lower-torso shadow
+  p(-6, -18, 5, 6, IVO);       // draped linen sash
+  p(-6, -18, 5, 2, IVL);
+  p(-2, -14, 3, 6, BEI);
+  // usekh collar — soft gold with muted accents
+  p(-7, -19, 14, 2, GLD);
+  p(-7, -18, 14, 1, TEA);
+  p(-6, -17, 12, 1, TER);
+  p(-7, -16, 14, 1, GDS);
   // pectoral scarab
-  p(-2, -14, 4, 3, "#3060c0");
-  p(-2, -14, 4, 1, "#e6c261");
-  p(-1, -13, 2, 1, "#e6c261");
-  // arms
-  p(-8, -17, 1, 6, "#c99a6c"); p(7, -17, 1, 6, "#c99a6c");
-  p(-8, -11, 1, 3, "#8a5a34"); p(7, -11, 1, 3, "#8a5a34"); // arm shading
+  p(-2, -15, 4, 3, TEA);
+  p(-2, -15, 4, 1, GLD);
+  p(-1, -14, 2, 1, GLD);
+
+  // arms — swing gently opposite to the legs, Moses-style
+  const armY = seated ? -17 : frame === 0 ? -17 : -18;
+  p(-9, armY, 2, 7, OUT);
+  p(-9, armY, 2, 6, SKN);
+  p(-9, armY + 4, 2, 2, SKS);
+  p(7, armY, 2, 7, OUT);
+  p(7, armY, 2, 6, SKN);
+  p(7, armY + 4, 2, 2, SKS);
+  // gold armlets
+  p(-9, armY + 2, 2, 1, GLD); p(7, armY + 2, 2, 1, GLD);
 
   // -------- Neck + head --------
-  p(-3, -20, 6, 2, "#c99a6c");
-  p(-6, -28, 12, 8, "#c99a6c");
-  // kohl eyes
-  p(-5, -25, 4, 1, "#2b1d14"); p(1, -25, 4, 1, "#2b1d14");
-  p(-4, -24, 1, 1, "#f6efdc"); p(2, -24, 1, 1, "#f6efdc");
-  p(-3, -24, 1, 1, "#2b1d14"); p(3, -24, 1, 1, "#2b1d14");
-  // brow / kohl tail
-  p(-6, -26, 6, 1, "#2b1d14"); p(0, -26, 6, 1, "#2b1d14");
-  // pharaoh beard (postiche)
-  p(-1, -20, 2, 4, "#4a2c18");
-  p(-1, -17, 2, 1, "#e6c261");
+  // Slightly narrower skull than the nemes above it, with tighter-set kohl eyes
+  // so the face stays readable at gameplay distance (Moses' proportions).
+  p(-3, -21, 6, 2, SKS);
+  p(-5, -29, 10, 9, OUT);
+  p(-5, -29, 10, 8, SKN);
+  p(-5, -23, 10, 2, SKS);   // jaw shadow
+  p(-4, -28, 3, 3, IVL);    // soft cheek light
+  // kohl-lined eyes
+  p(-4, -26, 3, 1, OUT); p(1, -26, 3, 1, OUT);
+  p(-4, -25, 2, 1, IVL); p(2, -25, 2, 1, IVL);
+  p(-3, -25, 1, 1, OUT); p(3, -25, 1, 1, OUT);
+  // kohl tails
+  p(-5, -26, 1, 1, OUT); p(4, -26, 1, 1, OUT);
+  // mouth
+  p(-1, -22, 2, 1, SKS);
+  // pharaoh's postiche beard — braided ivory-gold, hanging off the chin
+  p(-1, -21, 2, 5, GDS);
+  p(-1, -21, 2, 4, GLD);
+  p(-1, -17, 2, 1, IVO);
 
-  // -------- Nemes headdress (blue+gold striped) --------
-  // top crown
-  for (let i = 0; i < 8; i++) {
-    p(-8 + i * 2, -34, 2, 6, i % 2 === 0 ? "#3060c0" : "#e6c261");
+  // -------- Nemes headdress — ivory with soft gold stripes --------
+  // 14 wide so the head never out-measures the shoulders.
+  p(-7, -36, 14, 8, OUT);
+  p(-7, -36, 14, 7, IVO);
+  p(-7, -36, 14, 2, IVL);
+  for (let i = 0; i < 4; i++) p(-6 + i * 3, -34, 2, 5, GLD);
+  for (let i = 0; i < 4; i++) p(-5 + i * 3, -34, 1, 5, BEI);
+  // brow band
+  p(-7, -30, 14, 2, GLD);
+  p(-7, -29, 14, 1, GDS);
+  // side lappets flaring down past the shoulders
+  for (const sx of [-9, 7]) {
+    p(sx, -29, 2, 10, OUT);
+    p(sx, -29, 2, 9, IVO);
+    p(sx, -27, 2, 1, GLD);
+    p(sx, -24, 2, 1, GLD);
+    p(sx, -21, 2, 1, BEI);
   }
-  // front brow band
-  p(-8, -29, 16, 2, "#e6c261");
-  p(-8, -29, 16, 1, "#c9700a");
-  // side flaps flaring outward
-  p(-10, -28, 2, 8, "#3060c0");
-  p(8, -28, 2, 8, "#3060c0");
-  p(-10, -28, 2, 1, "#e6c261"); p(8, -28, 2, 1, "#e6c261");
-  p(-10, -24, 2, 1, "#e6c261"); p(8, -24, 2, 1, "#e6c261");
-  p(-10, -20, 2, 1, "#e6c261"); p(8, -20, 2, 1, "#e6c261");
-  // Uraeus cobra rearing over brow
-  p(-1, -37, 2, 3, "#e6c261");
-  p(-1, -36, 2, 1, "#a12b2b");
-  p(-2, -33, 4, 1, "#e6c261");
-  p(-1, -32, 2, 1, "#2b1d14");
+  // Uraeus cobra rearing over the brow
+  p(-1, -39, 3, 4, GDS);
+  p(-1, -39, 3, 3, GLD);
+  p(-1, -38, 2, 1, TER);
+  p(-2, -36, 4, 1, GLD);
+  p(0, -37, 1, 1, OUT);
 
-  // -------- Was-scepter (held in front unless airborne) --------
+  // -------- Was-scepter — ivory shaft with soft gold fittings --------
   if (phase !== "airborne") {
-    ctx.save();
-    const staffX = x + flip * 10 * RPX;
-    const staffTopY = y + (-36 + bob / RPX) * RPX;
-    const staffBotY = y + (6 + bob / RPX) * RPX;
-    // shaft — layered wood
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 6; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
-    ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
-    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(staffX, staffTopY); ctx.lineTo(staffX, staffBotY); ctx.stroke();
-    // was-scepter head (stylized set-animal)
-    ctx.fillStyle = "#e6c261";
-    ctx.fillRect(staffX - flip * 2, staffTopY - 10, flip * 10, 7);
-    ctx.fillStyle = "#3060c0";
-    ctx.fillRect(staffX - flip * 2, staffTopY - 10, flip * 10, 2);
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(staffX + flip * 6, staffTopY - 7, 2, 2); // eye
+    const sX = flip * 10;               // grid X of the shaft
+    const topY = -37;
+    const botY = 5;
+    // shaft (pixel-stamped so it keeps the exact same grid density)
+    for (let gy = topY; gy <= botY; gy++) {
+      p(sX - (flip === 1 ? 0 : 1), gy, 2, 1, OUT);
+      p(sX - (flip === 1 ? 0 : 1) + (flip === 1 ? 0 : 1), gy, 1, 1, gy % 3 === 0 ? BEI : IVO);
+    }
+    // scepter head — stylized set-animal profile
+    p(sX - (flip === 1 ? 1 : 3), topY - 3, 5, 3, OUT);
+    p(sX - (flip === 1 ? 1 : 3), topY - 3, 5, 2, GLD);
+    p(sX + (flip === 1 ? 2 : -1), topY - 2, 1, 1, OUT);   // eye
+    p(sX - (flip === 1 ? 1 : 3), topY - 1, 5, 1, GDS);
     // forked base
-    ctx.fillStyle = "#2b1d14";
-    ctx.fillRect(staffX - 5, staffBotY - 2, 4, 5);
-    ctx.fillRect(staffX + 1, staffBotY - 2, 4, 5);
-    ctx.restore();
+    p(sX - (flip === 1 ? 1 : 2), botY + 1, 2, 2, GDS);
+    p(sX + (flip === 1 ? 1 : -1), botY + 1, 2, 2, GDS);
   }
 
   // Land shockwave (unchanged)
@@ -2311,79 +2389,101 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.fillStyle = color;
     ctx.fillRect(x + dx * TPX, y + dy * TPX, w * TPX, h * TPX);
   };
+  // Same palette and shading language as Ramses: ivory, warm beige, soft gold
+  // and a warm brown outline. Every shape is stamped on the 3px pixel grid.
+  const OUT = "#6b5537";
+  const IVL = "#fffaf0";
+  const IVO = "#f6ecd6";
+  const BEI = "#e4d3ad";
+  const BES = "#c9b286";
+  const STN = "#dcc9a2";
+  const STS = "#bda681";
+  const GLD = "#e8cf95";
+  const GDS = "#c1a468";
+  const TEA = "#93b3ad";
+  const TER = "#c78e73";
+
   ctx.save();
-  // Big soft shadow
-  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  // Soft ground shadow
+  ctx.fillStyle = "rgba(107, 85, 55, 0.28)";
   ctx.beginPath(); ctx.ellipse(x, y + 12 * TPX, 44, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-  // -------- Stepped stone plinth --------
-  p(-13, 8, 26, 3, "#a17048");
-  p(-13, 8, 26, 1, "#c9a05a");
-  p(-13, 10, 26, 1, "#7a4a2b");
-  // hieroglyph frieze on plinth
+  // -------- Stepped limestone plinth --------
+  p(-14, 8, 28, 5, OUT);
+  p(-14, 8, 28, 4, STN);
+  p(-14, 8, 28, 1, IVL);
+  p(-13, 10, 26, 2, STS);
+  // hieroglyph frieze
   for (let i = 0; i < 6; i++) {
-    p(-11 + i * 4, 9, 1, 1, "#2b1d14");
-    p(-10 + i * 4, 9, 1, 1, "#2b1d14");
+    p(-11 + i * 4, 10, 1, 1, BES);
+    p(-9 + i * 4, 10, 1, 1, GDS);
   }
 
-  // -------- Backrest (tall gold panel) --------
-  p(-9, -20, 18, 22, "#c9a05a");
-  p(-9, -20, 18, 1, "#e6c261");
-  p(-9, -18, 18, 1, "#e6c261");
-  p(-9, 1, 18, 1, "#8a5a20");
-  // blue-and-gold vertical striping on the backrest
-  for (let i = 0; i < 3; i++) {
-    p(-9 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
-    p(7 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
-  }
-  // Central winged sun-disk emblem
-  ctx.fillStyle = "#e6c261";
-  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#c9700a";
-  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 5, 0, Math.PI * 2); ctx.fill();
-  // wings
-  ctx.fillStyle = "#3060c0";
-  ctx.fillRect(x - 22, y - 15 * TPX - 2, 14, 3);
-  ctx.fillRect(x + 8, y - 15 * TPX - 2, 14, 3);
-  ctx.fillStyle = "#e6c261";
-  ctx.fillRect(x - 22, y - 15 * TPX + 1, 14, 1);
-  ctx.fillRect(x + 8, y - 15 * TPX + 1, 14, 1);
-  // rays
-  ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 1;
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * 9, y - 15 * TPX + Math.sin(a) * 9);
-    ctx.lineTo(x + Math.cos(a) * 13, y - 15 * TPX + Math.sin(a) * 13);
-    ctx.stroke();
+  // -------- Tall backrest --------
+  // Kept a shade darker (stone/beige) than Ramses himself so his ivory linen
+  // silhouette reads clearly against the throne behind him.
+  p(-10, -22, 20, 25, OUT);
+  p(-9, -21, 18, 23, STN);
+  p(-9, -21, 18, 2, BEI);
+  p(-9, 0, 18, 2, STS);
+  // gilded frame
+  p(-9, -21, 18, 1, GLD);
+  p(-9, -19, 18, 1, GDS);
+  // fluted side pilasters
+  for (let i = 0; i < 2; i++) {
+    p(-9 + i * 2, -18, 1, 18, BES);
+    p(-8 + i * 2, -18, 1, 18, GDS);
+    p(6 + i * 2, -18, 1, 18, GDS);
+    p(7 + i * 2, -18, 1, 18, BES);
   }
 
-  // -------- Seat block --------
-  p(-11, 2, 22, 6, "#c9a05a");
-  p(-11, 2, 22, 1, "#e6c261");
-  p(-11, 7, 22, 1, "#8a5a20");
-  // side hieroglyph panels
-  p(-10, 4, 20, 1, "#3060c0");
-  p(-10, 6, 20, 1, "#a12b2b");
+  // -------- Winged sun-disk emblem (pixel-stamped) --------
+  const ey = -14;
+  p(-2, ey - 2, 4, 4, GDS);
+  p(-2, ey - 2, 4, 3, GLD);
+  p(-1, ey - 1, 2, 1, IVL);
+  // wings sweeping out from the disk
+  for (let i = 0; i < 4; i++) {
+    p(-6 - i, ey - 1 + Math.floor(i / 2), 1, 2, i % 2 ? GLD : BEI);
+    p(5 + i, ey - 1 + Math.floor(i / 2), 1, 2, i % 2 ? GLD : BEI);
+  }
+  p(-6, ey + 1, 4, 1, GDS);
+  p(2, ey + 1, 4, 1, GDS);
+  // tail feathers
+  p(-1, ey + 2, 2, 2, TEA);
+  p(-1, ey + 3, 2, 1, TER);
+
+  // -------- Seat --------
+  p(-12, 2, 24, 7, OUT);
+  p(-11, 2, 22, 6, STN);
+  p(-11, 2, 22, 1, BEI);
+  p(-11, 6, 22, 2, STS);
+  // inlaid panel band
+  p(-10, 4, 20, 1, TEA);
+  p(-10, 5, 20, 1, TER);
 
   // -------- Armrests with cobra heads --------
-  p(-13, -2, 2, 10, "#c9a05a");
-  p(11, -2, 2, 10, "#c9a05a");
-  p(-13, -2, 2, 1, "#e6c261"); p(11, -2, 2, 1, "#e6c261");
-  // cobra heads
-  const cobra = (cx: number) => {
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 8);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(cx - 3, y - 4 * TPX + 2, 2, 2); ctx.fillRect(cx + 1, y - 4 * TPX + 2, 2, 2);
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(cx - 1, y - 3 * TPX + 3, 2, 1); // forked tongue
+  for (const ax of [-14, 12]) {
+    p(ax, -3, 2, 12, OUT);
+    p(ax, -3, 2, 11, STN);
+    p(ax, -3, 2, 1, BEI);
+    p(ax, 3, 2, 1, GLD);
+  }
+  const cobra = (gx: number) => {
+    p(gx, -7, 4, 4, OUT);
+    p(gx, -7, 4, 3, GLD);
+    p(gx, -7, 4, 1, IVL);
+    p(gx + 1, -6, 1, 1, OUT); p(gx + 2, -6, 1, 1, OUT); // eyes
+    p(gx + 1, -4, 2, 1, TER); // tongue
   };
-  cobra(x - 12 * TPX); cobra(x + 12 * TPX);
+  cobra(-14); cobra(12);
 
-  // -------- Lion-paw legs --------
-  p(-13, 11, 3, 2, "#8a5a20");
-  p(10, 11, 3, 2, "#8a5a20");
-  p(-13, 12, 1, 1, "#2b1d14"); p(-12, 12, 1, 1, "#2b1d14"); p(-11, 12, 1, 1, "#2b1d14");
-  p(10, 12, 1, 1, "#2b1d14"); p(11, 12, 1, 1, "#2b1d14"); p(12, 12, 1, 1, "#2b1d14");
+  // -------- Lion-paw feet --------
+  for (const fx of [-14, 11]) {
+    p(fx, 11, 3, 2, OUT);
+    p(fx, 11, 3, 1, STN);
+    p(fx, 12, 1, 1, BES); p(fx + 1, 12, 1, 1, STS); p(fx + 2, 12, 1, 1, BES);
+  }
   ctx.restore();
 }
 

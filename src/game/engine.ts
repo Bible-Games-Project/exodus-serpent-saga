@@ -218,6 +218,12 @@ export function update(state: GameState, dt: number) {
   state.now += dt;
   state.survivalSeconds = state.now;
 
+  // Passive health regeneration — always on, deliberately very slow
+  // (0.35 HP/second, ~1 HP every 3 seconds). Stops at full health.
+  if (state.player.hp > 0 && state.player.hp < state.player.maxHp) {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 0.35 * dt);
+  }
+
   // Screen effect decay
   if (state.screenShake) state.screenShake = Math.max(0, state.screenShake - dt * 20);
   if (state.screenFlash) state.screenFlash = Math.max(0, state.screenFlash - dt * 2);
