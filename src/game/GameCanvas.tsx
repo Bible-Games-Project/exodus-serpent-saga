@@ -2144,15 +2144,15 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     const wheelR = 22;
     const cartY = y + 8;
     const spin = s.now * 8 * flip;
-    // Cart body (gold with blue trim)
-    ctx.fillStyle = "#8a5a20"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
-    ctx.fillStyle = "#c9a05a"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(x - 28, cartY - 16, 56, 2);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(x - 28, cartY - 8, 56, 2);
-    ctx.fillStyle = "#c9700a"; ctx.fillRect(x - 28, cartY - 4, 56, 2);
+    // Cart body — ivory panels with soft gold trim (matches Ramses' palette)
+    ctx.fillStyle = "#6b5537"; ctx.fillRect(x - 30, cartY - 18, 60, 20);
+    ctx.fillStyle = "#f6ecd6"; ctx.fillRect(x - 28, cartY - 16, 56, 14);
+    ctx.fillStyle = "#e8cf95"; ctx.fillRect(x - 28, cartY - 16, 56, 2);
+    ctx.fillStyle = "#93b3ad"; ctx.fillRect(x - 28, cartY - 8, 56, 2);
+    ctx.fillStyle = "#c78e73"; ctx.fillRect(x - 28, cartY - 4, 56, 2);
     // Front panel emblem (sun disk)
-    ctx.fillStyle = "#e6c261"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#c9700a"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#e8cf95"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c1a468"; ctx.beginPath(); ctx.arc(x + flip * 20, cartY - 10, 2, 0, Math.PI * 2); ctx.fill();
     // Wheels — bronze rim, spokes rotating
     for (const wx of [x - 22, x + 22]) {
       ctx.fillStyle = "#2b1d14"; ctx.beginPath(); ctx.arc(wx, cartY + 4, wheelR, 0, Math.PI * 2); ctx.fill();
