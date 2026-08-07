@@ -2304,16 +2304,17 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   p(-1, -17, 2, 1, IVO);
 
   // -------- Nemes headdress — ivory with soft gold stripes --------
-  p(-8, -36, 16, 8, OUT);
-  p(-8, -36, 16, 7, IVO);
-  p(-8, -36, 16, 2, IVL);
-  for (let i = 0; i < 4; i++) p(-7 + i * 4, -34, 2, 5, GLD);
-  for (let i = 0; i < 4; i++) p(-6 + i * 4, -34, 1, 5, BEI);
+  // 14 wide so the head never out-measures the shoulders.
+  p(-7, -36, 14, 8, OUT);
+  p(-7, -36, 14, 7, IVO);
+  p(-7, -36, 14, 2, IVL);
+  for (let i = 0; i < 4; i++) p(-6 + i * 3, -34, 2, 5, GLD);
+  for (let i = 0; i < 4; i++) p(-5 + i * 3, -34, 1, 5, BEI);
   // brow band
-  p(-8, -30, 16, 2, GLD);
-  p(-8, -29, 16, 1, GDS);
+  p(-7, -30, 14, 2, GLD);
+  p(-7, -29, 14, 1, GDS);
   // side lappets flaring down past the shoulders
-  for (const sx of [-10, 8]) {
+  for (const sx of [-9, 7]) {
     p(sx, -29, 2, 10, OUT);
     p(sx, -29, 2, 9, IVO);
     p(sx, -27, 2, 1, GLD);
