@@ -2109,7 +2109,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const seated = !!d.seated;
   const flip = e.facing === -1 ? -1 : 1;
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
-  const walk = Math.sin(e.animT * 0.9) > 0 ? 1 : 0;
+  
 
   // Shadow — big; Ramses is roughly 2x a normal human.
   const chariot = !!d.chariot && !seated;
