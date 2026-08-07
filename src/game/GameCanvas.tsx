@@ -2382,79 +2382,99 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.fillStyle = color;
     ctx.fillRect(x + dx * TPX, y + dy * TPX, w * TPX, h * TPX);
   };
+  // Same palette and shading language as Ramses: ivory, warm beige, soft gold
+  // and a warm brown outline. Every shape is stamped on the 3px pixel grid.
+  const OUT = "#6b5537";
+  const IVL = "#fffaf0";
+  const IVO = "#f6ecd6";
+  const BEI = "#e4d3ad";
+  const BES = "#c9b286";
+  const STN = "#dcc9a2";
+  const STS = "#bda681";
+  const GLD = "#e8cf95";
+  const GDS = "#c1a468";
+  const TEA = "#93b3ad";
+  const TER = "#c78e73";
+
   ctx.save();
-  // Big soft shadow
-  ctx.fillStyle = "rgba(0,0,0,0.42)";
+  // Soft ground shadow
+  ctx.fillStyle = "rgba(107, 85, 55, 0.28)";
   ctx.beginPath(); ctx.ellipse(x, y + 12 * TPX, 44, 8, 0, 0, Math.PI * 2); ctx.fill();
 
-  // -------- Stepped stone plinth --------
-  p(-13, 8, 26, 3, "#a17048");
-  p(-13, 8, 26, 1, "#c9a05a");
-  p(-13, 10, 26, 1, "#7a4a2b");
-  // hieroglyph frieze on plinth
+  // -------- Stepped limestone plinth --------
+  p(-14, 8, 28, 5, OUT);
+  p(-14, 8, 28, 4, STN);
+  p(-14, 8, 28, 1, IVL);
+  p(-13, 10, 26, 2, STS);
+  // hieroglyph frieze
   for (let i = 0; i < 6; i++) {
-    p(-11 + i * 4, 9, 1, 1, "#2b1d14");
-    p(-10 + i * 4, 9, 1, 1, "#2b1d14");
+    p(-11 + i * 4, 10, 1, 1, BES);
+    p(-9 + i * 4, 10, 1, 1, GDS);
   }
 
-  // -------- Backrest (tall gold panel) --------
-  p(-9, -20, 18, 22, "#c9a05a");
-  p(-9, -20, 18, 1, "#e6c261");
-  p(-9, -18, 18, 1, "#e6c261");
-  p(-9, 1, 18, 1, "#8a5a20");
-  // blue-and-gold vertical striping on the backrest
-  for (let i = 0; i < 3; i++) {
-    p(-9 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
-    p(7 + i, -12, 1, 12, i % 2 === 0 ? "#3060c0" : "#e6c261");
-  }
-  // Central winged sun-disk emblem
-  ctx.fillStyle = "#e6c261";
-  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 8, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = "#c9700a";
-  ctx.beginPath(); ctx.arc(x, y - 15 * TPX, 5, 0, Math.PI * 2); ctx.fill();
-  // wings
-  ctx.fillStyle = "#3060c0";
-  ctx.fillRect(x - 22, y - 15 * TPX - 2, 14, 3);
-  ctx.fillRect(x + 8, y - 15 * TPX - 2, 14, 3);
-  ctx.fillStyle = "#e6c261";
-  ctx.fillRect(x - 22, y - 15 * TPX + 1, 14, 1);
-  ctx.fillRect(x + 8, y - 15 * TPX + 1, 14, 1);
-  // rays
-  ctx.strokeStyle = "#e6c261"; ctx.lineWidth = 1;
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * 9, y - 15 * TPX + Math.sin(a) * 9);
-    ctx.lineTo(x + Math.cos(a) * 13, y - 15 * TPX + Math.sin(a) * 13);
-    ctx.stroke();
+  // -------- Tall backrest --------
+  p(-10, -22, 20, 25, OUT);
+  p(-9, -21, 18, 23, IVO);
+  p(-9, -21, 18, 2, IVL);
+  p(-9, 0, 18, 2, BES);
+  // gilded frame
+  p(-9, -21, 18, 1, GLD);
+  p(-9, -19, 18, 1, GDS);
+  // fluted side pilasters
+  for (let i = 0; i < 2; i++) {
+    p(-9 + i * 2, -18, 1, 18, BEI);
+    p(-8 + i * 2, -18, 1, 18, GLD);
+    p(6 + i * 2, -18, 1, 18, GLD);
+    p(7 + i * 2, -18, 1, 18, BEI);
   }
 
-  // -------- Seat block --------
-  p(-11, 2, 22, 6, "#c9a05a");
-  p(-11, 2, 22, 1, "#e6c261");
-  p(-11, 7, 22, 1, "#8a5a20");
-  // side hieroglyph panels
-  p(-10, 4, 20, 1, "#3060c0");
-  p(-10, 6, 20, 1, "#a12b2b");
+  // -------- Winged sun-disk emblem (pixel-stamped) --------
+  const ey = -14;
+  p(-2, ey - 2, 4, 4, GDS);
+  p(-2, ey - 2, 4, 3, GLD);
+  p(-1, ey - 1, 2, 1, IVL);
+  // wings sweeping out from the disk
+  for (let i = 0; i < 4; i++) {
+    p(-6 - i, ey - 1 + Math.floor(i / 2), 1, 2, i % 2 ? GLD : BEI);
+    p(5 + i, ey - 1 + Math.floor(i / 2), 1, 2, i % 2 ? GLD : BEI);
+  }
+  p(-6, ey + 1, 4, 1, GDS);
+  p(2, ey + 1, 4, 1, GDS);
+  // tail feathers
+  p(-1, ey + 2, 2, 2, TEA);
+  p(-1, ey + 3, 2, 1, TER);
+
+  // -------- Seat --------
+  p(-12, 2, 24, 7, OUT);
+  p(-11, 2, 22, 6, BEI);
+  p(-11, 2, 22, 1, IVL);
+  p(-11, 6, 22, 2, BES);
+  // inlaid panel band
+  p(-10, 4, 20, 1, TEA);
+  p(-10, 5, 20, 1, TER);
 
   // -------- Armrests with cobra heads --------
-  p(-13, -2, 2, 10, "#c9a05a");
-  p(11, -2, 2, 10, "#c9a05a");
-  p(-13, -2, 2, 1, "#e6c261"); p(11, -2, 2, 1, "#e6c261");
-  // cobra heads
-  const cobra = (cx: number) => {
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 8);
-    ctx.fillStyle = "#3060c0"; ctx.fillRect(cx - 4, y - 5 * TPX, 8, 2);
-    ctx.fillStyle = "#2b1d14"; ctx.fillRect(cx - 3, y - 4 * TPX + 2, 2, 2); ctx.fillRect(cx + 1, y - 4 * TPX + 2, 2, 2);
-    ctx.fillStyle = "#a12b2b"; ctx.fillRect(cx - 1, y - 3 * TPX + 3, 2, 1); // forked tongue
+  for (const ax of [-14, 12]) {
+    p(ax, -3, 2, 12, OUT);
+    p(ax, -3, 2, 11, BEI);
+    p(ax, -3, 2, 1, IVL);
+    p(ax, 3, 2, 1, GLD);
+  }
+  const cobra = (gx: number) => {
+    p(gx, -7, 4, 4, OUT);
+    p(gx, -7, 4, 3, GLD);
+    p(gx, -7, 4, 1, IVL);
+    p(gx + 1, -6, 1, 1, OUT); p(gx + 2, -6, 1, 1, OUT); // eyes
+    p(gx + 1, -4, 2, 1, TER); // tongue
   };
-  cobra(x - 12 * TPX); cobra(x + 12 * TPX);
+  cobra(-14); cobra(12);
 
-  // -------- Lion-paw legs --------
-  p(-13, 11, 3, 2, "#8a5a20");
-  p(10, 11, 3, 2, "#8a5a20");
-  p(-13, 12, 1, 1, "#2b1d14"); p(-12, 12, 1, 1, "#2b1d14"); p(-11, 12, 1, 1, "#2b1d14");
-  p(10, 12, 1, 1, "#2b1d14"); p(11, 12, 1, 1, "#2b1d14"); p(12, 12, 1, 1, "#2b1d14");
+  // -------- Lion-paw feet --------
+  for (const fx of [-14, 11]) {
+    p(fx, 11, 3, 2, OUT);
+    p(fx, 11, 3, 1, STN);
+    p(fx, 12, 1, 1, BES); p(fx + 1, 12, 1, 1, STS); p(fx + 2, 12, 1, 1, BES);
+  }
   ctx.restore();
 }
 
