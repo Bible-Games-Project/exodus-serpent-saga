@@ -1415,7 +1415,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "staffswing") staffSwinging = true;
     drawList.push(e);
   }
-  drawList.sort((a, b) => a.pos.y - b.pos.y);
+  // Thrones are furniture: always behind whoever sits on them, even at equal depth.
+  const depthOf = (e: Entity) => e.pos.y - (e.kind === "throne" ? 1 : 0);
+  drawList.sort((a, b) => depthOf(a) - depthOf(b));
 
   for (const e of drawList) {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
