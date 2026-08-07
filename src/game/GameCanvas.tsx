@@ -2426,10 +2426,10 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   p(-9, -19, 18, 1, GDS);
   // fluted side pilasters
   for (let i = 0; i < 2; i++) {
-    p(-9 + i * 2, -18, 1, 18, BEI);
-    p(-8 + i * 2, -18, 1, 18, GLD);
-    p(6 + i * 2, -18, 1, 18, GLD);
-    p(7 + i * 2, -18, 1, 18, BEI);
+    p(-9 + i * 2, -18, 1, 18, BES);
+    p(-8 + i * 2, -18, 1, 18, GDS);
+    p(6 + i * 2, -18, 1, 18, GDS);
+    p(7 + i * 2, -18, 1, 18, BES);
   }
 
   // -------- Winged sun-disk emblem (pixel-stamped) --------
@@ -2450,9 +2450,9 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 
   // -------- Seat --------
   p(-12, 2, 24, 7, OUT);
-  p(-11, 2, 22, 6, BEI);
-  p(-11, 2, 22, 1, IVL);
-  p(-11, 6, 22, 2, BES);
+  p(-11, 2, 22, 6, STN);
+  p(-11, 2, 22, 1, BEI);
+  p(-11, 6, 22, 2, STS);
   // inlaid panel band
   p(-10, 4, 20, 1, TEA);
   p(-10, 5, 20, 1, TER);
@@ -2460,8 +2460,8 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   // -------- Armrests with cobra heads --------
   for (const ax of [-14, 12]) {
     p(ax, -3, 2, 12, OUT);
-    p(ax, -3, 2, 11, BEI);
-    p(ax, -3, 2, 1, IVL);
+    p(ax, -3, 2, 11, STN);
+    p(ax, -3, 2, 1, BEI);
     p(ax, 3, 2, 1, GLD);
   }
   const cobra = (gx: number) => {
