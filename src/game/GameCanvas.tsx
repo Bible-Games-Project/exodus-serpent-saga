@@ -1643,6 +1643,11 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
 
   // Draws a rect on the shared "art-pixel" grid. dx/dy are in art-pixels,
   // measured from the character's feet-center. Flip mirrors horizontally.
+  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
+    ctx.fillStyle = color;
+    const rx = flip === 1 ? x + dx * PX : x - (dx + w) * PX;
+    ctx.fillRect(rx, y + dy * PX, w * PX, h * PX);
+  };
 
   const shadow = (r: number) => {
     ctx.fillStyle = "rgba(0,0,0,0.28)";
