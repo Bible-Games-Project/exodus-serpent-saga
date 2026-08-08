@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { MosesMenuSprite } from "@/components/MosesMenuSprite";
 import menuDesert from "@/assets/menu-desert.png";
@@ -78,10 +78,41 @@ function PixelLink({
 function MainMenu() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Keep the title screen at its intended composition and scale: block
+  // ctrl+wheel zoom, pinch-zoom and Safari zoom gestures while mounted.
+  useEffect(() => {
+    const onWheel = (ev: WheelEvent) => {
+      if (ev.ctrlKey || ev.metaKey) ev.preventDefault();
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if ((ev.ctrlKey || ev.metaKey) && ["+", "-", "=", "_", "0"].includes(ev.key)) ev.preventDefault();
+    };
+    const onGesture = (ev: Event) => ev.preventDefault();
+    const onTouch = (ev: TouchEvent) => {
+      if (ev.touches.length > 1) ev.preventDefault();
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("keydown", onKey);
+    document.addEventListener("gesturestart", onGesture as EventListener);
+    document.addEventListener("gesturechange", onGesture as EventListener);
+    document.addEventListener("gestureend", onGesture as EventListener);
+    document.addEventListener("touchmove", onTouch as EventListener, { passive: false });
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("gesturestart", onGesture as EventListener);
+      document.removeEventListener("gesturechange", onGesture as EventListener);
+      document.removeEventListener("gestureend", onGesture as EventListener);
+      document.removeEventListener("touchmove", onTouch as EventListener);
+    };
+  }, []);
+
   return (
-    <main className="relative min-h-screen overflow-hidden" style={{ backgroundColor: MENU_CREAM }}>
-      {/* Pixel-art desert backdrop — pyramids, dunes, palms and rocks in a
-          warm, near-monochromatic cream palette. */}
+    <main
+      className="relative min-h-screen overflow-hidden"
+      style={{ backgroundColor: MENU_CREAM, touchAction: "pan-y" }}
+    >
+      {/* Layer 1 — pixel-art desert backdrop (pyramids, dunes, palms, rocks). */}
       <img
         src={menuDesert}
         alt=""
@@ -101,9 +132,19 @@ function MainMenu() {
         }}
       />
 
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-8 px-6 py-14 md:flex-row md:items-end md:justify-between">
-        {/* Title + menu */}
-        <div className="flex flex-col items-center text-center md:items-start md:pb-12 md:text-left">
+      {/* Layer 2 — Moses, purely decorative, on his own absolute layer on the
+          left so he can never overlap, push or re-centre the menu. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-0 z-10 hidden items-end md:flex lg:left-[4%] xl:left-[8%]"
+        style={{ animation: "exodus-menu-float 4.5s ease-in-out infinite" }}
+      >
+        <MosesMenuSprite zoom={3} className="drop-shadow-[0_14px_16px_rgba(120,80,40,0.28)]" />
+      </div>
+
+      {/* Layer 3 — centered title + menu, independent of every other layer. */}
+      <section className="relative z-20 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 px-6 py-14 text-center">
+        <div className="flex flex-col items-center">
           <p className="font-pixel mb-3 text-xs uppercase tracking-[0.42em] text-[#8a5a2c]">
             A tale from the desert
           </p>
@@ -130,17 +171,17 @@ function MainMenu() {
           </nav>
         </div>
 
-        {/* Moses — the exact gameplay sprite, gently idling. */}
+        {/* Mobile-only Moses: below the menu, still in its own container. */}
         <div
-          className="relative flex shrink-0 items-end justify-center"
+          aria-hidden
+          className="pointer-events-none flex justify-center md:hidden"
           style={{ animation: "exodus-menu-float 4.5s ease-in-out infinite" }}
         >
-          <MosesMenuSprite zoom={2} className="drop-shadow-[0_10px_12px_rgba(120,80,40,0.28)] md:hidden" />
-          <MosesMenuSprite zoom={3} className="hidden drop-shadow-[0_14px_16px_rgba(120,80,40,0.28)] md:block" />
+          <MosesMenuSprite zoom={2} className="drop-shadow-[0_10px_12px_rgba(120,80,40,0.28)]" />
         </div>
       </section>
 
-      <footer className="font-pixel absolute bottom-3 left-0 right-0 z-10 text-center text-xs text-[#8a5a2c]">
+      <footer className="font-pixel absolute bottom-3 left-0 right-0 z-20 text-center text-xs text-[#8a5a2c]">
         v0.1 — an original desert bullet-heaven
       </footer>
 

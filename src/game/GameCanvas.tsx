@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, RAMSES, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1489,7 +1489,44 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.fillRect(0, 0, viewW, viewH);
   }
 
-  // 5) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
+  // 5) Critical-health danger atmosphere — a chunky, dithered red wash that
+  // grows as Moses' health falls below 15%. Drawn as 6px pixel blocks with a
+  // vignette weighting so the centre of play stays readable.
+  const hpRatio = Math.max(0, s.player.hp) / Math.max(1, s.player.maxHp);
+  const danger = Math.max(0, Math.min(1, (0.15 - hpRatio) / 0.13));
+  if (danger > 0.001) {
+    const BLK = 6;
+    const cxp = viewW / 2, cyp = viewH / 2;
+    const maxD = Math.hypot(cxp, cyp);
+    // Two dither masks alternate each block so the wash reads as pixel art.
+    ctx.save();
+    for (let by = 0; by < viewH; by += BLK) {
+      for (let bx = 0; bx < viewW; bx += BLK) {
+        const d = Math.hypot(bx + BLK / 2 - cxp, by + BLK / 2 - cyp) / maxD;
+        // Edge-weighted: strong at the borders, gentle around Moses.
+        const w = 0.25 + d * d * 1.15;
+        const a = danger * w;
+        if (a <= 0.02) continue;
+        // Ordered 2x2 dither: skip a quarter of the blocks at low intensity.
+        const oi = ((bx / BLK) & 1) + (((by / BLK) & 1) << 1);
+        const th = [0.15, 0.55, 0.75, 0.35][oi];
+        if (danger < th * 0.55) continue;
+        ctx.fillStyle = `rgba(${a > 0.5 ? 150 : 176},${a > 0.5 ? 26 : 40},22,${Math.min(0.62, a * 0.62)})`;
+        ctx.fillRect(bx, by, BLK, BLK);
+      }
+    }
+    // Slow heartbeat pulse along the very edge of the frame.
+    const beat = 0.5 + 0.5 * Math.sin(s.now * 4.2);
+    const border = Math.round((10 + beat * 8) / BLK) * BLK;
+    ctx.fillStyle = `rgba(150,26,22,${0.18 * danger + 0.16 * danger * beat})`;
+    ctx.fillRect(0, 0, viewW, border);
+    ctx.fillRect(0, viewH - border, viewW, border);
+    ctx.fillRect(0, 0, border, viewH);
+    ctx.fillRect(viewW - border, 0, border, viewH);
+    ctx.restore();
+  }
+
+  // 6) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
 
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1508,7 +1545,9 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
   const flip = e.facing === -1;
   const frameIdx = Math.floor(e.animT) % sprite.frames.length;
   const img = renderSprite(sprite, frameIdx, SCALE, flip);
-  const drawW = img.width, drawH = img.height;
+  // +0.25% overall size — everything else (density, palette, animation) unchanged.
+  const MOSES_SIZE_MUL = 1.0025;
+  const drawW = img.width * MOSES_SIZE_MUL, drawH = img.height * MOSES_SIZE_MUL;
   const sx = Math.round(e.pos.x - camX - drawW / 2);
   const sy = Math.round(e.pos.y - camY - drawH + 8);
   // shadow
@@ -1646,8 +1685,7 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   const p = (dx: number, dy: number, w: number, h: number, color: string) => {
     ctx.fillStyle = color;
     const rx = flip === 1 ? x + dx * PX : x - (dx + w) * PX;
-    const ry = y + dy * PX;
-    ctx.fillRect(rx, ry, w * PX, h * PX);
+    ctx.fillRect(rx, y + dy * PX, w * PX, h * PX);
   };
 
   const shadow = (r: number) => {
@@ -2132,12 +2170,6 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 
   // Draws on the same 3-screen-pixel grid used for humanoids, at 2× Moses scale.
   const RPX = 3;
-  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
-    ctx.fillStyle = color;
-    const rx = flip === 1 ? x + dx * RPX : x - (dx + w) * RPX;
-    const ry = y + (dy + bob / RPX) * RPX;
-    ctx.fillRect(rx, ry, w * RPX, h * RPX);
-  };
 
   // -------- Egyptian war chariot (level 50+) --------
   // Drawn beneath Ramses so his torso rises above the cart. Simple pixel-art
@@ -2202,151 +2234,15 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     }
   }
 
-  // ---- Ramses palette: white / ivory / warm beige / soft gold, with muted
-  // desert-complementary accents (dusty teal + soft terracotta). Shading is
-  // soft: one light, one mid, one shadow tone per material, and the outline is
-  // a warm brown rather than black — exactly like Moses and the soldiers.
-  const OUT = "#6b5537";  // warm outline
-  const IVL = "#fffaf0";  // ivory highlight
-  const IVO = "#f6ecd6";  // ivory
-  const BEI = "#e4d3ad";  // warm beige
-  const BES = "#c9b286";  // beige shadow
-  const GLD = "#e8cf95";  // soft gold
-  const GDS = "#c1a468";  // gold shadow
-  const SKN = "#e3c49b";  // warm skin
-  const SKS = "#c39e75";  // skin shadow
-  const TEA = "#93b3ad";  // dusty teal accent
-  const TER = "#c78e73";  // soft terracotta accent
-
-  // Moses-style stepped walk: two readable poses, no smooth sliding.
+  // Ramses is drawn from Moses' own sprite pipeline: same renderer, same
+  // one-art-pixel-per-cell density, same stepped two-frame walk cycle. He is
+  // simply stamped at 2x Moses' cell size so he towers over normal humanoids.
   const step = Math.sin(e.animT * 0.9);
-  const frame = step > 0 ? 1 : 0;
-
-  // -------- Legs / shendyt kilt --------
-  if (!seated) {
-    if (frame === 0) {
-      p(-5, -1, 3, 5, SKN); p(-5, 1, 3, 3, SKS);
-      p(2, -1, 3, 5, SKN); p(2, 1, 3, 3, SKS);
-      p(-5, 4, 3, 1, OUT); p(2, 4, 3, 1, OUT);
-    } else {
-      p(-4, -1, 3, 5, SKN); p(-4, 1, 3, 3, SKS);
-      p(1, -1, 3, 5, SKN); p(1, 1, 3, 3, SKS);
-      p(-4, 4, 3, 1, OUT); p(1, 4, 3, 1, OUT);
-    }
-    // gold anklets
-    p(frame === 0 ? -5 : -4, 3, 3, 1, GLD);
-    p(frame === 0 ? 2 : 1, 3, 3, 1, GLD);
-  } else {
-    // seated: legs forward across the throne seat
-    p(-6, -1, 12, 3, SKN);
-    p(-6, 1, 12, 1, SKS);
-    p(-6, 2, 12, 1, OUT);
-  }
-
-  // Shendyt kilt — white linen with soft folds and a gold hem
-  p(-7, -9, 14, 8, OUT);
-  p(-7, -9, 14, 7, IVO);
-  p(-6, -9, 12, 3, IVL);
-  p(-7, -3, 14, 1, BEI);
-  p(-7, -2, 14, 1, BES);
-  p(-7, -9, 14, 1, GLD);
-  // central pleated panel
-  p(-1, -9, 2, 7, GLD);
-  p(0, -9, 1, 7, GDS);
-
-  // -------- Torso — ivory shawl over warm skin --------
-  p(-7, -19, 14, 11, OUT);
-  p(-7, -19, 14, 10, SKN);
-  p(-7, -12, 14, 2, SKS);      // lower-torso shadow
-  p(-6, -18, 5, 6, IVO);       // draped linen sash
-  p(-6, -18, 5, 2, IVL);
-  p(-2, -14, 3, 6, BEI);
-  // usekh collar — soft gold with muted accents
-  p(-7, -19, 14, 2, GLD);
-  p(-7, -18, 14, 1, TEA);
-  p(-6, -17, 12, 1, TER);
-  p(-7, -16, 14, 1, GDS);
-  // pectoral scarab
-  p(-2, -15, 4, 3, TEA);
-  p(-2, -15, 4, 1, GLD);
-  p(-1, -14, 2, 1, GLD);
-
-  // arms — swing gently opposite to the legs, Moses-style
-  const armY = seated ? -17 : frame === 0 ? -17 : -18;
-  p(-9, armY, 2, 7, OUT);
-  p(-9, armY, 2, 6, SKN);
-  p(-9, armY + 4, 2, 2, SKS);
-  p(7, armY, 2, 7, OUT);
-  p(7, armY, 2, 6, SKN);
-  p(7, armY + 4, 2, 2, SKS);
-  // gold armlets
-  p(-9, armY + 2, 2, 1, GLD); p(7, armY + 2, 2, 1, GLD);
-
-  // -------- Neck + head --------
-  // Slightly narrower skull than the nemes above it, with tighter-set kohl eyes
-  // so the face stays readable at gameplay distance (Moses' proportions).
-  p(-3, -21, 6, 2, SKS);
-  p(-5, -29, 10, 9, OUT);
-  p(-5, -29, 10, 8, SKN);
-  p(-5, -23, 10, 2, SKS);   // jaw shadow
-  p(-4, -28, 3, 3, IVL);    // soft cheek light
-  // kohl-lined eyes
-  p(-4, -26, 3, 1, OUT); p(1, -26, 3, 1, OUT);
-  p(-4, -25, 2, 1, IVL); p(2, -25, 2, 1, IVL);
-  p(-3, -25, 1, 1, OUT); p(3, -25, 1, 1, OUT);
-  // kohl tails
-  p(-5, -26, 1, 1, OUT); p(4, -26, 1, 1, OUT);
-  // mouth
-  p(-1, -22, 2, 1, SKS);
-  // pharaoh's postiche beard — braided ivory-gold, hanging off the chin
-  p(-1, -21, 2, 5, GDS);
-  p(-1, -21, 2, 4, GLD);
-  p(-1, -17, 2, 1, IVO);
-
-  // -------- Nemes headdress — ivory with soft gold stripes --------
-  // 14 wide so the head never out-measures the shoulders.
-  p(-7, -36, 14, 8, OUT);
-  p(-7, -36, 14, 7, IVO);
-  p(-7, -36, 14, 2, IVL);
-  for (let i = 0; i < 4; i++) p(-6 + i * 3, -34, 2, 5, GLD);
-  for (let i = 0; i < 4; i++) p(-5 + i * 3, -34, 1, 5, BEI);
-  // brow band
-  p(-7, -30, 14, 2, GLD);
-  p(-7, -29, 14, 1, GDS);
-  // side lappets flaring down past the shoulders
-  for (const sx of [-9, 7]) {
-    p(sx, -29, 2, 10, OUT);
-    p(sx, -29, 2, 9, IVO);
-    p(sx, -27, 2, 1, GLD);
-    p(sx, -24, 2, 1, GLD);
-    p(sx, -21, 2, 1, BEI);
-  }
-  // Uraeus cobra rearing over the brow
-  p(-1, -39, 3, 4, GDS);
-  p(-1, -39, 3, 3, GLD);
-  p(-1, -38, 2, 1, TER);
-  p(-2, -36, 4, 1, GLD);
-  p(0, -37, 1, 1, OUT);
-
-  // -------- Was-scepter — ivory shaft with soft gold fittings --------
-  if (phase !== "airborne") {
-    const sX = flip * 10;               // grid X of the shaft
-    const topY = -37;
-    const botY = 5;
-    // shaft (pixel-stamped so it keeps the exact same grid density)
-    for (let gy = topY; gy <= botY; gy++) {
-      p(sX - (flip === 1 ? 0 : 1), gy, 2, 1, OUT);
-      p(sX - (flip === 1 ? 0 : 1) + (flip === 1 ? 0 : 1), gy, 1, 1, gy % 3 === 0 ? BEI : IVO);
-    }
-    // scepter head — stylized set-animal profile
-    p(sX - (flip === 1 ? 1 : 3), topY - 3, 5, 3, OUT);
-    p(sX - (flip === 1 ? 1 : 3), topY - 3, 5, 2, GLD);
-    p(sX + (flip === 1 ? 2 : -1), topY - 2, 1, 1, OUT);   // eye
-    p(sX - (flip === 1 ? 1 : 3), topY - 1, 5, 1, GDS);
-    // forked base
-    p(sX - (flip === 1 ? 1 : 2), botY + 1, 2, 2, GDS);
-    p(sX + (flip === 1 ? 1 : -1), botY + 1, 2, 2, GDS);
-  }
+  const frame = seated ? 0 : step > 0 ? 1 : 0;
+  const rimg = renderSprite(RAMSES, frame, RPX * 2, flip === -1);
+  const rsx = Math.round(x - rimg.width / 2);
+  const rsy = Math.round(y + bob - rimg.height + 10);
+  ctx.drawImage(rimg, rsx, rsy);
 
   // Land shockwave (unchanged)
   if (phase === "land") {

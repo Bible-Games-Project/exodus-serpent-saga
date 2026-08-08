@@ -61,6 +61,14 @@ export const PALETTE: Record<string, string> = {
   // Jethro / earthy purple
   "p": "#8a6d9e",
   "P": "#4d3a5c",
+  // Pharaoh gold (intentionally brighter/more saturated than the base palette)
+  "1": "#b08c3f", // gold shadow
+  "2": "#f2c970", // gold mid
+  "3": "#ffe6a8", // gold highlight
+  // Royal linen — ivory / warm beige
+  "i": "#fffaf0",
+  "I": "#e4d3ad",
+  "x": "#c9b286",
 };
 
 export type ColorCode = keyof typeof PALETTE;
