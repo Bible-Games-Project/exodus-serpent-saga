@@ -2126,12 +2126,6 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 
   // Draws on the same 3-screen-pixel grid used for humanoids, at 2× Moses scale.
   const RPX = 3;
-  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
-    ctx.fillStyle = color;
-    const rx = flip === 1 ? x + dx * RPX : x - (dx + w) * RPX;
-    const ry = y + (dy + bob / RPX) * RPX;
-    ctx.fillRect(rx, ry, w * RPX, h * RPX);
-  };
 
   // -------- Egyptian war chariot (level 50+) --------
   // Drawn beneath Ramses so his torso rises above the cart. Simple pixel-art
