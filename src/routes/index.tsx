@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { MosesMenuSprite } from "@/components/MosesMenuSprite";
 import menuDesert from "@/assets/menu-desert.png";
