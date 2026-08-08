@@ -1489,7 +1489,44 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.fillRect(0, 0, viewW, viewH);
   }
 
-  // 5) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
+  // 5) Critical-health danger atmosphere — a chunky, dithered red wash that
+  // grows as Moses' health falls below 15%. Drawn as 6px pixel blocks with a
+  // vignette weighting so the centre of play stays readable.
+  const hpRatio = Math.max(0, s.player.hp) / Math.max(1, s.player.maxHp);
+  const danger = Math.max(0, Math.min(1, (0.15 - hpRatio) / 0.13));
+  if (danger > 0.001) {
+    const BLK = 6;
+    const cxp = viewW / 2, cyp = viewH / 2;
+    const maxD = Math.hypot(cxp, cyp);
+    // Two dither masks alternate each block so the wash reads as pixel art.
+    ctx.save();
+    for (let by = 0; by < viewH; by += BLK) {
+      for (let bx = 0; bx < viewW; bx += BLK) {
+        const d = Math.hypot(bx + BLK / 2 - cxp, by + BLK / 2 - cyp) / maxD;
+        // Edge-weighted: strong at the borders, gentle around Moses.
+        const w = 0.25 + d * d * 1.15;
+        const a = danger * w;
+        if (a <= 0.02) continue;
+        // Ordered 2x2 dither: skip a quarter of the blocks at low intensity.
+        const oi = ((bx / BLK) & 1) + (((by / BLK) & 1) << 1);
+        const th = [0.15, 0.55, 0.75, 0.35][oi];
+        if (danger < th * 0.55) continue;
+        ctx.fillStyle = `rgba(${a > 0.5 ? 150 : 176},${a > 0.5 ? 26 : 40},22,${Math.min(0.62, a * 0.62)})`;
+        ctx.fillRect(bx, by, BLK, BLK);
+      }
+    }
+    // Slow heartbeat pulse along the very edge of the frame.
+    const beat = 0.5 + 0.5 * Math.sin(s.now * 4.2);
+    const border = Math.round((10 + beat * 8) / BLK) * BLK;
+    ctx.fillStyle = `rgba(150,26,22,${0.18 * danger + 0.16 * danger * beat})`;
+    ctx.fillRect(0, 0, viewW, border);
+    ctx.fillRect(0, viewH - border, viewW, border);
+    ctx.fillRect(0, 0, border, viewH);
+    ctx.fillRect(viewW - border, 0, border, viewH);
+    ctx.restore();
+  }
+
+  // 6) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
 
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1508,7 +1545,9 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
   const flip = e.facing === -1;
   const frameIdx = Math.floor(e.animT) % sprite.frames.length;
   const img = renderSprite(sprite, frameIdx, SCALE, flip);
-  const drawW = img.width, drawH = img.height;
+  // +0.25% overall size — everything else (density, palette, animation) unchanged.
+  const MOSES_SIZE_MUL = 1.0025;
+  const drawW = img.width * MOSES_SIZE_MUL, drawH = img.height * MOSES_SIZE_MUL;
   const sx = Math.round(e.pos.x - camX - drawW / 2);
   const sy = Math.round(e.pos.y - camY - drawH + 8);
   // shadow
