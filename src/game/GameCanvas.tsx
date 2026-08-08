@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, RAMSES, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1643,12 +1643,6 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
 
   // Draws a rect on the shared "art-pixel" grid. dx/dy are in art-pixels,
   // measured from the character's feet-center. Flip mirrors horizontally.
-  const p = (dx: number, dy: number, w: number, h: number, color: string) => {
-    ctx.fillStyle = color;
-    const rx = flip === 1 ? x + dx * PX : x - (dx + w) * PX;
-    const ry = y + dy * PX;
-    ctx.fillRect(rx, ry, w * PX, h * PX);
-  };
 
   const shadow = (r: number) => {
     ctx.fillStyle = "rgba(0,0,0,0.28)";
@@ -2202,151 +2196,15 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     }
   }
 
-  // ---- Ramses palette: white / ivory / warm beige / soft gold, with muted
-  // desert-complementary accents (dusty teal + soft terracotta). Shading is
-  // soft: one light, one mid, one shadow tone per material, and the outline is
-  // a warm brown rather than black — exactly like Moses and the soldiers.
-  const OUT = "#6b5537";  // warm outline
-  const IVL = "#fffaf0";  // ivory highlight
-  const IVO = "#f6ecd6";  // ivory
-  const BEI = "#e4d3ad";  // warm beige
-  const BES = "#c9b286";  // beige shadow
-  const GLD = "#e8cf95";  // soft gold
-  const GDS = "#c1a468";  // gold shadow
-  const SKN = "#e3c49b";  // warm skin
-  const SKS = "#c39e75";  // skin shadow
-  const TEA = "#93b3ad";  // dusty teal accent
-  const TER = "#c78e73";  // soft terracotta accent
-
-  // Moses-style stepped walk: two readable poses, no smooth sliding.
+  // Ramses is drawn from Moses' own sprite pipeline: same renderer, same
+  // one-art-pixel-per-cell density, same stepped two-frame walk cycle. He is
+  // simply stamped at 2x Moses' cell size so he towers over normal humanoids.
   const step = Math.sin(e.animT * 0.9);
-  const frame = step > 0 ? 1 : 0;
-
-  // -------- Legs / shendyt kilt --------
-  if (!seated) {
-    if (frame === 0) {
-      p(-5, -1, 3, 5, SKN); p(-5, 1, 3, 3, SKS);
-      p(2, -1, 3, 5, SKN); p(2, 1, 3, 3, SKS);
-      p(-5, 4, 3, 1, OUT); p(2, 4, 3, 1, OUT);
-    } else {
-      p(-4, -1, 3, 5, SKN); p(-4, 1, 3, 3, SKS);
-      p(1, -1, 3, 5, SKN); p(1, 1, 3, 3, SKS);
-      p(-4, 4, 3, 1, OUT); p(1, 4, 3, 1, OUT);
-    }
-    // gold anklets
-    p(frame === 0 ? -5 : -4, 3, 3, 1, GLD);
-    p(frame === 0 ? 2 : 1, 3, 3, 1, GLD);
-  } else {
-    // seated: legs forward across the throne seat
-    p(-6, -1, 12, 3, SKN);
-    p(-6, 1, 12, 1, SKS);
-    p(-6, 2, 12, 1, OUT);
-  }
-
-  // Shendyt kilt — white linen with soft folds and a gold hem
-  p(-7, -9, 14, 8, OUT);
-  p(-7, -9, 14, 7, IVO);
-  p(-6, -9, 12, 3, IVL);
-  p(-7, -3, 14, 1, BEI);
-  p(-7, -2, 14, 1, BES);
-  p(-7, -9, 14, 1, GLD);
-  // central pleated panel
-  p(-1, -9, 2, 7, GLD);
-  p(0, -9, 1, 7, GDS);
-
-  // -------- Torso — ivory shawl over warm skin --------
-  p(-7, -19, 14, 11, OUT);
-  p(-7, -19, 14, 10, SKN);
-  p(-7, -12, 14, 2, SKS);      // lower-torso shadow
-  p(-6, -18, 5, 6, IVO);       // draped linen sash
-  p(-6, -18, 5, 2, IVL);
-  p(-2, -14, 3, 6, BEI);
-  // usekh collar — soft gold with muted accents
-  p(-7, -19, 14, 2, GLD);
-  p(-7, -18, 14, 1, TEA);
-  p(-6, -17, 12, 1, TER);
-  p(-7, -16, 14, 1, GDS);
-  // pectoral scarab
-  p(-2, -15, 4, 3, TEA);
-  p(-2, -15, 4, 1, GLD);
-  p(-1, -14, 2, 1, GLD);
-
-  // arms — swing gently opposite to the legs, Moses-style
-  const armY = seated ? -17 : frame === 0 ? -17 : -18;
-  p(-9, armY, 2, 7, OUT);
-  p(-9, armY, 2, 6, SKN);
-  p(-9, armY + 4, 2, 2, SKS);
-  p(7, armY, 2, 7, OUT);
-  p(7, armY, 2, 6, SKN);
-  p(7, armY + 4, 2, 2, SKS);
-  // gold armlets
-  p(-9, armY + 2, 2, 1, GLD); p(7, armY + 2, 2, 1, GLD);
-
-  // -------- Neck + head --------
-  // Slightly narrower skull than the nemes above it, with tighter-set kohl eyes
-  // so the face stays readable at gameplay distance (Moses' proportions).
-  p(-3, -21, 6, 2, SKS);
-  p(-5, -29, 10, 9, OUT);
-  p(-5, -29, 10, 8, SKN);
-  p(-5, -23, 10, 2, SKS);   // jaw shadow
-  p(-4, -28, 3, 3, IVL);    // soft cheek light
-  // kohl-lined eyes
-  p(-4, -26, 3, 1, OUT); p(1, -26, 3, 1, OUT);
-  p(-4, -25, 2, 1, IVL); p(2, -25, 2, 1, IVL);
-  p(-3, -25, 1, 1, OUT); p(3, -25, 1, 1, OUT);
-  // kohl tails
-  p(-5, -26, 1, 1, OUT); p(4, -26, 1, 1, OUT);
-  // mouth
-  p(-1, -22, 2, 1, SKS);
-  // pharaoh's postiche beard — braided ivory-gold, hanging off the chin
-  p(-1, -21, 2, 5, GDS);
-  p(-1, -21, 2, 4, GLD);
-  p(-1, -17, 2, 1, IVO);
-
-  // -------- Nemes headdress — ivory with soft gold stripes --------
-  // 14 wide so the head never out-measures the shoulders.
-  p(-7, -36, 14, 8, OUT);
-  p(-7, -36, 14, 7, IVO);
-  p(-7, -36, 14, 2, IVL);
-  for (let i = 0; i < 4; i++) p(-6 + i * 3, -34, 2, 5, GLD);
-  for (let i = 0; i < 4; i++) p(-5 + i * 3, -34, 1, 5, BEI);
-  // brow band
-  p(-7, -30, 14, 2, GLD);
-  p(-7, -29, 14, 1, GDS);
-  // side lappets flaring down past the shoulders
-  for (const sx of [-9, 7]) {
-    p(sx, -29, 2, 10, OUT);
-    p(sx, -29, 2, 9, IVO);
-    p(sx, -27, 2, 1, GLD);
-    p(sx, -24, 2, 1, GLD);
-    p(sx, -21, 2, 1, BEI);
-  }
-  // Uraeus cobra rearing over the brow
-  p(-1, -39, 3, 4, GDS);
-  p(-1, -39, 3, 3, GLD);
-  p(-1, -38, 2, 1, TER);
-  p(-2, -36, 4, 1, GLD);
-  p(0, -37, 1, 1, OUT);
-
-  // -------- Was-scepter — ivory shaft with soft gold fittings --------
-  if (phase !== "airborne") {
-    const sX = flip * 10;               // grid X of the shaft
-    const topY = -37;
-    const botY = 5;
-    // shaft (pixel-stamped so it keeps the exact same grid density)
-    for (let gy = topY; gy <= botY; gy++) {
-      p(sX - (flip === 1 ? 0 : 1), gy, 2, 1, OUT);
-      p(sX - (flip === 1 ? 0 : 1) + (flip === 1 ? 0 : 1), gy, 1, 1, gy % 3 === 0 ? BEI : IVO);
-    }
-    // scepter head — stylized set-animal profile
-    p(sX - (flip === 1 ? 1 : 3), topY - 3, 5, 3, OUT);
-    p(sX - (flip === 1 ? 1 : 3), topY - 3, 5, 2, GLD);
-    p(sX + (flip === 1 ? 2 : -1), topY - 2, 1, 1, OUT);   // eye
-    p(sX - (flip === 1 ? 1 : 3), topY - 1, 5, 1, GDS);
-    // forked base
-    p(sX - (flip === 1 ? 1 : 2), botY + 1, 2, 2, GDS);
-    p(sX + (flip === 1 ? 1 : -1), botY + 1, 2, 2, GDS);
-  }
+  const frame = seated ? 0 : step > 0 ? 1 : 0;
+  const rimg = renderSprite(RAMSES, frame, RPX * 2, flip === -1);
+  const rsx = Math.round(x - rimg.width / 2);
+  const rsy = Math.round(y + bob - rimg.height + 10);
+  ctx.drawImage(rimg, rsx, rsy);
 
   // Land shockwave (unchanged)
   if (phase === "land") {
