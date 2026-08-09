@@ -61,14 +61,16 @@ export const PALETTE: Record<string, string> = {
   // Jethro / earthy purple
   "p": "#8a6d9e",
   "P": "#4d3a5c",
-  // Pharaoh gold (intentionally brighter/more saturated than the base palette)
-  "1": "#b08c3f", // gold shadow
+  // Pharaoh gold — the only bright accent on Ramses. #F2C970 is the mid tone,
+  // with a darker shadow and a soft highlight for depth.
+  "1": "#a67c2e", // gold shadow
   "2": "#f2c970", // gold mid
-  "3": "#ffe6a8", // gold highlight
-  // Royal linen — ivory / warm beige
-  "i": "#fffaf0",
-  "I": "#e4d3ad",
-  "x": "#c9b286",
+  "3": "#ffe3a0", // gold highlight
+  // Royal linen — muted ivory / warm beige, deliberately a touch darker than
+  // Moses' linen so Ramses reads as ancient, elegant and desert-harmonious.
+  "i": "#efe1c2",
+  "I": "#d6c29a",
+  "x": "#ab9670",
 };
 
 export type ColorCode = keyof typeof PALETTE;

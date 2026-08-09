@@ -39,6 +39,43 @@ const SPRITE_MAP: Record<string, Sprite> = {
 
 const SCALE = 3;
 
+// ---------------- Responsive composition ----------------
+// The game is authored for a 1280x720 "design" viewport. On any other screen
+// we scale the camera so the *visible world area* stays essentially constant:
+// a small laptop, a large monitor and a phone all see the same amount of the
+// map with Moses at the same relative size. Nothing is stretched — the zoom is
+// uniform on both axes, only the aspect ratio of the framing changes.
+const DESIGN_W = 1280;
+const DESIGN_H = 720;
+
+export function viewZoom(cssW: number, cssH: number): number {
+  const area = Math.max(1, cssW * cssH) / (DESIGN_W * DESIGN_H);
+  const z = Math.sqrt(area);
+  return Math.max(0.8, Math.min(1.7, z));
+}
+
+/** Uniform scale for the bottom HUD so it never overflows narrow screens. */
+function hudScale(cssW: number, cssH: number): number {
+  return Math.max(0.5, Math.min(1, Math.min(cssW / 1000, cssH / 620)));
+}
+
+function useHudScale(): number {
+  const [k, setK] = useState(() =>
+    typeof window === "undefined" ? 1 : hudScale(window.innerWidth, window.innerHeight),
+  );
+  useEffect(() => {
+    const on = () => setK(hudScale(window.innerWidth, window.innerHeight));
+    on();
+    window.addEventListener("resize", on);
+    window.addEventListener("orientationchange", on);
+    return () => {
+      window.removeEventListener("resize", on);
+      window.removeEventListener("orientationchange", on);
+    };
+  }, []);
+  return k;
+}
+
 function makeSandTile(): HTMLCanvasElement {
   // Ground base: authored desert tile, drawn into a power-of-two canvas so the
   // world size (8192) stays an exact multiple of the tile and wrapping is
@@ -142,7 +179,12 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
       }
       s.input.x = ix; s.input.y = iy;
       s.paused = paused;
-      s.viewport = { w: cnv.clientWidth, h: cnv.clientHeight };
+      {
+        // Logical (zoom-corrected) viewport so spawning/off-screen logic sees
+        // the same world extents on every device.
+        const z = viewZoom(cnv.clientWidth, cnv.clientHeight);
+        s.viewport = { w: cnv.clientWidth / z, h: cnv.clientHeight / z };
+      }
 
       if (!paused && !s.gameOver && !s.levelUpPending) update(s, dt);
 
@@ -433,6 +475,7 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const shieldPct = Math.round((1 - shieldDamageMul(state)) * 100);
 
   const notifs = state.notifications ?? [];
+  const k = useHudScale();
 
   return (
     <>
@@ -442,9 +485,10 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.45) 100%)" }}
       />
 
-      {/* Single bottom HUD: run info | player stats */}
+      {/* Single bottom HUD: run info | player stats. Uniformly scaled so the
+          same layout fits phones, small laptops and large monitors. */}
       <div className="absolute inset-x-0 bottom-7 flex items-end justify-center px-3">
-        <div className="flex items-end gap-6">
+        <div className="flex items-end gap-6" style={{ transform: `scale(${k})`, transformOrigin: "bottom center" }}>
           <div className="flex items-end gap-4">
             <StatCell art={MEDAL_ART} label="Level" value={`${state.level}`} />
             <StatCell art={CLOCK_ART} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
@@ -550,20 +594,39 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 }
 
 
-// Loadout bar now only surfaces active companions (unlocked plagues are shown
-// via floating notifications when acquired, not as a permanent list).
+// Companion summon announcement: a brief banner shown for a few seconds when a
+// companion joins, then it fades out and disappears completely. It is never a
+// permanent HUD element.
+const SUMMON_NOTICE_SECONDS = 4.5;
+const SUMMON_FADE_SECONDS = 0.8;
+
 function LoadoutBar({ state, tick: _tick, onDismissPlague: _p, onDismissNpc }: {
   state: GameState; tick: number;
   onDismissPlague: (id: PlagueId) => void;
   onDismissNpc: (id: NpcId) => void;
 }) {
   const npcs = Array.from(state.npcs.keys());
-  if (npcs.length === 0) return null;
+  // First time we see a companion, remember when it appeared.
+  const seen = useRef(new Map<NpcId, number>());
+  for (const id of npcs) if (!seen.current.has(id)) seen.current.set(id, state.now);
+
+  const visible = npcs
+    .map((id) => ({ id, age: state.now - (seen.current.get(id) ?? state.now) }))
+    .filter((n) => n.age < SUMMON_NOTICE_SECONDS + SUMMON_FADE_SECONDS);
+
+  if (visible.length === 0) return null;
   return (
     <div className="absolute inset-x-0 top-14 flex flex-wrap items-center justify-center gap-1.5 px-2">
-      {npcs.map((id) => (
-        <LoadoutPill key={id} isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
-      ))}
+      {visible.map(({ id, age }) => {
+        const fade = age <= SUMMON_NOTICE_SECONDS
+          ? 1
+          : Math.max(0, 1 - (age - SUMMON_NOTICE_SECONDS) / SUMMON_FADE_SECONDS);
+        return (
+          <div key={id} style={{ opacity: fade, transform: `translateY(${(1 - fade) * -8}px)` }}>
+            <LoadoutPill isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1338,9 +1401,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   const w = cnv.width;
   const cam = s.camera;
   const dpr = w / cnv.clientWidth;
-  const viewW = cnv.clientWidth;
-  const viewH = cnv.clientHeight;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Uniform camera zoom keeps the composition identical across resolutions.
+  const zoom = viewZoom(cnv.clientWidth, cnv.clientHeight);
+  const viewW = cnv.clientWidth / zoom;
+  const viewH = cnv.clientHeight / zoom;
+  ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
   ctx.clearRect(0, 0, viewW, viewH);
 
   // ---- Infinite-world wrap: temporarily shift every entity so its position
@@ -1529,7 +1594,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // 6) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
 
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
 
   // Restore original entity positions (see wrap block at top of draw).
   for (const [id, ox, oy] of origs) {
