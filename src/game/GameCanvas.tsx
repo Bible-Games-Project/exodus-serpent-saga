@@ -1380,9 +1380,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   const w = cnv.width;
   const cam = s.camera;
   const dpr = w / cnv.clientWidth;
-  const viewW = cnv.clientWidth;
-  const viewH = cnv.clientHeight;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // Uniform camera zoom keeps the composition identical across resolutions.
+  const zoom = viewZoom(cnv.clientWidth, cnv.clientHeight);
+  const viewW = cnv.clientWidth / zoom;
+  const viewH = cnv.clientHeight / zoom;
+  ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
   ctx.clearRect(0, 0, viewW, viewH);
 
   // ---- Infinite-world wrap: temporarily shift every entity so its position
