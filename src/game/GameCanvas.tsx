@@ -179,7 +179,12 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
       }
       s.input.x = ix; s.input.y = iy;
       s.paused = paused;
-      s.viewport = { w: cnv.clientWidth, h: cnv.clientHeight };
+      {
+        // Logical (zoom-corrected) viewport so spawning/off-screen logic sees
+        // the same world extents on every device.
+        const z = viewZoom(cnv.clientWidth, cnv.clientHeight);
+        s.viewport = { w: cnv.clientWidth / z, h: cnv.clientHeight / z };
+      }
 
       if (!paused && !s.gameOver && !s.levelUpPending) update(s, dt);
 
