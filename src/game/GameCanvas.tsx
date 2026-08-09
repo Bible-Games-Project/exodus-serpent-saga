@@ -39,6 +39,43 @@ const SPRITE_MAP: Record<string, Sprite> = {
 
 const SCALE = 3;
 
+// ---------------- Responsive composition ----------------
+// The game is authored for a 1280x720 "design" viewport. On any other screen
+// we scale the camera so the *visible world area* stays essentially constant:
+// a small laptop, a large monitor and a phone all see the same amount of the
+// map with Moses at the same relative size. Nothing is stretched — the zoom is
+// uniform on both axes, only the aspect ratio of the framing changes.
+const DESIGN_W = 1280;
+const DESIGN_H = 720;
+
+export function viewZoom(cssW: number, cssH: number): number {
+  const area = Math.max(1, cssW * cssH) / (DESIGN_W * DESIGN_H);
+  const z = Math.sqrt(area);
+  return Math.max(0.8, Math.min(1.7, z));
+}
+
+/** Uniform scale for the bottom HUD so it never overflows narrow screens. */
+function hudScale(cssW: number, cssH: number): number {
+  return Math.max(0.5, Math.min(1, Math.min(cssW / 1000, cssH / 620)));
+}
+
+function useHudScale(): number {
+  const [k, setK] = useState(() =>
+    typeof window === "undefined" ? 1 : hudScale(window.innerWidth, window.innerHeight),
+  );
+  useEffect(() => {
+    const on = () => setK(hudScale(window.innerWidth, window.innerHeight));
+    on();
+    window.addEventListener("resize", on);
+    window.addEventListener("orientationchange", on);
+    return () => {
+      window.removeEventListener("resize", on);
+      window.removeEventListener("orientationchange", on);
+    };
+  }, []);
+  return k;
+}
+
 function makeSandTile(): HTMLCanvasElement {
   // Ground base: authored desert tile, drawn into a power-of-two canvas so the
   // world size (8192) stays an exact multiple of the tile and wrapping is
