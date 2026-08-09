@@ -594,20 +594,39 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 }
 
 
-// Loadout bar now only surfaces active companions (unlocked plagues are shown
-// via floating notifications when acquired, not as a permanent list).
+// Companion summon announcement: a brief banner shown for a few seconds when a
+// companion joins, then it fades out and disappears completely. It is never a
+// permanent HUD element.
+const SUMMON_NOTICE_SECONDS = 4.5;
+const SUMMON_FADE_SECONDS = 0.8;
+
 function LoadoutBar({ state, tick: _tick, onDismissPlague: _p, onDismissNpc }: {
   state: GameState; tick: number;
   onDismissPlague: (id: PlagueId) => void;
   onDismissNpc: (id: NpcId) => void;
 }) {
   const npcs = Array.from(state.npcs.keys());
-  if (npcs.length === 0) return null;
+  // First time we see a companion, remember when it appeared.
+  const seen = useRef(new Map<NpcId, number>());
+  for (const id of npcs) if (!seen.current.has(id)) seen.current.set(id, state.now);
+
+  const visible = npcs
+    .map((id) => ({ id, age: state.now - (seen.current.get(id) ?? state.now) }))
+    .filter((n) => n.age < SUMMON_NOTICE_SECONDS + SUMMON_FADE_SECONDS);
+
+  if (visible.length === 0) return null;
   return (
     <div className="absolute inset-x-0 top-14 flex flex-wrap items-center justify-center gap-1.5 px-2">
-      {npcs.map((id) => (
-        <LoadoutPill key={id} isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
-      ))}
+      {visible.map(({ id, age }) => {
+        const fade = age <= SUMMON_NOTICE_SECONDS
+          ? 1
+          : Math.max(0, 1 - (age - SUMMON_NOTICE_SECONDS) / SUMMON_FADE_SECONDS);
+        return (
+          <div key={id} style={{ opacity: fade, transform: `translateY(${(1 - fade) * -8}px)` }}>
+            <LoadoutPill isNew={state.newNpcs.has(id)} title={NPCS[id].name} subtitle="Companion" tone="ally" onClick={() => onDismissNpc(id)} />
+          </div>
+        );
+      })}
     </div>
   );
 }
