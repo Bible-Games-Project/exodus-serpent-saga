@@ -1573,7 +1573,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // 6) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
 
 
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
 
   // Restore original entity positions (see wrap block at top of draw).
   for (const [id, ox, oy] of origs) {
