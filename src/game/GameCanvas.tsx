@@ -475,6 +475,7 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const shieldPct = Math.round((1 - shieldDamageMul(state)) * 100);
 
   const notifs = state.notifications ?? [];
+  const k = useHudScale();
 
   return (
     <>
@@ -484,9 +485,10 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.18) 45%, rgba(0,0,0,0.45) 100%)" }}
       />
 
-      {/* Single bottom HUD: run info | player stats */}
+      {/* Single bottom HUD: run info | player stats. Uniformly scaled so the
+          same layout fits phones, small laptops and large monitors. */}
       <div className="absolute inset-x-0 bottom-7 flex items-end justify-center px-3">
-        <div className="flex items-end gap-6">
+        <div className="flex items-end gap-6" style={{ transform: `scale(${k})`, transformOrigin: "bottom center" }}>
           <div className="flex items-end gap-4">
             <StatCell art={MEDAL_ART} label="Level" value={`${state.level}`} />
             <StatCell art={CLOCK_ART} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
