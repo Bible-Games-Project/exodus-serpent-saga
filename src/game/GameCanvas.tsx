@@ -1615,11 +1615,12 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
   const drawW = img.width * MOSES_SIZE_MUL, drawH = img.height * MOSES_SIZE_MUL;
   const sx = Math.round(e.pos.x - camX - drawW / 2);
   const sy = Math.round(e.pos.y - camY - drawH + 8);
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.beginPath();
-  ctx.ellipse(sx + drawW / 2, Math.round(e.pos.y - camY + 8), img.width * 0.35, 4, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Pixel-art ground shadow — sways gently with the walk cycle.
+  const mosesWalking = Math.hypot(e.vel.x, e.vel.y) > 5;
+  drawPixelShadow(ctx, sx + drawW / 2, Math.round(e.pos.y - camY + 9), img.width * 0.66, {
+    px: SCALE, alpha: 0.26, seed: 7, phase: e.animT, sway: mosesWalking ? 1 : 0,
+  });
+
   ctx.drawImage(img, sx, sy, drawW, drawH);
   // Invincibility (Star bonus): Moses flashes between his normal colours and a
   // brighter, gold-tinted version — no ring, no overlay covering him.
