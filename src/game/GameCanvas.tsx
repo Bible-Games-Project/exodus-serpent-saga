@@ -3540,9 +3540,11 @@ function drawCompanion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
     }
   }
 
-  // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  // Pixel-art ground shadow (stays under the body, even when downed)
+  drawPixelShadow(ctx, x, y + 11, 30, {
+    px: CPX, alpha: 0.26, seed: e.id, phase: e.animT, sway: downed ? 0 : 0.8,
+  });
+
 
   // ---------- Downed pose ----------
   if (downed) {
