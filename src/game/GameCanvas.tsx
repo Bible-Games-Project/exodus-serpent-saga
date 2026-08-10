@@ -1695,10 +1695,10 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
   // Shadow: for downed companions, put it under the resting body (at sprite center).
   const shadowY = downed ? Math.round(sy + drawH / 2 + 6) : Math.round(e.pos.y - camY + 8);
-  ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
-  ctx.beginPath();
-  ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
-  ctx.fill();
+  drawPixelShadow(ctx, sx + drawW / 2, shadowY + 1, img.width * 0.7 * shadowScale, {
+    px: SCALE, alpha: 0.22, seed: e.id, phase: e.animT, sway: downed ? 0 : 0.8, lift: shadowScale,
+  });
+
   if (downed) {
     ctx.save();
     ctx.globalAlpha = 0.55;
