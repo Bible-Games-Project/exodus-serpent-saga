@@ -1757,11 +1757,9 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   };
 
   const shadow = (r: number) => {
-    ctx.fillStyle = "rgba(0,0,0,0.28)";
-    ctx.beginPath();
-    ctx.ellipse(x, y + 6, r, 3.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    drawPixelShadow(ctx, x, y + 7, r * 2, { px: PX, alpha: 0.26, seed: e.id, phase: t, sway: 0.8 });
   };
+
   const hpBar = () => {
     if (e.hp < e.maxHp) {
       const bw = 26;
