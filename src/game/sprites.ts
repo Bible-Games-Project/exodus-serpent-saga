@@ -417,66 +417,69 @@ export const ROCK = make([
   ],
 ]);
 
-// Ramses — built directly on Moses' construction: same 16-wide grid, one
-// character per pixel, the same rounded organic head (no cube), the same
-// two-frame walk cycle with identical leg timing, and the same built-in staff
-// column on his right (gold instead of wood). No dark bands anywhere: the
-// silhouette is held with the warm beige shadow `x` instead of the black `K`
-// outline. Eyes are pure white like Moses'. Palette is muted royal linen with
-// #F2C970 gold as the only bright accent. 24 rows tall so he towers over Moses
-// while clearly coming from the same hand.
+// Ramses — rebuilt from scratch on Moses' construction: same one-character-per-
+// pixel grid, same organic rounded head and face (white eyes), same stepped
+// two-frame walk cycle with identical leg timing, and the same "staff column"
+// on his right — only here it is an Egyptian was-scepter in royal gold.
+//
+// Pharaoh identity is carried by silhouette: a flaring white nemes headdress
+// with gold bands and a rearing uraeus cobra crest, a broad usekh collar, a
+// gold royal belt over ivory royal linen and gilded sandals. No black outlines
+// anywhere — the silhouette is held with the deep warm shadow `q` so he stays
+// in harmony with the #FEEFBE desert. 18 wide x 24 tall.
 export const RAMSES = make([
   [
-    "..............22",
-    ".....xxxxxx..121",
-    "....xiiiiiix.121",
-    "....xi2ii2ix.121",
-    "....xissssix.121",
-    "....xiWssWix.121",
-    "....xissssix.121",
-    ".....x2222x..121",
-    "....2222222..121",
-    "...i2222222i.121",
-    "...iiiiiiii..121",
-    "...iIiIiIiI..121",
-    "..iiiiiiiiii.121",
-    "..iIiiiiiiIi.121",
-    "..iii2222iii.121",
-    "..iiiiiiiiii.121",
-    "..iIiiiiiiIi.121",
-    "..iiiiiiiiii.121",
-    "..iIiiiiiiIi.121",
-    "...iii..iii..121",
-    "...III..III..121",
-    "...sss..sss..121",
-    "...SSS..SSS..121",
-    "...22....22..121",
+    "......q4q......434",
+    ".....qWWWq.....424",
+    "....qWWWWWWWq..121",
+    "...qW4WW4WW4Wq.121",
+    "...qWssssssWq..121",
+    "...qWsWssWsWq..121",
+    "...qWssssssWq..121",
+    "...qWsSSSSsWq..121",
+    "...qW4WWWW4Wq..121",
+    "..q4444444444q.121",
+    "..q1222222221q.121",
+    "..q4422442244q.121",
+    "...q11111111q..121",
+    "...iiiiiiiiii..121",
+    "...iIiiiiiiIi..121",
+    "...i44444444i..121",
+    "...i22222222i..121",
+    "...iiiiiiiiii..121",
+    "...iIiiiiiiIi..121",
+    "...iiiiiiiiii..121",
+    "...iii..iii....121",
+    "...III..III....121",
+    "...sss..sss....1.1",
+    "...222..222....1.1",
   ],
   [
-    "..............22",
-    ".....xxxxxx..121",
-    "....xiiiiiix.121",
-    "....xi2ii2ix.121",
-    "....xissssix.121",
-    "....xiWssWix.121",
-    "....xissssix.121",
-    ".....x2222x..121",
-    "....2222222..121",
-    "...i2222222i.121",
-    "...iiiiiiii..121",
-    "...iIiIiIiI..121",
-    "..iiiiiiiiii.121",
-    "..iIiiiiiiIi.121",
-    "..iii2222iii.121",
-    "..iiiiiiiiii.121",
-    "..iIiiiiiiIi.121",
-    "..iiiiiiiiii.121",
-    "..iIiiiiiiIi.121",
-    "....iiiiii...121",
-    "....IIIIII...121",
-    "...ss....ss..121",
-    "..SSs....sSS.121",
-    "..22......22.121",
+    "......q4q......434",
+    ".....qWWWq.....424",
+    "....qWWWWWWWq..121",
+    "...qW4WW4WW4Wq.121",
+    "...qWssssssWq..121",
+    "...qWsWssWsWq..121",
+    "...qWssssssWq..121",
+    "...qWsSSSSsWq..121",
+    "...qW4WWWW4Wq..121",
+    "..q4444444444q.121",
+    "..q1222222221q.121",
+    "..q4422442244q.121",
+    "...q11111111q..121",
+    "...iiiiiiiiii..121",
+    "...iIiiiiiiIi..121",
+    "...i44444444i..121",
+    "...i22222222i..121",
+    "...iiiiiiiiii..121",
+    "...iIiiiiiiIi..121",
+    "....iiiiii.....121",
+    "....IIIIII.....121",
+    "...ss....ss....121",
+    "..222....222...1.1",
+    "..2........2...1.1",
   ],
 ]);
+
 
