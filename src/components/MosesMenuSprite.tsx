@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { MOSES_NOSTAFF, renderSprite } from "@/game/sprites";
 import { drawShepherdStaff } from "@/game/staff";
+import { drawPixelShadow } from "@/game/shadow";
+
 
 /**
  * Moses exactly as he appears in gameplay: the same MOSES_NOSTAFF sprite at the
@@ -38,11 +40,9 @@ export function MosesMenuSprite({ zoom = 3, className }: { zoom?: number; classN
       const baseX = Math.round((W - img.width) / 2);
       const baseY = H - img.height - 6 + breath;
 
-      // Soft ground shadow.
-      ctx.fillStyle = "rgba(90, 62, 34, 0.22)";
-      ctx.beginPath();
-      ctx.ellipse(W / 2, H - 6, img.width * 0.36, 5, 0, 0, Math.PI * 2);
-      ctx.fill();
+      // Pixel-art ground shadow (same language as gameplay).
+      drawPixelShadow(ctx, W / 2, H - 5, img.width * 0.7, { px: 3, alpha: 0.24, seed: 7 });
+
 
       ctx.drawImage(img, baseX, baseY);
 

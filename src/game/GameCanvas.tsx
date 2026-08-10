@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, RAMSES, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { drawPixelShadow } from "./shadow";
+
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1359,32 +1361,40 @@ function iconGridFor(c: UpgradeChoice): string[] {
 }
 
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
+  // Fits the whole three-card selection inside the viewport at every size:
+  // one row on desktop, one column on mobile, never scrolling and never
+  // clipping the third card. Sizes are viewport-relative so cards, icons and
+  // text shrink together on short screens.
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-      <div className="max-w-3xl w-[92%] rounded-2xl border border-border bg-card p-6 shadow-2xl">
-        <h2 className="mb-1 text-center text-2xl">Level Up!</h2>
-        <p className="mb-6 text-center text-sm text-muted-foreground">Choose your blessing</p>
-        <div className="grid gap-4 sm:grid-cols-3">
+    <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-background/70 p-2 backdrop-blur-sm sm:p-4">
+      <div className="flex h-full max-h-full w-full max-w-5xl flex-col rounded-2xl border border-border bg-card p-2 shadow-2xl sm:p-5">
+        <h2 className="text-center text-[clamp(1rem,3.4vh,1.6rem)] leading-tight">Level Up!</h2>
+        <p className="mb-1 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] text-muted-foreground sm:mb-3">Choose your blessing</p>
+        <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-3 gap-2 sm:grid-cols-3 sm:grid-rows-1 sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
             return (
               <button key={c.id} onClick={() => onPick(c)}
-                className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary">
+                className="group relative flex min-h-0 min-w-0 items-center gap-3 overflow-hidden rounded-xl border border-border bg-background p-2 text-left transition-all hover:border-primary hover:bg-secondary sm:flex-col sm:items-stretch sm:gap-0 sm:p-4 sm:hover:-translate-y-1">
                 {c.isUnlock && (
-                  <span className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
+                  <span className={`absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow sm:-right-2 sm:-top-2 ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
                     NEW
                   </span>
                 )}
-                <div className="mb-3 flex h-20 items-center justify-center">
-                  <PixelIcon grid={grid} size={72} />
-                </div>
-                <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
-                <div className="text-xs text-muted-foreground">{c.description}</div>
-                {c.scripture && (
-                  <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] italic leading-snug text-foreground/80">
-                    {c.scripture}
+                <div className="flex shrink-0 items-center justify-center sm:mb-3 sm:h-[clamp(2.5rem,12vh,5rem)]">
+                  <div className="origin-center scale-[0.62] sm:scale-100">
+                    <PixelIcon grid={grid} size={72} />
                   </div>
-                )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 text-[clamp(0.72rem,2.1vh,0.9rem)] font-bold leading-tight text-primary sm:mb-2">{c.title}</div>
+                  <div className="line-clamp-3 text-[clamp(0.62rem,1.8vh,0.78rem)] leading-snug text-muted-foreground sm:line-clamp-none">{c.description}</div>
+                  {c.scripture && (
+                    <div className="mt-1 hidden rounded-md border border-primary/30 bg-primary/5 p-2 text-[clamp(0.6rem,1.6vh,0.7rem)] italic leading-snug text-foreground/80 sm:mt-3 sm:block [@media(min-height:640px)]:block">
+                      {c.scripture}
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -1393,6 +1403,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
     </div>
   );
 }
+
 
 
 
@@ -1615,11 +1626,12 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
   const drawW = img.width * MOSES_SIZE_MUL, drawH = img.height * MOSES_SIZE_MUL;
   const sx = Math.round(e.pos.x - camX - drawW / 2);
   const sy = Math.round(e.pos.y - camY - drawH + 8);
-  // shadow
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.beginPath();
-  ctx.ellipse(sx + drawW / 2, Math.round(e.pos.y - camY + 8), img.width * 0.35, 4, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Pixel-art ground shadow — sways gently with the walk cycle.
+  const mosesWalking = Math.hypot(e.vel.x, e.vel.y) > 5;
+  drawPixelShadow(ctx, sx + drawW / 2, Math.round(e.pos.y - camY + 9), img.width * 0.66, {
+    px: SCALE, alpha: 0.26, seed: 7, phase: e.animT, sway: mosesWalking ? 1 : 0,
+  });
+
   ctx.drawImage(img, sx, sy, drawW, drawH);
   // Invincibility (Star bonus): Moses flashes between his normal colours and a
   // brighter, gold-tinted version — no ring, no overlay covering him.
@@ -1692,10 +1704,10 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
   // Shadow: for downed companions, put it under the resting body (at sprite center).
   const shadowY = downed ? Math.round(sy + drawH / 2 + 6) : Math.round(e.pos.y - camY + 8);
-  ctx.fillStyle = `rgba(0,0,0,${0.18 * shadowScale})`;
-  ctx.beginPath();
-  ctx.ellipse(sx + drawW / 2, shadowY, img.width * 0.35 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
-  ctx.fill();
+  drawPixelShadow(ctx, sx + drawW / 2, shadowY + 1, img.width * 0.7 * shadowScale, {
+    px: SCALE, alpha: 0.22, seed: e.id, phase: e.animT, sway: downed ? 0 : 0.8, lift: shadowScale,
+  });
+
   if (downed) {
     ctx.save();
     ctx.globalAlpha = 0.55;
@@ -1754,11 +1766,9 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   };
 
   const shadow = (r: number) => {
-    ctx.fillStyle = "rgba(0,0,0,0.28)";
-    ctx.beginPath();
-    ctx.ellipse(x, y + 6, r, 3.5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    drawPixelShadow(ctx, x, y + 7, r * 2, { px: PX, alpha: 0.26, seed: e.id, phase: t, sway: 0.8 });
   };
+
   const hpBar = () => {
     if (e.hp < e.maxHp) {
       const bw = 26;
@@ -2216,10 +2226,15 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
   
 
-  // Shadow — big; Ramses is roughly 2x a normal human.
+  // Pixel-art ground shadow — big; Ramses is roughly 2x a normal human. It stays
+  // on the ground while he leaps, tightening as he rises and spreading on landing.
   const chariot = !!d.chariot && !seated;
-  ctx.fillStyle = "rgba(0,0,0,0.42)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, chariot ? 54 : 34, chariot ? 9 : 7, 0, 0, Math.PI * 2); ctx.fill();
+  const airT = phase === "airborne" ? 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.75)) : 0;
+  const ramLift = phase === "airborne" ? 1 - Math.sin(airT * Math.PI) * 0.45 : phase === "land" ? 1.12 : 1;
+  drawPixelShadow(ctx, x, y + 11, chariot ? 108 : 70, {
+    px: 3, alpha: 0.34, seed: 99, phase: e.animT, sway: seated ? 0 : 0.9, lift: ramLift,
+  });
+
 
   let bob = 0;
   if (phase === "airborne") {
@@ -2336,9 +2351,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 46 * RPX - 1, bw + 2, 6);
     ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw, 4);
     ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw * Math.max(0, e.hp / e.maxHp), 4);
-    ctx.fillStyle = "#ffdd80"; ctx.font = "700 12px Nunito, sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("RAMSES", x, y - 46 * RPX - 5);
   }
+
 }
 
 // ---------------- Throne ----------------
@@ -3535,9 +3549,11 @@ function drawCompanion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
     }
   }
 
-  // Shadow
-  ctx.fillStyle = "rgba(0,0,0,0.28)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+  // Pixel-art ground shadow (stays under the body, even when downed)
+  drawPixelShadow(ctx, x, y + 11, 30, {
+    px: CPX, alpha: 0.26, seed: e.id, phase: e.animT, sway: downed ? 0 : 0.8,
+  });
+
 
   // ---------- Downed pose ----------
   if (downed) {

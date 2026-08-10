@@ -66,6 +66,9 @@ export const PALETTE: Record<string, string> = {
   "1": "#a67c2e", // gold shadow
   "2": "#f2c970", // gold mid
   "3": "#ffe3a0", // gold highlight
+  "4": "#d9a227", // rich royal gold (saturated accent)
+  "q": "#6b4a24", // deep warm shadow (silhouette, replaces black outlines)
+
   // Royal linen — muted ivory / warm beige, deliberately a touch darker than
   // Moses' linen so Ramses reads as ancient, elegant and desert-harmonious.
   "i": "#efe1c2",
