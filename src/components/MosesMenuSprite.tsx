@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import { MOSES_NOSTAFF, renderSprite } from "@/game/sprites";
 import { drawShepherdStaff } from "@/game/staff";
+import { drawPixelShadow } from "@/game/shadow";
+
 
 /**
  * Moses exactly as he appears in gameplay: the same MOSES_NOSTAFF sprite at the
