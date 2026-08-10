@@ -1361,32 +1361,40 @@ function iconGridFor(c: UpgradeChoice): string[] {
 }
 
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
+  // Fits the whole three-card selection inside the viewport at every size:
+  // one row on desktop, one column on mobile, never scrolling and never
+  // clipping the third card. Sizes are viewport-relative so cards, icons and
+  // text shrink together on short screens.
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-      <div className="max-w-3xl w-[92%] rounded-2xl border border-border bg-card p-6 shadow-2xl">
-        <h2 className="mb-1 text-center text-2xl">Level Up!</h2>
-        <p className="mb-6 text-center text-sm text-muted-foreground">Choose your blessing</p>
-        <div className="grid gap-4 sm:grid-cols-3">
+    <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-background/70 p-2 backdrop-blur-sm sm:p-4">
+      <div className="flex h-full max-h-full w-full max-w-5xl flex-col rounded-2xl border border-border bg-card p-2 shadow-2xl sm:p-5">
+        <h2 className="text-center text-[clamp(1rem,3.4vh,1.6rem)] leading-tight">Level Up!</h2>
+        <p className="mb-1 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] text-muted-foreground sm:mb-3">Choose your blessing</p>
+        <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-3 gap-2 sm:grid-cols-3 sm:grid-rows-1 sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
             return (
               <button key={c.id} onClick={() => onPick(c)}
-                className="group relative rounded-xl border border-border bg-background p-4 text-left transition-all hover:-translate-y-1 hover:border-primary hover:bg-secondary">
+                className="group relative flex min-h-0 min-w-0 items-center gap-3 overflow-hidden rounded-xl border border-border bg-background p-2 text-left transition-all hover:border-primary hover:bg-secondary sm:flex-col sm:items-stretch sm:gap-0 sm:p-4 sm:hover:-translate-y-1">
                 {c.isUnlock && (
-                  <span className={`absolute -right-2 -top-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
+                  <span className={`absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow sm:-right-2 sm:-top-2 ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
                     NEW
                   </span>
                 )}
-                <div className="mb-3 flex h-20 items-center justify-center">
-                  <PixelIcon grid={grid} size={72} />
-                </div>
-                <div className="mb-2 text-sm font-bold text-primary">{c.title}</div>
-                <div className="text-xs text-muted-foreground">{c.description}</div>
-                {c.scripture && (
-                  <div className="mt-3 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] italic leading-snug text-foreground/80">
-                    {c.scripture}
+                <div className="flex shrink-0 items-center justify-center sm:mb-3 sm:h-[clamp(2.5rem,12vh,5rem)]">
+                  <div className="origin-center scale-[0.62] sm:scale-100">
+                    <PixelIcon grid={grid} size={72} />
                   </div>
-                )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 text-[clamp(0.72rem,2.1vh,0.9rem)] font-bold leading-tight text-primary sm:mb-2">{c.title}</div>
+                  <div className="line-clamp-3 text-[clamp(0.62rem,1.8vh,0.78rem)] leading-snug text-muted-foreground sm:line-clamp-none">{c.description}</div>
+                  {c.scripture && (
+                    <div className="mt-1 hidden rounded-md border border-primary/30 bg-primary/5 p-2 text-[clamp(0.6rem,1.6vh,0.7rem)] italic leading-snug text-foreground/80 sm:mt-3 sm:block [@media(min-height:640px)]:block">
+                      {c.scripture}
+                    </div>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -1395,6 +1403,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
     </div>
   );
 }
+
 
 
 
