@@ -2217,10 +2217,15 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
   
 
-  // Shadow — big; Ramses is roughly 2x a normal human.
+  // Pixel-art ground shadow — big; Ramses is roughly 2x a normal human. It stays
+  // on the ground while he leaps, tightening as he rises and spreading on landing.
   const chariot = !!d.chariot && !seated;
-  ctx.fillStyle = "rgba(0,0,0,0.42)";
-  ctx.beginPath(); ctx.ellipse(x, y + 10, chariot ? 54 : 34, chariot ? 9 : 7, 0, 0, Math.PI * 2); ctx.fill();
+  const airT = phase === "airborne" ? 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.75)) : 0;
+  const ramLift = phase === "airborne" ? 1 - Math.sin(airT * Math.PI) * 0.45 : phase === "land" ? 1.12 : 1;
+  drawPixelShadow(ctx, x, y + 11, chariot ? 108 : 70, {
+    px: 3, alpha: 0.34, seed: 99, phase: e.animT, sway: seated ? 0 : 0.9, lift: ramLift,
+  });
+
 
   let bob = 0;
   if (phase === "airborne") {
