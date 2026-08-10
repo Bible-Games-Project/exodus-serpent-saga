@@ -2342,9 +2342,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 46 * RPX - 1, bw + 2, 6);
     ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw, 4);
     ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw * Math.max(0, e.hp / e.maxHp), 4);
-    ctx.fillStyle = "#ffdd80"; ctx.font = "700 12px Nunito, sans-serif"; ctx.textAlign = "center";
-    ctx.fillText("RAMSES", x, y - 46 * RPX - 5);
   }
+
 }
 
 // ---------------- Throne ----------------
