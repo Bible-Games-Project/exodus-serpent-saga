@@ -168,9 +168,8 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
         d.leapCd = cd;
       }
     }
-  }
-
   } else if (phase === "telegraph") {
+
     d.leapT = ((d.leapT as number) ?? 0) - dt;
     const tp = d.leapTarget as Vec2;
     if ((d.leapT as number) > 0.45) {
