@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, RAMSES, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { drawRamsesArt } from "./ramsesArt";
 import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
@@ -2314,15 +2315,30 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     }
   }
 
-  // Ramses is drawn from Moses' own sprite pipeline: same renderer, same
-  // one-art-pixel-per-cell density, same stepped two-frame walk cycle. He is
-  // simply stamped at 2x Moses' cell size so he towers over normal humanoids.
-  const step = Math.sin(e.animT * 0.9);
-  const frame = seated ? 0 : step > 0 ? 1 : 0;
-  const rimg = renderSprite(RAMSES, frame, RPX * 2, flip === -1);
-  const rsx = Math.round(x - rimg.width / 2);
-  const rsy = Math.round(y + bob - rimg.height + 10);
-  ctx.drawImage(rimg, rsx, rsy);
+  // Ramses uses the supplied pixel-art sprite, split into body + staff layers so
+  // the staff he already holds is the one that swings during a melee strike.
+  const atk = (d.atkPhase as string) ?? "idle";
+  let staffAngle = 0;
+  if (atk === "windup") {
+    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.45));
+    staffAngle = -0.95 * t;
+  } else if (atk === "strike") {
+    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.18));
+    staffAngle = -0.95 + t * 2.15;
+  } else if (atk === "recover") {
+    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.35));
+    staffAngle = 1.2 * (1 - t);
+  }
+  drawRamsesArt(ctx, {
+    x,
+    groundY: y + 10,
+    flip: flip === -1 ? -1 : 1,
+    walkPhase: e.animT * 4.2,
+    moving: !seated && atk === "idle" && phase === "idle",
+    bob,
+    staffAngle: staffAngle * (flip === -1 ? 1 : 1),
+  });
+
 
   // Land shockwave (unchanged)
   if (phase === "land") {

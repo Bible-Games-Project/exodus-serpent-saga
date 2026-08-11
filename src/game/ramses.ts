@@ -57,11 +57,14 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const d = r.data!;
   const p = state.player;
 
-  // Activation trigger — player reaches level 10.
-  if (!d.active && state.level >= 10) {
+  // Activation trigger — player reaches level 3: Ramses leaves his throne.
+  if (!d.active && state.level >= 3) {
     d.active = true;
     d.seated = false;
     d.leapCd = 5;
+    d.atkPhase = "idle";
+    d.atkT = 0;
+    d.atkCd = 1.5;
   }
   // Leap unlocks at player level 30 (Biblical progression, no longer tied to plague).
   if (!d.leapUnlocked && state.level >= 30) {
@@ -81,16 +84,61 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const phase = d.leapPhase as string;
   const chariot = !!d.chariot;
 
+  // ---- Melee staff strike ----
+  // Wind-up (staff raised) → strike (downward sweep, damage on impact) →
+  // recover, then a short cooldown. He stands still for the whole swing so the
+  // attack is readable.
+  const atk = (d.atkPhase as string) ?? "idle";
+  const MELEE_RANGE = r.radius + p.radius + 22;
+  if (phase === "idle" && atk !== "idle") {
+    d.atkT = ((d.atkT as number) ?? 0) - dt;
+    if ((d.atkT as number) <= 0) {
+      if (atk === "windup") {
+        d.atkPhase = "strike";
+        d.atkT = 0.18;
+        // Impact: damage Moses if he is inside the swing arc in front of Ramses.
+        const dx = p.pos.x - r.pos.x;
+        const dy = p.pos.y - r.pos.y;
+        const reach = MELEE_RANGE + 26;
+        const inFront = dx * (r.facing ?? 1) > -18;
+        if (dx * dx + dy * dy < reach * reach && inFront && !isInvuln(state)) {
+          p.hp -= 34 * shieldDamageMul(state);
+          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+        }
+        state.screenShake = Math.max(state.screenShake ?? 0, 8);
+      } else if (atk === "strike") {
+        d.atkPhase = "recover";
+        d.atkT = 0.35;
+      } else {
+        d.atkPhase = "idle";
+        d.atkCd = 1.6 + Math.random() * 0.8;
+      }
+    }
+    return;
+  }
+
   if (phase === "idle") {
-    // Chase Moses. Faster and heavier when mounted on the chariot.
     const dx = p.pos.x - r.pos.x;
     const dy = p.pos.y - r.pos.y;
     const dd = Math.hypot(dx, dy) || 1;
-    const spd = chariot ? 140 : 70;
-    r.pos.x += (dx / dd) * spd * dt;
-    r.pos.y += (dy / dd) * spd * dt;
-    helpers.resolveObstacles(r.pos, r.radius);
     r.facing = dx > 0 ? 1 : -1;
+
+    // Start a strike when close enough and off cooldown; otherwise chase.
+    const cdA = ((d.atkCd as number) ?? 0) - dt;
+    d.atkCd = cdA;
+    if (!chariot && dd < MELEE_RANGE && cdA <= 0) {
+      d.atkPhase = "windup";
+      d.atkT = 0.45;
+      return;
+    }
+
+    // Chase Moses. Faster and heavier when mounted on the chariot.
+    const spd = chariot ? 140 : 70;
+    if (dd > MELEE_RANGE * 0.8 || chariot) {
+      r.pos.x += (dx / dd) * spd * dt;
+      r.pos.y += (dy / dd) * spd * dt;
+      helpers.resolveObstacles(r.pos, r.radius);
+    }
 
     // Contact damage
     if (dist2(r.pos, p.pos) < (r.radius + p.radius) ** 2 && !isInvuln(state)) {
@@ -121,6 +169,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
       }
     }
   } else if (phase === "telegraph") {
+
     d.leapT = ((d.leapT as number) ?? 0) - dt;
     const tp = d.leapTarget as Vec2;
     if ((d.leapT as number) > 0.45) {
