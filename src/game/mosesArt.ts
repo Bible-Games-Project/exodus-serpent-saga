@@ -1,29 +1,52 @@
-// Moses' artwork. The sprite is the user-supplied pixel-art PNG, split once into
-// two layers (body + staff) so the staff he already holds is the one that swings
-// during his melee attack — no second staff is ever drawn. Neither layer is
-// redrawn or recoloured: composited at rest they are pixel-identical to the
-// original PNG.
-import bodyAsset from "@/assets/moses-body.png.asset.json";
-import staffAsset from "@/assets/moses-staff.png.asset.json";
+// Moses' artwork.
+//
+// The sprite is the user-supplied pixel-art PNG, split once into complete,
+// non-overlapping layers so that every animation is a whole-part translation or
+// rotation — no pixel of the robe is ever cut, clipped or resampled:
+//
+//   torso  — head, robe and both sleeves (rows 0..LEG_TOP-1), one clean piece
+//   legs   — back leg and front leg, each a complete foot piece
+//   hands  — the relaxed rear hand and the forward hand that grips the staff
+//   staff  — the shepherd's crook, held by the forward hand
+//
+// Base pose: both arms hang naturally downward and the staff sits in the hand on
+// the side Moses faces. Walking alternates the feet with a crossed (opposite)
+// arm swing, a one-pixel torso bob and a subtle staff sway. The melee attack
+// rotates the staff *and* the gripping hand around that hand, so the staff he
+// already holds is the one that swings.
+import torsoUrl from "@/assets/moses-torso.png";
+import legBackUrl from "@/assets/moses-leg-back.png";
+import legFrontUrl from "@/assets/moses-leg-front.png";
+import staffUrl from "@/assets/moses-staff2.png";
+import handUrl from "@/assets/moses-hand.png";
+import handBackUrl from "@/assets/moses-hand-back.png";
 
 export const MOSES_ART = {
-  /** sprite-pixel size of each layer (native resolution of the supplied PNG) */
-  W: 64,
+  /** sprite-pixel size of every layer (shared canvas, so layers align at 0,0) */
+  W: 80,
   H: 96,
   /** screen pixels per sprite pixel — native density, art is never resampled */
   PX: 1,
-  /** x of Moses' body centre inside the sprite (the staff sits to his right) */
+  /** x of Moses' body centre inside the sprite */
   CX: 39,
-  /** row just below the robe hem: everything from here down is feet/sandals */
+  /** first row of the feet layers */
   LEG_TOP: 83,
-  /** fist / staff pivot inside the sprite */
-  HAND: { x: 17, y: 40 },
+  /** the forward hand's grip on the staff — pivot for the melee swing */
+  HAND: { x: 56, y: 77 },
   /** crook (business end of the staff) relative to HAND, in sprite pixels */
-  TIP: { x: -6, y: -34 },
+  TIP: { x: 11, y: -68 },
 } as const;
 
-let bodyImg: HTMLImageElement | null = null;
-let staffImg: HTMLImageElement | null = null;
+type Layers = {
+  torso: HTMLImageElement;
+  legBack: HTMLImageElement;
+  legFront: HTMLImageElement;
+  staff: HTMLImageElement;
+  hand: HTMLImageElement;
+  handBack: HTMLImageElement;
+};
+
+let layers: Layers | null = null;
 
 function load(url: string): HTMLImageElement {
   const img = new Image();
@@ -33,9 +56,20 @@ function load(url: string): HTMLImageElement {
 
 export function ensureMosesArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!bodyImg) bodyImg = load(bodyAsset.url);
-  if (!staffImg) staffImg = load(staffAsset.url);
-  return !!(bodyImg.complete && bodyImg.naturalWidth && staffImg.complete && staffImg.naturalWidth);
+  if (!layers) {
+    layers = {
+      torso: load(torsoUrl),
+      legBack: load(legBackUrl),
+      legFront: load(legFrontUrl),
+      staff: load(staffUrl),
+      hand: load(handUrl),
+      handBack: load(handBackUrl),
+    };
+  }
+  for (const img of Object.values(layers)) {
+    if (!img.complete || !img.naturalWidth) return false;
+  }
+  return true;
 }
 
 export type MosesPose = {
@@ -48,11 +82,20 @@ export type MosesPose = {
   moving: boolean;
   /** extra vertical offset in screen px (bob) */
   bob: number;
-  /** staff rotation in radians around the hand; 0 keeps the original pose */
+  /** staff rotation in radians around the forward hand; 0 keeps the base pose */
   staffAngle: number;
   /** optional additive flash pass (invincibility) */
   flash?: number;
 };
+
+/** Staff rotation (radians, around the forward hand) for a swing progress 0..1. */
+export function mosesSwingAngle(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  // Short wind-up that lifts the crook back, then a fast forward/downward sweep.
+  if (p < 0.28) return -0.5 * (p / 0.28);
+  const t = (p - 0.28) / 0.72;
+  return -0.5 + (1 - (1 - t) * (1 - t)) * 2.5;
+}
 
 /** Screen position of the staff's crook for a given pose — used by the wind slash. */
 export function mosesStaffTip(x: number, groundY: number, flip: 1 | -1, angle: number) {
@@ -72,16 +115,35 @@ export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
   };
 }
 
+/** Distance (screen px) from the grip to the crook — melee reach. */
+export const MOSES_STAFF_LEN = Math.hypot(MOSES_ART.TIP.x, MOSES_ART.TIP.y) * MOSES_ART.PX;
+
 /**
- * Draws Moses at native pixel density. The walk cycle re-stamps the existing
- * sandal pixels with a one-pixel alternating step plus a one-pixel torso bob —
- * no pixel is redrawn or resampled, so the character stays exactly as supplied.
+ * Draws Moses at native pixel density from his complete layers.
+ * Every frame is built from whole-piece offsets, so the robe silhouette stays
+ * coherent through the whole walk cycle and the swing.
  */
 export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
-  if (!ensureMosesArt() || !bodyImg || !staffImg) return;
-  const { W, H, PX, CX, HAND, LEG_TOP } = MOSES_ART;
-  const step = pose.moving ? (Math.sin(pose.walkPhase) > 0 ? 1 : 0) : -1;
-  const torsoBob = pose.moving ? (step === 1 ? -1 : 0) : 0;
+  if (!ensureMosesArt() || !layers) return;
+  const { W, H, PX, CX, HAND } = MOSES_ART;
+  const L = layers;
+
+  // ---- walk cycle: whole-piece offsets (integer sprite pixels) ----
+  const sw = pose.moving ? Math.sin(pose.walkPhase) : 0;
+  const stride = pose.moving ? Math.round(sw * 2) : 0;
+  const frontDX = stride;
+  const backDX = -stride;
+  const frontLift = pose.moving ? -Math.max(0, Math.round(sw * 1.6)) : 0;
+  const backLift = pose.moving ? -Math.max(0, Math.round(-sw * 1.6)) : 0;
+  // torso bobs twice per stride and sways one pixel with the leading leg
+  const torsoDY = pose.moving ? (Math.sin(pose.walkPhase * 2) > 0 ? -1 : 0) : 0;
+  const torsoDX = pose.moving ? Math.round(sw * 0.6) : 0;
+  // arms swing opposite the legs (right foot forward -> left arm forward)
+  const staffArmDX = pose.moving ? -Math.round(sw * 1.4) : 0;
+  const relaxedArmDX = pose.moving ? Math.round(sw * 1.4) : 0;
+  // the held staff gets a very subtle sway from the walking motion
+  const walkSway = pose.moving ? Math.sin(pose.walkPhase) * 0.035 : 0;
+  const staffRot = pose.staffAngle + (pose.staffAngle ? 0 : walkSway);
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -89,34 +151,27 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
 
-  const paint = () => {
-    // ---- staff (behind the body so the fist keeps gripping it) ----
-    ctx.save();
-    ctx.translate(HAND.x * PX, HAND.y * PX);
-    if (pose.staffAngle) ctx.rotate(pose.staffAngle);
-    ctx.translate(-HAND.x * PX, -HAND.y * PX);
-    ctx.translate(0, torsoBob * PX);
-    ctx.drawImage(staffImg!, 0, 0, W * PX, H * PX);
-    ctx.restore();
+  const stamp = (img: HTMLImageElement, dx: number, dy: number) => {
+    ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
+  };
 
-    // ---- body: torso + animated feet ----
-    const legH = H - LEG_TOP;
-    ctx.drawImage(bodyImg!, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
-    if (step === -1) {
-      ctx.drawImage(bodyImg!, 0, LEG_TOP, W, legH, 0, LEG_TOP * PX, W * PX, legH * PX);
-    } else {
-      // Front foot lifts and reaches, rear foot trails — mirrored next frame.
-      const lift = step === 1 ? 1 : 0;
-      const half = Math.round(CX);
-      ctx.drawImage(
-        bodyImg!, 0, LEG_TOP, half, legH,
-        -(1 - lift) * PX, (LEG_TOP - lift) * PX, half * PX, legH * PX,
-      );
-      ctx.drawImage(
-        bodyImg!, half, LEG_TOP, W - half, legH,
-        (half + lift) * PX, (LEG_TOP - (1 - lift)) * PX, (W - half) * PX, legH * PX,
-      );
-    }
+  const paint = () => {
+    // feet first (they sit behind the robe hem)
+    stamp(L.legBack, backDX, backLift);
+    stamp(L.legFront, frontDX, frontLift);
+    // one clean robe/body piece
+    stamp(L.torso, torsoDX, torsoDY);
+    // rear arm's hand, relaxed and swinging opposite the front leg
+    stamp(L.handBack, torsoDX + relaxedArmDX, torsoDY);
+    // staff, pivoting on the forward hand
+    ctx.save();
+    ctx.translate((HAND.x + torsoDX + staffArmDX) * PX, (HAND.y + torsoDY) * PX);
+    if (staffRot) ctx.rotate(staffRot);
+    ctx.translate(-HAND.x * PX, -HAND.y * PX);
+    ctx.drawImage(L.staff, 0, 0, W * PX, H * PX);
+    // the gripping hand rides with the staff so it never lets go
+    ctx.drawImage(L.hand, 0, 0, W * PX, H * PX);
+    ctx.restore();
   };
 
   paint();
