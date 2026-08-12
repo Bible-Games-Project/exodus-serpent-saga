@@ -1617,49 +1617,38 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
 
 // ---------------- Moses ----------------
-function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, staffSwinging: boolean) {
-  const sprite = MOSES_NOSTAFF;
-  const flip = e.facing === -1;
-  const frameIdx = Math.floor(e.animT) % sprite.frames.length;
-  const img = renderSprite(sprite, frameIdx, SCALE, flip);
-  // +0.25% overall size — everything else (density, palette, animation) unchanged.
-  const MOSES_SIZE_MUL = 1.0025;
-  const drawW = img.width * MOSES_SIZE_MUL, drawH = img.height * MOSES_SIZE_MUL;
-  const sx = Math.round(e.pos.x - camX - drawW / 2);
-  const sy = Math.round(e.pos.y - camY - drawH + 8);
-  // Pixel-art ground shadow — sways gently with the walk cycle.
-  const mosesWalking = Math.hypot(e.vel.x, e.vel.y) > 5;
-  drawPixelShadow(ctx, sx + drawW / 2, Math.round(e.pos.y - camY + 9), img.width * 0.66, {
-    px: SCALE, alpha: 0.26, seed: 7, phase: e.animT, sway: mosesWalking ? 1 : 0,
+/** Staff rotation (radians, around his hand) for a given swing progress 0..1. */
+export function mosesSwingAngle(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  // Quick wind-up back, then a fast forward sweep, easing out on the follow-through.
+  if (p < 0.28) return -0.55 * (p / 0.28);
+  const t = (p - 0.28) / 0.72;
+  return -0.55 + (1 - (1 - t) * (1 - t)) * 2.75;
+}
+
+function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null) {
+  const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
+  const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
+  const x = e.pos.x - camX;
+  const groundY = e.pos.y - camY + 8;
+  const bob = walking ? (Math.sin(e.animT * 4.2) > 0 ? -1 : 0) : 0;
+
+  drawPixelShadow(ctx, x, Math.round(e.pos.y - camY + 9), 30, {
+    px: SCALE, alpha: 0.26, seed: 7, phase: e.animT, sway: walking ? 1 : 0,
   });
 
-  ctx.drawImage(img, sx, sy, drawW, drawH);
-  // Invincibility (Star bonus): Moses flashes between his normal colours and a
-  // brighter, gold-tinted version — no ring, no overlay covering him.
-  if (s.now < (s.invulnUntil ?? 0)) {
-    const pulse = 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14));
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = pulse;
-    ctx.drawImage(img, sx, sy, drawW, drawH);
-    ctx.restore();
-  }
-  // Programmatic staff — animated bob/rotate synced to walk cycle.
-  if (!staffSwinging) drawMosesIdleStaff(ctx, e, s, camX, camY);
+  drawMosesArt(ctx, {
+    x, groundY, flip,
+    walkPhase: e.animT * 4.2,
+    moving: walking,
+    bob,
+    // The staff he already holds is the one that swings.
+    staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
+    // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
+    flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
+  });
 }
 
-function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameState, camX: number, camY: number) {
-  const facing = e.facing;
-  const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
-  const t = e.animT;
-  const bob = walking ? Math.sin(t) * 1.4 : 0;
-  // Mostly vertical at rest (−90°), with a small sway while walking.
-  const rot = -Math.PI / 2 + 0.10 + (walking ? Math.sin(t) * 0.07 : 0);
-  // Grip at Moses' hand — sits ~25% up from the butt end of the staff.
-  const gripX = e.pos.x - camX + facing * 8;
-  const gripY = e.pos.y - camY - 14 + bob;
-  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 46);
-}
 
 // Shepherd's-crook renderer lives in ./staff so the main menu can reuse it.
 
