@@ -2388,7 +2388,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     groundY: y + 10,
     flip: flip === -1 ? -1 : 1,
     walkPhase: e.animT * 4.2,
-    moving: !seated && atk === "idle" && phase === "idle" && Math.hypot(e.vel.x, e.vel.y) > 5,
+    moving: !seated && atk === "idle" && phase === "idle",
     bob,
     staffAngle: staffAngle * (flip === -1 ? 1 : 1),
   });

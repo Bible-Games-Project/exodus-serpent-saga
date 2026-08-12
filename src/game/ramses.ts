@@ -84,34 +84,35 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const phase = d.leapPhase as string;
   const chariot = !!d.chariot;
 
-  // ---- Melee staff strike ----
-  // Wind-up (staff raised) → strike (downward sweep, damage on impact) →
-  // recover, then a short cooldown. He stands still for the whole swing so the
-  // attack is readable.
+  // ---- Ground smash ----
+  // Wind-up (staff raised overhead) → smash into the ground (damage in a radius
+  // at that instant, cracks + dust + screen shake) → recover, then a cooldown.
+  // He stands still for the whole attack so it is readable.
   const atk = (d.atkPhase as string) ?? "idle";
-  const MELEE_RANGE = r.radius + p.radius + 22;
+  const MELEE_RANGE = r.radius + p.radius + 34;
+  const SMASH_R = (d.smashR as number) ?? 110;
+  // Ground cracks/dust linger briefly after the impact, then vanish.
+  if ((d.crackT as number) > 0) d.crackT = (d.crackT as number) - dt;
   if (phase === "idle" && atk !== "idle") {
     d.atkT = ((d.atkT as number) ?? 0) - dt;
     if ((d.atkT as number) <= 0) {
       if (atk === "windup") {
-        d.atkPhase = "strike";
-        d.atkT = 0.18;
-        // Impact: damage Moses if he is inside the swing arc in front of Ramses.
-        const dx = p.pos.x - r.pos.x;
-        const dy = p.pos.y - r.pos.y;
-        const reach = MELEE_RANGE + 26;
-        const inFront = dx * (r.facing ?? 1) > -18;
-        if (dx * dx + dy * dy < reach * reach && inFront && !isInvuln(state)) {
-          p.hp -= 34 * shieldDamageMul(state);
+        // Staff slams into the ground: damage is dealt only at this instant.
+        d.atkPhase = "smash";
+        d.atkT = 0.12;
+        d.crackT = 0.55;
+        d.crackSeed = 1 + Math.random() * 999;
+        if (dist2(r.pos, p.pos) < SMASH_R * SMASH_R && !isInvuln(state)) {
+          p.hp -= 38 * shieldDamageMul(state);
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
-        state.screenShake = Math.max(state.screenShake ?? 0, 8);
-      } else if (atk === "strike") {
+        state.screenShake = Math.max(state.screenShake ?? 0, 11);
+      } else if (atk === "smash") {
         d.atkPhase = "recover";
-        d.atkT = 0.35;
+        d.atkT = 0.45;
       } else {
         d.atkPhase = "idle";
-        d.atkCd = 1.6 + Math.random() * 0.8;
+        d.atkCd = 1.8 + Math.random() * 0.9;
       }
     }
     return;
@@ -128,7 +129,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     d.atkCd = cdA;
     if (!chariot && dd < MELEE_RANGE && cdA <= 0) {
       d.atkPhase = "windup";
-      d.atkT = 0.45;
+      d.atkT = 0.55;
       return;
     }
 
