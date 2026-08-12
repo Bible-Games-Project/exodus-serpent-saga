@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
+import { drawMosesArt, mosesStaffTip } from "./mosesArt";
 import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
