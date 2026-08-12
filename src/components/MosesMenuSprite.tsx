@@ -11,7 +11,7 @@ import { drawPixelShadow } from "@/game/shadow";
  */
 export function MosesMenuSprite({ zoom = 3, className }: { zoom?: number; className?: string }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  const W = 72;
+  const W = MOSES_ART.W;
   const H = MOSES_ART.H + 8;
 
   useEffect(() => {
