@@ -122,12 +122,8 @@ export function mosesArmAngle(swing: number | null | undefined, walkPhase = 0, m
 
 /** Hand (grip) position in sprite pixels for a given arm angle. */
 function handSprite(armAngle: number) {
-  const { SHOULDER, HAND0, ARM_REST } = MOSES_ART;
-  const v = rot(HAND0.x - SHOULDER.x, HAND0.y - SHOULDER.y, armAngle - ARM_REST + ARM_REST - ARM_REST + (armAngle - armAngle));
-  // rotate the rest-pose hand vector by (armAngle - 0) — the arm layer itself is
-  // drawn rotated by armAngle, so the same rotation applies to the hand.
+  const { SHOULDER, HAND0 } = MOSES_ART;
   const w = rot(HAND0.x - SHOULDER.x, HAND0.y - SHOULDER.y, armAngle);
-  void v;
   return { x: SHOULDER.x + w.x, y: SHOULDER.y + w.y };
 }
 
