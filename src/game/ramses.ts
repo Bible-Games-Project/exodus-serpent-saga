@@ -34,6 +34,9 @@ export function spawnRamses(state: GameState): void {
       leapUnlocked: false,   // unlocks at player level 30
       chariot: false,        // mounts war chariot at player level 50
       spearCd: 0,
+      smashR: 110,
+      crackT: 0,
+      crackSeed: 1,
       leapPhase: "idle",
       leapT: 0,
       leapTarget: { x: cx, y: cy } as Vec2,
