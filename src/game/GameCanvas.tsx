@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawMosesArt, mosesStaffTip, mosesArmAngle } from "./mosesArt";
+import { drawMosesArt, mosesStaffTip } from "./mosesArt";
 import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
@@ -1648,7 +1648,6 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     bob,
     // The staff he already holds is the one that swings.
     staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
-    swing: swingProgress,
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -2551,7 +2550,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
     const p = trailStart + t * (progress - trailStart);
-    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p), mosesArmAngle(p));
+    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
     const fade = life * (0.25 + 0.75 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
@@ -2565,7 +2564,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   ctx.restore();
 
   // Bright impact glow at the crook of the staff mid-swing.
-  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress), mosesArmAngle(progress));
+  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
   ctx.save();
   ctx.globalAlpha = life;
   ctx.fillStyle = "#ffffff";
