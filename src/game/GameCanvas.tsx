@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, MOSES_NOSTAFF, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
+import { drawMosesArt, mosesStaffTip } from "./mosesArt";
 import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
@@ -1486,10 +1487,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // 2) Depth-sorted pass
   const drawList: Entity[] = [];
-  let staffSwinging = false;
+  let swingProgress: number | null = null;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
-    if (e.kind === "staffswing") staffSwinging = true;
+    if (e.kind === "staffswing") {
+      const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
+      swingProgress = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+    }
     drawList.push(e);
   }
   // Thrones are furniture: always behind whoever sits on them, even at equal depth.
@@ -1514,7 +1518,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, staffSwinging); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
 
     // Programmatic enemy renderers
@@ -1617,49 +1621,38 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
 
 // ---------------- Moses ----------------
-function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, staffSwinging: boolean) {
-  const sprite = MOSES_NOSTAFF;
-  const flip = e.facing === -1;
-  const frameIdx = Math.floor(e.animT) % sprite.frames.length;
-  const img = renderSprite(sprite, frameIdx, SCALE, flip);
-  // +0.25% overall size — everything else (density, palette, animation) unchanged.
-  const MOSES_SIZE_MUL = 1.0025;
-  const drawW = img.width * MOSES_SIZE_MUL, drawH = img.height * MOSES_SIZE_MUL;
-  const sx = Math.round(e.pos.x - camX - drawW / 2);
-  const sy = Math.round(e.pos.y - camY - drawH + 8);
-  // Pixel-art ground shadow — sways gently with the walk cycle.
-  const mosesWalking = Math.hypot(e.vel.x, e.vel.y) > 5;
-  drawPixelShadow(ctx, sx + drawW / 2, Math.round(e.pos.y - camY + 9), img.width * 0.66, {
-    px: SCALE, alpha: 0.26, seed: 7, phase: e.animT, sway: mosesWalking ? 1 : 0,
+/** Staff rotation (radians, around his hand) for a given swing progress 0..1. */
+export function mosesSwingAngle(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  // Quick wind-up back, then a fast forward sweep, easing out on the follow-through.
+  if (p < 0.28) return -0.55 * (p / 0.28);
+  const t = (p - 0.28) / 0.72;
+  return -0.55 + (1 - (1 - t) * (1 - t)) * 2.75;
+}
+
+function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null) {
+  const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
+  const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
+  const x = e.pos.x - camX;
+  const groundY = e.pos.y - camY + 8;
+  const bob = walking ? (Math.sin(e.animT * 4.2) > 0 ? -1 : 0) : 0;
+
+  drawPixelShadow(ctx, x, Math.round(e.pos.y - camY + 9), 30, {
+    px: SCALE, alpha: 0.26, seed: 7, phase: e.animT, sway: walking ? 1 : 0,
   });
 
-  ctx.drawImage(img, sx, sy, drawW, drawH);
-  // Invincibility (Star bonus): Moses flashes between his normal colours and a
-  // brighter, gold-tinted version — no ring, no overlay covering him.
-  if (s.now < (s.invulnUntil ?? 0)) {
-    const pulse = 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14));
-    ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.globalAlpha = pulse;
-    ctx.drawImage(img, sx, sy, drawW, drawH);
-    ctx.restore();
-  }
-  // Programmatic staff — animated bob/rotate synced to walk cycle.
-  if (!staffSwinging) drawMosesIdleStaff(ctx, e, s, camX, camY);
+  drawMosesArt(ctx, {
+    x, groundY, flip,
+    walkPhase: e.animT * 4.2,
+    moving: walking,
+    bob,
+    // The staff he already holds is the one that swings.
+    staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
+    // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
+    flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
+  });
 }
 
-function drawMosesIdleStaff(ctx: CanvasRenderingContext2D, e: Entity, _s: GameState, camX: number, camY: number) {
-  const facing = e.facing;
-  const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
-  const t = e.animT;
-  const bob = walking ? Math.sin(t) * 1.4 : 0;
-  // Mostly vertical at rest (−90°), with a small sway while walking.
-  const rot = -Math.PI / 2 + 0.10 + (walking ? Math.sin(t) * 0.07 : 0);
-  // Grip at Moses' hand — sits ~25% up from the butt end of the staff.
-  const gripX = e.pos.x - camX + facing * 8;
-  const gripY = e.pos.y - camY - 14 + bob;
-  drawShepherdStaff(ctx, gripX, gripY, rot, facing, 46);
-}
 
 // Shepherd's-crook renderer lives in ./staff so the main menu can reuse it.
 
@@ -2480,52 +2473,45 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 
 
 
-// ---------------- staff swing effect ----------------
+// ---------------- staff swing wind effect ----------------
+// The staff itself is drawn as part of Moses (see drawMoses) — this entity only
+// paints the white wind slash that trails the crook of his own staff.
 function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
-  const facing = (e.data?.facing as number) ?? 1;
-  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
+  const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const progress = 1 - life;
-  const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
-  const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
-  const staffLen = 46;
-  const gx = s.player.pos.x - camX + facing * 8;
-  const gy = s.player.pos.y - camY - 14;
-  const swingAng = startA + (endA - startA) * progress;
-  const relAng = facing === 1 ? swingAng : Math.PI - swingAng;
+  const px = s.player.pos.x - camX;
+  const groundY = s.player.pos.y - camY + 8;
 
   ctx.save();
   const trailStart = Math.max(0, progress - 0.75);
   const segs = 26;
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
-    const a = startA + (endA - startA) * (trailStart + t * (progress - trailStart));
+    const p = trailStart + t * (progress - trailStart);
+    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
     const fade = life * (0.25 + 0.75 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
-    const ox = gx + Math.cos(a) * staffLen * 0.75;
-    const oy = gy + Math.sin(a) * staffLen * 0.75;
     const outerSz = t > 0.8 ? 7 : t > 0.5 ? 6 : 5;
-    ctx.fillRect(Math.round(ox - outerSz / 2), Math.round(oy - outerSz / 2), outerSz, outerSz);
+    ctx.fillRect(Math.round(tip.x - outerSz / 2), Math.round(tip.y - outerSz / 2), outerSz, outerSz);
     ctx.globalAlpha = fade;
     const coreSz = t > 0.8 ? 4 : 3;
-    ctx.fillRect(Math.round(ox - coreSz / 2), Math.round(oy - coreSz / 2), coreSz, coreSz);
+    ctx.fillRect(Math.round(tip.x - coreSz / 2), Math.round(tip.y - coreSz / 2), coreSz, coreSz);
   }
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  // Draw the animated shepherd's-crook staff itself.
-  drawShepherdStaff(ctx, gx, gy, relAng, facing, staffLen);
-  // Bright impact glow at the tip of the crook mid-swing.
-  const dirX = Math.cos(relAng) * facing;
-  const dirY = Math.sin(relAng);
-  const tipX = gx + dirX * staffLen * 0.75;
-  const tipY = gy + dirY * staffLen * 0.75;
+  // Bright impact glow at the crook of the staff mid-swing.
+  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
   ctx.save();
   ctx.globalAlpha = life;
   ctx.fillStyle = "#ffffff";
-  ctx.beginPath(); ctx.arc(tipX, tipY, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(tip.x, tip.y, 4, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
+
 
 
 function drawCompanionMelee(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
