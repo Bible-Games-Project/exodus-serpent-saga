@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawMosesArt, mosesStaffTip } from "./mosesArt";
+import { drawMosesArt, mosesStaffTip, mosesSwingAngle } from "./mosesArt";
+export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
@@ -1621,14 +1622,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
 
 // ---------------- Moses ----------------
-/** Staff rotation (radians, around his hand) for a given swing progress 0..1. */
-export function mosesSwingAngle(progress: number): number {
-  const p = Math.max(0, Math.min(1, progress));
-  // Quick wind-up back, then a fast forward sweep, easing out on the follow-through.
-  if (p < 0.28) return -0.55 * (p / 0.28);
-  const t = (p - 0.28) / 0.72;
-  return -0.55 + (1 - (1 - t) * (1 - t)) * 2.75;
-}
+
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null) {
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;

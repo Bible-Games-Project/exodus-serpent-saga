@@ -5,6 +5,8 @@ import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKi
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
+import { MOSES_ART, mosesSwingAngle } from "./mosesArt";
+
 
 // ---------- utilities ----------
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -533,16 +535,18 @@ export function update(state: GameState, dt: number) {
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
   const facing = (d.facing as number) ?? 1;
-  const staffLen = ((d.staffLen as number) ?? 62) * 0.75; // grip -> tip
   const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
   const progress = 1 - life;
-  const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
-  const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
-  const swingAng = startA + (endA - startA) * progress;
-  const cx = state.player.pos.x + facing * 8;
-  const cy = state.player.pos.y - 18;
-  const tipX = cx + Math.cos(swingAng) * staffLen;
-  const tipY = cy + Math.sin(swingAng) * staffLen;
+  // The hitbox is the staff's real trajectory: the segment from Moses' gripping
+  // hand to the crook, using the exact same pivot and angle the renderer uses.
+  const ang = mosesSwingAngle(progress);
+  const { HAND, TIP, CX, H } = MOSES_ART;
+  const cx = state.player.pos.x + (HAND.x - CX) * facing;
+  const cy = state.player.pos.y + 8 - (H - HAND.y);
+  const c = Math.cos(ang), s = Math.sin(ang);
+  const tipX = cx + (TIP.x * c - TIP.y * s) * facing;
+  const tipY = cy + (TIP.x * s + TIP.y * c);
+
 
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
