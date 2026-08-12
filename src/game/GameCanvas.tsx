@@ -2472,52 +2472,45 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 
 
 
-// ---------------- staff swing effect ----------------
+// ---------------- staff swing wind effect ----------------
+// The staff itself is drawn as part of Moses (see drawMoses) — this entity only
+// paints the white wind slash that trails the crook of his own staff.
 function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
-  const facing = (e.data?.facing as number) ?? 1;
-  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.18));
+  const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const progress = 1 - life;
-  const startA = facing === 1 ? -Math.PI * 0.85 : Math.PI + Math.PI * 0.85;
-  const endA   = facing === 1 ?  Math.PI * 0.35 : Math.PI - Math.PI * 0.35;
-  const staffLen = 46;
-  const gx = s.player.pos.x - camX + facing * 8;
-  const gy = s.player.pos.y - camY - 14;
-  const swingAng = startA + (endA - startA) * progress;
-  const relAng = facing === 1 ? swingAng : Math.PI - swingAng;
+  const px = s.player.pos.x - camX;
+  const groundY = s.player.pos.y - camY + 8;
 
   ctx.save();
   const trailStart = Math.max(0, progress - 0.75);
   const segs = 26;
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
-    const a = startA + (endA - startA) * (trailStart + t * (progress - trailStart));
+    const p = trailStart + t * (progress - trailStart);
+    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
     const fade = life * (0.25 + 0.75 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
-    const ox = gx + Math.cos(a) * staffLen * 0.75;
-    const oy = gy + Math.sin(a) * staffLen * 0.75;
     const outerSz = t > 0.8 ? 7 : t > 0.5 ? 6 : 5;
-    ctx.fillRect(Math.round(ox - outerSz / 2), Math.round(oy - outerSz / 2), outerSz, outerSz);
+    ctx.fillRect(Math.round(tip.x - outerSz / 2), Math.round(tip.y - outerSz / 2), outerSz, outerSz);
     ctx.globalAlpha = fade;
     const coreSz = t > 0.8 ? 4 : 3;
-    ctx.fillRect(Math.round(ox - coreSz / 2), Math.round(oy - coreSz / 2), coreSz, coreSz);
+    ctx.fillRect(Math.round(tip.x - coreSz / 2), Math.round(tip.y - coreSz / 2), coreSz, coreSz);
   }
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  // Draw the animated shepherd's-crook staff itself.
-  drawShepherdStaff(ctx, gx, gy, relAng, facing, staffLen);
-  // Bright impact glow at the tip of the crook mid-swing.
-  const dirX = Math.cos(relAng) * facing;
-  const dirY = Math.sin(relAng);
-  const tipX = gx + dirX * staffLen * 0.75;
-  const tipY = gy + dirY * staffLen * 0.75;
+  // Bright impact glow at the crook of the staff mid-swing.
+  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
   ctx.save();
   ctx.globalAlpha = life;
   ctx.fillStyle = "#ffffff";
-  ctx.beginPath(); ctx.arc(tipX, tipY, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(tip.x, tip.y, 4, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
+
 
 
 function drawCompanionMelee(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
