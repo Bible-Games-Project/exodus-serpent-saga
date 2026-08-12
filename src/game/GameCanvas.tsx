@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawMosesArt, mosesStaffTip } from "./mosesArt";
+import { drawMosesArt, mosesStaffTip, mosesArmAngle } from "./mosesArt";
 import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
@@ -1648,6 +1648,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     bob,
     // The staff he already holds is the one that swings.
     staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
+    swing: swingProgress,
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -2313,15 +2314,75 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const atk = (d.atkPhase as string) ?? "idle";
   let staffAngle = 0;
   if (atk === "windup") {
-    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.45));
-    staffAngle = -0.95 * t;
-  } else if (atk === "strike") {
-    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.18));
-    staffAngle = -0.95 + t * 2.15;
+    // Raises the staff overhead, holding it high just before the smash.
+    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.55));
+    staffAngle = -1.15 * (t < 0.7 ? t / 0.7 : 1);
+  } else if (atk === "smash") {
+    // Drives it straight down into the sand.
+    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.12));
+    staffAngle = -1.15 + t * 1.6;
   } else if (atk === "recover") {
-    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.35));
-    staffAngle = 1.2 * (1 - t);
+    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.45));
+    staffAngle = 0.45 * (1 - t);
   }
+
+  // ---- pixel-art ground impact: irregular cracks + dust, no smooth rings ----
+  const crackT = (d.crackT as number) ?? 0;
+  if (crackT > 0) {
+    const CT = 0.55;
+    const life = Math.max(0, Math.min(1, crackT / CT));
+    const grow = 1 - life;
+    const R = (d.smashR as number) ?? 110;
+    const seed = (d.crackSeed as number) ?? 1;
+    const rnd = (i: number) => {
+      const v = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;
+      return v - Math.floor(v);
+    };
+    const gy = y + 8;
+    ctx.save();
+    ctx.globalAlpha = 0.25 + 0.65 * life;
+    const BR = 3;
+    for (let b = 0; b < 12; b++) {
+      const a0 = (b / 12) * Math.PI * 2 + rnd(b) * 0.35;
+      let cxp = 0, cyp = 0, a = a0;
+      const len = R * (0.6 + rnd(b + 40) * 0.4) * Math.min(1, grow * 1.6);
+      let travelled = 0;
+      let k = 0;
+      while (travelled < len) {
+        a += (rnd(b * 31 + k) - 0.5) * 0.7;
+        const stepLen = BR * (1 + Math.floor(rnd(b * 17 + k) * 2));
+        cxp += Math.cos(a) * stepLen;
+        cyp += Math.sin(a) * stepLen * 0.5;
+        travelled += stepLen;
+        const w = travelled < len * 0.4 ? BR * 2 : BR;
+        ctx.fillStyle = k % 3 === 0 ? "#6b4a26" : "#8a6338";
+        ctx.fillRect(Math.round(cxp + x - w / 2), Math.round(cyp + gy - BR / 2), w, BR);
+        // occasional chip beside the crack
+        if (rnd(b * 7 + k + 3) > 0.78) {
+          ctx.fillStyle = "#a8814c";
+          ctx.fillRect(Math.round(cxp + x + BR), Math.round(cyp + gy - BR), BR, BR);
+        }
+        k++;
+        if (k > 60) break;
+      }
+    }
+    // dust / debris kicked up around the impact
+    for (let i = 0; i < 26; i++) {
+      const a = rnd(i + 200) * Math.PI * 2;
+      const rr = R * (0.15 + rnd(i + 300) * 0.75) * Math.min(1, grow * 1.9);
+      const rise = grow * 22 * (0.4 + rnd(i + 400) * 0.6);
+      ctx.globalAlpha = life * 0.75;
+      ctx.fillStyle = i % 3 === 0 ? "#e6d3ab" : i % 3 === 1 ? "#cbb083" : "#b19467";
+      const sz = 3 + (i % 2) * 3;
+      ctx.fillRect(
+        Math.round(x + Math.cos(a) * rr),
+        Math.round(gy + Math.sin(a) * rr * 0.45 - rise),
+        sz, sz,
+      );
+    }
+    ctx.restore();
+  }
+
   drawRamsesArt(ctx, {
     x,
     groundY: y + 10,
@@ -2490,7 +2551,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
     const p = trailStart + t * (progress - trailStart);
-    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
+    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p), mosesArmAngle(p));
     const fade = life * (0.25 + 0.75 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
@@ -2504,7 +2565,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   ctx.restore();
 
   // Bright impact glow at the crook of the staff mid-swing.
-  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
+  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress), mosesArmAngle(progress));
   ctx.save();
   ctx.globalAlpha = life;
   ctx.fillStyle = "#ffffff";
