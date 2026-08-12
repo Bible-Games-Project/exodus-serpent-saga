@@ -1486,10 +1486,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // 2) Depth-sorted pass
   const drawList: Entity[] = [];
-  let staffSwinging = false;
+  let swingProgress: number | null = null;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
-    if (e.kind === "staffswing") staffSwinging = true;
+    if (e.kind === "staffswing") {
+      const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
+      swingProgress = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+    }
     drawList.push(e);
   }
   // Thrones are furniture: always behind whoever sits on them, even at equal depth.
