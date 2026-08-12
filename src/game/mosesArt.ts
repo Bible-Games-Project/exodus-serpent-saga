@@ -128,7 +128,7 @@ function handSprite(armAngle: number) {
 }
 
 /** Screen position of Moses' grip (staff pivot). */
-export function mosesGrip(x: number, groundY: number, flip: 1 | -1, armAngle = MOSES_ART.ARM_REST) {
+export function mosesGrip(x: number, groundY: number, flip: 1 | -1, armAngle: number = MOSES_ART.ARM_REST) {
   const { PX, CX, H } = MOSES_ART;
   const h = handSprite(armAngle);
   return {
@@ -143,7 +143,7 @@ export function mosesStaffTip(
   groundY: number,
   flip: 1 | -1,
   staffAngle: number,
-  armAngle = MOSES_ART.ARM_REST,
+  armAngle: number = MOSES_ART.ARM_REST,
 ) {
   const { PX, GRIP0, TIP0 } = MOSES_ART;
   const grip = mosesGrip(x, groundY, flip, armAngle);
