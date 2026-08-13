@@ -5,7 +5,7 @@ import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKi
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
-import { MOSES_ART, mosesSwingAngle } from "./mosesGameArt";
+import { MOSES_ART, MOSES_COMBO_LEN, MOSES_SWING_DURS, mosesSwingAngle } from "./mosesGameArt";
 
 
 // ---------- utilities ----------
@@ -535,17 +535,29 @@ export function update(state: GameState, dt: number) {
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
   const facing = (d.facing as number) ?? 1;
-  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
+  const maxTtl = (d.maxTtl as number) ?? 0.18;
+  const variant = (d.variant as number) ?? 0;
+  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / maxTtl));
   const progress = 1 - life;
   // The hitbox is the staff's real trajectory: the segment from Moses' gripping
   // hand to the crook, using the exact same pivot and angle the renderer uses.
-  const ang = mosesSwingAngle(progress);
+  // We sample the whole arc swept since the previous frame so fast swings never
+  // tunnel past an enemy (works overhead and behind, not just in front).
   const { HAND, TIP, CX, H, PX } = MOSES_ART;
   const cx = state.player.pos.x + (HAND.x - CX) * PX * facing;
   const cy = state.player.pos.y + 8 - (H - HAND.y) * PX;
-  const c = Math.cos(ang), s = Math.sin(ang);
-  const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
-  const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
+  const prevProgress = Math.max(0, progress - _dt / maxTtl);
+  const tips: { x: number; y: number }[] = [];
+  const SAMPLES = 4;
+  for (let i = 0; i <= SAMPLES; i++) {
+    const pr = prevProgress + ((progress - prevProgress) * i) / SAMPLES;
+    const ang = mosesSwingAngle(pr, variant);
+    const c = Math.cos(ang), s = Math.sin(ang);
+    tips.push({
+      x: cx + (TIP.x * c - TIP.y * s) * PX * facing,
+      y: cy + (TIP.x * s + TIP.y * c) * PX,
+    });
+  }
 
 
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
@@ -555,14 +567,17 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     if (hit.has(en.id)) continue;
-    // Distance from enemy to the staff line segment (cx,cy)-(tipX,tipY)
-    const vx = tipX - cx, vy = tipY - cy;
-    const wx = en.pos.x - cx, wy = en.pos.y - cy;
-    const seglen2 = vx * vx + vy * vy;
-    let t = (wx * vx + wy * vy) / (seglen2 || 1);
-    t = Math.max(0, Math.min(1, t));
-    const px = cx + vx * t, py = cy + vy * t;
-    const dd = Math.hypot(en.pos.x - px, en.pos.y - py);
+    // Distance from the enemy to any staff position swept this frame
+    let dd = Infinity;
+    for (const tp of tips) {
+      const vx = tp.x - cx, vy = tp.y - cy;
+      const wx = en.pos.x - cx, wy = en.pos.y - cy;
+      const seglen2 = vx * vx + vy * vy;
+      let t = (wx * vx + wy * vy) / (seglen2 || 1);
+      t = Math.max(0, Math.min(1, t));
+      const px = cx + vx * t, py = cy + vy * t;
+      dd = Math.min(dd, Math.hypot(en.pos.x - px, en.pos.y - py));
+    }
     if (dd < en.radius + tolerance) {
       en.hp -= dmg;
       hit.add(en.id);
