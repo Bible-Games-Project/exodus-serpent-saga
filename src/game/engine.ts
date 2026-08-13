@@ -636,6 +636,11 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     const facing = state.player.facing;
     const range = (def.base.extra?.range ?? 70) + level * 4;
     const halfArc = (def.base.extra?.arc ?? 1.05);
+    // 3-hit alternating combo: 1 -> 2 -> 3 -> 1 ...
+    const pd = (state.player.data ??= {} as Record<string, unknown>);
+    const variant = ((pd.staffCombo as number) ?? 0) % MOSES_COMBO_LEN;
+    pd.staffCombo = (variant + 1) % MOSES_COMBO_LEN;
+    const maxTtl = MOSES_SWING_DURS[variant];
     const sw: Entity = {
       id: state.nextId++,
       pos: { x: p.x, y: p.y },
@@ -644,11 +649,12 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       hp: 1, maxHp: 1,
       team: "hazard", facing,
       animT: 0, born: state.now,
-      ttl: 0.18,
+      ttl: maxTtl,
       kind: "staffswing",
-      data: { range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>() },
+      data: { range, halfArc, facing, variant, maxTtl, dps: 0, staffLen: 60, hit: new Set<number>() },
     };
     state.entities.set(sw.id, sw);
+
   } else if (id === "serpent") {
     let nearest: Entity | null = null;
     let bestD = Infinity;
