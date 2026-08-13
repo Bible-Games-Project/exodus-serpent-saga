@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawMosesArt, mosesStaffTip, mosesSwingAngle } from "./mosesArt";
+import { drawMosesArt, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 

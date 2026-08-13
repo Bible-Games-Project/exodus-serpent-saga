@@ -5,7 +5,7 @@ import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKi
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
-import { MOSES_ART, mosesSwingAngle } from "./mosesArt";
+import { MOSES_ART, mosesSwingAngle } from "./mosesGameArt";
 
 
 // ---------- utilities ----------
@@ -540,12 +540,12 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // The hitbox is the staff's real trajectory: the segment from Moses' gripping
   // hand to the crook, using the exact same pivot and angle the renderer uses.
   const ang = mosesSwingAngle(progress);
-  const { HAND, TIP, CX, H } = MOSES_ART;
-  const cx = state.player.pos.x + (HAND.x - CX) * facing;
-  const cy = state.player.pos.y + 8 - (H - HAND.y);
+  const { HAND, TIP, CX, H, PX } = MOSES_ART;
+  const cx = state.player.pos.x + (HAND.x - CX) * PX * facing;
+  const cy = state.player.pos.y + 8 - (H - HAND.y) * PX;
   const c = Math.cos(ang), s = Math.sin(ang);
-  const tipX = cx + (TIP.x * c - TIP.y * s) * facing;
-  const tipY = cy + (TIP.x * s + TIP.y * c);
+  const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
+  const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
 
 
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
