@@ -5,7 +5,7 @@ import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKi
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
-import { MOSES_ART, mosesSwingAngle } from "./mosesArt";
+import { MOSES_ART, mosesSwingAngle } from "./mosesGameArt";
 
 
 // ---------- utilities ----------
