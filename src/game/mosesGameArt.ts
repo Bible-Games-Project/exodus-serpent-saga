@@ -128,6 +128,12 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   const bodyDY = pose.moving ? (Math.sin(pose.walkPhase * 2) > 0 ? -1 : 0) : 0;
   // the robe is never nudged sideways or clipped — only the feet alternate
   const bodyDX = 0;
+  // arms swing opposite to the legs (right foot forward -> left arm forward).
+  // The arm regions are re-stamped from the body layer, never cut out of it,
+  // so the robe stays completely intact.
+  const armSw = pose.moving ? Math.round(sw) : 0; // -1 | 0 | 1
+  const lArm = { dx: armSw, dy: -Math.max(0, armSw) };
+  const rArm = { dx: -armSw, dy: -Math.max(0, -armSw) };
   // the held staff sways gently with the walk (arms stay relaxed and down)
   const walkSway = pose.moving ? Math.sin(pose.walkPhase) * 0.05 : 0;
   const staffRot = pose.staffAngle || walkSway;
@@ -142,13 +148,28 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, IMG_H * PX);
   };
 
+  // arm slices of the body layer (sprite px), re-drawn on top with an offset
+  const ARM_TOP = 20, ARM_BOT = 44;
+  const stampArm = (sx: number, sw2: number, dx: number, dy: number) => {
+    if (!dx && !dy) return;
+    ctx.drawImage(
+      L.body,
+      sx, ARM_TOP, sw2, ARM_BOT - ARM_TOP,
+      (sx + dx) * PX, (ARM_TOP + dy + bodyDY) * PX, sw2 * PX, (ARM_BOT - ARM_TOP) * PX,
+    );
+  };
+
   const paint = () => {
     stamp(L.legL, lDX, lLift);
     stamp(L.legR, rDX, rLift);
     stamp(L.body, bodyDX, bodyDY);
-    // staff, pivoting on the forward hand so it never leaves the grip
+    // back arm (left, away from camera) then forward arm (right, holds staff)
+    stampArm(4, 10, lArm.dx, lArm.dy);
+    stampArm(29, 11, rArm.dx, rArm.dy);
+    // staff, pivoting on the forward hand so it never leaves the grip —
+    // the grip travels with the right arm as it swings
     ctx.save();
-    ctx.translate((HAND.x + bodyDX) * PX, (HAND.y + bodyDY) * PX);
+    ctx.translate((HAND.x + bodyDX + rArm.dx) * PX, (HAND.y + bodyDY + rArm.dy) * PX);
     // mirror the staff horizontally about the grip so the crook faces right;
     // the pivot / hand attachment point is unchanged
     ctx.scale(-1, 1);
@@ -157,6 +178,7 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
     ctx.drawImage(L.staff, 0, 0, W * PX, IMG_H * PX);
     ctx.restore();
   };
+
 
   paint();
   if (pose.flash && pose.flash > 0) {
