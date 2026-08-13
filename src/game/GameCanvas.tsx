@@ -1489,13 +1489,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // 2) Depth-sorted pass
   const drawList: Entity[] = [];
   let swingProgress: number | null = null;
-  let swingVariant = 0;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
     if (e.kind === "staffswing") {
       const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
       swingProgress = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
-      swingVariant = (e.data?.variant as number) ?? 0;
     }
     drawList.push(e);
   }
@@ -1521,7 +1519,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, swingVariant); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
 
     // Programmatic enemy renderers
@@ -1626,7 +1624,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 // ---------------- Moses ----------------
 
 
-function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, swingVariant = 0) {
+function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null) {
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
   const x = e.pos.x - camX;
@@ -1643,7 +1641,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     moving: walking,
     bob,
     // The staff he already holds is the one that swings.
-    staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress, swingVariant),
+    staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -2535,7 +2533,6 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
   const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
-  const variant = (e.data?.variant as number) ?? 0;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const progress = 1 - life;
   const px = s.player.pos.x - camX;
@@ -2547,7 +2544,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
     const p = trailStart + t * (progress - trailStart);
-    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p, variant));
+    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
     const fade = life * (0.25 + 0.75 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
@@ -2561,7 +2558,7 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   ctx.restore();
 
   // Bright impact glow at the crook of the staff mid-swing.
-  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress, variant));
+  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
   ctx.save();
   ctx.globalAlpha = life;
   ctx.fillStyle = "#ffffff";
