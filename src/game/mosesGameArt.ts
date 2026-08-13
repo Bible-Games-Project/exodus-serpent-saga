@@ -10,9 +10,9 @@
 //   staff   — the shepherd's crook, rotating around the forward hand
 //
 // The Home / Main Menu keeps the older Moses art in ./mosesArt — untouched.
-import bodyAsset from "@/assets/moses2-body.png.asset.json";
-import legLAsset from "@/assets/moses2-leg-l.png.asset.json";
-import legRAsset from "@/assets/moses2-leg-r.png.asset.json";
+import bodyAsset from "@/assets/moses3-body.png.asset.json";
+import legLAsset from "@/assets/moses3-leg-l.png.asset.json";
+import legRAsset from "@/assets/moses3-leg-r.png.asset.json";
 import staffAsset from "@/assets/mosesg-staff.png.asset.json";
 
 export const MOSES_ART = {
