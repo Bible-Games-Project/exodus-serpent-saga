@@ -80,13 +80,41 @@ export type MosesPose = {
   flash?: number;
 };
 
-/** Staff rotation (radians, around the forward hand) for a swing progress 0..1. */
-export function mosesSwingAngle(progress: number): number {
+/** How long each combo step lasts (seconds). Step 3 is the big sweep. */
+export const MOSES_SWING_DURS = [0.18, 0.16, 0.24] as const;
+export const MOSES_COMBO_LEN = MOSES_SWING_DURS.length;
+
+/**
+ * Staff rotation (radians, around the forward hand) for a swing progress 0..1.
+ * `variant` selects one of the three combo steps — every step uses the exact
+ * same pivot (the forward hand); only the trajectory differs.
+ *   0 — downward / forward chop
+ *   1 — rising diagonal back-swing (opposite direction)
+ *   2 — wide overhead sweep, full arc
+ */
+export function mosesSwingAngle(progress: number, variant = 0): number {
   const p = Math.max(0, Math.min(1, progress));
+  const step = ((variant % MOSES_COMBO_LEN) + MOSES_COMBO_LEN) % MOSES_COMBO_LEN;
+  const ease = (t: number) => 1 - (1 - t) * (1 - t);
+
+  if (step === 1) {
+    // upward diagonal: starts low in front, whips up and back over the shoulder
+    if (p < 0.22) return 0.9 * (p / 0.22);
+    const t = (p - 0.22) / 0.78;
+    return 0.9 - ease(t) * 2.9;
+  }
+  if (step === 2) {
+    // big sweep: long windup behind, then a full 360-ish horizontal-looking arc
+    if (p < 0.32) return -1.15 * (p / 0.32);
+    const t = (p - 0.32) / 0.68;
+    return -1.15 + ease(t) * 4.3;
+  }
+  // step 0 — downward chop
   if (p < 0.28) return -0.5 * (p / 0.28);
   const t = (p - 0.28) / 0.72;
-  return -0.5 + (1 - (1 - t) * (1 - t)) * 2.5;
+  return -0.5 + ease(t) * 2.5;
 }
+
 
 /** Screen position of Moses' grip (staff pivot). */
 export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
