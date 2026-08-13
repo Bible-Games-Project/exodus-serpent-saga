@@ -27,8 +27,10 @@ export const MOSES_ART = {
   CX: 21,
   /** first row of the feet layers */
   LEG_TOP: 46,
-  /** the forward hand's grip on the staff — pivot for the melee swing */
-  HAND: { x: 33, y: 34 },
+  /** the forward hand's grip on the staff — pivot for the melee swing.
+   *  x nudged right (+2) so the grip sits more naturally in the right hand,
+   *  clear of the robe's centre line. */
+  HAND: { x: 35, y: 34 },
   /** crook (business end of the staff) relative to HAND, in sprite pixels.
    *  The staff layer is mirrored around the grip, so x points right. */
   TIP: { x: 1, y: -30 },
