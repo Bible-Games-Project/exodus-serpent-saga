@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ART } from "./mosesGameArt";
+import { drawMosesArt, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
@@ -1489,13 +1489,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // 2) Depth-sorted pass
   const drawList: Entity[] = [];
   let swingProgress: number | null = null;
-  let swingCombo = 0;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
     if (e.kind === "staffswing") {
       const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
       swingProgress = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
-      swingCombo = (e.data?.combo as number) ?? 0;
     }
     drawList.push(e);
   }
@@ -1521,7 +1519,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, swingCombo); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
 
     // Programmatic enemy renderers
@@ -1626,7 +1624,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 // ---------------- Moses ----------------
 
 
-function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, swingCombo = 0) {
+function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null) {
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
   const x = e.pos.x - camX;
@@ -1639,12 +1637,11 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
 
   drawMosesArt(ctx, {
     x, groundY, flip,
-    walkPhase: e.animT * 6.6,
+    walkPhase: e.animT * 4.2,
     moving: walking,
-    bob: 0,
+    bob,
     // The staff he already holds is the one that swings.
-    swing: swingProgress,
-    combo: swingCombo,
+    staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -2535,29 +2532,23 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 // paints the white wind slash that trails the crook of his own staff.
 function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
-  const maxTtl = (e.data?.maxTtl as number) ?? MOSES_ART.SWING_TIME;
-  const combo = (e.data?.combo as number) ?? 0;
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const progress = 1 - life;
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
 
-  // The wind only exists from the fast swing through the follow-through, so the
-  // anticipation frames stay clean and the impact frame reads as the strongest.
-  if (progress < 0.4) return;
-  const power = Math.min(1, (progress - 0.4) / 0.16) * Math.min(1, (1 - progress) / 0.18 + 0.35);
-
   ctx.save();
-  const trailStart = Math.max(0.4, progress - 0.3);
+  const trailStart = Math.max(0, progress - 0.75);
   const segs = 26;
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
     const p = trailStart + t * (progress - trailStart);
-    const tip = mosesStaffTip(px, groundY, facing, p, combo);
-    const fade = power * (0.2 + 0.8 * t);
+    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
+    const fade = life * (0.25 + 0.75 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
-    const outerSz = t > 0.8 ? 8 : t > 0.5 ? 6 : 5;
+    const outerSz = t > 0.8 ? 7 : t > 0.5 ? 6 : 5;
     ctx.fillRect(Math.round(tip.x - outerSz / 2), Math.round(tip.y - outerSz / 2), outerSz, outerSz);
     ctx.globalAlpha = fade;
     const coreSz = t > 0.8 ? 4 : 3;
@@ -2566,22 +2557,14 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  // Bright impact burst at the crook, oriented along the swing direction.
-  const tip = mosesStaffTip(px, groundY, facing, progress, combo);
-  const prev = mosesStaffTip(px, groundY, facing, Math.max(0.4, progress - 0.06), combo);
-  const dx = tip.x - prev.x, dy = tip.y - prev.y;
-  const dl = Math.hypot(dx, dy) || 1;
+  // Bright impact glow at the crook of the staff mid-swing.
+  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
   ctx.save();
-  ctx.globalAlpha = power;
+  ctx.globalAlpha = life;
   ctx.fillStyle = "#ffffff";
-  for (let k = 0; k < 4; k++) {
-    const sz = 6 - k;
-    const ox = (dx / dl) * k * 4, oy = (dy / dl) * k * 4;
-    ctx.fillRect(Math.round(tip.x + ox - sz / 2), Math.round(tip.y + oy - sz / 2), sz, sz);
-  }
+  ctx.beginPath(); ctx.arc(tip.x, tip.y, 4, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
-
 
 
 

@@ -5,7 +5,7 @@ import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKi
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
-import { MOSES_ART, mosesAttackGeom } from "./mosesGameArt";
+import { MOSES_ART, mosesSwingAngle } from "./mosesGameArt";
 
 
 // ---------- utilities ----------
@@ -535,19 +535,14 @@ export function update(state: GameState, dt: number) {
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
   const facing = (d.facing as number) ?? 1;
-  const maxTtl = (d.maxTtl as number) ?? MOSES_ART.SWING_TIME;
-  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / maxTtl));
+  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
   const progress = 1 - life;
   // The hitbox is the staff's real trajectory: the segment from Moses' gripping
-  // hand to the crook, using the exact same pose the renderer uses (pivot moves
-  // with the hand, angle snapped identically).
-  const geom = mosesAttackGeom(progress, (d.combo as number) ?? 0);
-  const ang = geom.angle;
+  // hand to the crook, using the exact same pivot and angle the renderer uses.
+  const ang = mosesSwingAngle(progress);
   const { HAND, TIP, CX, H, PX } = MOSES_ART;
-  const hx = HAND.x + geom.hand.dx + geom.body.dx;
-  const hy = HAND.y + geom.hand.dy + geom.body.dy;
-  const cx = state.player.pos.x + (hx - CX) * PX * facing;
-  const cy = state.player.pos.y + 8 - (H - hy) * PX;
+  const cx = state.player.pos.x + (HAND.x - CX) * PX * facing;
+  const cy = state.player.pos.y + 8 - (H - HAND.y) * PX;
   const c = Math.cos(ang), s = Math.sin(ang);
   const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
   const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
@@ -639,10 +634,6 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   if (id === "staff") {
     // Damage handled per-frame in applyStaffSwingHits — spawn hazard only.
     const facing = state.player.facing;
-    // 3-hit combo: each cast plays the next authored attack animation.
-    const pdata = (state.player.data ??= {});
-    const combo = (((pdata.staffCombo as number | undefined) ?? -1) + 1) % MOSES_ART.COMBOS;
-    pdata.staffCombo = combo;
     const range = (def.base.extra?.range ?? 70) + level * 4;
     const halfArc = (def.base.extra?.arc ?? 1.05);
     const sw: Entity = {
@@ -653,12 +644,9 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       hp: 1, maxHp: 1,
       team: "hazard", facing,
       animT: 0, born: state.now,
-      ttl: MOSES_ART.SWING_TIME,
+      ttl: 0.18,
       kind: "staffswing",
-      data: {
-        range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>(),
-        maxTtl: MOSES_ART.SWING_TIME, combo,
-      },
+      data: { range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>() },
     };
     state.entities.set(sw.id, sw);
   } else if (id === "serpent") {
