@@ -2535,23 +2535,29 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 // paints the white wind slash that trails the crook of his own staff.
 function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
-  const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
+  const maxTtl = (e.data?.maxTtl as number) ?? MOSES_ART.SWING_TIME;
+  const combo = (e.data?.combo as number) ?? 0;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   const progress = 1 - life;
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
 
+  // The wind only exists from the fast swing through the follow-through, so the
+  // anticipation frames stay clean and the impact frame reads as the strongest.
+  if (progress < 0.4) return;
+  const power = Math.min(1, (progress - 0.4) / 0.16) * Math.min(1, (1 - progress) / 0.18 + 0.35);
+
   ctx.save();
-  const trailStart = Math.max(0, progress - 0.75);
+  const trailStart = Math.max(0.4, progress - 0.3);
   const segs = 26;
   for (let i = 0; i < segs; i++) {
     const t = i / (segs - 1);
     const p = trailStart + t * (progress - trailStart);
-    const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(p));
-    const fade = life * (0.25 + 0.75 * t);
+    const tip = mosesStaffTip(px, groundY, facing, p, combo);
+    const fade = power * (0.2 + 0.8 * t);
     ctx.globalAlpha = fade * 0.55;
     ctx.fillStyle = "#ffffff";
-    const outerSz = t > 0.8 ? 7 : t > 0.5 ? 6 : 5;
+    const outerSz = t > 0.8 ? 8 : t > 0.5 ? 6 : 5;
     ctx.fillRect(Math.round(tip.x - outerSz / 2), Math.round(tip.y - outerSz / 2), outerSz, outerSz);
     ctx.globalAlpha = fade;
     const coreSz = t > 0.8 ? 4 : 3;
@@ -2560,14 +2566,22 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   ctx.globalAlpha = 1;
   ctx.restore();
 
-  // Bright impact glow at the crook of the staff mid-swing.
-  const tip = mosesStaffTip(px, groundY, facing, mosesSwingAngle(progress));
+  // Bright impact burst at the crook, oriented along the swing direction.
+  const tip = mosesStaffTip(px, groundY, facing, progress, combo);
+  const prev = mosesStaffTip(px, groundY, facing, Math.max(0.4, progress - 0.06), combo);
+  const dx = tip.x - prev.x, dy = tip.y - prev.y;
+  const dl = Math.hypot(dx, dy) || 1;
   ctx.save();
-  ctx.globalAlpha = life;
+  ctx.globalAlpha = power;
   ctx.fillStyle = "#ffffff";
-  ctx.beginPath(); ctx.arc(tip.x, tip.y, 4, 0, Math.PI * 2); ctx.fill();
+  for (let k = 0; k < 4; k++) {
+    const sz = 6 - k;
+    const ox = (dx / dl) * k * 4, oy = (dy / dl) * k * 4;
+    ctx.fillRect(Math.round(tip.x + ox - sz / 2), Math.round(tip.y + oy - sz / 2), sz, sz);
+  }
   ctx.restore();
 }
+
 
 
 
