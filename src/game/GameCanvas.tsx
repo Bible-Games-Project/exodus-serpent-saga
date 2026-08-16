@@ -517,13 +517,14 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             <StatCell
               art={BONUS_ART.shield}
               label="Shield (damage reduction)"
-              value={`${shieldPct}%`}
+              value={`${shieldPct}`}
               active={shieldActive}
               color={BONUSES.shield.color}
               remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
             />
-            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`x${meleeMul.toFixed(2)}`} />
-            <StatCell art={SWORD_ART} label="Plague damage" value={`x${dmgMul.toFixed(2)}`} />
+            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`${Math.round(meleeMul * 100)}`} />
+            <StatCell art={SWORD_ART} label="Plague damage" value={`${Math.round(dmgMul * 100)}`} />
+
             <StatCell
               art={BONUS_ART.lightning}
               label="Movement speed"
