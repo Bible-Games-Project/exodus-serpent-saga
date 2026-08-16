@@ -38,7 +38,7 @@
   --color-nile: var(--nile);
   --color-papyrus: var(--papyrus);
   --color-gold: var(--gold);
-  /* Pixel-art typography — Silkscreen for titles/buttons, Pixelify Sans for
+  /* Pixel-art typography — Silkscreen for titles/buttons, DotGothic16 for
      supporting menu copy. Both are bitmap-style, unrounded and highly legible. */
   --font-display: "Silkscreen", "Courier New", monospace;
   --font-pixel: "DotGothic16", "Silkscreen", "Courier New", monospace;
