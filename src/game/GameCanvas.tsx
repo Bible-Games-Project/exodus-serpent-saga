@@ -439,7 +439,7 @@ function StatCell({
         <StatPixelIcon art={art} size={36} />
       </span>
       <span
-        className="font-pixel whitespace-nowrap text-center text-lg font-bold leading-none tabular-nums transition-colors duration-300"
+        className="font-stat whitespace-nowrap text-center text-base leading-none tabular-nums transition-colors duration-300"
         style={{ color: active ? color : "rgba(255,255,255,0.94)", textShadow: "0 2px 3px rgba(0,0,0,0.9)" }}
       >
         {value}
