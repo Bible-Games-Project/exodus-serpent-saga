@@ -41,7 +41,7 @@ export function PixelActionButton({
     <button
       {...rest}
       className={[
-        "pixel-btn pixel-btn-press font-display w-full px-4 py-2.5 text-xs uppercase tracking-[0.14em]",
+        "pixel-btn pixel-btn-press font-display w-full px-4 py-2.5 text-xs uppercase tracking-[0.14em] disabled:opacity-50",
         variant === "primary" ? "bg-[#e9c168] text-[#3a2412]" : "bg-[#f6e2ad] text-[#4a2f16]",
       ].join(" ")}
     >
