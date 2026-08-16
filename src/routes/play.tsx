@@ -108,11 +108,14 @@ function PlayPage() {
 
 
       {gameOver && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="w-[92%] max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-2xl">
-            <h2 className="mb-1 font-display text-3xl text-primary">Your journey ends</h2>
-            <p className="mb-6 text-sm text-muted-foreground">The desert claims all in time.</p>
-            <div className="mb-6 grid grid-cols-3 gap-3 text-center">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-[rgba(30,18,8,0.75)] p-3">
+          <div
+            className="pixel-panel w-[92%] max-w-md bg-[#FEEFBE] p-6 text-center"
+            style={{ boxShadow: "0 6px 0 0 rgba(58,36,18,0.75)" }}
+          >
+            <h2 className="mb-1 font-display text-2xl uppercase tracking-[0.1em] text-[#7a3d16]">Your journey ends</h2>
+            <p className="font-pixel mb-5 text-sm text-[#8a5a2c]">The desert claims all in time.</p>
+            <div className="mb-5 grid grid-cols-3 gap-2 text-center">
               <Stat label="Level" value={gameOver.level} />
               <Stat label="Time" value={formatTime(gameOver.survivalSeconds)} />
               <Stat label="Kills" value={gameOver.kills} />
@@ -141,37 +144,26 @@ function PlayPage() {
               >
                 <input
                   type="text"
-                  placeholder="Enter your name"
+                  placeholder="ENTER YOUR NAME"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   maxLength={24}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="font-pixel w-full border-[3px] border-[#3a2412] bg-[#f6e2ad] px-3 py-2 text-sm uppercase text-[#4a2f16] placeholder:text-[#a5824f] focus:outline-none"
                 />
-                {submitError && <p className="text-xs text-destructive">{submitError}</p>}
-                <button
-                  type="submit"
-                  disabled={submitting || !name.trim()}
-                  className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-                >
+                {submitError && <p className="font-pixel text-xs text-[#a12b2b]">{submitError}</p>}
+                <PixelActionButton type="submit" variant="primary" disabled={submitting || !name.trim()}>
                   {submitting ? "Submitting…" : "Submit score"}
-                </button>
+                </PixelActionButton>
               </form>
             ) : (
-              <p className="text-sm text-primary">Score submitted!</p>
+              <p className="font-pixel text-sm uppercase tracking-wider text-[#7a3d16]">Score submitted!</p>
             )}
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => window.location.reload()}
-                className="flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm hover:bg-secondary"
-              >
-                Play again
-              </button>
-              <button
-                onClick={() => navigate({ to: "/leaderboard" })}
-                className="flex-1 rounded-md border border-border bg-background px-4 py-2 text-sm hover:bg-secondary"
-              >
-                Leaderboard
-              </button>
+            <div className="mt-4 flex gap-3">
+              <PixelActionButton onClick={() => window.location.reload()}>Retry</PixelActionButton>
+              <PixelActionButton onClick={() => navigate({ to: "/leaderboard" })}>Scores</PixelActionButton>
+            </div>
+            <div className="mt-3">
+              <PixelActionButton onClick={() => navigate({ to: "/" })}>Home</PixelActionButton>
             </div>
           </div>
         </div>
@@ -182,9 +174,9 @@ function PlayPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-border bg-background px-2 py-3">
-      <div className="text-lg font-bold">{value}</div>
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</div>
+    <div className="border-[3px] border-[#3a2412] bg-[#f6e2ad] px-2 py-2">
+      <div className="font-display text-sm text-[#4a2c10]">{value}</div>
+      <div className="font-pixel text-[10px] uppercase tracking-widest text-[#8a5a2c]">{label}</div>
     </div>
   );
 }

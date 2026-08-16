@@ -42,7 +42,9 @@
      supporting menu copy. Both are bitmap-style, unrounded and highly legible. */
   --font-display: "Silkscreen", "Courier New", monospace;
   --font-pixel: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
-  --font-body: "Nunito", "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Body copy is pixel-art too — no modern sans anywhere in the UI. */
+  --font-body: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
+
 
 }
 
@@ -176,6 +178,36 @@
       inset 0 3px 0 0 color-mix(in oklab, white 30%, transparent);
   }
 }
+
+/* Pixel-art UI panel: hard border, zero radius and stepped ("pixelated")
+   corners produced by a clip-path staircase. Two sizes so nested panels keep
+   the same visual language at different scales. */
+@utility pixel-panel {
+  border-radius: 0;
+  border: 3px solid #3a2412;
+  image-rendering: pixelated;
+  clip-path: polygon(
+    9px 0, calc(100% - 9px) 0,
+    calc(100% - 9px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 9px, 100% 9px,
+    100% calc(100% - 9px), calc(100% - 3px) calc(100% - 9px), calc(100% - 3px) calc(100% - 3px), calc(100% - 9px) calc(100% - 3px), calc(100% - 9px) 100%,
+    9px 100%, 9px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 9px), 0 calc(100% - 9px),
+    0 9px, 3px 9px, 3px 3px, 9px 3px
+  );
+}
+
+@utility pixel-panel-sm {
+  border-radius: 0;
+  border: 3px solid #3a2412;
+  image-rendering: pixelated;
+  clip-path: polygon(
+    6px 0, calc(100% - 6px) 0,
+    calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%,
+    6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0 calc(100% - 6px),
+    0 6px, 3px 6px, 3px 3px, 6px 3px
+  );
+}
+
 
 @keyframes exodus-menu-float {
   0%, 100% { transform: translateY(0); }
