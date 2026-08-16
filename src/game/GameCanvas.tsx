@@ -250,12 +250,15 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
             />
           )}
           {paused && !pending && !s.gameOver && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur-sm">
-              <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-xl">
-                <h2 className="mb-4 text-3xl">Paused</h2>
+            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(30,18,8,0.72)]">
+              <div
+                className="pixel-panel bg-[#FEEFBE] p-7 text-center"
+                style={{ boxShadow: "0 6px 0 0 rgba(58,36,18,0.75)" }}
+              >
+                <h2 className="font-display mb-5 text-lg uppercase tracking-[0.14em] text-[#4a2c10]">Paused</h2>
                 <button
                   onClick={onTogglePause}
-                  className="rounded-md bg-primary px-6 py-2 text-primary-foreground hover:opacity-90"
+                  className="pixel-btn pixel-btn-press font-display bg-[#e9c168] px-6 py-2 text-xs uppercase tracking-[0.14em] text-[#3a2412]"
                 >
                   Resume
                 </button>
