@@ -42,7 +42,9 @@
      supporting menu copy. Both are bitmap-style, unrounded and highly legible. */
   --font-display: "Silkscreen", "Courier New", monospace;
   --font-pixel: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
-  --font-body: "Nunito", "Nunito Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Body copy is pixel-art too — no modern sans anywhere in the UI. */
+  --font-body: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
+
 
 }
 
