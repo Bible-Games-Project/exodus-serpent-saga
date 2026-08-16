@@ -20,7 +20,7 @@ export function PixelModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-[88%] max-w-sm border-[3px] border-[#3a2412] bg-[#FEEFBE] p-6"
+        className="pixel-panel w-[88%] max-w-sm bg-[#FEEFBE] p-6"
         style={{ boxShadow: "0 6px 0 0 rgba(58,36,18,0.75)" }}
       >
         <h2 className="font-display mb-4 text-center text-lg uppercase tracking-[0.14em] text-[#4a2c10]">
