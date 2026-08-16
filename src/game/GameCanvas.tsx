@@ -439,7 +439,7 @@ function StatCell({
         <StatPixelIcon art={art} size={36} />
       </span>
       <span
-        className="font-pixel whitespace-nowrap text-center text-lg font-bold leading-none tabular-nums transition-colors duration-300"
+        className="font-stat whitespace-nowrap text-center text-base leading-none tabular-nums transition-colors duration-300"
         style={{ color: active ? color : "rgba(255,255,255,0.94)", textShadow: "0 2px 3px rgba(0,0,0,0.9)" }}
       >
         {value}
@@ -517,13 +517,14 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             <StatCell
               art={BONUS_ART.shield}
               label="Shield (damage reduction)"
-              value={`${shieldPct}%`}
+              value={`${shieldPct}`}
               active={shieldActive}
               color={BONUSES.shield.color}
               remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
             />
-            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`x${meleeMul.toFixed(2)}`} />
-            <StatCell art={SWORD_ART} label="Plague damage" value={`x${dmgMul.toFixed(2)}`} />
+            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`${Math.round(meleeMul * 100)}`} />
+            <StatCell art={SWORD_ART} label="Plague damage" value={`${Math.round(dmgMul * 100)}`} />
+
             <StatCell
               art={BONUS_ART.lightning}
               label="Movement speed"
@@ -1370,10 +1371,14 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
   // Pixel-art panel language: stepped corners, hard borders, no radii.
   // Three compact, vertically centred cards — one row on desktop, one column
   // on mobile — always fully visible without scrolling.
+  // Every card uses one fixed size, sized for the wordiest blessing in the
+  // game (icon + title + long description + scripture), so the popup never
+  // resizes between level ups.
+  const CARD = "w-full sm:w-[13.5rem] h-[8.5rem] sm:h-[17.5rem]";
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[rgba(30,18,8,0.72)] p-2 sm:p-4">
       <div
-        className="pixel-panel flex h-full max-h-full w-full max-w-4xl flex-col bg-[#FEEFBE] p-3 sm:p-5"
+        className="pixel-panel flex max-h-full w-auto max-w-[95vw] flex-col bg-[#FEEFBE] p-3 sm:p-5"
         style={{ boxShadow: "0 6px 0 0 rgba(58,36,18,0.75)" }}
       >
         <h2 className="font-display text-center text-[clamp(0.95rem,3.2vh,1.5rem)] uppercase leading-tight tracking-[0.12em] text-[#4a2c10]">
@@ -1382,14 +1387,14 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
         <p className="font-pixel mb-2 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] uppercase tracking-[0.22em] text-[#8a5a2c] sm:mb-4">
           Choose your blessing
         </p>
-        <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-3 gap-2 sm:grid-cols-3 sm:grid-rows-1 sm:gap-4">
+        <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-stretch sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
             return (
               <button
                 key={c.id}
                 onClick={() => onPick(c)}
-                className="pixel-panel-sm group relative flex min-h-0 min-w-0 items-center gap-3 self-center bg-[#f6e2ad] p-2 text-left transition-transform duration-100 hover:bg-[#f0d795] sm:h-auto sm:max-h-full sm:flex-col sm:items-center sm:justify-center sm:gap-2 sm:p-3 sm:text-center sm:hover:-translate-y-1"
+                className={`pixel-panel-sm group relative flex ${CARD} shrink-0 items-center gap-3 bg-[#f6e2ad] p-2 text-left transition-transform duration-100 hover:bg-[#f0d795] sm:flex-col sm:items-center sm:justify-start sm:gap-2 sm:p-3 sm:text-center sm:hover:-translate-y-1`}
                 style={{ boxShadow: "0 5px 0 0 rgba(58,36,18,0.6)" }}
               >
                 {c.isUnlock && (
@@ -1401,19 +1406,19 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
                   </span>
                 )}
                 <div className="flex shrink-0 items-center justify-center">
-                  <div className="origin-center scale-[0.58] sm:scale-[0.8]">
+                  <div className="origin-center scale-[0.58] sm:scale-[0.72]">
                     <PixelIcon grid={grid} size={72} />
                   </div>
                 </div>
-                <div className="min-w-0 flex-1 sm:flex-none">
-                  <div className="font-display mb-1 text-[clamp(0.62rem,1.8vh,0.8rem)] uppercase leading-tight tracking-[0.08em] text-[#7a3d16]">
+                <div className="min-w-0 flex-1 overflow-hidden sm:flex-none">
+                  <div className="font-display mb-1 text-[0.7rem] uppercase leading-tight tracking-[0.08em] text-[#7a3d16]">
                     {c.title}
                   </div>
-                  <div className="font-pixel line-clamp-3 text-[clamp(0.62rem,1.7vh,0.8rem)] leading-snug text-[#5c3a18] sm:line-clamp-4">
+                  <div className="font-pixel line-clamp-3 text-[0.72rem] leading-snug text-[#5c3a18] sm:line-clamp-4">
                     {c.description}
                   </div>
                   {c.scripture && (
-                    <div className="font-pixel mt-1.5 hidden border-[3px] border-[#3a2412] bg-[#FEEFBE] px-1.5 py-1 text-[clamp(0.58rem,1.5vh,0.7rem)] leading-snug text-[#7a5228] [@media(min-height:640px)]:block">
+                    <div className="font-pixel mt-1.5 hidden line-clamp-3 border-[3px] border-[#3a2412] bg-[#FEEFBE] px-1.5 py-1 text-[0.66rem] leading-snug text-[#7a5228] [@media(min-height:700px)]:block">
                       {c.scripture}
                     </div>
                   )}
@@ -1426,6 +1431,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
     </div>
   );
 }
+
 
 
 

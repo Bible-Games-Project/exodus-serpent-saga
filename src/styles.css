@@ -38,12 +38,14 @@
   --color-nile: var(--nile);
   --color-papyrus: var(--papyrus);
   --color-gold: var(--gold);
-  /* Pixel-art typography — Silkscreen for titles/buttons, Pixelify Sans for
+  /* Pixel-art typography — Silkscreen for titles/buttons, DotGothic16 for
      supporting menu copy. Both are bitmap-style, unrounded and highly legible. */
   --font-display: "Silkscreen", "Courier New", monospace;
-  --font-pixel: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
+  --font-pixel: "DotGothic16", "Silkscreen", "Courier New", monospace;
+  /* Numeric/stat font — maximum legibility for digits at small sizes. */
+  --font-stat: "Silkscreen", "DotGothic16", "Courier New", monospace;
   /* Body copy is pixel-art too — no modern sans anywhere in the UI. */
-  --font-body: "Pixelify Sans", "Silkscreen", "Courier New", monospace;
+  --font-body: "DotGothic16", "Silkscreen", "Courier New", monospace;
 
 
 }
