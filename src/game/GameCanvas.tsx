@@ -1364,36 +1364,53 @@ function iconGridFor(c: UpgradeChoice): string[] {
 }
 
 function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
-  // Fits the whole three-card selection inside the viewport at every size:
-  // one row on desktop, one column on mobile, never scrolling and never
-  // clipping the third card. Sizes are viewport-relative so cards, icons and
-  // text shrink together on short screens.
+  // Pixel-art panel language: stepped corners, hard borders, no radii.
+  // Three compact, vertically centred cards — one row on desktop, one column
+  // on mobile — always fully visible without scrolling.
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-background/70 p-2 backdrop-blur-sm sm:p-4">
-      <div className="flex h-full max-h-full w-full max-w-5xl flex-col rounded-2xl border border-border bg-card p-2 shadow-2xl sm:p-5">
-        <h2 className="text-center text-[clamp(1rem,3.4vh,1.6rem)] leading-tight">Level Up!</h2>
-        <p className="mb-1 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] text-muted-foreground sm:mb-3">Choose your blessing</p>
+    <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[rgba(30,18,8,0.72)] p-2 sm:p-4">
+      <div
+        className="pixel-panel flex h-full max-h-full w-full max-w-4xl flex-col bg-[#FEEFBE] p-3 sm:p-5"
+        style={{ boxShadow: "0 6px 0 0 rgba(58,36,18,0.75)" }}
+      >
+        <h2 className="font-display text-center text-[clamp(0.95rem,3.2vh,1.5rem)] uppercase leading-tight tracking-[0.12em] text-[#4a2c10]">
+          Level Up!
+        </h2>
+        <p className="font-pixel mb-2 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] uppercase tracking-[0.22em] text-[#8a5a2c] sm:mb-4">
+          Choose your blessing
+        </p>
         <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-3 gap-2 sm:grid-cols-3 sm:grid-rows-1 sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
             return (
-              <button key={c.id} onClick={() => onPick(c)}
-                className="group relative flex min-h-0 min-w-0 items-center gap-3 overflow-hidden rounded-xl border border-border bg-background p-2 text-left transition-all hover:border-primary hover:bg-secondary sm:flex-col sm:items-stretch sm:gap-0 sm:p-4 sm:hover:-translate-y-1">
+              <button
+                key={c.id}
+                onClick={() => onPick(c)}
+                className="pixel-panel-sm group relative flex min-h-0 min-w-0 items-center gap-3 self-center bg-[#f6e2ad] p-2 text-left transition-transform duration-100 hover:bg-[#f0d795] sm:h-auto sm:max-h-full sm:flex-col sm:items-center sm:justify-center sm:gap-2 sm:p-3 sm:text-center sm:hover:-translate-y-1"
+                style={{ boxShadow: "0 5px 0 0 rgba(58,36,18,0.6)" }}
+              >
                 {c.isUnlock && (
-                  <span className={`absolute right-1 top-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider shadow sm:-right-2 sm:-top-2 ${c.isCompanion ? "bg-sky-400 text-white" : "bg-yellow-400 text-black"}`} style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite" }}>
+                  <span
+                    className={`font-display absolute right-1 top-1 px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] ${c.isCompanion ? "bg-[#7fa8b8] text-[#20303a]" : "bg-[#e9c168] text-[#3a2412]"}`}
+                    style={{ animation: "exodus-new-bounce 0.9s ease-in-out infinite", border: "3px solid #3a2412" }}
+                  >
                     NEW
                   </span>
                 )}
-                <div className="flex shrink-0 items-center justify-center sm:mb-3 sm:h-[clamp(2.5rem,12vh,5rem)]">
-                  <div className="origin-center scale-[0.62] sm:scale-100">
+                <div className="flex shrink-0 items-center justify-center">
+                  <div className="origin-center scale-[0.58] sm:scale-[0.8]">
                     <PixelIcon grid={grid} size={72} />
                   </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 text-[clamp(0.72rem,2.1vh,0.9rem)] font-bold leading-tight text-primary sm:mb-2">{c.title}</div>
-                  <div className="line-clamp-3 text-[clamp(0.62rem,1.8vh,0.78rem)] leading-snug text-muted-foreground sm:line-clamp-none">{c.description}</div>
+                <div className="min-w-0 flex-1 sm:flex-none">
+                  <div className="font-display mb-1 text-[clamp(0.62rem,1.8vh,0.8rem)] uppercase leading-tight tracking-[0.08em] text-[#7a3d16]">
+                    {c.title}
+                  </div>
+                  <div className="font-pixel line-clamp-3 text-[clamp(0.62rem,1.7vh,0.8rem)] leading-snug text-[#5c3a18] sm:line-clamp-4">
+                    {c.description}
+                  </div>
                   {c.scripture && (
-                    <div className="mt-1 hidden rounded-md border border-primary/30 bg-primary/5 p-2 text-[clamp(0.6rem,1.6vh,0.7rem)] italic leading-snug text-foreground/80 sm:mt-3 sm:block [@media(min-height:640px)]:block">
+                    <div className="font-pixel mt-1.5 hidden border-[3px] border-[#3a2412] bg-[#FEEFBE] px-1.5 py-1 text-[clamp(0.58rem,1.5vh,0.7rem)] leading-snug text-[#7a5228] [@media(min-height:640px)]:block">
                       {c.scripture}
                     </div>
                   )}
