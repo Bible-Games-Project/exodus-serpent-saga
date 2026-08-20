@@ -93,15 +93,15 @@ export function mosesStaffTip(x: number, groundY: number, flip: 1 | -1, angle: n
 /** Distance (screen px) from the grip to the crook — melee reach. */
 export const MOSES_STAFF_LEN = Math.hypot(MOSES_ART.TIP.x, MOSES_ART.TIP.y) * MOSES_ART.PX;
 
-/** Draws gameplay Moses at native pixel density from the provided spritesheet. */
+/** Draws gameplay Moses at native pixel density from the provided sprites. */
 export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
-  if (!ensureMosesArt() || !sheet) return;
+  if (!ensureMosesArt() || !sheet || !idle) return;
   const { W, IMG_H, H, PX, CX, FRAMES } = MOSES_ART;
 
-  // sequential playback while moving; frame 1 is the idle pose
+  // sequential playback while moving; the dedicated idle sprite when standing
   const frame = pose.moving
     ? ((Math.floor((pose.walkPhase / (Math.PI * 2)) * FRAMES) % FRAMES) + FRAMES) % FRAMES
-    : 0;
+    : -1;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -110,8 +110,13 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   ctx.translate(-CX * PX, -H * PX);
 
   const paint = () => {
-    ctx.drawImage(sheet!, frame * W, 0, W, IMG_H, 0, 0, W * PX, IMG_H * PX);
+    if (frame < 0) {
+      ctx.drawImage(idle!, 0, 0, W, IMG_H, 0, 0, W * PX, IMG_H * PX);
+    } else {
+      ctx.drawImage(sheet!, frame * W, 0, W, IMG_H, 0, 0, W * PX, IMG_H * PX);
+    }
   };
+
 
   paint();
   if (pose.flash && pose.flash > 0) {
