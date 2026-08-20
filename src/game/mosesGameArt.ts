@@ -1,72 +1,79 @@
 // Gameplay Moses.
 //
-// Two supplied sprites drive Moses entirely: a single idle pose and a 5-frame
-// walking spritesheet. Both already contain his staff, so nothing is cut,
-// masked or procedurally animated — the complete provided frames are blitted
-// with nearest-neighbour scaling. Frames play 1..5 while he moves; when he
-// stops, the idle sprite is shown.
+// The gameplay hero is the pixel-art body PNG (no staff baked in) plus the
+// staff PNG as a fully separate layer that hangs from his forward (right-side)
+// hand. The body/robe layer is one uncut piece: only the feet pieces below the
+// robe hem move, so the robe can never look cropped.
 //
-// The only geometry we still expose is the grip/crook of the staff drawn inside
-// the sprite, so the existing staff-attack wind FX (and its hitbox) can stay
-// anchored to the staff.
+//   body    — head, robe, sleeves and both hands (rows 0..45), never cut
+//   legL/R  — the two feet below the hem (rows 46..52), alternating
+//   staff   — the shepherd's crook, rotating around the forward hand
 //
 // The Home / Main Menu keeps its own Moses art — untouched.
-import sheetAsset from "@/assets/moses-walk5.png.asset.json";
-import idleAsset from "@/assets/moses-idle.png.asset.json";
+import bodyAsset from "@/assets/moses-body.png.asset.json";
+import legLAsset from "@/assets/moses-leg-l.png.asset.json";
+import legRAsset from "@/assets/moses-leg-r.png.asset.json";
+import staffAsset from "@/assets/moses-staff.png.asset.json";
 
 export const MOSES_ART = {
-  /** sprite-pixel size of one frame */
-  W: 64,
-  IMG_H: 72,
+  /** sprite-pixel size of the shared layer canvas */
+  W: 43,
+  IMG_H: 60,
   /** ground contact row (bottom of the sandals) */
-  H: 64,
+  H: 53,
   /** screen pixels per sprite pixel */
   PX: 1.5,
-  /** x of Moses' body centre inside the frame */
-  CX: 26,
-  /** number of frames in the walk sheet */
-  FRAMES: 5,
-  /** the hand gripping the staff inside the sprite — pivot for the melee FX */
-  HAND: { x: 35, y: 45 },
+  /** x of Moses' body centre inside the sprite */
+  CX: 21,
+  /** first row of the feet layers */
+  LEG_TOP: 46,
+  /** the forward hand's grip on the staff — pivot for the melee swing */
+  HAND: { x: 35, y: 34 },
   /** crook (business end of the staff) relative to HAND, in sprite pixels */
-  TIP: { x: 2, y: -30 },
+  TIP: { x: 1, y: -30 },
 } as const;
 
-let sheet: HTMLImageElement | null = null;
-let idle: HTMLImageElement | null = null;
+/**
+ * Attack animation cadence — unchanged timing contract used by the engine:
+ * wind-up, impact window and total duration all stay exactly as before.
+ */
+export const MOSES_ATTACK = {
+  FRAME: 0.1,
+  IMPACT_FRAME: 2,
+  WINDUP: 0.2,
+  DUR: 0.5,
+} as const;
+
+type Layers = {
+  body: HTMLImageElement;
+  legL: HTMLImageElement;
+  legR: HTMLImageElement;
+  staff: HTMLImageElement;
+};
+
+let layers: Layers | null = null;
+
+function load(url: string): HTMLImageElement {
+  const img = new Image();
+  img.src = url;
+  return img;
+}
 
 export function ensureMosesArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!sheet) {
-    sheet = new Image();
-    sheet.src = sheetAsset.url;
+  if (!layers) {
+    layers = {
+      body: load(bodyAsset.url),
+      legL: load(legLAsset.url),
+      legR: load(legRAsset.url),
+      staff: load(staffAsset.url),
+    };
   }
-  if (!idle) {
-    idle = new Image();
-    idle.src = idleAsset.url;
+  for (const img of Object.values(layers)) {
+    if (!img.complete || !img.naturalWidth) return false;
   }
-  return (
-    sheet.complete && !!sheet.naturalWidth && idle.complete && !!idle.naturalWidth
-  );
+  return true;
 }
-
-/**
- * Attack animation cadence. The 5 walk-sheet frames double as the swing poses:
- *   frame 1 → preparation, frame 2 → swing,
- *   frame 3 → IMPACT (wind FX + damage), frames 4/5 → follow-through & recovery.
- * The timings below keep the previous attack rhythm: the impact fires
- * WINDUP seconds after the attack starts, never earlier or later.
- */
-export const MOSES_ATTACK = {
-  /** seconds per attack frame */
-  FRAME: 0.1,
-  /** 0-based index of the impact frame (frame 3) */
-  IMPACT_FRAME: 2,
-  /** time from attack start until frame 3 lands = 2 frames of wind-up */
-  WINDUP: 0.2,
-  /** total animation length (5 frames) */
-  DUR: 0.5,
-} as const;
 
 export type MosesPose = {
   /** screen position of Moses' feet (ground contact point) */
@@ -76,15 +83,14 @@ export type MosesPose = {
   walkPhase: number;
   moving: boolean;
   bob: number;
-  /** kept for API compatibility — the staff lives inside the sprite now */
+  /** staff rotation in radians around the forward hand; 0 keeps the base pose */
   staffAngle: number;
-  /** 0..1 through the attack animation — overrides walk/idle frames */
+  /** kept for API compatibility with the caller; the swing is driven by staffAngle */
   attackProgress?: number | null;
   flash?: number;
 };
 
-
-/** Staff rotation (radians) for a swing progress 0..1 — drives the wind FX. */
+/** Staff rotation (radians, around the forward hand) for a swing progress 0..1. */
 export function mosesSwingAngle(progress: number): number {
   const p = Math.max(0, Math.min(1, progress));
   if (p < 0.28) return -0.5 * (p / 0.28);
@@ -114,21 +120,32 @@ export function mosesStaffTip(x: number, groundY: number, flip: 1 | -1, angle: n
 /** Distance (screen px) from the grip to the crook — melee reach. */
 export const MOSES_STAFF_LEN = Math.hypot(MOSES_ART.TIP.x, MOSES_ART.TIP.y) * MOSES_ART.PX;
 
-/** Draws gameplay Moses at native pixel density from the provided sprites. */
+/** Draws gameplay Moses at native pixel density from his whole-piece layers. */
 export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
-  if (!ensureMosesArt() || !sheet || !idle) return;
-  const { W, IMG_H, H, PX, CX, FRAMES } = MOSES_ART;
+  if (!ensureMosesArt() || !layers) return;
+  const { W, IMG_H, H, PX, CX, HAND } = MOSES_ART;
+  const L = layers;
 
-  // attack animation wins; otherwise sequential walk playback, or the
-  // dedicated idle sprite when standing still
-  const ap = pose.attackProgress;
-  const frame =
-    ap !== null && ap !== undefined
-      ? Math.max(0, Math.min(FRAMES - 1, Math.floor(ap * FRAMES)))
-      : pose.moving
-        ? ((Math.floor((pose.walkPhase / (Math.PI * 2)) * FRAMES) % FRAMES) + FRAMES) % FRAMES
-        : -1;
-
+  // ---- walk cycle: whole-piece integer offsets, robe untouched ----
+  const sw = pose.moving ? Math.sin(pose.walkPhase) : 0;
+  const stride = pose.moving ? Math.round(sw * 2) : 0;
+  const rDX = stride;
+  const lDX = -stride;
+  const rLift = pose.moving ? -Math.max(0, Math.round(sw * 1.4)) : 0;
+  const lLift = pose.moving ? -Math.max(0, Math.round(-sw * 1.4)) : 0;
+  // very subtle torso movement: a single pixel bob, twice per stride
+  const bodyDY = pose.moving ? (Math.sin(pose.walkPhase * 2) > 0 ? -1 : 0) : 0;
+  // the robe is never nudged sideways or clipped — only the feet alternate
+  const bodyDX = 0;
+  // arms swing opposite to the legs (right foot forward -> left arm forward).
+  // The arm regions are re-stamped from the body layer, never cut out of it,
+  // so the robe stays completely intact.
+  const armSw = pose.moving ? Math.round(sw) : 0; // -1 | 0 | 1
+  const lArm = { dx: armSw, dy: -Math.max(0, armSw) };
+  const rArm = { dx: -armSw, dy: -Math.max(0, -armSw) };
+  // the held staff sways gently with the walk (arms stay relaxed and down)
+  const walkSway = pose.moving ? Math.sin(pose.walkPhase) * 0.05 : 0;
+  const staffRot = pose.staffAngle || walkSway;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -136,14 +153,40 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
 
-  const paint = () => {
-    if (frame < 0) {
-      ctx.drawImage(idle!, 0, 0, W, IMG_H, 0, 0, W * PX, IMG_H * PX);
-    } else {
-      ctx.drawImage(sheet!, frame * W, 0, W, IMG_H, 0, 0, W * PX, IMG_H * PX);
-    }
+  const stamp = (img: HTMLImageElement, dx: number, dy: number) => {
+    ctx.drawImage(img, dx * PX, dy * PX, W * PX, IMG_H * PX);
   };
 
+  // arm slices of the body layer (sprite px), re-drawn on top with an offset
+  const ARM_TOP = 20, ARM_BOT = 44;
+  const stampArm = (sx: number, sw2: number, dx: number, dy: number) => {
+    if (!dx && !dy) return;
+    ctx.drawImage(
+      L.body,
+      sx, ARM_TOP, sw2, ARM_BOT - ARM_TOP,
+      (sx + dx) * PX, (ARM_TOP + dy + bodyDY) * PX, sw2 * PX, (ARM_BOT - ARM_TOP) * PX,
+    );
+  };
+
+  const paint = () => {
+    stamp(L.legL, lDX, lLift);
+    stamp(L.legR, rDX, rLift);
+    stamp(L.body, bodyDX, bodyDY);
+    // back arm (left, away from camera) then forward arm (right, holds staff)
+    stampArm(4, 10, lArm.dx, lArm.dy);
+    stampArm(29, 11, rArm.dx, rArm.dy);
+    // staff, pivoting on the forward hand so it never leaves the grip —
+    // the grip travels with the right arm as it swings
+    ctx.save();
+    ctx.translate((HAND.x + bodyDX + rArm.dx) * PX, (HAND.y + bodyDY + rArm.dy) * PX);
+    // mirror the staff horizontally about the grip so the crook faces right;
+    // the pivot / hand attachment point is unchanged
+    ctx.scale(-1, 1);
+    if (staffRot) ctx.rotate(-staffRot);
+    ctx.translate(-HAND.x * PX, -HAND.y * PX);
+    ctx.drawImage(L.staff, 0, 0, W * PX, IMG_H * PX);
+    ctx.restore();
+  };
 
   paint();
   if (pose.flash && pose.flash > 0) {
