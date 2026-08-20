@@ -119,10 +119,16 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   if (!ensureMosesArt() || !sheet || !idle) return;
   const { W, IMG_H, H, PX, CX, FRAMES } = MOSES_ART;
 
-  // sequential playback while moving; the dedicated idle sprite when standing
-  const frame = pose.moving
-    ? ((Math.floor((pose.walkPhase / (Math.PI * 2)) * FRAMES) % FRAMES) + FRAMES) % FRAMES
-    : -1;
+  // attack animation wins; otherwise sequential walk playback, or the
+  // dedicated idle sprite when standing still
+  const ap = pose.attackProgress;
+  const frame =
+    ap !== null && ap !== undefined
+      ? Math.max(0, Math.min(FRAMES - 1, Math.floor(ap * FRAMES)))
+      : pose.moving
+        ? ((Math.floor((pose.walkPhase / (Math.PI * 2)) * FRAMES) % FRAMES) + FRAMES) % FRAMES
+        : -1;
+
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
