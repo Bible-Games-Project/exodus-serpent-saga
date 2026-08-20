@@ -650,9 +650,15 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       hp: 1, maxHp: 1,
       team: "hazard", facing,
       animT: 0, born: state.now,
-      ttl: 0.18,
+      // The entity spans the whole attack cycle so the sprite animation can be
+      // driven from it; the wind FX + hitbox only live inside the impact window
+      // that starts when the sprite reaches frame 3.
+      ttl: MOSES_ATTACK.DUR,
       kind: "staffswing",
-      data: { range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>() },
+      data: {
+        range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>(),
+        dur: MOSES_ATTACK.DUR, windup: MOSES_ATTACK.WINDUP, maxTtl: 0.18,
+      },
     };
     state.entities.set(sw.id, sw);
   } else if (id === "serpent") {
