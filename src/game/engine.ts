@@ -535,8 +535,14 @@ export function update(state: GameState, dt: number) {
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
   const facing = (d.facing as number) ?? 1;
-  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
-  const progress = 1 - life;
+  const dur = (d.dur as number) ?? MOSES_ATTACK.DUR;
+  const windup = (d.windup as number) ?? MOSES_ATTACK.WINDUP;
+  const fx = (d.maxTtl as number) ?? 0.18;
+  // Nothing happens during the wind-up (frames 1-2): the impact — FX, hitbox
+  // and damage — starts exactly when the sprite reaches frame 3.
+  const elapsed = dur - (sw.ttl ?? 0);
+  if (elapsed < windup) return;
+  const progress = Math.max(0, Math.min(1, (elapsed - windup) / fx));
   // The hitbox is the staff's real trajectory: the segment from Moses' gripping
   // hand to the crook, using the exact same pivot and angle the renderer uses.
   const ang = mosesSwingAngle(progress);
