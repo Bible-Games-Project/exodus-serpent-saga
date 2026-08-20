@@ -1,36 +1,39 @@
 // Gameplay Moses.
 //
-// Moses is now ONE sprite: the supplied 6-frame walking spritesheet already
-// contains his staff. Frames are played sequentially (1..6) while he moves and
-// frame 1 is his idle pose. Nothing is cut, masked or procedurally animated —
-// the complete provided frames are blitted with nearest-neighbour scaling.
+// Two supplied sprites drive Moses entirely: a single idle pose and a 5-frame
+// walking spritesheet. Both already contain his staff, so nothing is cut,
+// masked or procedurally animated — the complete provided frames are blitted
+// with nearest-neighbour scaling. Frames play 1..5 while he moves; when he
+// stops, the idle sprite is shown.
 //
 // The only geometry we still expose is the grip/crook of the staff drawn inside
 // the sprite, so the existing staff-attack wind FX (and its hitbox) can stay
 // anchored to the staff.
 //
 // The Home / Main Menu keeps its own Moses art — untouched.
-import sheetAsset from "@/assets/moses-walk.png.asset.json";
+import sheetAsset from "@/assets/moses-walk5.png.asset.json";
+import idleAsset from "@/assets/moses-idle.png.asset.json";
 
 export const MOSES_ART = {
   /** sprite-pixel size of one frame */
-  W: 44,
-  IMG_H: 60,
+  W: 64,
+  IMG_H: 72,
   /** ground contact row (bottom of the sandals) */
-  H: 53,
+  H: 64,
   /** screen pixels per sprite pixel */
   PX: 1.5,
   /** x of Moses' body centre inside the frame */
-  CX: 22,
+  CX: 26,
   /** number of frames in the walk sheet */
-  FRAMES: 6,
+  FRAMES: 5,
   /** the hand gripping the staff inside the sprite — pivot for the melee FX */
-  HAND: { x: 31, y: 34 },
+  HAND: { x: 35, y: 45 },
   /** crook (business end of the staff) relative to HAND, in sprite pixels */
   TIP: { x: 2, y: -30 },
 } as const;
 
 let sheet: HTMLImageElement | null = null;
+let idle: HTMLImageElement | null = null;
 
 export function ensureMosesArt(): boolean {
   if (typeof document === "undefined") return false;
@@ -38,7 +41,13 @@ export function ensureMosesArt(): boolean {
     sheet = new Image();
     sheet.src = sheetAsset.url;
   }
-  return sheet.complete && !!sheet.naturalWidth;
+  if (!idle) {
+    idle = new Image();
+    idle.src = idleAsset.url;
+  }
+  return (
+    sheet.complete && !!sheet.naturalWidth && idle.complete && !!idle.naturalWidth
+  );
 }
 
 export type MosesPose = {
