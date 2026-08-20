@@ -5,7 +5,7 @@ import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKi
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
-import { MOSES_ART, mosesSwingAngle } from "./mosesGameArt";
+import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 
 
 // ---------- utilities ----------
@@ -535,8 +535,14 @@ export function update(state: GameState, dt: number) {
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
   const facing = (d.facing as number) ?? 1;
-  const life = Math.max(0, Math.min(1, (sw.ttl ?? 0) / 0.18));
-  const progress = 1 - life;
+  const dur = (d.dur as number) ?? MOSES_ATTACK.DUR;
+  const windup = (d.windup as number) ?? MOSES_ATTACK.WINDUP;
+  const fx = (d.maxTtl as number) ?? 0.18;
+  // Nothing happens during the wind-up (frames 1-2): the impact — FX, hitbox
+  // and damage — starts exactly when the sprite reaches frame 3.
+  const elapsed = dur - (sw.ttl ?? 0);
+  if (elapsed < windup) return;
+  const progress = Math.max(0, Math.min(1, (elapsed - windup) / fx));
   // The hitbox is the staff's real trajectory: the segment from Moses' gripping
   // hand to the crook, using the exact same pivot and angle the renderer uses.
   const ang = mosesSwingAngle(progress);
@@ -644,9 +650,15 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       hp: 1, maxHp: 1,
       team: "hazard", facing,
       animT: 0, born: state.now,
-      ttl: 0.18,
+      // The entity spans the whole attack cycle so the sprite animation can be
+      // driven from it; the wind FX + hitbox only live inside the impact window
+      // that starts when the sprite reaches frame 3.
+      ttl: MOSES_ATTACK.DUR,
       kind: "staffswing",
-      data: { range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>() },
+      data: {
+        range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>(),
+        dur: MOSES_ATTACK.DUR, windup: MOSES_ATTACK.WINDUP, maxTtl: 0.18,
+      },
     };
     state.entities.set(sw.id, sw);
   } else if (id === "serpent") {

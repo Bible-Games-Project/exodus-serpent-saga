@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawMosesArt, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
+import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
@@ -1515,11 +1515,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // 2) Depth-sorted pass
   const drawList: Entity[] = [];
   let swingProgress: number | null = null;
+  let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool") continue;
     if (e.kind === "staffswing") {
-      const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
-      swingProgress = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+      const dur = (e.data?.dur as number) ?? MOSES_ATTACK.DUR;
+      attackProgress = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / dur));
+      swingProgress = staffFxProgress(e);
     }
     drawList.push(e);
   }
@@ -1545,7 +1547,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
 
     // Programmatic enemy renderers
@@ -1650,7 +1652,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 // ---------------- Moses ----------------
 
 
-function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null) {
+function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const walking = Math.hypot(e.vel.x, e.vel.y) > 5;
   const x = e.pos.x - camX;
@@ -1668,6 +1670,8 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     bob,
     // The staff he already holds is the one that swings.
     staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
+    // Frames 1-5 of the swing, paced to the existing attack cadence.
+    attackProgress,
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -2554,13 +2558,24 @@ function drawThrone(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
 
 
 // ---------------- staff swing wind effect ----------------
+// 0..1 through the impact window (frame 3 onward), or null during the wind-up.
+function staffFxProgress(e: Entity): number | null {
+  const dur = (e.data?.dur as number) ?? MOSES_ATTACK.DUR;
+  const windup = (e.data?.windup as number) ?? MOSES_ATTACK.WINDUP;
+  const fx = (e.data?.maxTtl as number) ?? 0.18;
+  const elapsed = dur - (e.ttl ?? 0);
+  if (elapsed < windup) return null;
+  return Math.max(0, Math.min(1, (elapsed - windup) / fx));
+}
+
 // The staff itself is drawn as part of Moses (see drawMoses) — this entity only
 // paints the white wind slash that trails the crook of his own staff.
 function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
-  const maxTtl = (e.data?.maxTtl as number) ?? 0.18;
-  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
-  const progress = 1 - life;
+  const progress = staffFxProgress(e);
+  // Wind-up frames (1-2): the staff has not landed yet, so no FX at all.
+  if (progress === null) return;
+  const life = 1 - progress;
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
 

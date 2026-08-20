@@ -50,6 +50,24 @@ export function ensureMosesArt(): boolean {
   );
 }
 
+/**
+ * Attack animation cadence. The 5 walk-sheet frames double as the swing poses:
+ *   frame 1 → preparation, frame 2 → swing,
+ *   frame 3 → IMPACT (wind FX + damage), frames 4/5 → follow-through & recovery.
+ * The timings below keep the previous attack rhythm: the impact fires
+ * WINDUP seconds after the attack starts, never earlier or later.
+ */
+export const MOSES_ATTACK = {
+  /** seconds per attack frame */
+  FRAME: 0.1,
+  /** 0-based index of the impact frame (frame 3) */
+  IMPACT_FRAME: 2,
+  /** time from attack start until frame 3 lands = 2 frames of wind-up */
+  WINDUP: 0.2,
+  /** total animation length (5 frames) */
+  DUR: 0.5,
+} as const;
+
 export type MosesPose = {
   /** screen position of Moses' feet (ground contact point) */
   x: number;
@@ -60,8 +78,11 @@ export type MosesPose = {
   bob: number;
   /** kept for API compatibility — the staff lives inside the sprite now */
   staffAngle: number;
+  /** 0..1 through the attack animation — overrides walk/idle frames */
+  attackProgress?: number | null;
   flash?: number;
 };
+
 
 /** Staff rotation (radians) for a swing progress 0..1 — drives the wind FX. */
 export function mosesSwingAngle(progress: number): number {
@@ -98,10 +119,16 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   if (!ensureMosesArt() || !sheet || !idle) return;
   const { W, IMG_H, H, PX, CX, FRAMES } = MOSES_ART;
 
-  // sequential playback while moving; the dedicated idle sprite when standing
-  const frame = pose.moving
-    ? ((Math.floor((pose.walkPhase / (Math.PI * 2)) * FRAMES) % FRAMES) + FRAMES) % FRAMES
-    : -1;
+  // attack animation wins; otherwise sequential walk playback, or the
+  // dedicated idle sprite when standing still
+  const ap = pose.attackProgress;
+  const frame =
+    ap !== null && ap !== undefined
+      ? Math.max(0, Math.min(FRAMES - 1, Math.floor(ap * FRAMES)))
+      : pose.moving
+        ? ((Math.floor((pose.walkPhase / (Math.PI * 2)) * FRAMES) % FRAMES) + FRAMES) % FRAMES
+        : -1;
+
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
