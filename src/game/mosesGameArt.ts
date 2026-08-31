@@ -24,7 +24,7 @@ export const MOSES_ART = {
   /** the right hand's grip on the staff — pivot for the melee swing */
   HAND: { x: 29, y: 43 },
   /** crook (business end of the staff) relative to HAND, in sprite pixels */
-  TIP: { x: -4, y: -37 },
+  TIP: { x: 4, y: -37 },
 } as const;
 
 /** the staff sprite keeps its own canvas / scale so its art is unchanged */
@@ -182,7 +182,9 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
     // the grip travels with the arm as it swings
     ctx.save();
     ctx.translate((HAND.x + bodyDX + rArm.dx) * PX, (HAND.y + bodyDY + rArm.dy) * PX);
-    if (staffRot) ctx.rotate(staffRot);
+    // mirror about the grip so the crook faces Moses' forward direction
+    ctx.scale(-1, 1);
+    if (staffRot) ctx.rotate(-staffRot);
     ctx.drawImage(
       L.staff,
       -STAFF.GRIP.x * STAFF.PX, -STAFF.GRIP.y * STAFF.PX,
