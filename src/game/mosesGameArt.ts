@@ -22,7 +22,7 @@ export const MOSES_ART = {
   /** first row of the feet layers */
   LEG_TOP: 55,
   /** the right hand's grip on the staff — pivot for the melee swing */
-  HAND: { x: 27, y: 43 },
+  HAND: { x: 29, y: 43 },
   /** crook (business end of the staff) relative to HAND, in sprite pixels */
   TIP: { x: -4, y: -37 },
 } as const;
