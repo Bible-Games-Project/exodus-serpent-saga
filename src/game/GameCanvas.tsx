@@ -1642,10 +1642,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // 6) Short, edge-focused hit feedback. This observes the already-updated HP
   // and never changes damage, cooldowns, or any other game state.
-  if (s.player.hp < lastRenderedPlayerHp - 0.01) {
+  if (hasRenderedPlayerHp && s.player.hp < lastRenderedPlayerHp - 0.01) {
     damageImpactUntil = Math.max(damageImpactUntil, s.now + 0.22);
   }
   lastRenderedPlayerHp = s.player.hp;
+  hasRenderedPlayerHp = true;
   const impactLife = Math.max(0, damageImpactUntil - s.now) / 0.22;
   if (impactLife > 0) {
     ctx.save();
