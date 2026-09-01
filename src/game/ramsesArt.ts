@@ -76,20 +76,20 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.drawImage(staffImg, 0, 0, W * PX, H * PX);
   ctx.restore();
 
-  // ---- body: legs first (with a robe overlap band), then the torso on top ----
-  // The overlap band carries a few rows of robe pixels along with each leg
-  // slice, and the slices overlap horizontally at the centre seam, so a shifted
-  // leg can never open a transparent hole against the robe/body.
+  // ---- body: legs first, then the intact torso/robe on top ----
+  // Each moving leg carries a small overlap of the robe hem. The torso is then
+  // stamped in full through LEG_TOP, preserving a continuous connection at the
+  // hip and keeping the original stride offsets unchanged.
   const legH = H - LEG_TOP;
-  const OVER = 6;                 // robe rows travelling with the legs
-  const bandTop = LEG_TOP - OVER; // source row where each leg slice starts
+  const OVER = 6;
+  const bandTop = LEG_TOP - OVER;
   if (step === -1) {
     ctx.drawImage(bodyImg, 0, LEG_TOP, W, legH, 0, LEG_TOP * PX, W * PX, legH * PX);
   } else {
     // Front leg lifts and reaches, rear leg trails — mirrored on the next frame.
     const lift = step === 1 ? 1 : 0;
     const half = Math.round(CX);
-    const OX = 2; // horizontal overlap between the two leg slices
+    const OX = 2;
     const lW = half + OX;
     ctx.drawImage(
       bodyImg, 0, bandTop, lW, legH + OVER,
@@ -102,8 +102,9 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
       (rSX + lift) * PX, (bandTop - (1 - lift)) * PX, rW * PX, (legH + OVER) * PX,
     );
   }
-  // Torso re-stamped over the band so the robe above the hips stays pristine.
-  ctx.drawImage(bodyImg, 0, 0, W, bandTop, 0, torsoBob * PX, W * PX, bandTop * PX);
+  // Restamp the complete robe/torso above the leg line. This closes any seam
+  // without introducing a new colour or an artificial pixel block.
+  ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
   ctx.restore();
 }
 
