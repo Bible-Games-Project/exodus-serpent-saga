@@ -123,25 +123,39 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   const { W, IMG_H, H, PX, CX, HAND } = MOSES_ART;
   const L = layers;
 
-  // ---- walk cycle: only the sandals travel ----
-  const sw = pose.moving ? Math.sin(pose.walkPhase) : 0;
-  const stride = pose.moving ? Math.round(sw * 2) : 0;
-  const rDX = stride;
-  const lDX = -stride;
-  const rLift = pose.moving ? -Math.max(0, Math.round(sw * 1.4)) : 0;
-  const lLift = pose.moving ? -Math.max(0, Math.round(-sw * 1.4)) : 0;
+  // ---- walk cycle: a real step cycle, only the sandals travel ----
+  // Each foot runs the same cycle, half a period apart: a swing phase where it
+  // lifts and travels forward (in Moses' facing direction), then a stance phase
+  // where it stays on the ground and slides back under the body.
+  const TAU = Math.PI * 2;
+  const step = (phase: number) => {
+    const u = ((phase % TAU) + TAU) / TAU % 1;
+    if (u < 0.45) {
+      const t = u / 0.45; // swing: forward + lifted
+      return { dx: Math.round(-2 + 5 * t), dy: -Math.round(Math.sin(Math.PI * t) * 2.2) };
+    }
+    const t = (u - 0.45) / 0.55; // stance: planted, sliding back
+    return { dx: Math.round(3 - 5 * t), dy: 0 };
+  };
+  const zero = { dx: 0, dy: 0 };
+  const fR = pose.moving ? step(pose.walkPhase) : zero;
+  const fL = pose.moving ? step(pose.walkPhase + Math.PI) : zero;
+  const rDX = fR.dx, rLift = fR.dy;
+  const lDX = fL.dx, lLift = fL.dy;
 
   // ---- idle breathing: one pixel, slowly, while standing still ----
   const breathT = pose.walkPhase / 4.2; // walkPhase is animT * 4.2
   const breath = pose.moving ? 0 : Math.sin(breathT * 1.6) > 0.55 ? -1 : 0;
 
-  // very subtle torso movement while walking: a single pixel bob per half stride
-  const bodyDY = pose.moving ? (Math.sin(pose.walkPhase * 2) > 0 ? -1 : 0) : breath;
+  // very subtle torso movement while walking: rises as the body passes over the
+  // planted foot (twice per stride), never enough to look like a bounce
+  const bodyDY = pose.moving ? (Math.sin(pose.walkPhase * 2) > 0.4 ? -1 : 0) : breath;
   // the robe is never nudged sideways or clipped — only the feet alternate
   const bodyDX = 0;
-  // arms swing opposite to the legs (right foot ahead -> left arm forward).
+  // arms swing opposite to the legs (right foot forward -> left arm forward).
   // The arm regions are re-stamped from the body layer, never cut out of it.
-  const armSw = pose.moving ? Math.round(sw) : 0; // -1 | 0 | 1
+  const sw = pose.moving ? Math.sin(pose.walkPhase) : 0;
+  const armSw = pose.moving ? Math.round(sw * 1.4) : 0; // -1 | 0 | 1
   const lArm = { dx: armSw, dy: -Math.max(0, armSw) };
   const rArm = { dx: -armSw, dy: -Math.max(0, -armSw) };
   // the held staff sways gently with the walk / breathes while idle
@@ -149,6 +163,15 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
     ? Math.sin(pose.walkPhase) * 0.05
     : Math.sin(breathT * 1.6) * 0.015;
   const staffRot = pose.staffAngle || walkSway;
+  // during an attack the staff arm leads the motion: it lifts on the wind-up
+  // (negative angle) and drives down through the swing, so hand + staff read as
+  // one connected movement.
+  if (pose.staffAngle) {
+    const a = pose.staffAngle;
+    rArm.dy = Math.max(-4, Math.min(2, Math.round(a * 2.4)));
+    rArm.dx = Math.max(-1, Math.min(2, Math.round(a * 1.2)));
+  }
+
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
