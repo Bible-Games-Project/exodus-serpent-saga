@@ -19,6 +19,10 @@ const DESERT_TILE_URL = desertTileAsset.url;
 /** Opacity of the white wash drawn over the ground texture only (0–1). */
 const GROUND_WASH_OPACITY = 0.42;
 
+// Renderer-local visual feedback; gameplay damage values remain untouched.
+let lastRenderedPlayerHp = 0;
+let hasRenderedPlayerHp = false;
+let damageImpactUntil = 0;
 
 
 const SPRITE_MAP: Record<string, Sprite> = {
@@ -1636,7 +1640,37 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.restore();
   }
 
-  // 6) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
+  // 6) Short, edge-focused hit feedback. This observes the already-updated HP
+  // and never changes damage, cooldowns, or any other game state.
+  if (hasRenderedPlayerHp && s.player.hp < lastRenderedPlayerHp - 0.01) {
+    damageImpactUntil = Math.max(damageImpactUntil, s.now + 0.22);
+  }
+  lastRenderedPlayerHp = s.player.hp;
+  hasRenderedPlayerHp = true;
+  const impactLife = Math.max(0, damageImpactUntil - s.now) / 0.22;
+  if (impactLife > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, impactLife * 1.35);
+    const edge = 10 + Math.round((1 - impactLife) * 6);
+    const px = 6;
+    ctx.fillStyle = "#a12b2b";
+    ctx.fillRect(0, 0, viewW, edge);
+    ctx.fillRect(0, viewH - edge, viewW, edge);
+    ctx.fillRect(0, 0, edge, viewH);
+    ctx.fillRect(viewW - edge, 0, edge, viewH);
+    // Stepped corner shards make the flash read as pixel-art impact, not a wash.
+    ctx.fillStyle = "#e05a48";
+    const shards = [
+      [edge + 4, edge + 2, 12, px], [edge + 2, edge + 4, px, 12],
+      [viewW - edge - 16, edge + 2, 12, px], [viewW - edge - px, edge + 4, px, 12],
+      [edge + 4, viewH - edge - px - 2, 12, px], [edge + 2, viewH - edge - 16, px, 12],
+      [viewW - edge - 16, viewH - edge - px - 2, 12, px], [viewW - edge - px, viewH - edge - 16, px, 12],
+    ];
+    for (const [x, y, w, h] of shards) ctx.fillRect(Math.round(x), Math.round(y), w, h);
+    ctx.restore();
+  }
+
+  // 7) Invulnerability — no ring; Moses himself flashes bright (see drawMoses).
 
 
   ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
@@ -1665,7 +1699,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
 
   drawMosesArt(ctx, {
     x, groundY, flip,
-    walkPhase: e.animT * 4.2,
+    walkPhase: walking ? e.animT * 4.2 : s.now * 4.2,
     moving: walking,
     bob,
     // The staff he already holds is the one that swings.

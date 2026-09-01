@@ -144,7 +144,10 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
   const lDX = fL.dx, lLift = fL.dy;
 
   // ---- idle breathing: one pixel, slowly, while standing still ----
-  const breathT = pose.walkPhase / 4.2; // walkPhase is animT * 4.2
+  // walkPhase is driven by the live clock for idle poses (the engine pauses the
+  // movement clock when input is zero), so breathing continues without moving
+  // the planted feet.
+  const breathT = pose.walkPhase / 4.2;
   const breath = pose.moving ? 0 : Math.sin(breathT * 1.6) > 0.55 ? -1 : 0;
 
   // very subtle torso movement while walking: rises as the body passes over the

@@ -76,23 +76,35 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.drawImage(staffImg, 0, 0, W * PX, H * PX);
   ctx.restore();
 
-  // ---- body: torso + animated legs ----
+  // ---- body: legs first, then the intact torso/robe on top ----
+  // Each moving leg carries a small overlap of the robe hem. The torso is then
+  // stamped in full through LEG_TOP, preserving a continuous connection at the
+  // hip and keeping the original stride offsets unchanged.
   const legH = H - LEG_TOP;
-  ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
+  const OVER = 6;
+  const bandTop = LEG_TOP - OVER;
   if (step === -1) {
     ctx.drawImage(bodyImg, 0, LEG_TOP, W, legH, 0, LEG_TOP * PX, W * PX, legH * PX);
   } else {
     // Front leg lifts and reaches, rear leg trails — mirrored on the next frame.
     const lift = step === 1 ? 1 : 0;
     const half = Math.round(CX);
+    const OX = 2;
+    const lW = half + OX;
     ctx.drawImage(
-      bodyImg, 0, LEG_TOP, half, legH,
-      -(1 - lift) * PX, (LEG_TOP - lift) * PX, half * PX, legH * PX,
+      bodyImg, 0, bandTop, lW, legH + OVER,
+      -(1 - lift) * PX, (bandTop - lift) * PX, lW * PX, (legH + OVER) * PX,
     );
+    const rSX = half - OX;
+    const rW = W - rSX;
     ctx.drawImage(
-      bodyImg, half, LEG_TOP, W - half, legH,
-      (half + lift) * PX, (LEG_TOP - (1 - lift)) * PX, (W - half) * PX, legH * PX,
+      bodyImg, rSX, bandTop, rW, legH + OVER,
+      (rSX + lift) * PX, (bandTop - (1 - lift)) * PX, rW * PX, (legH + OVER) * PX,
     );
   }
+  // Restamp the complete robe/torso above the leg line. This closes any seam
+  // without introducing a new colour or an artificial pixel block.
+  ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
   ctx.restore();
 }
+
