@@ -20,7 +20,8 @@ const DESERT_TILE_URL = desertTileAsset.url;
 const GROUND_WASH_OPACITY = 0.42;
 
 // Renderer-local visual feedback; gameplay damage values remain untouched.
-let lastRenderedPlayerHp = Number.POSITIVE_INFINITY;
+let lastRenderedPlayerHp = 0;
+let hasRenderedPlayerHp = false;
 let damageImpactUntil = 0;
 
 
