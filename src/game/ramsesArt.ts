@@ -76,23 +76,34 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.drawImage(staffImg, 0, 0, W * PX, H * PX);
   ctx.restore();
 
-  // ---- body: torso + animated legs ----
+  // ---- body: legs first (with a robe overlap band), then the torso on top ----
+  // The overlap band carries a few rows of robe pixels along with each leg
+  // slice, and the slices overlap horizontally at the centre seam, so a shifted
+  // leg can never open a transparent hole against the robe/body.
   const legH = H - LEG_TOP;
-  ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
+  const OVER = 6;                 // robe rows travelling with the legs
+  const bandTop = LEG_TOP - OVER; // source row where each leg slice starts
   if (step === -1) {
     ctx.drawImage(bodyImg, 0, LEG_TOP, W, legH, 0, LEG_TOP * PX, W * PX, legH * PX);
   } else {
     // Front leg lifts and reaches, rear leg trails — mirrored on the next frame.
     const lift = step === 1 ? 1 : 0;
     const half = Math.round(CX);
+    const OX = 2; // horizontal overlap between the two leg slices
+    const lW = half + OX;
     ctx.drawImage(
-      bodyImg, 0, LEG_TOP, half, legH,
-      -(1 - lift) * PX, (LEG_TOP - lift) * PX, half * PX, legH * PX,
+      bodyImg, 0, bandTop, lW, legH + OVER,
+      -(1 - lift) * PX, (bandTop - lift) * PX, lW * PX, (legH + OVER) * PX,
     );
+    const rSX = half - OX;
+    const rW = W - rSX;
     ctx.drawImage(
-      bodyImg, half, LEG_TOP, W - half, legH,
-      (half + lift) * PX, (LEG_TOP - (1 - lift)) * PX, (W - half) * PX, legH * PX,
+      bodyImg, rSX, bandTop, rW, legH + OVER,
+      (rSX + lift) * PX, (bandTop - (1 - lift)) * PX, rW * PX, (legH + OVER) * PX,
     );
   }
+  // Torso re-stamped over the band so the robe above the hips stays pristine.
+  ctx.drawImage(bodyImg, 0, 0, W, bandTop, 0, torsoBob * PX, W * PX, bandTop * PX);
   ctx.restore();
 }
+
