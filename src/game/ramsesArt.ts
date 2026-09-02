@@ -81,9 +81,8 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   // stamped in full through LEG_TOP, preserving a continuous connection at the
   // hip and keeping the original stride offsets unchanged.
   const legH = H - LEG_TOP;
-  // The overlap band stays below Ramses' arm/hand pixels (which end at sprite
-  // row 36), so the shifted leg slices can never clip or duplicate the hand.
-  const OVER = 4;
+  // Preserve the established robe overlap used by the existing leg cycle.
+  const OVER = 6;
   const bandTop = LEG_TOP - OVER;
   if (step === -1) {
     ctx.drawImage(bodyImg, 0, LEG_TOP, W, legH, 0, LEG_TOP * PX, W * PX, legH * PX);
