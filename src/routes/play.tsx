@@ -49,11 +49,6 @@ function PlayPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setFadeIn(false));
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
   // Keep the game at its intended scale: block ctrl+wheel zoom, pinch-zoom and
   // Safari zoom gestures while the play route is mounted.
   useEffect(() => {
@@ -85,10 +80,15 @@ function PlayPage() {
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 z-40 bg-black transition-opacity duration-500 ease-out ${fadeIn ? "opacity-100" : "opacity-0"}`}
-        />
+        {fadeIn && (
+          <div
+            data-testid="play-fade-in"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-40 bg-black"
+            style={{ animation: "exodus-play-fade-in 500ms linear forwards" }}
+            onAnimationEnd={() => setFadeIn(false)}
+          />
+        )}
 
         {/* Corner controls */}
         <div className="absolute left-3 top-3 z-20">
