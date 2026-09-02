@@ -81,6 +81,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   // stamped in full through LEG_TOP, preserving a continuous connection at the
   // hip and keeping the original stride offsets unchanged.
   const legH = H - LEG_TOP;
+  // Preserve the established robe overlap used by the existing leg cycle.
   const OVER = 6;
   const bandTop = LEG_TOP - OVER;
   if (step === -1) {
@@ -102,9 +103,17 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
       (rSX + lift) * PX, (bandTop - (1 - lift)) * PX, rW * PX, (legH + OVER) * PX,
     );
   }
-  // Restamp the complete robe/torso above the leg line. This closes any seam
-  // without introducing a new colour or an artificial pixel block.
+  // Re-stamp the complete robe/torso above the leg line. This closes any seam
+  // and keeps both arms and hands intact in every walking pose.
   ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
+  // Re-stamp the supplied arm/hand pixels after the stride slices so the left
+  // hand remains connected without changing the walking offsets or leg rhythm.
+  const ARM_TOP = 18;
+  const ARM_BOTTOM = 31;
+  ctx.drawImage(
+    bodyImg, 0, ARM_TOP, W, ARM_BOTTOM - ARM_TOP,
+    0, (ARM_TOP + torsoBob) * PX, W * PX, (ARM_BOTTOM - ARM_TOP) * PX,
+  );
   ctx.restore();
 }
 

@@ -39,6 +39,7 @@ function IconButton({
 
 function PlayPage() {
   const [paused, setPaused] = useState(false);
+  const [fadeIn, setFadeIn] = useState(true);
   const [gameOver, setGameOver] = useState<null | { level: number; survivalSeconds: number; kills: number }>(null);
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +48,13 @@ function PlayPage() {
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
+
+  // The intro fade runs from the first painted frame; this clears the overlay
+  // afterwards even if the animation completes before hydration attaches.
+  useEffect(() => {
+    const t = window.setTimeout(() => setFadeIn(false), 520);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // Keep the game at its intended scale: block ctrl+wheel zoom, pinch-zoom and
   // Safari zoom gestures while the play route is mounted.
@@ -79,6 +87,15 @@ function PlayPage() {
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
+        {fadeIn && (
+          <div
+            data-testid="play-fade-in"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-40 bg-black"
+            style={{ animation: "exodus-play-fade-in 500ms linear forwards" }}
+            onAnimationEnd={() => setFadeIn(false)}
+          />
+        )}
 
         {/* Corner controls */}
         <div className="absolute left-3 top-3 z-20">

@@ -326,6 +326,7 @@ export function update(state: GameState, dt: number) {
       if (!invuln && wrapDist2(state, e.pos, p.pos) < (e.radius + p.radius) ** 2) {
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
+        state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
       for (const npcId of state.npcs.values()) {
@@ -403,6 +404,8 @@ export function update(state: GameState, dt: number) {
       if (e.data?.enemyOwned) {
         if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
           p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
+          const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
+          state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           state.entities.delete(e.id);
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
@@ -625,6 +628,7 @@ function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: 
     team: "projectile", facing: dir.x > 0 ? 1 : -1,
     animT: 0, born: state.now,
     ttl, dmg,
+    ownerId: owner.id,
     kind,
     data: { enemyOwned: true, angle: Math.atan2(dir.y, dir.x) },
   };

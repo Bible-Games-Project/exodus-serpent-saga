@@ -220,3 +220,10 @@
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 0.8; transform: scale(1.04); }
 }
+
+/* 0.5s black fade-in when a gameplay session starts, so the scene is fully
+   rendered underneath before it becomes visible. */
+@keyframes exodus-play-fade-in {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
