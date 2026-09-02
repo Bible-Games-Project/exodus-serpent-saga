@@ -23,6 +23,7 @@ const GROUND_WASH_OPACITY = 0.42;
 let lastRenderedPlayerHp = 0;
 let hasRenderedPlayerHp = false;
 let damageImpactUntil = 0;
+let damageImpactKind: "normal" | "ramses" = "normal";
 
 
 const SPRITE_MAP: Record<string, Sprite> = {
@@ -123,6 +124,12 @@ export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
 
   useEffect(() => {
     stateRef.current = createInitialState();
+    // A new run starts with a clean renderer baseline, so the first frame is
+    // never mistaken for a damage event from a previous session.
+    lastRenderedPlayerHp = 0;
+    hasRenderedPlayerHp = false;
+    damageImpactUntil = 0;
+    damageImpactKind = "normal";
     const cnv = canvasRef.current!;
     const ctx = cnv.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
@@ -1603,70 +1610,65 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     ctx.fillRect(0, 0, viewW, viewH);
   }
 
-  // 5) Critical-health danger atmosphere — a chunky, dithered red wash that
-  // grows as Moses' health falls below 15%. Drawn as 6px pixel blocks with a
-  // vignette weighting so the centre of play stays readable.
+  // 5) Critical-health danger atmosphere. This is deliberately a small number
+  // of fixed canvas fills rather than a per-pixel grid, so low HP cannot lower
+  // the game loop's frame rate.
   const hpRatio = Math.max(0, s.player.hp) / Math.max(1, s.player.maxHp);
   const danger = Math.max(0, Math.min(1, (0.15 - hpRatio) / 0.13));
   if (danger > 0.001) {
-    const BLK = 6;
-    const cxp = viewW / 2, cyp = viewH / 2;
-    const maxD = Math.hypot(cxp, cyp);
-    // Two dither masks alternate each block so the wash reads as pixel art.
-    ctx.save();
-    for (let by = 0; by < viewH; by += BLK) {
-      for (let bx = 0; bx < viewW; bx += BLK) {
-        const d = Math.hypot(bx + BLK / 2 - cxp, by + BLK / 2 - cyp) / maxD;
-        // Edge-weighted: strong at the borders, gentle around Moses.
-        const w = 0.25 + d * d * 1.15;
-        const a = danger * w;
-        if (a <= 0.02) continue;
-        // Ordered 2x2 dither: skip a quarter of the blocks at low intensity.
-        const oi = ((bx / BLK) & 1) + (((by / BLK) & 1) << 1);
-        const th = [0.15, 0.55, 0.75, 0.35][oi];
-        if (danger < th * 0.55) continue;
-        ctx.fillStyle = `rgba(${a > 0.5 ? 150 : 176},${a > 0.5 ? 26 : 40},22,${Math.min(0.62, a * 0.62)})`;
-        ctx.fillRect(bx, by, BLK, BLK);
-      }
-    }
-    // Slow heartbeat pulse along the very edge of the frame.
     const beat = 0.5 + 0.5 * Math.sin(s.now * 4.2);
-    const border = Math.round((10 + beat * 8) / BLK) * BLK;
-    ctx.fillStyle = `rgba(150,26,22,${0.18 * danger + 0.16 * danger * beat})`;
+    const border = Math.round((10 + beat * 8) / 6) * 6;
+    ctx.save();
+    ctx.globalAlpha = 0.22 + danger * 0.25 + beat * danger * 0.08;
+    ctx.fillStyle = "#961a16";
     ctx.fillRect(0, 0, viewW, border);
     ctx.fillRect(0, viewH - border, viewW, border);
     ctx.fillRect(0, 0, border, viewH);
     ctx.fillRect(viewW - border, 0, border, viewH);
+    // Fixed stepped cut-ins preserve the chunky, dithered look without a grid.
+    ctx.globalAlpha *= 0.72;
+    ctx.fillStyle = "#b02820";
+    const step = 12;
+    for (let i = 1; i < 5; i++) {
+      ctx.fillRect(i * step, border + i * 3, step, 6);
+      ctx.fillRect(viewW - (i + 1) * step, border + i * 3, step, 6);
+      ctx.fillRect(i * step, viewH - border - i * 3 - 6, step, 6);
+      ctx.fillRect(viewW - (i + 1) * step, viewH - border - i * 3 - 6, step, 6);
+    }
     ctx.restore();
   }
 
-  // 6) Short, edge-focused hit feedback. This observes the already-updated HP
+  // 6) Short, edge-focused hit feedback. It observes the already-updated HP
   // and never changes damage, cooldowns, or any other game state.
   if (hasRenderedPlayerHp && s.player.hp < lastRenderedPlayerHp - 0.01) {
-    damageImpactUntil = Math.max(damageImpactUntil, s.now + 0.22);
+    damageImpactKind = s.damageImpactKind === "ramses" ? "ramses" : "normal";
+    damageImpactUntil = Math.max(damageImpactUntil, s.now + (damageImpactKind === "ramses" ? 0.28 : 0.22));
   }
   lastRenderedPlayerHp = s.player.hp;
   hasRenderedPlayerHp = true;
-  const impactLife = Math.max(0, damageImpactUntil - s.now) / 0.22;
+  const impactDuration = damageImpactKind === "ramses" ? 0.28 : 0.22;
+  const impactLife = Math.max(0, damageImpactUntil - s.now) / impactDuration;
   if (impactLife > 0) {
     ctx.save();
-    ctx.globalAlpha = Math.min(1, impactLife * 1.35);
-    const edge = 10 + Math.round((1 - impactLife) * 6);
+    ctx.globalAlpha = Math.min(1, impactLife * 1.4);
+    const isRamsesHit = damageImpactKind === "ramses";
+    const edge = (isRamsesHit ? 22 : 10) + Math.round((1 - impactLife) * (isRamsesHit ? 8 : 6));
     const px = 6;
-    ctx.fillStyle = "#a12b2b";
+    ctx.fillStyle = isRamsesHit ? "#76151b" : "#a12b2b";
     ctx.fillRect(0, 0, viewW, edge);
     ctx.fillRect(0, viewH - edge, viewW, edge);
     ctx.fillRect(0, 0, edge, viewH);
     ctx.fillRect(viewW - edge, 0, edge, viewH);
-    // Stepped corner shards make the flash read as pixel-art impact, not a wash.
-    ctx.fillStyle = "#e05a48";
-    const shards = [
-      [edge + 4, edge + 2, 12, px], [edge + 2, edge + 4, px, 12],
-      [viewW - edge - 16, edge + 2, 12, px], [viewW - edge - px, edge + 4, px, 12],
-      [edge + 4, viewH - edge - px - 2, 12, px], [edge + 2, viewH - edge - 16, px, 12],
-      [viewW - edge - 16, viewH - edge - px - 2, 12, px], [viewW - edge - px, viewH - edge - 16, px, 12],
-    ];
-    for (const [x, y, w, h] of shards) ctx.fillRect(Math.round(x), Math.round(y), w, h);
+    ctx.fillStyle = isRamsesHit ? "#c92d32" : "#e05a48";
+    const shard = isRamsesHit ? 18 : 12;
+    ctx.fillRect(edge + 4, edge + 2, shard, px);
+    ctx.fillRect(edge + 2, edge + 4, px, shard);
+    ctx.fillRect(viewW - edge - shard - 4, edge + 2, shard, px);
+    ctx.fillRect(viewW - edge - px - 2, edge + 4, px, shard);
+    ctx.fillRect(edge + 4, viewH - edge - px - 2, shard, px);
+    ctx.fillRect(edge + 2, viewH - edge - shard - 4, px, shard);
+    ctx.fillRect(viewW - edge - shard - 4, viewH - edge - px - 2, shard, px);
+    ctx.fillRect(viewW - edge - px - 2, viewH - edge - shard - 4, px, shard);
     ctx.restore();
   }
 

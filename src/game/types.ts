@@ -154,6 +154,7 @@ export type GameState = {
   // Screen effects (camera shake amplitude, flash 0-1).
   screenShake?: number;
   screenFlash?: number;
+  damageImpactKind?: "normal" | "ramses";
 
   // Ramses world boss (ramses.ts).
   ramsesId?: number;

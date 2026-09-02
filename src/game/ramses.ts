@@ -107,6 +107,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
         d.crackSeed = 1 + Math.random() * 999;
         if (dist2(r.pos, p.pos) < SMASH_R * SMASH_R && !isInvuln(state)) {
           p.hp -= 38 * shieldDamageMul(state);
+          state.damageImpactKind = "ramses";
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
         state.screenShake = Math.max(state.screenShake ?? 0, 11);
@@ -147,6 +148,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     // Contact damage
     if (dist2(r.pos, p.pos) < (r.radius + p.radius) ** 2 && !isInvuln(state)) {
       p.hp -= (chariot ? 45 : 30) * dt * shieldDamageMul(state);
+      state.damageImpactKind = "ramses";
       if (p.hp <= 0) { state.gameOver = true; state.running = false; }
     }
 
@@ -200,6 +202,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
       const R = d.landRadius as number;
       if (dist2(r.pos, p.pos) < R * R && !isInvuln(state)) {
         p.hp -= (d.landDmg as number) * shieldDamageMul(state);
+        state.damageImpactKind = "ramses";
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
       state.screenShake = Math.max(state.screenShake ?? 0, 16);

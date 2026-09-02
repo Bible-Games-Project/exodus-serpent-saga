@@ -39,6 +39,7 @@ function IconButton({
 
 function PlayPage() {
   const [paused, setPaused] = useState(false);
+  const [fadeIn, setFadeIn] = useState(true);
   const [gameOver, setGameOver] = useState<null | { level: number; survivalSeconds: number; kills: number }>(null);
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +48,11 @@ function PlayPage() {
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setFadeIn(false));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // Keep the game at its intended scale: block ctrl+wheel zoom, pinch-zoom and
   // Safari zoom gestures while the play route is mounted.
@@ -78,6 +84,10 @@ function PlayPage() {
           paused={paused || homeOpen || settingsOpen}
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
+        />
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 z-40 bg-black transition-opacity duration-500 ease-out ${fadeIn ? "opacity-100" : "opacity-0"}`}
         />
 
         {/* Corner controls */}
