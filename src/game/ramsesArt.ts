@@ -104,15 +104,9 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
       (rSX + lift) * PX, (bandTop - (1 - lift)) * PX, rW * PX, (legH + OVER) * PX,
     );
   }
-  // Re-stamp the intact upper body after the leg slices. The final arm/hand
-  // pass keeps the left hand fully connected through every walking pose.
+  // Re-stamp the complete robe/torso above the leg line. This closes any seam
+  // and keeps both arms and hands intact in every walking pose.
   ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
-  const ARM_TOP = 18;
-  const ARM_BOTTOM = 31;
-  ctx.drawImage(
-    bodyImg, 0, ARM_TOP, W, ARM_BOTTOM - ARM_TOP,
-    0, (ARM_TOP + torsoBob) * PX, W * PX, (ARM_BOTTOM - ARM_TOP) * PX,
-  );
   ctx.restore();
 }
 
