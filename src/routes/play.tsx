@@ -49,6 +49,13 @@ function PlayPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
 
+  // The intro fade runs from the first painted frame; this clears the overlay
+  // afterwards even if the animation completes before hydration attaches.
+  useEffect(() => {
+    const t = window.setTimeout(() => setFadeIn(false), 520);
+    return () => window.clearTimeout(t);
+  }, []);
+
   // Keep the game at its intended scale: block ctrl+wheel zoom, pinch-zoom and
   // Safari zoom gestures while the play route is mounted.
   useEffect(() => {
