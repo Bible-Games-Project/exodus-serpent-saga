@@ -1560,6 +1560,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
     if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
+    if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
 
     // Programmatic enemy renderers
     if (drawProceduralEnemy(ctx, e, camX, camY)) continue;
