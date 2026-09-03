@@ -327,6 +327,13 @@ export function update(state: GameState, dt: number) {
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
+        // Visual-only contact burst at the point of impact (rate-limited).
+        if (e.kind === "soldier" && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
+          e.data!.hitFxAt = state.now + 0.4;
+          const mx = e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW) * 0.5;
+          const my = e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) * 0.5 - 12;
+          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.22, { seed: e.id });
+        }
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
       for (const npcId of state.npcs.values()) {
