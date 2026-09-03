@@ -1802,7 +1802,7 @@ function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, cam
   if (!ensureSoldierArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
-  const moving = Math.hypot(e.vel.x, e.vel.y) > 2 || true;
+  const moving = true; // chase behaviour keeps him advancing
   drawPixelShadow(ctx, x, groundY + 1, SOLDIER_ART.W * SOLDIER_ART.PX * 0.7, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
