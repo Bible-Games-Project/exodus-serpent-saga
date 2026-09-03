@@ -1797,6 +1797,64 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   }
 }
 
+// ---------------- Egyptian soldier (layered supplied sprite) ----------------
+function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureSoldierArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const moving = Math.hypot(e.vel.x, e.vel.y) > 2 || true;
+  drawPixelShadow(ctx, x, groundY + 1, SOLDIER_ART.W * SOLDIER_ART.PX * 0.7, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  drawSoldierArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * 5.2,
+    moving,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 26;
+    const by = groundY - SOLDIER_ART.H * SOLDIER_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// Short, punchy pixel-art contact burst — purely visual feedback.
+function drawHitSpark(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.22;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const seed = (e.data?.seed as number) ?? e.id;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, life * 1.6);
+  // core flash: chunky stepped cross
+  ctx.fillStyle = "#ffe9a8";
+  ctx.fillRect(cx - 9, cy - 3, 18, 6);
+  ctx.fillRect(cx - 3, cy - 9, 6, 18);
+  ctx.fillStyle = "#ff8a2b";
+  ctx.fillRect(cx - 12, cy - 3, 3, 6);
+  ctx.fillRect(cx + 9, cy - 3, 3, 6);
+  ctx.fillRect(cx - 3, cy - 12, 6, 3);
+  ctx.fillRect(cx - 3, cy + 9, 6, 3);
+  // radiating pixel shards
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + ((seed % 7) * 0.21);
+    const r = 10 + t * 22;
+    const px = Math.round(cx + Math.cos(a) * r);
+    const py = Math.round(cy + Math.sin(a) * r * 0.8);
+    ctx.fillStyle = i % 2 === 0 ? "#e04a2b" : "#ffb347";
+    ctx.fillRect(px - 2, py - 2, 4, 4);
+  }
+  ctx.restore();
+}
+
+
 // ---------------- procedural enemy renderers ----------------
 // All humanoid enemies are drawn at "Moses pixel density" (3 screen-pixels
 // per art-pixel), on a shared 16-wide grid whose origin is at the character's
