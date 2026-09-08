@@ -1831,28 +1831,32 @@ function drawHitSpark(ctx: CanvasRenderingContext2D, e: Entity, camX: number, ca
   const cx = Math.round(e.pos.x - camX);
   const cy = Math.round(e.pos.y - camY);
   const seed = (e.data?.seed as number) ?? e.id;
+  // punch impacts use a deliberately small, tight burst
+  const k = e.data?.small ? 0.55 : 1;
+  const u = (n: number) => Math.round(n * k) || (n > 0 ? 1 : 0);
   ctx.save();
   ctx.globalAlpha = Math.min(1, life * 1.6);
   // core flash: chunky stepped cross
   ctx.fillStyle = "#ffe9a8";
-  ctx.fillRect(cx - 9, cy - 3, 18, 6);
-  ctx.fillRect(cx - 3, cy - 9, 6, 18);
+  ctx.fillRect(cx - u(9), cy - u(3), u(18), u(6));
+  ctx.fillRect(cx - u(3), cy - u(9), u(6), u(18));
   ctx.fillStyle = "#ff8a2b";
-  ctx.fillRect(cx - 12, cy - 3, 3, 6);
-  ctx.fillRect(cx + 9, cy - 3, 3, 6);
-  ctx.fillRect(cx - 3, cy - 12, 6, 3);
-  ctx.fillRect(cx - 3, cy + 9, 6, 3);
+  ctx.fillRect(cx - u(12), cy - u(3), u(3), u(6));
+  ctx.fillRect(cx + u(9), cy - u(3), u(3), u(6));
+  ctx.fillRect(cx - u(3), cy - u(12), u(6), u(3));
+  ctx.fillRect(cx - u(3), cy + u(9), u(6), u(3));
   // radiating pixel shards
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2 + ((seed % 7) * 0.21);
-    const r = 10 + t * 22;
+    const r = (10 + t * 22) * k;
     const px = Math.round(cx + Math.cos(a) * r);
     const py = Math.round(cy + Math.sin(a) * r * 0.8);
     ctx.fillStyle = i % 2 === 0 ? "#e04a2b" : "#ffb347";
-    ctx.fillRect(px - 2, py - 2, 4, 4);
+    ctx.fillRect(px - u(2), py - u(2), u(4), u(4));
   }
   ctx.restore();
 }
+
 
 
 // ---------------- procedural enemy renderers ----------------
