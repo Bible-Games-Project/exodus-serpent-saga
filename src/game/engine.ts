@@ -6,6 +6,8 @@ import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRan
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
+import { SOLDIER_PUNCH_DUR } from "./soldierArt";
+
 
 
 // ---------- utilities ----------
@@ -297,6 +299,13 @@ export function update(state: GameState, dt: number) {
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
+      // Free-arm punch animation progress (visual only).
+      if (e.kind === "soldier" && e.data?.punchAt != null) {
+        const pp = (state.now - (e.data.punchAt as number)) / SOLDIER_PUNCH_DUR;
+        if (pp >= 1) { delete e.data.punchAt; delete e.data.punchProgress; }
+        else e.data.punchProgress = pp;
+      }
+
       // Ramses handled separately.
       if (e.kind === "ramses") {
         // still take contact damage handled in tickRamses; skip here.
@@ -329,11 +338,17 @@ export function update(state: GameState, dt: number) {
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         // Visual-only contact burst at the point of impact (rate-limited).
         if (e.kind === "soldier" && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
-          e.data!.hitFxAt = state.now + 0.4;
-          const mx = e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW) * 0.5;
-          const my = e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) * 0.5 - 12;
-          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.22, { seed: e.id });
+          e.data!.hitFxAt = state.now + 0.5;
+          // free-arm punch, played exactly on the hit that deals damage
+          e.data!.punchAt = state.now;
+          const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+          const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+          const fd = Math.hypot(fdx, fdy) || 1;
+          const mx = e.pos.x + (fdx / fd) * 18;
+          const my = e.pos.y + (fdy / fd) * 6 - 26;
+          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
         }
+
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
       for (const npcId of state.npcs.values()) {
@@ -568,6 +583,10 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
   const dmg = stats.dmg * damageMultiplier(state);
   const tolerance = 14; // segment thickness
+  // Frontal cone: same reach as the staff, opening slightly above and below
+  // Moses' facing direction so a visually connecting swing always lands.
+  const reach = Math.hypot(tipX - cx, tipY - cy) + tolerance;
+  const HALF_CONE = 0.85; // ~49 degrees each side of the facing direction
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     if (hit.has(en.id)) continue;
@@ -579,7 +598,18 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     t = Math.max(0, Math.min(1, t));
     const px = cx + vx * t, py = cy + vy * t;
     const dd = Math.hypot(en.pos.x - px, en.pos.y - py);
-    if (dd < en.radius + tolerance) {
+    let inRange = dd < en.radius + tolerance;
+    if (!inRange) {
+      // Cone test, measured from Moses' hand toward his facing direction.
+      const ex = (en.pos.x - cx) * facing; // forward component (always >0 in front)
+      const ey = en.pos.y - cy;
+      const dist = Math.hypot(ex, ey);
+      if (ex > 0 && dist < reach + en.radius) {
+        inRange = Math.abs(Math.atan2(ey, ex)) <= HALF_CONE;
+      }
+    }
+    if (inRange) {
+
       en.hp -= dmg;
       hit.add(en.id);
       // knockback
