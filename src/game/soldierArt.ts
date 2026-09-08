@@ -55,7 +55,35 @@ export type SoldierPose = {
   /** walk cycle driver */
   walkPhase: number;
   moving: boolean;
+  /** 0..1 progress of a punch with the free arm; null/undefined = no punch */
+  punch?: number | null;
 };
+
+/** duration (seconds) of the free-arm punch animation */
+export const SOLDIER_PUNCH_DUR = 0.3;
+
+/** Shoulder of the free arm, in sprite pixels (used for the punch + FX). */
+const FREE_SHOULDER = { x: 19, y: 36 } as const;
+
+/** Screen position of the free fist for a punch progress (for impact FX). */
+export function soldierFistPos(x: number, groundY: number, flip: 1 | -1, punch: number) {
+  const { PX, CX, H } = SOLDIER_ART;
+  const reach = punchReach(punch);
+  return {
+    x: x + (FREE_SHOULDER.x - CX - reach) * PX * flip,
+    y: groundY - (H - FREE_SHOULDER.y) * PX,
+  };
+}
+
+/** Forward extension of the fist (sprite px) over the punch progress. */
+function punchReach(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  // quick jab: pull back slightly, snap out, retract
+  if (p < 0.22) return -2 * (p / 0.22);
+  if (p < 0.5) return -2 + 12 * ((p - 0.22) / 0.28);
+  return 10 * (1 - (p - 0.5) / 0.5);
+}
+
 
 /**
  * Draws the soldier at native pixel density. Walking is produced purely by
