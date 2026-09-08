@@ -297,6 +297,13 @@ export function update(state: GameState, dt: number) {
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
+      // Free-arm punch animation progress (visual only).
+      if (e.kind === "soldier" && e.data?.punchAt != null) {
+        const pp = (state.now - (e.data.punchAt as number)) / SOLDIER_PUNCH_DUR;
+        if (pp >= 1) { delete e.data.punchAt; delete e.data.punchProgress; }
+        else e.data.punchProgress = pp;
+      }
+
       // Ramses handled separately.
       if (e.kind === "ramses") {
         // still take contact damage handled in tickRamses; skip here.
