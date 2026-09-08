@@ -1806,12 +1806,16 @@ function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, cam
   drawPixelShadow(ctx, x, groundY + 1, SOLDIER_ART.W * SOLDIER_ART.PX * 0.7, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
+  const punchAt = e.data?.punchAt as number | undefined;
+  const punch = punchAt != null ? (e.animT, (performance.now() / 1000)) : null;
   drawSoldierArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
     walkPhase: e.animT * 5.2,
     moving,
+    punch: e.data?.punchProgress as number | undefined ?? null,
   });
+
   if (e.hp < e.maxHp) {
     const bw = 26;
     const by = groundY - SOLDIER_ART.H * SOLDIER_ART.PX - 6;
