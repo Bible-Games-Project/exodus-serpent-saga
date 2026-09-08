@@ -136,34 +136,6 @@ export const SOLDIER = make([
 ]);
 
 
-// Jackal enemy — 16x10, fast low predator
-export const JACKAL = make([
-  [
-    "..JJ...........J",
-    ".JjjJ.........Jj",
-    "JjjjjjjjjjjjjJj.",
-    "JjjWjjjjjjjjjjJ.",
-    "JjjjjjjjjjjjjjJ.",
-    ".JjjjjjjjjjjjJ..",
-    "..Jj..JJ..JJ..J.",
-    "..Jj..jj..jj....",
-    "..Jj..jj..jj....",
-    "..KK..KK..KK....",
-  ],
-  [
-    "..JJ.........JJJ",
-    ".JjjJ.......Jjj.",
-    "JjjjjjjjjjjjJj..",
-    "JjjWjjjjjjjjjJ..",
-    "JjjjjjjjjjjjjJ..",
-    ".Jjjjjjjjjjjjj..",
-    "..JJ..JJ..JJ..J.",
-    "..jj..jj..jj..jj",
-    "..jj..jj..jj..jj",
-    "..KK..KK..KK..KK",
-  ],
-]);
-
 // Frog — 10x7. Three frames: crouch (pre-jump), stretch (mid-air), landing.
 // Rendered with additional squash/stretch and vertical hop offset in the
 // draw pipeline for a cartoon-style bounce.
