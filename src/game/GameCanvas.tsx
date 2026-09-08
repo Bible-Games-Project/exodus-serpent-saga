@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, JACKAL, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
+import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
 import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
@@ -30,7 +31,7 @@ let damageImpactKind: "normal" | "ramses" = "normal";
 const SPRITE_MAP: Record<string, Sprite> = {
   serpent: SERPENT,
   soldier: SOLDIER,
-  jackal: JACKAL,
+  
   frog: FROG,
   fly: FLY,
   gem: GEM,
@@ -1562,6 +1563,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
     if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
 
     // Programmatic enemy renderers
@@ -1819,6 +1821,32 @@ function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, cam
   if (e.hp < e.maxHp) {
     const bw = 26;
     const by = groundY - SOLDIER_ART.H * SOLDIER_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// ---------------- desert dog (layered supplied sprite) ----------------
+function drawDog(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureDogArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 7);
+  // The supplied sprite faces right; animal facing is stored inverted.
+  const flip: 1 | -1 = e.facing === -1 ? 1 : -1;
+  drawPixelShadow(ctx, x, groundY + 1, DOG_ART.W * DOG_ART.PX * 0.66, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.7,
+  });
+  drawDogArt(ctx, {
+    x, groundY, flip,
+    walkPhase: e.animT * 7,
+    moving: true,
+    pounce: (e.data?.pounceProgress as number | undefined) ?? null,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 24;
+    const by = groundY - DOG_ART.H * DOG_ART.PX - 5;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);

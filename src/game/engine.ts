@@ -7,6 +7,7 @@ import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
+import { DOG_POUNCE_DUR } from "./dogArt";
 
 
 
@@ -305,6 +306,12 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.punchAt; delete e.data.punchProgress; }
         else e.data.punchProgress = pp;
       }
+      // Dog crouch + lunge bite progress (visual only).
+      if (e.kind === "jackal" && e.data?.pounceAt != null) {
+        const pp = (state.now - (e.data.pounceAt as number)) / DOG_POUNCE_DUR;
+        if (pp >= 1) { delete e.data.pounceAt; delete e.data.pounceProgress; }
+        else e.data.pounceProgress = pp;
+      }
 
       // Ramses handled separately.
       if (e.kind === "ramses") {
@@ -337,17 +344,20 @@ export function update(state: GameState, dt: number) {
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         // Visual-only contact burst at the point of impact (rate-limited).
-        if (e.kind === "soldier" && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
-          e.data!.hitFxAt = state.now + 0.5;
-          // free-arm punch, played exactly on the hit that deals damage
-          e.data!.punchAt = state.now;
+        if ((e.kind === "soldier" || e.kind === "jackal") && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
+          const dog = e.kind === "jackal";
+          e.data!.hitFxAt = state.now + (dog ? 0.6 : 0.5);
+          // attack animation, played exactly on the hit that deals damage
+          if (dog) e.data!.pounceAt = state.now;
+          else e.data!.punchAt = state.now;
           const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
           const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
           const fd = Math.hypot(fdx, fdy) || 1;
-          const mx = e.pos.x + (fdx / fd) * 18;
-          const my = e.pos.y + (fdy / fd) * 6 - 26;
+          const mx = e.pos.x + (fdx / fd) * (dog ? 14 : 18);
+          const my = e.pos.y + (fdy / fd) * 6 - (dog ? 14 : 26);
           spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
         }
+
 
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
