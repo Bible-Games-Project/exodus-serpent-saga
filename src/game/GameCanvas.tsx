@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
-import { drawSwordSoldierArt, ensureSwordSoldierArt, SWORD_ART } from "./swordSoldierArt";
+import { drawSwordSoldierArt, ensureSwordSoldierArt, SWORD_ART as SWORDSOL_ART } from "./swordSoldierArt";
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
 import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
 export { mosesSwingAngle };
@@ -1835,7 +1835,7 @@ function drawSwordSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   if (!ensureSwordSoldierArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
-  drawPixelShadow(ctx, x, groundY + 1, SWORD_ART.W * SWORD_ART.PX * 0.42, {
+  drawPixelShadow(ctx, x, groundY + 1, SWORDSOL_ART.W * SWORDSOL_ART.PX * 0.42, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
   drawSwordSoldierArt(ctx, {
@@ -1847,7 +1847,7 @@ function drawSwordSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   });
   if (e.hp < e.maxHp) {
     const bw = 26;
-    const by = groundY - SWORD_ART.H * SWORD_ART.PX - 6;
+    const by = groundY - SWORDSOL_ART.H * SWORDSOL_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
