@@ -31,7 +31,7 @@ let damageImpactKind: "normal" | "ramses" = "normal";
 const SPRITE_MAP: Record<string, Sprite> = {
   serpent: SERPENT,
   soldier: SOLDIER,
-  jackal: JACKAL,
+  
   frog: FROG,
   fly: FLY,
   gem: GEM,

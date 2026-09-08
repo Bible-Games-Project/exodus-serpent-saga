@@ -7,6 +7,7 @@ import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
+import { DOG_POUNCE_DUR } from "./dogArt";
 
 
 
