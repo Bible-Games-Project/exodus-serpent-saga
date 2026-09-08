@@ -329,11 +329,17 @@ export function update(state: GameState, dt: number) {
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         // Visual-only contact burst at the point of impact (rate-limited).
         if (e.kind === "soldier" && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
-          e.data!.hitFxAt = state.now + 0.4;
-          const mx = e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW) * 0.5;
-          const my = e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) * 0.5 - 12;
-          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.22, { seed: e.id });
+          e.data!.hitFxAt = state.now + 0.5;
+          // free-arm punch, played exactly on the hit that deals damage
+          e.data!.punchAt = state.now;
+          const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+          const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+          const fd = Math.hypot(fdx, fdy) || 1;
+          const mx = e.pos.x + (fdx / fd) * 18;
+          const my = e.pos.y + (fdy / fd) * 6 - 26;
+          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
         }
+
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
       for (const npcId of state.npcs.values()) {
