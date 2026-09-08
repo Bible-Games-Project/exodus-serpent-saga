@@ -102,12 +102,31 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
 };
 
-const ENEMY_ORDER = Object.keys(ENEMY_DEFS);
+// Introduction order. Exactly ONE new enemy type unlocks every 3 player
+// levels: soldier at 0, jackal at 3, swordsoldier at 6, then the rest.
+const ENEMY_ORDER = [
+  "soldier",
+  "jackal",
+  "swordsoldier",
+  "crow",
+  "archer",
+  "bat",
+  "wolf",
+  "knight",
+  "chariot",
+  "lion",
+  "mage",
+];
 
-// Weighted random selection filtered by survival time.
+/** Player level at which an enemy type is first allowed to spawn. */
+export function enemyUnlockLevel(kind: string): number {
+  const i = ENEMY_ORDER.indexOf(kind);
+  return i < 0 ? 0 : i * 3;
+}
+
+// Weighted random selection filtered by player level (one new type / 3 levels).
 export function pickEnemyKind(state: GameState): string {
-  const mins = state.now / 60;
-  const eligible = ENEMY_ORDER.filter((k) => ENEMY_DEFS[k].minMinute <= mins);
+  const eligible = ENEMY_ORDER.filter((k) => enemyUnlockLevel(k) <= state.level);
   const total = eligible.reduce((s, k) => s + ENEMY_DEFS[k].weight, 0);
   let r = Math.random() * total;
   for (const k of eligible) {

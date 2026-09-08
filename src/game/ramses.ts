@@ -31,7 +31,7 @@ export function spawnRamses(state: GameState): void {
       throneX: cx,
       throneY: cy,
       leapCd: 8,
-      leapUnlocked: false,   // unlocks at player level 30
+      leapUnlocked: false,   // unlocks at player level 36
       chariot: false,        // mounts war chariot at player level 50
       spearCd: 0,
       smashR: 110,
@@ -60,8 +60,8 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const d = r.data!;
   const p = state.player;
 
-  // Activation trigger — player reaches level 3: Ramses leaves his throne.
-  if (!d.active && state.level >= 3) {
+  // Activation trigger — player reaches level 18: Ramses leaves his throne.
+  if (!d.active && state.level >= 18) {
     d.active = true;
     d.seated = false;
     d.leapCd = 5;
@@ -69,8 +69,8 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     d.atkT = 0;
     d.atkCd = 1.5;
   }
-  // Leap unlocks at player level 30 (Biblical progression, no longer tied to plague).
-  if (!d.leapUnlocked && state.level >= 30) {
+  // Leap (jumping) attack unlocks at player level 36.
+  if (!d.leapUnlocked && state.level >= 36) {
     d.leapUnlocked = true;
   }
   // Chariot unlocks at player level 50 — Ramses mounts a war chariot.

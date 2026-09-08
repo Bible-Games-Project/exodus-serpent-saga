@@ -8,6 +8,7 @@ import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
+import { SWORD_THRUST_DUR } from "./swordSoldierArt";
 
 
 
@@ -306,6 +307,12 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.punchAt; delete e.data.punchProgress; }
         else e.data.punchProgress = pp;
       }
+      // Sword thrust progress (visual only).
+      if (e.kind === "swordsoldier" && e.data?.thrustAt != null) {
+        const pp = (state.now - (e.data.thrustAt as number)) / SWORD_THRUST_DUR;
+        if (pp >= 1) { delete e.data.thrustAt; delete e.data.thrustProgress; }
+        else e.data.thrustProgress = pp;
+      }
       // Dog crouch + lunge bite progress (visual only).
       if (e.kind === "jackal" && e.data?.pounceAt != null) {
         const pp = (state.now - (e.data.pounceAt as number)) / DOG_POUNCE_DUR;
@@ -344,11 +351,12 @@ export function update(state: GameState, dt: number) {
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         // Visual-only contact burst at the point of impact (rate-limited).
-        if ((e.kind === "soldier" || e.kind === "jackal") && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
+        if ((e.kind === "soldier" || e.kind === "jackal" || e.kind === "swordsoldier") && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
           const dog = e.kind === "jackal";
           e.data!.hitFxAt = state.now + (dog ? 0.6 : 0.5);
           // attack animation, played exactly on the hit that deals damage
           if (dog) e.data!.pounceAt = state.now;
+          else if (e.kind === "swordsoldier") e.data!.thrustAt = state.now;
           else e.data!.punchAt = state.now;
           const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
           const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
