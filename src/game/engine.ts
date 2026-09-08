@@ -568,6 +568,10 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
   const dmg = stats.dmg * damageMultiplier(state);
   const tolerance = 14; // segment thickness
+  // Frontal cone: same reach as the staff, opening slightly above and below
+  // Moses' facing direction so a visually connecting swing always lands.
+  const reach = Math.hypot(tipX - cx, tipY - cy) + tolerance;
+  const HALF_CONE = 0.85; // ~49 degrees each side of the facing direction
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     if (hit.has(en.id)) continue;
@@ -579,7 +583,18 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     t = Math.max(0, Math.min(1, t));
     const px = cx + vx * t, py = cy + vy * t;
     const dd = Math.hypot(en.pos.x - px, en.pos.y - py);
-    if (dd < en.radius + tolerance) {
+    let inRange = dd < en.radius + tolerance;
+    if (!inRange) {
+      // Cone test, measured from Moses' hand toward his facing direction.
+      const ex = (en.pos.x - cx) * facing; // forward component (always >0 in front)
+      const ey = en.pos.y - cy;
+      const dist = Math.hypot(ex, ey);
+      if (ex > 0 && dist < reach + en.radius) {
+        inRange = Math.abs(Math.atan2(ey, ex)) <= HALF_CONE;
+      }
+    }
+    if (inRange) {
+
       en.hp -= dmg;
       hit.add(en.id);
       // knockback
