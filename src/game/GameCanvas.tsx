@@ -1567,6 +1567,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "swordsoldier" && drawSwordSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
     if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
+    if (e.kind === "bloodhit") { drawBloodHit(ctx, e, camX, camY); continue; }
+
 
     // Programmatic enemy renderers
     if (drawProceduralEnemy(ctx, e, camX, camY)) continue;
