@@ -38,8 +38,8 @@ export type EnemyDef = {
 };
 
 export const ENEMY_DEFS: Record<string, EnemyDef> = {
-  // Enemy introduction is deliberately slow — new types appear at roughly the
-  // same cadence as plague unlocks so the player has time to master each foe.
+  // Roster is deliberately limited to the three basic foes (plus Ramses, who
+  // lives outside this table). More types will be added one by one later.
   soldier: {
     kind: "soldier", category: "human",
     radius: 12, baseHp: 26, hpPerMinute: 24, speed: 55, contactDmg: 10, xp: 3,
@@ -55,68 +55,15 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 12, baseHp: 42, hpPerMinute: 26, speed: 70, contactDmg: 14, xp: 4,
     minMinute: 3, weight: 4, behavior: "chase",
   },
-  crow: {
-    kind: "crow", category: "animal",
-    radius: 8, baseHp: 10, hpPerMinute: 8, speed: 130, contactDmg: 6, xp: 2,
-    minMinute: 4, weight: 3, behavior: "flyover", ignoresObstacles: true,
-  },
-  archer: {
-    kind: "archer", category: "human",
-    radius: 11, baseHp: 24, hpPerMinute: 18, speed: 45, contactDmg: 6, xp: 4,
-    minMinute: 5, weight: 3, behavior: "ranged",
-    attack: { cooldown: 2.2, range: 260, projectileSpeed: 320, projectileDmg: 10, projectileKind: "arrow", projectileTtl: 1.4 },
-  },
-  bat: {
-    kind: "bat", category: "animal",
-    radius: 7, baseHp: 8, hpPerMinute: 8, speed: 150, contactDmg: 8, xp: 2,
-    minMinute: 6.5, weight: 3, behavior: "erratic", ignoresObstacles: true,
-  },
-  wolf: {
-    kind: "wolf", category: "animal",
-    radius: 11, baseHp: 30, hpPerMinute: 20, speed: 115, contactDmg: 14, xp: 4,
-    minMinute: 8, weight: 4, behavior: "pack",
-  },
-  knight: {
-    kind: "knight", category: "human",
-    radius: 16, baseHp: 90, hpPerMinute: 40, speed: 65, contactDmg: 18, xp: 8,
-    minMinute: 10, weight: 2, behavior: "ranged",
-    attack: { cooldown: 2.6, range: 240, projectileSpeed: 300, projectileDmg: 14, projectileKind: "spear_e", projectileTtl: 1.4 },
-  },
-  chariot: {
-    kind: "chariot", category: "human",
-    radius: 18, baseHp: 120, hpPerMinute: 45, speed: 90, contactDmg: 22, xp: 10,
-    minMinute: 12, weight: 2, behavior: "charge",
-    chargeCooldown: 4, chargeSpeed: 260, chargeDuration: 0.9,
-  },
-  lion: {
-    kind: "lion", category: "animal",
-    radius: 14, baseHp: 90, hpPerMinute: 30, speed: 80, contactDmg: 20, xp: 6,
-    minMinute: 13, weight: 2, behavior: "charge",
-    chargeCooldown: 5, chargeSpeed: 280, chargeDuration: 0.8,
-  },
-  mage: {
-    kind: "mage", category: "human",
-    radius: 12, baseHp: 50, hpPerMinute: 22, speed: 40, contactDmg: 8, xp: 6,
-    minMinute: 15, weight: 2, behavior: "ranged",
-    attack: { cooldown: 2.4, range: 280, projectileSpeed: 240, projectileDmg: 16, projectileKind: "magebolt", projectileTtl: 1.8 },
-  },
 };
 
-// Introduction order. Exactly ONE new enemy type unlocks every 3 player
-// levels: soldier at 0, jackal at 3, swordsoldier at 6, then the rest.
+// Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
 const ENEMY_ORDER = [
   "soldier",
   "jackal",
   "swordsoldier",
-  "crow",
-  "archer",
-  "bat",
-  "wolf",
-  "knight",
-  "chariot",
-  "lion",
-  "mage",
 ];
+
 
 /** Player level at which an enemy type is first allowed to spawn. */
 export function enemyUnlockLevel(kind: string): number {
@@ -187,7 +134,11 @@ export function enemyTick(
         mvx /= m; mvy /= m;
       }
     }
-    move(mvx * spd, mvy * spd);
+    // Stop just beside the target so the melee animation can reach it without
+    // the sprites overlapping.
+    const standoff = e.radius + 22;
+    if (d > standoff) move(mvx * spd, mvy * spd);
+
     // Melee swing anim for humans in close range.
     if (def.category === "human" && d < e.radius + 26) {
       const swingCd = ((e.data!.swingCd as number) ?? 0) - dt;

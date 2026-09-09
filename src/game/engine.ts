@@ -10,6 +10,15 @@ import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { SWORD_THRUST_DUR } from "./swordSoldierArt";
 
+// Basic melee enemies attack from just beside Moses instead of overlapping him.
+// `gap` = extra distance beyond the two sprite radii, `from`/`to` = the slice of
+// the attack animation during which the blow actually connects.
+const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; from: number; to: number }> = {
+  soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 16, from: 0.35, to: 0.65 },
+  swordsoldier: { key: "thrustAt", dur: SWORD_THRUST_DUR, gap: 22, from: 0.35, to: 0.65 },
+  jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 14, from: 0.45, to: 0.75 },
+};
+
 
 
 // ---------- utilities ----------
@@ -345,30 +354,45 @@ export function update(state: GameState, dt: number) {
       });
       wrapPos(state, e.pos);
 
-      // Contact damage
-      if (!invuln && wrapDist2(state, e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+      // ---- melee attack: triggered from beside Moses, damage lands mid-anim ----
+      const melee = MELEE_ATTACKS[e.kind];
+      const dd = Math.sqrt(wrapDist2(state, e.pos, p.pos));
+      if (melee) {
+        const reach = e.radius + p.radius + melee.gap;
+        const key = melee.key;
+        const active = e.data?.[key] != null;
+        if (!invuln && !active && dd < reach && state.now >= ((e.data?.atkGate as number) ?? 0)) {
+          e.data!.atkGate = state.now + melee.dur + 0.3;
+          e.data![key] = state.now;
+          e.data!.atkHitDone = false;
+        }
+        if (!invuln && e.data?.[key] != null) {
+          const prog = (state.now - (e.data[key] as number)) / melee.dur;
+          if (prog >= melee.from && prog <= melee.to && dd < reach + 10) {
+            const contactDmg = (e.data?.contactDmg as number) ?? 8;
+            p.hp -= contactDmg * dt * shieldDamageMul(state);
+            state.damageImpactKind = "normal";
+            if (!e.data.atkHitDone) {
+              e.data.atkHitDone = true;
+              const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+              const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+              const fd = Math.hypot(fdx, fdy) || 1;
+              const dog = e.kind === "jackal";
+              const mx = e.pos.x + (fdx / fd) * (dog ? 14 : 18);
+              const my = e.pos.y + (fdy / fd) * 6 - (dog ? 14 : 26);
+              spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
+            }
+            if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+          }
+        }
+      } else if (!invuln && dd < e.radius + p.radius) {
+        // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
-        // Visual-only contact burst at the point of impact (rate-limited).
-        if ((e.kind === "soldier" || e.kind === "jackal" || e.kind === "swordsoldier") && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
-          const dog = e.kind === "jackal";
-          e.data!.hitFxAt = state.now + (dog ? 0.6 : 0.5);
-          // attack animation, played exactly on the hit that deals damage
-          if (dog) e.data!.pounceAt = state.now;
-          else if (e.kind === "swordsoldier") e.data!.thrustAt = state.now;
-          else e.data!.punchAt = state.now;
-          const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
-          const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
-          const fd = Math.hypot(fdx, fdy) || 1;
-          const mx = e.pos.x + (fdx / fd) * (dog ? 14 : 18);
-          const my = e.pos.y + (fdy / fd) * 6 - (dog ? 14 : 26);
-          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
-        }
-
-
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
+
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
@@ -577,7 +601,12 @@ export function update(state: GameState, dt: number) {
 // ---------- staff hitbox follows swing ----------
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
-  const facing = (d.facing as number) ?? 1;
+  // The swing always tracks Moses' CURRENT facing, so the visual staff and the
+  // hit cone can never disagree (turning mid-swing flips both together).
+  const facing = state.player.facing;
+  d.facing = facing;
+  sw.facing = facing;
+
   const dur = (d.dur as number) ?? MOSES_ATTACK.DUR;
   const windup = (d.windup as number) ?? MOSES_ATTACK.WINDUP;
   const fx = (d.maxTtl as number) ?? 0.18;
