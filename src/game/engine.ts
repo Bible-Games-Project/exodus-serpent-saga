@@ -379,10 +379,13 @@ export function update(state: GameState, dt: number) {
               const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
               const fd = Math.hypot(fdx, fdy) || 1;
               const dog = e.kind === "jackal";
-              const mx = e.pos.x + (fdx / fd) * (dog ? 14 : 18);
-              const my = e.pos.y + (fdy / fd) * 6 - (dog ? 14 : 26);
+              // contact point sits on Moses' body, on the side the enemy is on
+              const mx = p.pos.x - (fdx / fd) * (p.radius - 2);
+              const my = p.pos.y - (fdy / fd) * 4 - (dog ? 14 : 24);
               spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
+              spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
             }
+
             if (p.hp <= 0) { state.gameOver = true; state.running = false; }
           }
         }
