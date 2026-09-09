@@ -187,7 +187,11 @@ export function enemyTick(
         mvx /= m; mvy /= m;
       }
     }
-    move(mvx * spd, mvy * spd);
+    // Stop just beside the target so the melee animation can reach it without
+    // the sprites overlapping.
+    const standoff = e.radius + 22;
+    if (d > standoff) move(mvx * spd, mvy * spd);
+
     // Melee swing anim for humans in close range.
     if (def.category === "human" && d < e.radius + 26) {
       const swingCd = ((e.data!.swingCd as number) ?? 0) - dt;
