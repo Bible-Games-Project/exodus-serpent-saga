@@ -123,32 +123,24 @@ export function drawSoldierArt(ctx: CanvasRenderingContext2D, pose: SoldierPose)
   stamp(l.legB, stepB, liftB);
   stamp(l.legF, stepF, liftF);
   stamp(l.body, 0, 0);
-  // Free arm (the one NOT holding the staff): only drawn while punching, so the
-  // sprite is untouched at rest. It reads as a short jab from the shoulder.
+  // Forearm + fist + staff as one rigid group: the grip never breaks. During a
+  // strike the whole group rotates around the shoulder so the staff sweeps
+  // forward and visibly reaches Moses.
   const punch = pose.punch;
   if (punch != null && punch > 0 && punch < 1) {
-    const reach = punchReach(punch);
-    const sx = FREE_SHOULDER.x, sy = FREE_SHOULDER.y;
-    const len = Math.max(0, Math.round(reach));
-    const droop = Math.round((1 - Math.min(1, Math.max(0, reach) / 10)) * 2);
-    const ax = sx - len - 3;
-    const ay = sy + droop;
-    // upper/forearm as a 3px-thick limb, outlined below for pixel-art contrast
-    ctx.fillStyle = "#703914";
-    ctx.fillRect(ax * PX, (ay + 3) * PX, (sx - ax) * PX, 1 * PX);
-    ctx.fillStyle = "#e88e4d";
-    ctx.fillRect(ax * PX, ay * PX, (sx - ax) * PX, 3 * PX);
-    // fist
-    ctx.fillStyle = "#703914";
-    ctx.fillRect((ax - 4) * PX, (ay - 1) * PX, 4 * PX, 5 * PX);
-    ctx.fillStyle = "#e98f4e";
-    ctx.fillRect((ax - 3) * PX, ay * PX, 3 * PX, 3 * PX);
-    // gold cuff at the shoulder
-    ctx.fillStyle = "#ffd460";
-    ctx.fillRect((sx - 2) * PX, ay * PX, 2 * PX, 3 * PX);
+    const a = strikeAngle(punch);
+    // small forward lean of the arm group as the staff comes down
+    const lean = a < 0 ? Math.round(a * 1.5) : 0;
+    ctx.save();
+    ctx.translate(STAFF_SHOULDER.x * PX, STAFF_SHOULDER.y * PX);
+    ctx.rotate(a);
+    ctx.translate(-STAFF_SHOULDER.x * PX, -STAFF_SHOULDER.y * PX);
+    stamp(l.arm, lean, 0);
+    ctx.restore();
+  } else {
+    stamp(l.arm, armStep, armLift);
   }
-  // Forearm + fist + staff as one rigid group: the grip never breaks.
-  stamp(l.arm, armStep, armLift);
+
   ctx.restore();
 }
 
