@@ -1883,7 +1883,38 @@ function drawDog(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: n
   return true;
 }
 
+// A few small pixel-art blood drops flicked off Moses at the moment of impact.
+function drawBloodHit(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.45;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const seed = ((e.data?.seed as number) ?? e.id) % 97;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, life * 1.8);
+  for (let i = 0; i < 6; i++) {
+    const r = ((seed * (i + 3) * 7) % 100) / 100;
+    const dir = r < 0.5 ? -1 : 1;
+    const vx = dir * (14 + r * 30);
+    const vy = -26 - r * 24;
+    const px = Math.round(cx + vx * t);
+    const py = Math.round(cy + vy * t + 150 * t * t);
+    const s = i % 3 === 0 ? 3 : 2;
+    ctx.fillStyle = i % 2 === 0 ? "#b3121b" : "#e8262b";
+    ctx.fillRect(px, py, s, s);
+  }
+  // tight splash at the contact point
+  ctx.fillStyle = "#c9161d";
+  ctx.globalAlpha = Math.min(1, life * 1.2);
+  ctx.fillRect(cx - 3, cy - 1, 6, 2);
+  ctx.fillRect(cx - 1, cy - 3, 2, 6);
+  ctx.restore();
+}
+
 // Short, punchy pixel-art contact burst — purely visual feedback.
+
 function drawHitSpark(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const maxTtl = (e.data?.maxTtl as number) ?? 0.22;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
