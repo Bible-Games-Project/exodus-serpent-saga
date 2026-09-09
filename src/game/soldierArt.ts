@@ -55,34 +55,37 @@ export type SoldierPose = {
   /** walk cycle driver */
   walkPhase: number;
   moving: boolean;
-  /** 0..1 progress of a punch with the free arm; null/undefined = no punch */
+  /** 0..1 progress of the staff strike; null/undefined = no strike */
   punch?: number | null;
 };
 
-/** duration (seconds) of the free-arm punch animation */
-export const SOLDIER_PUNCH_DUR = 0.3;
+/** duration (seconds) of the staff strike animation */
+export const SOLDIER_PUNCH_DUR = 0.38;
 
-/** Shoulder of the free arm, in sprite pixels (used for the punch + FX). */
-const FREE_SHOULDER = { x: 19, y: 36 } as const;
+/** Shoulder of the staff arm, in sprite pixels — pivot of the strike. */
+const STAFF_SHOULDER = { x: 18, y: 34 } as const;
 
-/** Screen position of the free fist for a punch progress (for impact FX). */
+/** Rotation (radians) of the staff arm over the strike progress. */
+function strikeAngle(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p < 0.3) return 0.45 * (p / 0.3);              // prepare: staff cocks back/up
+  if (p < 0.6) return 0.45 - 1.55 * ((p - 0.3) / 0.3); // fast sweep forward
+  return -1.1 * (1 - (p - 0.6) / 0.4);                // recover
+}
+
+/** Screen position of the staff's striking end for a strike progress (impact FX). */
 export function soldierFistPos(x: number, groundY: number, flip: 1 | -1, punch: number) {
   const { PX, CX, H } = SOLDIER_ART;
-  const reach = punchReach(punch);
+  const a = strikeAngle(punch);
+  const L = 26; // sprite px from shoulder to the striking part of the staff
+  const rx = Math.sin(a) * L;
+  const ry = -Math.cos(a) * L;
   return {
-    x: x + (FREE_SHOULDER.x - CX - reach) * PX * flip,
-    y: groundY - (H - FREE_SHOULDER.y) * PX,
+    x: x + (STAFF_SHOULDER.x - CX + rx) * PX * flip,
+    y: groundY - (H - STAFF_SHOULDER.y - ry) * PX,
   };
 }
 
-/** Forward extension of the fist (sprite px) over the punch progress. */
-function punchReach(progress: number): number {
-  const p = Math.max(0, Math.min(1, progress));
-  // quick jab: pull back slightly, snap out, retract
-  if (p < 0.22) return -2 * (p / 0.22);
-  if (p < 0.5) return -2 + 12 * ((p - 0.22) / 0.28);
-  return 10 * (1 - (p - 0.5) / 0.5);
-}
 
 
 /**
@@ -120,32 +123,24 @@ export function drawSoldierArt(ctx: CanvasRenderingContext2D, pose: SoldierPose)
   stamp(l.legB, stepB, liftB);
   stamp(l.legF, stepF, liftF);
   stamp(l.body, 0, 0);
-  // Free arm (the one NOT holding the staff): only drawn while punching, so the
-  // sprite is untouched at rest. It reads as a short jab from the shoulder.
+  // Forearm + fist + staff as one rigid group: the grip never breaks. During a
+  // strike the whole group rotates around the shoulder so the staff sweeps
+  // forward and visibly reaches Moses.
   const punch = pose.punch;
   if (punch != null && punch > 0 && punch < 1) {
-    const reach = punchReach(punch);
-    const sx = FREE_SHOULDER.x, sy = FREE_SHOULDER.y;
-    const len = Math.max(0, Math.round(reach));
-    const droop = Math.round((1 - Math.min(1, Math.max(0, reach) / 10)) * 2);
-    const ax = sx - len - 3;
-    const ay = sy + droop;
-    // upper/forearm as a 3px-thick limb, outlined below for pixel-art contrast
-    ctx.fillStyle = "#703914";
-    ctx.fillRect(ax * PX, (ay + 3) * PX, (sx - ax) * PX, 1 * PX);
-    ctx.fillStyle = "#e88e4d";
-    ctx.fillRect(ax * PX, ay * PX, (sx - ax) * PX, 3 * PX);
-    // fist
-    ctx.fillStyle = "#703914";
-    ctx.fillRect((ax - 4) * PX, (ay - 1) * PX, 4 * PX, 5 * PX);
-    ctx.fillStyle = "#e98f4e";
-    ctx.fillRect((ax - 3) * PX, ay * PX, 3 * PX, 3 * PX);
-    // gold cuff at the shoulder
-    ctx.fillStyle = "#ffd460";
-    ctx.fillRect((sx - 2) * PX, ay * PX, 2 * PX, 3 * PX);
+    const a = strikeAngle(punch);
+    // small forward lean of the arm group as the staff comes down
+    const lean = a < 0 ? Math.round(a * 1.5) : 0;
+    ctx.save();
+    ctx.translate(STAFF_SHOULDER.x * PX, STAFF_SHOULDER.y * PX);
+    ctx.rotate(a);
+    ctx.translate(-STAFF_SHOULDER.x * PX, -STAFF_SHOULDER.y * PX);
+    stamp(l.arm, lean, 0);
+    ctx.restore();
+  } else {
+    stamp(l.arm, armStep, armLift);
   }
-  // Forearm + fist + staff as one rigid group: the grip never breaks.
-  stamp(l.arm, armStep, armLift);
+
   ctx.restore();
 }
 
