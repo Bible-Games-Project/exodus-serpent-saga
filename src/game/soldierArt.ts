@@ -55,34 +55,37 @@ export type SoldierPose = {
   /** walk cycle driver */
   walkPhase: number;
   moving: boolean;
-  /** 0..1 progress of a punch with the free arm; null/undefined = no punch */
+  /** 0..1 progress of the staff strike; null/undefined = no strike */
   punch?: number | null;
 };
 
-/** duration (seconds) of the free-arm punch animation */
-export const SOLDIER_PUNCH_DUR = 0.3;
+/** duration (seconds) of the staff strike animation */
+export const SOLDIER_PUNCH_DUR = 0.38;
 
-/** Shoulder of the free arm, in sprite pixels (used for the punch + FX). */
-const FREE_SHOULDER = { x: 19, y: 36 } as const;
+/** Shoulder of the staff arm, in sprite pixels — pivot of the strike. */
+const STAFF_SHOULDER = { x: 18, y: 34 } as const;
 
-/** Screen position of the free fist for a punch progress (for impact FX). */
+/** Rotation (radians) of the staff arm over the strike progress. */
+function strikeAngle(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p < 0.3) return 0.45 * (p / 0.3);              // prepare: staff cocks back/up
+  if (p < 0.6) return 0.45 - 1.55 * ((p - 0.3) / 0.3); // fast sweep forward
+  return -1.1 * (1 - (p - 0.6) / 0.4);                // recover
+}
+
+/** Screen position of the staff's striking end for a strike progress (impact FX). */
 export function soldierFistPos(x: number, groundY: number, flip: 1 | -1, punch: number) {
   const { PX, CX, H } = SOLDIER_ART;
-  const reach = punchReach(punch);
+  const a = strikeAngle(punch);
+  const L = 26; // sprite px from shoulder to the striking part of the staff
+  const rx = Math.sin(a) * L;
+  const ry = -Math.cos(a) * L;
   return {
-    x: x + (FREE_SHOULDER.x - CX - reach) * PX * flip,
-    y: groundY - (H - FREE_SHOULDER.y) * PX,
+    x: x + (STAFF_SHOULDER.x - CX + rx) * PX * flip,
+    y: groundY - (H - STAFF_SHOULDER.y - ry) * PX,
   };
 }
 
-/** Forward extension of the fist (sprite px) over the punch progress. */
-function punchReach(progress: number): number {
-  const p = Math.max(0, Math.min(1, progress));
-  // quick jab: pull back slightly, snap out, retract
-  if (p < 0.22) return -2 * (p / 0.22);
-  if (p < 0.5) return -2 + 12 * ((p - 0.22) / 0.28);
-  return 10 * (1 - (p - 0.5) / 0.5);
-}
 
 
 /**
