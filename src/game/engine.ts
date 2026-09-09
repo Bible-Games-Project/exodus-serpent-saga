@@ -345,30 +345,45 @@ export function update(state: GameState, dt: number) {
       });
       wrapPos(state, e.pos);
 
-      // Contact damage
-      if (!invuln && wrapDist2(state, e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+      // ---- melee attack: triggered from beside Moses, damage lands mid-anim ----
+      const melee = MELEE_ATTACKS[e.kind];
+      const dd = Math.sqrt(wrapDist2(state, e.pos, p.pos));
+      if (melee) {
+        const reach = e.radius + p.radius + melee.gap;
+        const key = melee.key;
+        const active = e.data?.[key] != null;
+        if (!invuln && !active && dd < reach && state.now >= ((e.data?.atkGate as number) ?? 0)) {
+          e.data!.atkGate = state.now + melee.dur + 0.3;
+          e.data![key] = state.now;
+          e.data!.atkHitDone = false;
+        }
+        if (!invuln && e.data?.[key] != null) {
+          const prog = (state.now - (e.data[key] as number)) / melee.dur;
+          if (prog >= melee.from && prog <= melee.to && dd < reach + 10) {
+            const contactDmg = (e.data?.contactDmg as number) ?? 8;
+            p.hp -= contactDmg * dt * shieldDamageMul(state);
+            state.damageImpactKind = "normal";
+            if (!e.data.atkHitDone) {
+              e.data.atkHitDone = true;
+              const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+              const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+              const fd = Math.hypot(fdx, fdy) || 1;
+              const dog = e.kind === "jackal";
+              const mx = e.pos.x + (fdx / fd) * (dog ? 14 : 18);
+              const my = e.pos.y + (fdy / fd) * 6 - (dog ? 14 : 26);
+              spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
+            }
+            if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+          }
+        }
+      } else if (!invuln && dd < e.radius + p.radius) {
+        // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
-        // Visual-only contact burst at the point of impact (rate-limited).
-        if ((e.kind === "soldier" || e.kind === "jackal" || e.kind === "swordsoldier") && state.now >= ((e.data?.hitFxAt as number) ?? 0)) {
-          const dog = e.kind === "jackal";
-          e.data!.hitFxAt = state.now + (dog ? 0.6 : 0.5);
-          // attack animation, played exactly on the hit that deals damage
-          if (dog) e.data!.pounceAt = state.now;
-          else if (e.kind === "swordsoldier") e.data!.thrustAt = state.now;
-          else e.data!.punchAt = state.now;
-          const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
-          const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
-          const fd = Math.hypot(fdx, fdy) || 1;
-          const mx = e.pos.x + (fdx / fd) * (dog ? 14 : 18);
-          const my = e.pos.y + (fdy / fd) * 6 - (dog ? 14 : 26);
-          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
-        }
-
-
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
+
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
