@@ -577,7 +577,12 @@ export function update(state: GameState, dt: number) {
 // ---------- staff hitbox follows swing ----------
 function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const d = sw.data!;
-  const facing = (d.facing as number) ?? 1;
+  // The swing always tracks Moses' CURRENT facing, so the visual staff and the
+  // hit cone can never disagree (turning mid-swing flips both together).
+  const facing = state.player.facing;
+  d.facing = facing;
+  sw.facing = facing;
+
   const dur = (d.dur as number) ?? MOSES_ATTACK.DUR;
   const windup = (d.windup as number) ?? MOSES_ATTACK.WINDUP;
   const fx = (d.maxTtl as number) ?? 0.18;
