@@ -14,9 +14,10 @@ import { SWORD_THRUST_DUR } from "./swordSoldierArt";
 // `gap` = extra distance beyond the two sprite radii, `from`/`to` = the slice of
 // the attack animation during which the blow actually connects.
 const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; from: number; to: number }> = {
-  soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 16, from: 0.35, to: 0.65 },
-  swordsoldier: { key: "thrustAt", dur: SWORD_THRUST_DUR, gap: 22, from: 0.35, to: 0.65 },
-  jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 14, from: 0.45, to: 0.75 },
+  soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 34, from: 0.4, to: 0.62 },
+  swordsoldier: { key: "thrustAt", dur: SWORD_THRUST_DUR, gap: 38, from: 0.35, to: 0.65 },
+  jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
+
 };
 
 
