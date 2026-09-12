@@ -179,7 +179,10 @@ export function enemyTick(
     let mvx = nx, mvy = ny;
     if (d < preferred - 20) { mvx = -nx; mvy = -ny; }
     else if (d < preferred + 20) { mvx = -ny; mvy = nx; }
-    move(mvx * spd, mvy * spd);
+    // Plant himself while the aim/shoot animation is playing: no sliding.
+    const shootUntil = (e.data!.shootHoldUntil as number) ?? 0;
+    if (state.now >= shootUntil) move(mvx * spd, mvy * spd);
+
     const cd = ((e.data!.atkCd as number) ?? 0) - dt;
     // Trigger a short windup before firing (the archer draws his bow here).
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
