@@ -11,7 +11,9 @@ export type EnemyBehavior =
   | "erratic"     // jittery flying (bats)
   | "pack"        // wolves cluster with peers
   | "ambush"      // waits motionless, then sprints once the target is close
+  | "skirmish"    // erratic hops, dash in, hit, dash out
   | "flyover";    // ignores obstacles
+
 
 export type EnemyDef = {
   kind: string;
@@ -83,9 +85,10 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   heavysoldier: {
     kind: "heavysoldier", category: "human",
-    // Half the basic soldier's speed (55 -> 27.5) and four times his damage
-    // (10 -> 40, i.e. twice the axe soldier's 20).
-    radius: 15, baseHp: 90, hpPerMinute: 34, speed: 27.5, contactDmg: 40, xp: 8,
+    // Half the basic soldier's speed (55 -> 27.5), four times his damage
+    // (10 -> 40, i.e. twice the axe soldier's 20) and ten times his health
+    // (26 base / 24 per minute -> 260 / 240).
+    radius: 15, baseHp: 260, hpPerMinute: 240, speed: 27.5, contactDmg: 40, xp: 8,
     minMinute: 0, weight: 3, behavior: "chase",
   },
   wolf: {
@@ -94,6 +97,19 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     // is 1.6x the dog's 95.
     radius: 12, baseHp: 34, hpPerMinute: 20, speed: 152, contactDmg: 16, xp: 4,
     minMinute: 0, weight: 4, behavior: "ambush",
+  },
+  agilesoldier: {
+    kind: "agilesoldier", category: "human",
+    // The heavy soldier's opposite: paper-thin, very fast, damage barely above
+    // the basic soldier's 10.
+    radius: 11, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
+    minMinute: 0, weight: 4, behavior: "skirmish",
+  },
+  cobra: {
+    kind: "cobra", category: "animal",
+    // Ordinary approach, but its bite poisons for 5 seconds.
+    radius: 11, baseHp: 30, hpPerMinute: 20, speed: 62, contactDmg: 4, xp: 5,
+    minMinute: 0, weight: 3, behavior: "chase",
   },
 };
 
@@ -107,7 +123,10 @@ const ENEMY_ORDER = [
   "bat",
   "heavysoldier",
   "wolf",
+  "agilesoldier",
+  "cobra",
 ];
+
 
 
 
@@ -184,8 +203,11 @@ export function enemyTick(
     // Stop just beside the target so the melee animation can reach it without
     // the sprites overlapping.
     const standoff = e.radius + 36;
-    // The heavy soldier plants his boots for the whole sword swing.
-    const planted = e.kind === "heavysoldier" && e.data?.heavyAt != null;
+    // The heavy soldier plants his boots for the whole sword swing; the cobra
+    // anchors its coil while it strikes.
+    const planted = (e.kind === "heavysoldier" && e.data?.heavyAt != null)
+      || (e.kind === "cobra" && e.data?.strikeAt != null);
+
     if (d > standoff && !planted) move(mvx * spd, mvy * spd);
 
     // Melee swing anim for humans in close range.
@@ -210,7 +232,49 @@ export function enemyTick(
       const standoff = e.radius + 26;
       if (!leaping && d > standoff) move(nx * spd, ny * spd);
     }
+  } else if (def.behavior === "skirmish") {
+    // Agile soldier: unpredictable short hops, a fast run-in when the target is
+    // near, then an immediate fast retreat after the stab.
+    const ds = e.data!;
+    if (ds.stabAt != null) {
+      ds.pendingRetreat = 1;
+      ds.dashing = 1;
+    } else if (ds.pendingRetreat) {
+      ds.pendingRetreat = 0;
+      ds.retreatUntil = state.now + 0.75;
+    }
+    const retreating = state.now < ((ds.retreatUntil as number) ?? 0);
+    const standoff = e.radius + 34;
+
+    if (ds.stabAt != null) {
+      // Plant during the stab so the blow reads as contact, not a slide.
+      ds.dashing = 1;
+    } else if (retreating) {
+      ds.dashing = 1;
+      move(-nx * spd * 1.15, -ny * spd * 1.15);
+    } else if (d < 210) {
+      ds.dashing = 1;
+      if (d > standoff) move(nx * spd * 1.3, ny * spd * 1.3);
+    } else {
+      ds.dashing = 0;
+      // Wander in short springy hops toward no particular place.
+      const hopAt = (ds.hopAt as number) ?? -1;
+      const elapsed = state.now - hopAt;
+      if (hopAt < 0 || elapsed > ((ds.hopGap as number) ?? 0.6)) {
+        const bias = Math.atan2(ny, nx);
+        const a = Math.random() < 0.45
+          ? bias + (Math.random() - 0.5) * 1.6
+          : Math.random() * Math.PI * 2;
+        ds.hopAt = state.now;
+        ds.hopGap = 0.5 + Math.random() * 0.35;
+        ds.hvx = Math.cos(a) * spd * 1.1;
+        ds.hvy = Math.sin(a) * spd * 1.1;
+      } else if (elapsed < 0.34) {
+        move((ds.hvx as number) ?? 0, (ds.hvy as number) ?? 0);
+      }
+    }
   } else if (def.behavior === "flyover") {
+
     move(nx * spd, ny * spd);
     // gentle vertical bob
     e.pos.y += Math.sin(state.now * 4 + e.id) * 6 * dt;
