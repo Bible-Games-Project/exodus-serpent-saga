@@ -5,6 +5,8 @@ import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawAxeSoldierArt, ensureAxeArt, AXE_ART } from "./axeSoldierArt";
 import { drawShieldSoldierArt, ensureShieldArt, SHIELD_ART } from "./shieldSoldierArt";
+import { drawHeavySoldierArt, ensureHeavyArt, HEAVY_ART } from "./heavySoldierArt";
+import { drawBatArt, ensureBatArt, BAT_ART } from "./batArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
