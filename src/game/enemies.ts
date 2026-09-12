@@ -571,6 +571,41 @@ export function enemyTick(
         move((mvx / m) * spd, (mvy / m) * spd);
       }
     }
+  } else if (def.behavior === "chariot") {
+    // Archer chariot: the horses never halt. It sweeps around Moses on a wide
+    // curving pass, drifting in and out, and looses arrows without slowing.
+    const dch = e.data!;
+    if (dch.spin == null) dch.spin = Math.random() < 0.5 ? 1 : -1;
+    // Occasionally change which way it wheels around, so passes vary.
+    if (state.now >= ((dch.spinUntil as number) ?? 0)) {
+      dch.spinUntil = state.now + 3 + Math.random() * 4;
+      if (Math.random() < 0.35) dch.spin = -(dch.spin as number);
+    }
+    const spin = dch.spin as number;
+    const ring = 230;
+    const radial = d > ring + 60 ? 1 : d < ring - 60 ? -1 : 0;
+    let mvx = nx * radial * 0.9 + -ny * spin;
+    let mvy = ny * radial * 0.9 + nx * spin;
+    const m = Math.hypot(mvx, mvy) || 1;
+    mvx /= m; mvy /= m;
+    move(mvx * spd, mvy * spd);
+    dch.driveX = mvx;
+    dch.driveY = mvy;
+
+    // Aim and fire while rolling — nothing here ever stops the movement.
+    const cd = ((dch.atkCd as number) ?? 0) - dt;
+    if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(dch.windupUntil as number | undefined)) {
+      dch.windupUntil = state.now + cd;
+      dch.shootAt = state.now;
+    }
+    if (cd <= 0 && def.attack && d < def.attack.range) {
+      helpers.spawnEnemyProjectile(e, { x: nx, y: ny }, def.attack.projectileKind, def.attack.projectileSpeed, def.attack.projectileDmg, def.attack.projectileTtl);
+      dch.atkCd = def.attack.cooldown;
+      dch.lastAtkAt = state.now;
+      dch.windupUntil = 0;
+    } else {
+      dch.atkCd = cd;
+    }
   }
 
   // facing
@@ -579,6 +614,10 @@ export function enemyTick(
   } else if (e.kind === "spearknight" && e.data?.charging) {
     // The lance must keep pointing along the charge, even after the pass.
     e.facing = ((e.data.chargeVx as number) ?? dx) > 0 ? 1 : -1;
+  } else if (e.kind === "chariotarcher") {
+    // The rig faces where the horses are pulling, never sideways-snapping.
+    const drive = (e.data?.driveX as number) ?? dx;
+    if (Math.abs(drive) > 0.15) e.facing = drive > 0 ? 1 : -1;
   } else {
     e.facing = dx > 0 ? 1 : -1;
   }
