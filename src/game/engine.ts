@@ -341,6 +341,12 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.axeAt; delete e.data.axeProgress; }
         else e.data.axeProgress = pp;
       }
+      // Heavy soldier sword swing progress (visual only; he plants while swinging).
+      if (e.kind === "heavysoldier" && e.data?.heavyAt != null) {
+        const pp = (state.now - (e.data.heavyAt as number)) / HEAVY_SWING_DUR;
+        if (pp >= 1) { delete e.data.heavyAt; delete e.data.heavyProgress; }
+        else e.data.heavyProgress = pp;
+      }
       // Shield soldier brace recoil after blocking a staff blow (visual only).
       if (e.kind === "shieldsoldier" && e.data?.blockAt != null) {
         const pp = (state.now - (e.data.blockAt as number)) / 0.22;
