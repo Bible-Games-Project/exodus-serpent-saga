@@ -154,7 +154,33 @@ export function createInitialState(): GameState {
   obstacles.push({ pos: thronePos, r: 40 });
   state.obstacles = obstacles;
   spawnRamses(state);
+  if (DEV_ENABLED && dev) applyDevConfig(state, dev);
   return state;
+}
+
+/**
+ * Dev-only: seed the run's starting state so the *existing* progression systems
+ * (enemy unlocks, Ramses phases, plague ranks) behave as if the player had
+ * legitimately reached that level. Nothing persistent is written.
+ */
+function applyDevConfig(state: GameState, dev: DevConfig) {
+  const lvl = Math.max(1, Math.min(999, Math.floor(dev.startLevel)));
+  state.level = lvl;
+  state.xp = 0;
+  state.xpToNext = Math.floor(5 + state.level * 3 + state.level ** 1.35);
+
+  if (dev.plagues !== "none") {
+    const upTo = dev.plagues === "all" ? Infinity : dev.plagues;
+    for (const id of PLAGUE_ORDER) {
+      if (PLAGUES[id].unlockLevel > upTo) continue;
+      if (!state.plagues.has(id)) {
+        state.plagues.set(id, 1);
+        state.plagueCooldown.set(id, 0.5);
+      }
+    }
+  }
+}
+
 }
 
 
