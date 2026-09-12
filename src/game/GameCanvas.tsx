@@ -3,6 +3,8 @@ import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSpr
 import { drawRamsesArt } from "./ramsesArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
+import { drawSpearSoldierArt, ensureSpearSoldierArt, drawFlyingSpear, SPEAR_SOLDIER_ART } from "./spearSoldierArt";
+import { drawCamelArt, ensureCamelArt, CAMEL_ART } from "./camelArt";
 import { drawAxeSoldierArt, ensureAxeArt, AXE_ART } from "./axeSoldierArt";
 import { drawShieldSoldierArt, ensureShieldArt, SHIELD_ART } from "./shieldSoldierArt";
 import { drawHeavySoldierArt, ensureHeavyArt, HEAVY_ART } from "./heavySoldierArt";
