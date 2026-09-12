@@ -2155,7 +2155,94 @@ function drawCamel(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   return true;
 }
 
+// ---------------- desert lion (layered supplied sprite) ----------------
+function drawLion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureLionArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const maul = (e.data?.maulProgress as number | undefined) ?? null;
+  const charging = !!e.data?.burstUntil && maul == null;
+  drawPixelShadow(ctx, x, groundY + 1, LION_ART.W * LION_ART.PX * 0.45, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  const moving = maul == null && !!e.data?.lionRunning;
+  drawLionArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * (charging ? 8.5 : 3.6),
+    moving,
+    charging,
+    maul,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 30;
+    const by = groundY - LION_ART.H * LION_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// ---------------- mounted spear knight (layered supplied sprite) ----------------
+function drawSpearKnight(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureSpearKnightArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const charging = !!e.data?.charging;
+  drawPixelShadow(ctx, x, groundY + 1, SPEAR_KNIGHT_ART.W * SPEAR_KNIGHT_ART.PX * 0.45, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  drawSpearKnightArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * (charging ? 9 : 5),
+    moving: true,
+    charging,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 32;
+    const by = groundY - SPEAR_KNIGHT_ART.H * SPEAR_KNIGHT_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// ---------------- Egyptian sorcerer (layered supplied sprite) ----------------
+function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState): boolean {
+  if (!ensureMageArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const castP = (e.data?.shootProgress as number | undefined) ?? null;
+  drawPixelShadow(ctx, x, groundY + 1, MAGE_ART.W * MAGE_ART.PX * 0.42, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.7,
+  });
+  // The supplied sprite faces left, so its flip is the mirror of the others.
+  const flip: 1 | -1 = e.facing === -1 ? 1 : -1;
+  const pose = { x, groundY, flip };
+  drawMageArt(ctx, {
+    ...pose,
+    walkPhase: e.animT * 5,
+    moving: castP == null,
+    castP,
+    now: s.now,
+  });
+  const tip = mageStaffTip(pose);
+  drawMageStaffLight(ctx, tip.x, tip.y, s.now, castP != null ? 1 - Math.abs(castP - 0.55) * 2 : 0);
+  if (e.hp < e.maxHp) {
+    const bw = 26;
+    const by = groundY - MAGE_ART.H * MAGE_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
 function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+
 
   if (!ensureArcherArt()) return false;
   const x = Math.round(e.pos.x - camX);
