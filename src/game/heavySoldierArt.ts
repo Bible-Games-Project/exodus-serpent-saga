@@ -81,6 +81,7 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  ctx.filter = "sepia(8%) saturate(115%) brightness(110%)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
@@ -102,5 +103,6 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
   } else {
     stamp(l.body, 0, bodyDY);
   }
+  ctx.filter = "none";
   ctx.restore();
 }
