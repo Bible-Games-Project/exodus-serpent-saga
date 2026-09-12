@@ -3,6 +3,7 @@
 // the player learns the Death of the Firstborn plague.
 import type { Entity, GameState, Vec2 } from "./types";
 import { shieldDamageMul } from "./bonuses";
+import { resolvePlayerDefeat } from "./playerDefeat";
 
 const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
@@ -132,7 +133,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
         if (dist2(r.pos, p.pos) < SMASH_R * SMASH_R && !isInvuln(state)) {
           p.hp -= 38 * shieldDamageMul(state);
           state.damageImpactKind = "ramses";
-          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+          resolvePlayerDefeat(state);
         }
         state.screenShake = Math.max(state.screenShake ?? 0, 11);
       } else if (atk === "smash") {
@@ -173,7 +174,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     if (dist2(r.pos, p.pos) < (r.radius + p.radius) ** 2 && !isInvuln(state)) {
       p.hp -= (chariot ? 45 : 30) * dt * shieldDamageMul(state);
       state.damageImpactKind = "ramses";
-      if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+      resolvePlayerDefeat(state);
     }
 
     // Chariot: throw flaming spears at Moses.
@@ -227,7 +228,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
       if (dist2(r.pos, p.pos) < R * R && !isInvuln(state)) {
         p.hp -= (d.landDmg as number) * shieldDamageMul(state);
         state.damageImpactKind = "ramses";
-        if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+        resolvePlayerDefeat(state);
       }
       state.screenShake = Math.max(state.screenShake ?? 0, 16);
     }

@@ -99,6 +99,7 @@ export function drawWolfArt(ctx: CanvasRenderingContext2D, pose: WolfPose): void
     ? (Math.sin(pose.walkPhase * 0.25) > 0.6 ? -1 : 0)
     : 0;
   const bodyDY = pose.running && !leaping ? (Math.cos(pose.walkPhase) > 0.5 ? -1 : 0) : idleBreath;
+  const idle = !pose.running && !leaping;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -110,10 +111,28 @@ export function drawWolfArt(ctx: CanvasRenderingContext2D, pose: WolfPose): void
     ctx.drawImage(img, (dx + o.dx) * PX, (dy + o.dy) * PX, W * PX, H * PX);
   };
 
-  stamp(l.legRF, stepB, liftB);
-  stamp(l.legFF, stepA, liftA);
-  stamp(l.legRN, stepA, liftA);
-  stamp(l.legFN, stepB, liftB);
+  const stampIdleLeg = (img: HTMLImageElement, pivotX: number, pivotY: number, angle: number, dy: number) => {
+    ctx.save();
+    ctx.translate(pivotX * PX, pivotY * PX);
+    ctx.rotate(angle);
+    ctx.translate(-pivotX * PX, -pivotY * PX);
+    ctx.drawImage(img, 0, dy * PX, W * PX, H * PX);
+    ctx.restore();
+  };
+
+  if (idle) {
+    // Plant each paw directly below its shoulder/hip. The intact body is drawn
+    // last, covering the small joint overlap exactly as it does while running.
+    stampIdleLeg(l.legRF, 22, 15, Math.PI / 6, 2);
+    stampIdleLeg(l.legFF, 43, 17, Math.PI / 9, 0);
+    stampIdleLeg(l.legRN, 13, 15, -Math.PI / 4.5, 4);
+    stampIdleLeg(l.legFN, 37, 15, Math.PI / 12, 0);
+  } else {
+    stamp(l.legRF, stepB, liftB);
+    stamp(l.legFF, stepA, liftA);
+    stamp(l.legRN, stepA, liftA);
+    stamp(l.legFN, stepB, liftB);
+  }
   stamp(l.body, 0, bodyDY);
   ctx.restore();
 }

@@ -2116,7 +2116,7 @@ function drawSpearSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   if (!ensureSpearSoldierArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
-  drawPixelShadow(ctx, x, groundY + 1, SPEAR_SOLDIER_ART.W * SPEAR_SOLDIER_ART.PX * 0.3, {
+  drawPixelShadow(ctx, x, groundY - 5, SPEAR_SOLDIER_ART.W * SPEAR_SOLDIER_ART.PX * 0.3, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
   const throwP = (e.data?.shootProgress as number | undefined) ?? null;
@@ -2126,6 +2126,7 @@ function drawSpearSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     walkPhase: e.animT * 5.2,
     moving: throwP == null,
     throwP,
+    holdingSpear: e.data?.spearInFlight == null,
   });
   if (e.hp < e.maxHp) {
     const bw = 26;

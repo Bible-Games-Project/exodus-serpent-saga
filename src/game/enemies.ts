@@ -166,7 +166,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     kind: "chariotarcher", category: "human",
     // Mounted archer: the rig never stops rolling, looses arrows on the move,
     // and the chariot itself runs Moses down on contact.
-    radius: 30, baseHp: 80, hpPerMinute: 40, speed: 135, contactDmg: 30, xp: 14,
+    radius: 60, baseHp: 80, hpPerMinute: 40, speed: 135, contactDmg: 30, xp: 14,
     minMinute: 0, weight: 3, behavior: "chariot",
     attack: {
       // Same arrow as the archer on foot (9 damage), fired while driving.
@@ -442,7 +442,8 @@ export function enemyTick(
 
     const cd = ((e.data!.atkCd as number) ?? 0) - dt;
     // Trigger a short windup before firing (the archer draws his bow here).
-    if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
+    const waitingForSpear = e.kind === "spearsoldier" && e.data!.spearInFlight != null;
+    if (!waitingForSpear && def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
       e.data!.shootAt = state.now;
       e.data!.shootHoldUntil = state.now + (
@@ -452,7 +453,7 @@ export function enemyTick(
       );
     }
 
-    if (cd <= 0 && def.attack && d < def.attack.range) {
+    if (!waitingForSpear && cd <= 0 && def.attack && d < def.attack.range) {
       helpers.spawnEnemyProjectile(e, { x: nx, y: ny }, def.attack.projectileKind, def.attack.projectileSpeed, def.attack.projectileDmg, def.attack.projectileTtl);
       e.data!.atkCd = def.attack.cooldown;
       e.data!.lastAtkAt = state.now;

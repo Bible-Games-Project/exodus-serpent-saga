@@ -66,6 +66,8 @@ export type SpearSoldierPose = {
   moving: boolean;
   /** 0..1 progress of the throw; null = idle */
   throwP?: number | null;
+  /** false from release until the separate thrown projectile is removed */
+  holdingSpear: boolean;
 };
 
 export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSoldierPose): void {
@@ -82,7 +84,7 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
   const liftF = swing !== 0 && stepF > 0 ? -1 : 0;
   const liftB = swing !== 0 && stepB > 0 ? -1 : 0;
   // the held spear vanishes the instant it is released
-  const released = t != null && t >= SPEAR_RELEASE_AT;
+  const released = !pose.holdingSpear || (t != null && t >= SPEAR_RELEASE_AT);
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;

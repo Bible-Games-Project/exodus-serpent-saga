@@ -18,6 +18,7 @@ import { COBRA_STRIKE_DUR } from "./cobraArt";
 import { LION_MAUL_DUR } from "./lionArt";
 import { MAGE_CAST_DUR } from "./mageArt";
 import { CHARIOT_SHOOT_DUR } from "./chariotArt";
+import { resolvePlayerDefeat } from "./playerDefeat";
 import { weaponMuzzle } from "./muzzles";
 
 import { playShieldBlock } from "./sfx";
@@ -293,7 +294,7 @@ export function update(state: GameState, dt: number) {
     if (state.now < until) {
       const dps = (pd.poisonDps as number) ?? 0;
       state.player.hp -= dps * dt * shieldDamageMul(state);
-      if (state.player.hp <= 0) { state.gameOver = true; state.running = false; }
+      resolvePlayerDefeat(state);
     } else if (pd.poisonUntil != null) {
       delete pd.poisonUntil;
       delete pd.poisonDps;
@@ -540,7 +541,7 @@ export function update(state: GameState, dt: number) {
             }
 
 
-            if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+            resolvePlayerDefeat(state);
           }
         }
       } else if (!invuln && dd < e.radius + p.radius) {
@@ -548,7 +549,7 @@ export function update(state: GameState, dt: number) {
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
-        if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+        resolvePlayerDefeat(state);
       }
 
       // ---- spear knight: the lance connects once per pass-through charge ----
@@ -565,7 +566,7 @@ export function update(state: GameState, dt: number) {
           const my = p.pos.y - (fdy / fd) * 4 - 26;
           spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.2, { seed: e.id });
           spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
-          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+          resolvePlayerDefeat(state);
         }
       }
 
@@ -585,7 +586,7 @@ export function update(state: GameState, dt: number) {
     } else if (e.team === "projectile") {
       e.ttl = (e.ttl ?? 0) - dt;
       if (e.ttl <= 0) {
-        if (e.kind === "fireball") {
+          if (e.kind === "fireball") {
           const R = (e.data?.radius as number) ?? 110;
           const fireDmg = e.dmg ?? 60;
           for (const en of state.entities.values()) {
@@ -616,7 +617,7 @@ export function update(state: GameState, dt: number) {
           }
           spawnVisualHazard(state, "hailimpact", e.pos, 0.45, { radius: R });
         }
-        state.entities.delete(e.id);
+        removeProjectile(state, e);
         continue;
       }
       if (e.kind === "frog") {
@@ -652,8 +653,8 @@ export function update(state: GameState, dt: number) {
           // Small impact + blood exactly where the projectile struck Moses.
           spawnVisualHazard(state, "hitspark", hitPt, 0.18, { seed: e.id, small: 1 });
           spawnVisualHazard(state, "bloodhit", hitPt, 0.45, { seed: e.id, maxTtl: 0.45 });
-          state.entities.delete(e.id);
-          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+          removeProjectile(state, e);
+          resolvePlayerDefeat(state);
         }
         if (!state.entities.has(e.id)) continue;
         continue;
@@ -678,17 +679,17 @@ export function update(state: GameState, dt: number) {
       for (const { en } of contacts) {
         if (en.kind === "shieldsoldier") {
           triggerShieldBlock(state, en, e.pos);
-          state.entities.delete(e.id);
+          removeProjectile(state, e);
           break;
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
-        if (!e.data?.pierce) { state.entities.delete(e.id); break; }
+        if (!e.data?.pierce) { removeProjectile(state, e); break; }
         if (en.hp <= 0) killEnemy(state, en);
       }
     } else if (e.team === "hazard") {
       e.ttl = (e.ttl ?? 0) - dt;
-      if (e.ttl <= 0) { state.entities.delete(e.id); continue; }
+      if (e.ttl <= 0) { removeProjectile(state, e); continue; }
       e.pos.x += e.vel.x * dt;
       e.pos.y += e.vel.y * dt;
       const d = e.data!;
@@ -1012,6 +1013,18 @@ function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: 
     data: { enemyOwned: true, angle: Math.atan2(dir.y, dir.x) },
   };
   state.entities.set(e.id, e);
+  if (owner.kind === "spearsoldier" && kind === "spear") {
+    owner.data!.spearInFlight = e.id;
+  }
+}
+
+function removeProjectile(state: GameState, projectile: Entity): void {
+  state.entities.delete(projectile.id);
+  if (projectile.ownerId == null) return;
+  const owner = state.entities.get(projectile.ownerId);
+  if (owner?.kind === "spearsoldier" && owner.data?.spearInFlight === projectile.id) {
+    delete owner.data.spearInFlight;
+  }
 }
 
 function castPlague(state: GameState, id: PlagueId, level: number) {
