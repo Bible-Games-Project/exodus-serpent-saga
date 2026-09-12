@@ -4,9 +4,7 @@ import { GameCanvas } from "@/game/GameCanvas";
 import { submitScore } from "@/lib/leaderboard";
 import { PixelIcon, HOME_ART, GEAR_ART } from "@/components/PixelIcon";
 import { PixelModal, PixelActionButton, GameSettingsDialog } from "@/components/GameSettingsDialog";
-import { DEV_ENABLED, type DevConfig } from "@/game/devMode";
-import { useSettings } from "@/hooks/useSettings";
-import { DevPanel } from "@/components/DevPanel";
+
 
 export const Route = createFileRoute("/play")({
   head: () => ({

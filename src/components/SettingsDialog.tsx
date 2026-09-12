@@ -24,9 +24,6 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
           <Row label="Volume" hint="Toggle audio (sounds coming in a future update).">
             <Switch checked={settings.volume} onCheckedChange={(v) => update({ volume: v })} />
           </Row>
-          <Row label="Game Dev Mode" hint="Reserved for future debugging tools.">
-            <Switch checked={settings.devMode} onCheckedChange={(v) => update({ devMode: v })} />
-          </Row>
         </div>
       </DialogContent>
     </Dialog>
