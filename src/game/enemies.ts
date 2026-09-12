@@ -188,16 +188,22 @@ function camelAllowed(state: GameState): boolean {
 }
 
 export function pickEnemyKind(state: GameState): string {
-  const eligible = ENEMY_ORDER.filter(
-    (k) => enemyUnlockLevel(k) <= state.level && (k !== "camel" || camelAllowed(state)),
-  );
+  // In the Test Map the session config decides what may spawn; the normal game
+  // keeps its untouched level-based unlock rule.
+  const tm = state.testMap;
+  const allowed = (k: string) =>
+    (tm ? tm.enemies[k] === true : enemyUnlockLevel(k) <= state.level)
+    && (k !== "camel" || camelAllowed(state));
+  const eligible = ENEMY_ORDER.filter(allowed);
+  if (eligible.length === 0) return "";
   const total = eligible.reduce((s, k) => s + ENEMY_DEFS[k].weight, 0);
   let r = Math.random() * total;
   for (const k of eligible) {
     r -= ENEMY_DEFS[k].weight;
     if (r <= 0) return k;
   }
-  return "soldier";
+  return eligible[0];
+
 }
 
 // ----- behaviour tick helpers (called from engine) -----
