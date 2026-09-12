@@ -28,8 +28,10 @@ export function renderSprite(
   scale: number,
   flipX = false,
 ): HTMLCanvasElement {
-  const f = frame % sprite.frames.length;
-  if (!sprite.frames[f]) { console.error("BADSPRITE", String(frame), sprite.frames.length, sprite.w, sprite.h, new Error().stack); return document.createElement("canvas"); }
+  // Wrap safely: some effect entities run their timer slightly negative, which
+  // would otherwise index past the frame list.
+  const n = sprite.frames.length;
+  const f = ((Math.floor(frame) % n) + n) % n;
   const key = `${sprite.w}x${sprite.h}:${f}:${scale}:${flipX}:${sprite.frames[f].join("|")}`;
   const cached = cache.get(key);
   if (cached) return cached;
