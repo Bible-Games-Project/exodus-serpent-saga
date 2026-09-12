@@ -16,6 +16,7 @@ import { AGILE_STAB_DUR } from "./agileSoldierArt";
 import { COBRA_STRIKE_DUR } from "./cobraArt";
 
 import { playShieldBlock } from "./sfx";
+import { DEV_ENABLED, type DevConfig } from "./devMode";
 
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
@@ -65,7 +66,7 @@ function wrapDist2(state: GameState, a: Vec2, b: Vec2): number {
 
 
 // ---------- state factory ----------
-export function createInitialState(): GameState {
+export function createInitialState(dev?: DevConfig | null): GameState {
   const worldW = 8192; // multiple of 256 for seamless ground tiling
   const worldH = 8192;
 
