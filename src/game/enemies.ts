@@ -409,6 +409,7 @@ export function enemyTick(
 
 export function makeEnemy(state: GameState, kind: string, pos: Vec2): Entity {
   const def = ENEMY_DEFS[kind] ?? ENEMY_DEFS.soldier;
+  if (kind === "camel") (state as unknown as { __camelLevel?: number }).__camelLevel = state.level;
   const mins = state.now / 60;
   const hp = def.baseHp + def.hpPerMinute * mins;
   return {
