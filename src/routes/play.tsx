@@ -48,13 +48,8 @@ function PlayPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settings] = useSettings();
-  // Dev-only pre-match config. In production DEV_ENABLED is statically false,
-  // so this gate (and the panel) is stripped from the bundle.
-  const devGate = DEV_ENABLED && settings.devMode;
-  const [devConfig, setDevConfig] = useState<DevConfig | null>(null);
-  const devPending = devGate && !devConfig;
   const navigate = useNavigate();
+
 
   // The intro fade runs from the first painted frame; this clears the overlay
   // afterwards even if the animation completes before hydration attaches.
