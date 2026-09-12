@@ -1,6 +1,8 @@
 // Modular enemy registry. Each entry defines stats + behaviour hook.
 // New enemies can be added purely as data; engine dispatches by `behavior`.
 import type { Entity, GameState, Vec2 } from "./types";
+import { ARCHER_SHOOT_DUR } from "./archerArt";
+
 
 export type EnemyBehavior =
   | "chase"       // classic melee chase
