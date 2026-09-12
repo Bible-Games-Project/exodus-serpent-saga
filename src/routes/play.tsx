@@ -84,14 +84,12 @@ function PlayPage() {
   return (
     <main className="fixed inset-0 flex flex-col bg-background" style={{ touchAction: "none" }}>
       <div className="relative flex-1">
-        {!devPending && (
-          <GameCanvas
-            devConfig={devConfig}
-            paused={paused || homeOpen || settingsOpen}
-            onTogglePause={() => setPaused((p) => !p)}
-            onGameOver={(info) => setGameOver(info)}
-          />
-        )}
+        <GameCanvas
+          paused={paused || homeOpen || settingsOpen}
+          onTogglePause={() => setPaused((p) => !p)}
+          onGameOver={(info) => setGameOver(info)}
+        />
+
         {fadeIn && (
           <div
             data-testid="play-fade-in"
