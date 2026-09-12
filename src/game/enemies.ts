@@ -110,7 +110,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     kind: "agilesoldier", category: "human",
     // The heavy soldier's opposite: paper-thin, very fast, damage barely above
     // the basic soldier's 10.
-    radius: 11, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
+    radius: 6, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
     minMinute: 0, weight: 4, behavior: "skirmish",
   },
   cobra: {
@@ -138,17 +138,16 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   lion: {
     kind: "lion", category: "animal",
-    // Exactly three times the wolf in every way: health (34/20 -> 102/60) and
-    // bite damage (16 -> 48). It stalks slowly and irregularly, then bursts.
-    radius: 16, baseHp: 102, hpPerMinute: 60, speed: 58, contactDmg: 48, xp: 12,
-    minMinute: 0, weight: 3, behavior: "prowl",
-    chargeCooldown: 3.2, chargeSpeed: 300, chargeDuration: 1.1,
+    // A larger, stronger Dog: exactly 3× Dog HP scaling and bite damage, with
+    // the same approach speed and chase rhythm rather than the old burst AI.
+    radius: 24, baseHp: 42, hpPerMinute: 42, speed: 95, contactDmg: 36, xp: 12,
+    minMinute: 0, weight: 3, behavior: "chase",
   },
   spearknight: {
     kind: "spearknight", category: "human",
     // Mounted lancer: never trades blows, he gallops clean through Moses and
     // keeps going. All of his damage comes from the pass-through lance hit.
-    radius: 17, baseHp: 66, hpPerMinute: 34, speed: 150, contactDmg: 0, xp: 12,
+    radius: 34, baseHp: 66, hpPerMinute: 34, speed: 150, contactDmg: 0, xp: 12,
     minMinute: 0, weight: 3, behavior: "cavalry",
     chargeCooldown: 2.2, chargeSpeed: 440, chargeDuration: 1.5,
   },

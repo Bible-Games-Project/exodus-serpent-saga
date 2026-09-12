@@ -2169,17 +2169,15 @@ function drawLion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
   const maul = (e.data?.maulProgress as number | undefined) ?? null;
-  const charging = !!e.data?.burstUntil && maul == null;
   drawPixelShadow(ctx, x, groundY + 1, LION_ART.W * LION_ART.PX * 0.45, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
-  const moving = maul == null && !!e.data?.lionRunning;
+  const moving = maul == null;
   drawLionArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
-    walkPhase: e.animT * (charging ? 8.5 : 3.6),
+    walkPhase: e.animT * 5.2,
     moving,
-    charging,
     maul,
   });
   if (e.hp < e.maxHp) {

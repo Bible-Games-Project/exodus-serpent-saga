@@ -11,7 +11,8 @@ import legFAsset from "@/assets/knight-legf.png.asset.json";
 export const SPEAR_KNIGHT_ART = {
   W: 84,
   H: 53,
-  PX: 1.0,
+  /** Exactly twice the previous visual size. */
+  PX: 2.0,
   /** x of the horse's centre inside the sprite */
   CX: 44,
 } as const;
@@ -55,9 +56,11 @@ export function drawSpearKnightArt(ctx: CanvasRenderingContext2D, pose: SpearKni
   const stepB = -stepF;
   const liftF = stepF > 0 ? -2 : 0;
   const liftB = stepB > 0 ? -2 : 0;
-  const bodyDY = pose.moving
-    ? (Math.cos(pose.walkPhase) > 0.35 ? (pose.charging ? -3 : -1) : 0)
-    : (Math.sin(pose.walkPhase * 0.3) > 0.6 ? -1 : 0);
+  // Keep the complete rider and horse torso fixed over the overlapping leg
+  // roots. Only the legs move, preventing a belly seam during the gallop.
+  const bodyDY = pose.moving && Math.cos(pose.walkPhase * 2) > 0.45
+    ? (pose.charging ? -1 : 0)
+    : 0;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;

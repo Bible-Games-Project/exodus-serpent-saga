@@ -12,13 +12,14 @@ export const LION_ART = {
   W: 72,
   H: 44,
   /** screen pixels per sprite pixel (matches the other desert animals) */
-  PX: 1.0,
+  /** 50% larger than the previous lion. */
+  PX: 1.5,
   /** x of its body centre inside the sprite */
   CX: 40,
 } as const;
 
-/** duration (seconds) of the mauling pounce */
-export const LION_MAUL_DUR = 0.5;
+/** Dog-like crouch + lunge rhythm. */
+export const LION_MAUL_DUR = 0.42;
 
 type Layers = { body: HTMLImageElement; legB: HTMLImageElement; legF: HTMLImageElement };
 let layers: Layers | null = null;
@@ -61,8 +62,6 @@ export type LionPose = {
   walkPhase: number;
   /** true while padding along or sprinting */
   moving: boolean;
-  /** true during the sudden high-speed burst — a longer, harder gait */
-  charging?: boolean;
   /** 0..1 progress of the pounce; null = not pouncing */
   maul?: number | null;
 };
@@ -75,9 +74,9 @@ export function drawLionArt(ctx: CanvasRenderingContext2D, pose: LionPose): void
   const mauling = pose.maul != null && pose.maul > 0 && pose.maul < 1;
   const o = mauling ? maulOffset(pose.maul as number) : { dx: 0, dy: 0 };
 
-  // Diagonal gait: hind and fore legs swing against each other. The charge uses
-  // a wider stride so the burst reads instantly as a gallop.
-  const amp = pose.charging ? 4 : 2;
+  // Dog-like diagonal gait. The intact torso is always stamped last over the
+  // overlapping leg roots, so no gap can open through the belly.
+  const amp = 2;
   const swing = pose.moving && !mauling ? Math.sin(pose.walkPhase) : 0;
   const stepF = Math.round(swing * amp);
   const stepB = -stepF;
@@ -85,7 +84,7 @@ export function drawLionArt(ctx: CanvasRenderingContext2D, pose: LionPose): void
   const liftB = stepB > 0 ? -2 : 0;
   const breath = !pose.moving && !mauling ? (Math.sin(pose.walkPhase * 0.3) > 0.6 ? -1 : 0) : 0;
   const bodyDY = pose.moving && !mauling
-    ? (Math.cos(pose.walkPhase) > 0.4 ? (pose.charging ? -2 : -1) : 0)
+    ? (Math.cos(pose.walkPhase * 2) > 0 ? -1 : 0)
     : breath;
 
   ctx.save();
