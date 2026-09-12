@@ -395,6 +395,12 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
         else e.data.shootProgress = pp;
       }
+      // Chariot archer draw + release progress (he shoots while still rolling).
+      if (e.kind === "chariotarcher" && e.data?.shootAt != null) {
+        const pp = (state.now - (e.data.shootAt as number)) / CHARIOT_SHOOT_DUR;
+        if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
+        else e.data.shootProgress = pp;
+      }
       // Spear soldier throw progress (visual only; he plants while throwing).
       if (e.kind === "spearsoldier" && e.data?.shootAt != null) {
         const pp = (state.now - (e.data.shootAt as number)) / SPEAR_THROW_DUR;
@@ -967,10 +973,13 @@ function playerBodyHit(state: GameState, e: Entity, dt: number): Vec2 | null {
 }
 
 function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: string, speed: number, dmg: number, ttl: number) {
+  // Every shot leaves the weapon itself — bow string, spear tip, staff crystal —
+  // never the middle of the shooter's body.
+  const origin = weaponMuzzle(owner);
 
   const e: Entity = {
     id: state.nextId++,
-    pos: { x: owner.pos.x, y: owner.pos.y },
+    pos: { x: origin.x, y: origin.y },
     vel: { x: dir.x * speed, y: dir.y * speed },
     radius: 6,
     hp: 1, maxHp: 1,
