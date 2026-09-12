@@ -63,8 +63,15 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   axesoldier: {
     kind: "axesoldier", category: "human",
-    radius: 13, baseHp: 40, hpPerMinute: 26, speed: 52, contactDmg: 14, xp: 5,
+    // Exactly twice the basic soldier's staff damage (10 -> 20).
+    radius: 13, baseHp: 40, hpPerMinute: 26, speed: 52, contactDmg: 20, xp: 5,
     minMinute: 0, weight: 4, behavior: "chase",
+  },
+  shieldsoldier: {
+    kind: "shieldsoldier", category: "human",
+    // Purely defensive: he closes in but never attacks (contactDmg 0).
+    radius: 14, baseHp: 60, hpPerMinute: 30, speed: 46, contactDmg: 0, xp: 5,
+    minMinute: 0, weight: 3, behavior: "chase",
   },
 };
 
@@ -74,7 +81,9 @@ const ENEMY_ORDER = [
   "jackal",
   "archer",
   "axesoldier",
+  "shieldsoldier",
 ];
+
 
 
 
