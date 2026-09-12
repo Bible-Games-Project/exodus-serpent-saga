@@ -1,6 +1,8 @@
 // Modular enemy registry. Each entry defines stats + behaviour hook.
 // New enemies can be added purely as data; engine dispatches by `behavior`.
 import type { Entity, GameState, Vec2 } from "./types";
+import { ARCHER_SHOOT_DUR } from "./archerArt";
+
 
 export type EnemyBehavior =
   | "chase"       // classic melee chase
@@ -59,6 +61,11 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
       projectileDmg: 9, projectileKind: "arrow", projectileTtl: 2.4,
     },
   },
+  axesoldier: {
+    kind: "axesoldier", category: "human",
+    radius: 13, baseHp: 40, hpPerMinute: 26, speed: 52, contactDmg: 14, xp: 5,
+    minMinute: 0, weight: 4, behavior: "chase",
+  },
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
@@ -66,7 +73,9 @@ const ENEMY_ORDER = [
   "soldier",
   "jackal",
   "archer",
+  "axesoldier",
 ];
+
 
 
 /** Player level at which an enemy type is first allowed to spawn. */
@@ -172,13 +181,18 @@ export function enemyTick(
     let mvx = nx, mvy = ny;
     if (d < preferred - 20) { mvx = -nx; mvy = -ny; }
     else if (d < preferred + 20) { mvx = -ny; mvy = nx; }
-    move(mvx * spd, mvy * spd);
+    // Plant himself while the aim/shoot animation is playing: no sliding.
+    const shootUntil = (e.data!.shootHoldUntil as number) ?? 0;
+    if (state.now >= shootUntil) move(mvx * spd, mvy * spd);
+
     const cd = ((e.data!.atkCd as number) ?? 0) - dt;
     // Trigger a short windup before firing (the archer draws his bow here).
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
       e.data!.shootAt = state.now;
+      e.data!.shootHoldUntil = state.now + ARCHER_SHOOT_DUR;
     }
+
     if (cd <= 0 && def.attack && d < def.attack.range) {
       helpers.spawnEnemyProjectile(e, { x: nx, y: ny }, def.attack.projectileKind, def.attack.projectileSpeed, def.attack.projectileDmg, def.attack.projectileTtl);
       e.data!.atkCd = def.attack.cooldown;

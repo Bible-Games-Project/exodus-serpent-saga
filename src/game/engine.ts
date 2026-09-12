@@ -9,6 +9,7 @@ import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
+import { AXE_SWING_DUR } from "./axeSoldierArt";
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
 // `gap` = extra distance beyond the two sprite radii, `from`/`to` = the slice of
@@ -16,7 +17,9 @@ import { ARCHER_SHOOT_DUR } from "./archerArt";
 const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; from: number; to: number }> = {
   soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 34, from: 0.4, to: 0.62 },
   jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
+  axesoldier: { key: "axeAt", dur: AXE_SWING_DUR, gap: 34, from: 0.42, to: 0.6 },
 };
+
 
 
 
@@ -328,6 +331,13 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
         else e.data.shootProgress = pp;
       }
+      // Axe soldier swing progress (visual only).
+      if (e.kind === "axesoldier" && e.data?.axeAt != null) {
+        const pp = (state.now - (e.data.axeAt as number)) / AXE_SWING_DUR;
+        if (pp >= 1) { delete e.data.axeAt; delete e.data.axeProgress; }
+        else e.data.axeProgress = pp;
+      }
+
       // Dog crouch + lunge bite progress (visual only).
       if (e.kind === "jackal" && e.data?.pounceAt != null) {
         const pp = (state.now - (e.data.pounceAt as number)) / DOG_POUNCE_DUR;
@@ -473,20 +483,25 @@ export function update(state: GameState, dt: number) {
         e.pos.y += e.vel.y * dt;
       }
 
-      // Enemy-owned projectile hits player.
+      // Enemy-owned projectile hits player: tested against Moses' whole visible
+      // body (feet → head), not just his centre point, and swept over the frame
+      // so a fast arrow can never tunnel straight through him.
       if (e.data?.enemyOwned) {
-        if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+        const hitPt = playerBodyHit(state, e, dt);
+        if (!invuln && hitPt) {
           p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           // Small impact + blood exactly where the projectile struck Moses.
-          spawnVisualHazard(state, "hitspark", { x: e.pos.x, y: e.pos.y }, 0.18, { seed: e.id, small: 1 });
-          spawnVisualHazard(state, "bloodhit", { x: e.pos.x, y: e.pos.y }, 0.45, { seed: e.id, maxTtl: 0.45 });
+          spawnVisualHazard(state, "hitspark", hitPt, 0.18, { seed: e.id, small: 1 });
+          spawnVisualHazard(state, "bloodhit", hitPt, 0.45, { seed: e.id, maxTtl: 0.45 });
           state.entities.delete(e.id);
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
+        if (!state.entities.has(e.id)) continue;
         continue;
       }
+
 
       if (e.kind === "hailstone" || e.kind === "fireball") continue;
       const hit = e.data?.hit as Set<number> | undefined;
@@ -756,7 +771,29 @@ function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
   }
 }
 
+/**
+ * Moses' body box (feet → head) tested against a projectile's path this frame.
+ * Returns the contact point, or null when nothing touched him.
+ */
+function playerBodyHit(state: GameState, e: Entity, dt: number): Vec2 | null {
+  const p = state.player;
+  const halfW = 13 + (e.radius ?? 4) * 0.5;
+  const top = p.pos.y - 58;
+  const bottom = p.pos.y + 8;
+  const prevX = e.pos.x - e.vel.x * dt;
+  const prevY = e.pos.y - e.vel.y * dt;
+  const steps = 4;
+  for (let i = steps; i >= 0; i--) {
+    const t = i / steps;
+    const x = prevX + (e.pos.x - prevX) * t;
+    const y = prevY + (e.pos.y - prevY) * t;
+    if (Math.abs(x - p.pos.x) <= halfW && y >= top && y <= bottom) return { x, y };
+  }
+  return null;
+}
+
 function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: string, speed: number, dmg: number, ttl: number) {
+
   const e: Entity = {
     id: state.nextId++,
     pos: { x: owner.pos.x, y: owner.pos.y },
