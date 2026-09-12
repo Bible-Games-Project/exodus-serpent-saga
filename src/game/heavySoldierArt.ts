@@ -15,7 +15,8 @@ export const HEAVY_ART = {
   W: 50,
   H: 76,
   /** screen pixels per sprite pixel (matches the other Egyptian soldiers) */
-  PX: 0.9,
+  // Exactly twice his original render scale (0.9 -> 1.8); pixels untouched.
+  PX: 1.8,
   /** x of his body centre inside the sprite */
   CX: 21,
 } as const;

@@ -16,6 +16,7 @@ import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
 import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
 import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
 import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall } from "./mageArt";
+import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
@@ -1596,6 +1597,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "lion" && drawLion(ctx, e, camX, camY)) continue;
     if (e.kind === "spearknight" && drawSpearKnight(ctx, e, camX, camY)) continue;
     if (e.kind === "mage" && drawMage(ctx, e, camX, camY, s)) continue;
+    if (e.kind === "chariotarcher" && drawChariotArcher(ctx, e, camX, camY)) continue;
 
 
 
@@ -2240,6 +2242,30 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   if (e.hp < e.maxHp) {
     const bw = 26;
     const by = groundY - MAGE_ART.H * MAGE_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// ------------- Archer chariot (supplied sprite, always on the move) -------------
+function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureChariotArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, CHARIOT_ART.W * CHARIOT_ART.PX * 0.45, {
+    px: 3, alpha: 0.26, seed: e.id, phase: e.animT, sway: 0.5,
+  });
+  drawChariotArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    phase: e.animT * 6,
+    shoot: (e.data?.shootProgress as number | undefined) ?? null,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 44;
+    const by = groundY - CHARIOT_ART.H * CHARIOT_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
