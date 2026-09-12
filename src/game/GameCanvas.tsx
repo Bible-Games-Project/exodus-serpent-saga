@@ -1570,6 +1570,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
     if (e.kind === "axesoldier" && drawAxeSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "shieldsoldier" && drawShieldSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "shieldclang") { drawShieldClang(ctx, e, camX, camY); continue; }
+
 
     if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
     if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
