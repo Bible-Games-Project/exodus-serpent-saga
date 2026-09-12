@@ -13,6 +13,9 @@ import agilesoldier from "@/assets/agile-body.png.asset.json";
 import cobra from "@/assets/cobra-head.png.asset.json";
 import spearsoldier from "@/assets/spear-body.png.asset.json";
 import camel from "@/assets/camel-body.png.asset.json";
+import lion from "@/assets/lion-body.png.asset.json";
+import spearknight from "@/assets/knight-body.png.asset.json";
+import mage from "@/assets/mage-body.png.asset.json";
 import ramses from "@/assets/ramses-body.png.asset.json";
 
 const SPRITES: Record<string, string> = {
@@ -28,6 +31,9 @@ const SPRITES: Record<string, string> = {
   cobra: cobra.url,
   spearsoldier: spearsoldier.url,
   camel: camel.url,
+  lion: lion.url,
+  spearknight: spearknight.url,
+  mage: mage.url,
   ramses: ramses.url,
 };
 
