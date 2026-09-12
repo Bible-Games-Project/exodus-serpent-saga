@@ -3,7 +3,7 @@ import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { NPC_ORDER, NPCS } from "./npcs";
 import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
-import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind } from "./enemies";
+import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
@@ -15,6 +15,8 @@ import { HEAVY_SWING_DUR } from "./heavySoldierArt";
 import { WOLF_LEAP_DUR } from "./wolfArt";
 import { AGILE_STAB_DUR } from "./agileSoldierArt";
 import { COBRA_STRIKE_DUR } from "./cobraArt";
+import { LION_MAUL_DUR } from "./lionArt";
+import { MAGE_CAST_DUR } from "./mageArt";
 
 import { playShieldBlock } from "./sfx";
 import type { TestMapConfig } from "./types";
@@ -33,6 +35,7 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   wolf: { key: "leapAt", dur: WOLF_LEAP_DUR, gap: 30, from: 0.32, to: 0.58 },
   agilesoldier: { key: "stabAt", dur: AGILE_STAB_DUR, gap: 30, from: 0.35, to: 0.58 },
   cobra: { key: "strikeAt", dur: COBRA_STRIKE_DUR, gap: 26, from: 0.34, to: 0.55 },
+  lion: { key: "maulAt", dur: LION_MAUL_DUR, gap: 30, from: 0.3, to: 0.58 },
 
 };
 
@@ -440,6 +443,18 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.leapAt; delete e.data.leapProgress; }
         else e.data.leapProgress = pp;
       }
+      // Lion mauling pounce progress (visual only; it plants for the pounce).
+      if (e.kind === "lion" && e.data?.maulAt != null) {
+        const pp = (state.now - (e.data.maulAt as number)) / LION_MAUL_DUR;
+        if (pp >= 1) { delete e.data.maulAt; delete e.data.maulProgress; }
+        else e.data.maulProgress = pp;
+      }
+      // Sorcerer cast progress (visual only; he plants his feet to cast).
+      if (e.kind === "mage" && e.data?.shootAt != null) {
+        const pp = (state.now - (e.data.shootAt as number)) / MAGE_CAST_DUR;
+        if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
+        else e.data.shootProgress = pp;
+      }
       // Shield soldier brace recoil after blocking a staff blow (visual only).
       if (e.kind === "shieldsoldier" && e.data?.blockAt != null) {
         const pp = (state.now - (e.data.blockAt as number)) / 0.22;
@@ -526,6 +541,24 @@ export function update(state: GameState, dt: number) {
         p.hp -= contactDmg * dt * shieldDamageMul(state);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+      }
+
+      // ---- spear knight: the lance connects once per pass-through charge ----
+      if (!invuln && e.kind === "spearknight" && e.data?.charging && !e.data.lanceHit) {
+        const lanceReach = e.radius + p.radius + 22;
+        if (dd < lanceReach) {
+          e.data.lanceHit = 1;
+          p.hp -= KNIGHT_LANCE_DMG * shieldDamageMul(state);
+          state.damageImpactKind = "normal";
+          const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+          const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+          const fd = Math.hypot(fdx, fdy) || 1;
+          const mx = p.pos.x - (fdx / fd) * (p.radius - 2);
+          const my = p.pos.y - (fdy / fd) * 4 - 26;
+          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.2, { seed: e.id });
+          spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
+          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+        }
       }
 
       for (const npcId of state.npcs.values()) {

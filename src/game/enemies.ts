@@ -3,6 +3,7 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { SPEAR_THROW_DUR } from "./spearSoldierArt";
+import { MAGE_CAST_DUR } from "./mageArt";
 
 
 export type EnemyBehavior =
@@ -14,6 +15,8 @@ export type EnemyBehavior =
   | "ambush"      // waits motionless, then sprints once the target is close
   | "skirmish"    // erratic hops, dash in, hit, dash out
   | "flyover"     // ignores obstacles
+  | "prowl"       // slow irregular stalking with sudden high-speed bursts
+  | "cavalry"     // gallops straight through the target and keeps running
   | "neutral";    // peaceful wanderer, never chases or attacks
 
 
@@ -130,7 +133,37 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 16, baseHp: 70, hpPerMinute: 30, speed: 34, contactDmg: 0, xp: 4,
     minMinute: 0, weight: 2, behavior: "neutral",
   },
+  lion: {
+    kind: "lion", category: "animal",
+    // Exactly three times the wolf in every way: health (34/20 -> 102/60) and
+    // bite damage (16 -> 48). It stalks slowly and irregularly, then bursts.
+    radius: 16, baseHp: 102, hpPerMinute: 60, speed: 58, contactDmg: 48, xp: 12,
+    minMinute: 0, weight: 3, behavior: "prowl",
+    chargeCooldown: 3.2, chargeSpeed: 300, chargeDuration: 1.1,
+  },
+  spearknight: {
+    kind: "spearknight", category: "human",
+    // Mounted lancer: never trades blows, he gallops clean through Moses and
+    // keeps going. All of his damage comes from the pass-through lance hit.
+    radius: 17, baseHp: 66, hpPerMinute: 34, speed: 150, contactDmg: 0, xp: 12,
+    minMinute: 0, weight: 3, behavior: "cavalry",
+    chargeCooldown: 2.2, chargeSpeed: 440, chargeDuration: 1.5,
+  },
+  mage: {
+    kind: "mage", category: "human",
+    // Egyptian sorcerer: plants his feet to cast, and one ball of light hits for
+    // exactly three archer arrows (9 -> 27).
+    radius: 12, baseHp: 46, hpPerMinute: 26, speed: 44, contactDmg: 6, xp: 12,
+    minMinute: 0, weight: 3, behavior: "ranged",
+    attack: {
+      cooldown: 3.1, range: 340, projectileSpeed: 225,
+      projectileDmg: 27, projectileKind: "magelight", projectileTtl: 2.8,
+    },
+  },
 };
+
+/** Fixed damage of one spear-knight pass-through lance hit. */
+export const KNIGHT_LANCE_DMG = 34;
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
 export const ENEMY_ORDER = [
@@ -146,6 +179,9 @@ export const ENEMY_ORDER = [
   "cobra",
   "spearsoldier",
   "camel",
+  "lion",
+  "spearknight",
+  "mage",
 ];
 
 /** Display names for menus. Unknown kinds fall back to a prettified key. */
@@ -162,6 +198,9 @@ const ENEMY_LABELS: Record<string, string> = {
   cobra: "Cobra",
   spearsoldier: "Spear Soldier",
   camel: "Camel",
+  lion: "Desert Lion",
+  spearknight: "Spear Knight",
+  mage: "Egyptian Sorcerer",
 };
 
 export function enemyLabel(kind: string): string {
@@ -390,7 +429,11 @@ export function enemyTick(
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
       e.data!.shootAt = state.now;
-      e.data!.shootHoldUntil = state.now + (e.kind === "spearsoldier" ? SPEAR_THROW_DUR : ARCHER_SHOOT_DUR);
+      e.data!.shootHoldUntil = state.now + (
+        e.kind === "spearsoldier" ? SPEAR_THROW_DUR
+          : e.kind === "mage" ? MAGE_CAST_DUR
+            : ARCHER_SHOOT_DUR
+      );
     }
 
     if (cd <= 0 && def.attack && d < def.attack.range) {
@@ -424,11 +467,101 @@ export function enemyTick(
         move(nx * spd * 0.6, ny * spd * 0.6);
       }
     }
+  } else if (def.behavior === "prowl") {
+    // Lion: pads about slowly on an irregular heading, and every few seconds
+    // explodes into a short high-speed run straight at its prey.
+    const dl = e.data!;
+    const bursting = state.now < ((dl.burstUntil as number) ?? 0);
+    const pouncing = dl.maulAt != null;
+
+    if (pouncing) {
+      // Planted for the whole mauling pounce.
+      dl.lionRunning = 1;
+    } else if (bursting) {
+      dl.lionRunning = 1;
+      const standoff = e.radius + 26;
+      if (d > standoff) move(nx * (def.chargeSpeed ?? 300) * helpers.baseSlow * freezeMul, ny * (def.chargeSpeed ?? 300) * helpers.baseSlow * freezeMul);
+    } else {
+      const cd = ((dl.burstCd as number) ?? 0) - dt;
+      if (cd <= 0 && d < 430) {
+        dl.burstUntil = state.now + (def.chargeDuration ?? 1.1) * (0.7 + Math.random() * 0.6);
+        dl.burstCd = (def.chargeCooldown ?? 3.2) * (0.75 + Math.random() * 0.9);
+      } else {
+        dl.burstCd = cd;
+        // Slow, wavering stalk: heading re-picked often, with pauses.
+        const until = (dl.stalkUntil as number) ?? 0;
+        if (state.now >= until) {
+          const walking = !dl.stalkWalk;
+          dl.stalkWalk = walking ? 1 : 0;
+          dl.stalkUntil = state.now + (walking ? 0.7 + Math.random() * 1.3 : 0.3 + Math.random() * 0.7);
+          if (walking) {
+            const a = Math.atan2(ny, nx) + (Math.random() - 0.5) * 1.5;
+            dl.svx = Math.cos(a) * spd * (0.5 + Math.random() * 0.45);
+            dl.svy = Math.sin(a) * spd * (0.5 + Math.random() * 0.45);
+          }
+        }
+        if (dl.stalkWalk && d > e.radius + 26) {
+          move((dl.svx as number) ?? 0, (dl.svy as number) ?? 0);
+          dl.lionRunning = 1;
+        } else {
+          dl.lionRunning = 0;
+        }
+      }
+    }
+  } else if (def.behavior === "cavalry") {
+    // Spear knight: a cavalry pass. He lines up, gallops clean through the
+    // target without ever slowing, runs on, then wheels round for another pass.
+    const dk = e.data!;
+    const chargingUntil = (dk.chargingUntil as number) ?? 0;
+    const windupUntil = (dk.chargeWindupUntil as number) ?? 0;
+    const chargeSpd = (def.chargeSpeed ?? 440) * helpers.baseSlow * freezeMul;
+
+    if (state.now < windupUntil) {
+      // Short rear-up before the lance drops — he still trots forward.
+      dk.charging = 0;
+      move(nx * spd * 0.35, ny * spd * 0.35);
+    } else if (state.now < chargingUntil) {
+      dk.charging = 1;
+      const cvx = (dk.chargeVx as number) ?? nx;
+      const cvy = (dk.chargeVy as number) ?? ny;
+      move(cvx * chargeSpd, cvy * chargeSpd);
+    } else {
+      dk.charging = 0;
+      if (dk.chargeVx != null) {
+        // Charge just ended: forget this pass so the next one can hit again.
+        dk.lanceHit = 0;
+        dk.chargeVx = null;
+        dk.chargeVy = null;
+      }
+      const cd = ((dk.chargeCd as number) ?? 0) - dt;
+      if (cd <= 0 && d < 560 && d > 90) {
+        // Aim at where the target stands and commit to that straight line.
+        dk.chargeVx = nx;
+        dk.chargeVy = ny;
+        dk.lanceHit = 0;
+        dk.chargeWindupUntil = state.now + 0.3;
+        dk.chargingUntil = state.now + 0.3 + (def.chargeDuration ?? 1.5);
+        dk.chargeCd = def.chargeCooldown ?? 2.2;
+      } else {
+        dk.chargeCd = cd;
+        // Wheel around: keep circling at a lance-run distance, never standing.
+        const ring = 300;
+        const radial = d > ring + 40 ? 1 : d < ring - 40 ? -1 : 0;
+        const tx = -ny, ty = nx;
+        const mvx = nx * radial * 0.9 + tx * 0.8;
+        const mvy = ny * radial * 0.9 + ty * 0.8;
+        const m = Math.hypot(mvx, mvy) || 1;
+        move((mvx / m) * spd, (mvy / m) * spd);
+      }
+    }
   }
 
   // facing
-  if (e.kind === "jackal" || e.kind === "lion") {
+  if (e.kind === "jackal") {
     e.facing = dx > 0 ? -1 : 1;
+  } else if (e.kind === "spearknight" && e.data?.charging) {
+    // The lance must keep pointing along the charge, even after the pass.
+    e.facing = ((e.data.chargeVx as number) ?? dx) > 0 ? 1 : -1;
   } else {
     e.facing = dx > 0 ? 1 : -1;
   }
