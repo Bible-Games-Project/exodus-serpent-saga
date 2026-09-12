@@ -88,6 +88,13 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 15, baseHp: 90, hpPerMinute: 34, speed: 27.5, contactDmg: 40, xp: 8,
     minMinute: 0, weight: 3, behavior: "chase",
   },
+  wolf: {
+    kind: "wolf", category: "animal",
+    // Lies in wait, then sprints at 80% of the bat's speed (190 -> 152), which
+    // is 1.6x the dog's 95.
+    radius: 12, baseHp: 34, hpPerMinute: 20, speed: 152, contactDmg: 16, xp: 4,
+    minMinute: 0, weight: 4, behavior: "ambush",
+  },
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
@@ -99,6 +106,7 @@ const ENEMY_ORDER = [
   "shieldsoldier",
   "bat",
   "heavysoldier",
+  "wolf",
 ];
 
 
