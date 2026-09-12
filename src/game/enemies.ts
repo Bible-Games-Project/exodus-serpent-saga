@@ -73,6 +73,20 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 14, baseHp: 60, hpPerMinute: 30, speed: 46, contactDmg: 0, xp: 5,
     minMinute: 0, weight: 3, behavior: "chase",
   },
+  bat: {
+    kind: "bat", category: "animal",
+    // Glass cannon: one hit always kills it, but it flies at twice the dog's
+    // speed (95 -> 190) and straight through every obstacle.
+    radius: 9, baseHp: 1, hpPerMinute: 0, speed: 190, contactDmg: 6, xp: 2,
+    minMinute: 0, weight: 4, behavior: "flyover", ignoresObstacles: true,
+  },
+  heavysoldier: {
+    kind: "heavysoldier", category: "human",
+    // Half the basic soldier's speed (55 -> 27.5) and four times his damage
+    // (10 -> 40, i.e. twice the axe soldier's 20).
+    radius: 15, baseHp: 90, hpPerMinute: 34, speed: 27.5, contactDmg: 40, xp: 8,
+    minMinute: 0, weight: 3, behavior: "chase",
+  },
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
@@ -82,6 +96,8 @@ const ENEMY_ORDER = [
   "archer",
   "axesoldier",
   "shieldsoldier",
+  "bat",
+  "heavysoldier",
 ];
 
 
@@ -159,7 +175,9 @@ export function enemyTick(
     // Stop just beside the target so the melee animation can reach it without
     // the sprites overlapping.
     const standoff = e.radius + 36;
-    if (d > standoff) move(mvx * spd, mvy * spd);
+    // The heavy soldier plants his boots for the whole sword swing.
+    const planted = e.kind === "heavysoldier" && e.data?.heavyAt != null;
+    if (d > standoff && !planted) move(mvx * spd, mvy * spd);
 
     // Melee swing anim for humans in close range.
     if (def.category === "human" && d < e.radius + 26) {

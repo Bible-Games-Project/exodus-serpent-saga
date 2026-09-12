@@ -10,6 +10,7 @@ import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { AXE_SWING_DUR } from "./axeSoldierArt";
+import { HEAVY_SWING_DUR } from "./heavySoldierArt";
 import { playShieldBlock } from "./sfx";
 
 
@@ -20,6 +21,7 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 34, from: 0.4, to: 0.62 },
   jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
   axesoldier: { key: "axeAt", dur: AXE_SWING_DUR, gap: 34, from: 0.42, to: 0.6 },
+  heavysoldier: { key: "heavyAt", dur: HEAVY_SWING_DUR, gap: 36, from: 0.45, to: 0.62 },
 };
 
 
@@ -338,6 +340,12 @@ export function update(state: GameState, dt: number) {
         const pp = (state.now - (e.data.axeAt as number)) / AXE_SWING_DUR;
         if (pp >= 1) { delete e.data.axeAt; delete e.data.axeProgress; }
         else e.data.axeProgress = pp;
+      }
+      // Heavy soldier sword swing progress (visual only; he plants while swinging).
+      if (e.kind === "heavysoldier" && e.data?.heavyAt != null) {
+        const pp = (state.now - (e.data.heavyAt as number)) / HEAVY_SWING_DUR;
+        if (pp >= 1) { delete e.data.heavyAt; delete e.data.heavyProgress; }
+        else e.data.heavyProgress = pp;
       }
       // Shield soldier brace recoil after blocking a staff blow (visual only).
       if (e.kind === "shieldsoldier" && e.data?.blockAt != null) {
