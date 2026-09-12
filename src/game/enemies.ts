@@ -10,6 +10,7 @@ export type EnemyBehavior =
   | "charge"      // periodic dash toward target
   | "erratic"     // jittery flying (bats)
   | "pack"        // wolves cluster with peers
+  | "ambush"      // waits motionless, then sprints once the target is close
   | "flyover";    // ignores obstacles
 
 export type EnemyDef = {
