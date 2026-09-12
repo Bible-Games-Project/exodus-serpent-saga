@@ -339,6 +339,13 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.axeAt; delete e.data.axeProgress; }
         else e.data.axeProgress = pp;
       }
+      // Shield soldier brace recoil after blocking a staff blow (visual only).
+      if (e.kind === "shieldsoldier" && e.data?.blockAt != null) {
+        const pp = (state.now - (e.data.blockAt as number)) / 0.22;
+        if (pp >= 1) { delete e.data.blockAt; delete e.data.blockProgress; }
+        else e.data.blockProgress = pp;
+      }
+
 
       // Dog crouch + lunge bite progress (visual only).
       if (e.kind === "jackal" && e.data?.pounceAt != null) {
