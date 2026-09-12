@@ -85,7 +85,22 @@ export type NpcDef = {
   scripture?: string;
 };
 
+/**
+ * Test Map session configuration (see game/testMap.ts). Present only when the
+ * player launched the separate test map; the normal game leaves it undefined.
+ */
+export type TestMapConfig = {
+  /** Highest selectable attack index (0 = serpent ... 11 = Parting of the Red Sea); -1 = staff only. */
+  maxAttackIndex: number;
+  /** enemy kind -> active in this session */
+  enemies: Record<string, boolean>;
+  ramses: boolean;
+  /** 1 = throne/idle, 2 = walking + staff attack, 3 = jump attack, 4 = chariot */
+  ramsesLevel: 1 | 2 | 3 | 4;
+};
+
 export type GameState = {
+
   now: number; // seconds since run start
   running: boolean;
   paused: boolean;
@@ -162,4 +177,8 @@ export type GameState = {
   // Floating notifications (bonus pickups, plague unlocks, etc.)
   notifications?: Array<{ id: number; text: string; color: string; born: number; ttl: number }>;
   nextNotifId?: number;
+
+  /** Set only for the separate Test Map session. */
+  testMap?: TestMapConfig;
 };
+
