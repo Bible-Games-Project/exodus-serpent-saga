@@ -124,9 +124,8 @@ function PlayPage() {
         </PixelModal>
 
         <GameSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-
-        {devPending && <DevPanel onStart={(cfg) => setDevConfig(cfg)} />}
       </div>
+
 
 
       {gameOver && (
