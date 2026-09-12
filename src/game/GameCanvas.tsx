@@ -2115,8 +2115,11 @@ function drawPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameStat
 function drawSpearSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
   if (!ensureSpearSoldierArt()) return false;
   const x = Math.round(e.pos.x - camX);
-  const groundY = Math.round(e.pos.y - camY + 8);
-  drawPixelShadow(ctx, x, groundY - 5, SPEAR_SOLDIER_ART.W * SPEAR_SOLDIER_ART.PX * 0.3, {
+  // The supplied spear extends below the rear foot; lift the art slightly while
+  // keeping its shadow on the actual ground line so neither reads as buried.
+  const groundY = Math.round(e.pos.y - camY + 5);
+  const shadowY = Math.round(e.pos.y - camY + 9);
+  drawPixelShadow(ctx, x, shadowY, SPEAR_SOLDIER_ART.W * SPEAR_SOLDIER_ART.PX * 0.3, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
   const throwP = (e.data?.shootProgress as number | undefined) ?? null;

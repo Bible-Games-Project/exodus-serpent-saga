@@ -10,7 +10,8 @@ export const CHARIOT_ART = {
   W: 192,
   H: 124,
   /** screen pixels per sprite pixel */
-  PX: 0.55,
+  /** Matches the mounted spear knight's 168px-wide rendered footprint. */
+  PX: 0.875,
   /** x of the rig's centre inside the sprite */
   CX: 96,
 } as const;
