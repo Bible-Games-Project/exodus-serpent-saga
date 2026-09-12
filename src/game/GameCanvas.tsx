@@ -1755,7 +1755,8 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
 function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState) {
   const sprite = SPRITE_MAP[e.kind];
   if (!sprite) return;
-  const frameIdx = Math.floor(e.animT) % sprite.frames.length;
+  let frameIdx = Math.floor(e.animT) % sprite.frames.length;
+  if (!Number.isFinite(frameIdx) || frameIdx < 0) { console.error("BADFRAME", e.kind, e.animT); frameIdx = 0; }
   const flip = e.facing === -1;
   let hopOffY = 0, scaleY = 1, scaleX = 1, frogFrame = frameIdx;
   if (e.kind === "frog") {
