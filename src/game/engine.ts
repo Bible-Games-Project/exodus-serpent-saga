@@ -483,20 +483,25 @@ export function update(state: GameState, dt: number) {
         e.pos.y += e.vel.y * dt;
       }
 
-      // Enemy-owned projectile hits player.
+      // Enemy-owned projectile hits player: tested against Moses' whole visible
+      // body (feet → head), not just his centre point, and swept over the frame
+      // so a fast arrow can never tunnel straight through him.
       if (e.data?.enemyOwned) {
-        if (!invuln && dist2(e.pos, p.pos) < (e.radius + p.radius) ** 2) {
+        const hitPt = playerBodyHit(state, e, dt);
+        if (!invuln && hitPt) {
           p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           // Small impact + blood exactly where the projectile struck Moses.
-          spawnVisualHazard(state, "hitspark", { x: e.pos.x, y: e.pos.y }, 0.18, { seed: e.id, small: 1 });
-          spawnVisualHazard(state, "bloodhit", { x: e.pos.x, y: e.pos.y }, 0.45, { seed: e.id, maxTtl: 0.45 });
+          spawnVisualHazard(state, "hitspark", hitPt, 0.18, { seed: e.id, small: 1 });
+          spawnVisualHazard(state, "bloodhit", hitPt, 0.45, { seed: e.id, maxTtl: 0.45 });
           state.entities.delete(e.id);
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
+        if (!state.entities.has(e.id)) continue;
         continue;
       }
+
 
       if (e.kind === "hailstone" || e.kind === "fireball") continue;
       const hit = e.data?.hit as Set<number> | undefined;
