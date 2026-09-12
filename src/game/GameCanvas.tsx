@@ -13,6 +13,9 @@ import { drawCobraArt, ensureCobraArt, COBRA_ART } from "./cobraArt";
 
 import { drawBatArt, ensureBatArt, BAT_ART } from "./batArt";
 import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
+import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
+import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
+import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall } from "./mageArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
@@ -1574,7 +1577,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "redseawall") { drawRedSeaWall(ctx, e, camX, camY); continue; }
     if (e.kind === "redseaburst") { drawRedSeaBurst(ctx, e, camX, camY); continue; }
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
-    if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
+    if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
     if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
@@ -1590,6 +1593,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "wolf" && drawWolf(ctx, e, camX, camY)) continue;
     if (e.kind === "agilesoldier" && drawAgileSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "cobra" && drawCobra(ctx, e, camX, camY)) continue;
+    if (e.kind === "lion" && drawLion(ctx, e, camX, camY)) continue;
+    if (e.kind === "spearknight" && drawSpearKnight(ctx, e, camX, camY)) continue;
+    if (e.kind === "mage" && drawMage(ctx, e, camX, camY, s)) continue;
 
 
 
