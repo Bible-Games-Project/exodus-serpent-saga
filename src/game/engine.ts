@@ -10,6 +10,8 @@ import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { AXE_SWING_DUR } from "./axeSoldierArt";
+import { playShieldBlock } from "./sfx";
+
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
 // `gap` = extra distance beyond the two sprite radii, `from`/`to` = the slice of
@@ -337,6 +339,13 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.axeAt; delete e.data.axeProgress; }
         else e.data.axeProgress = pp;
       }
+      // Shield soldier brace recoil after blocking a staff blow (visual only).
+      if (e.kind === "shieldsoldier" && e.data?.blockAt != null) {
+        const pp = (state.now - (e.data.blockAt as number)) / 0.22;
+        if (pp >= 1) { delete e.data.blockAt; delete e.data.blockProgress; }
+        else e.data.blockProgress = pp;
+      }
+
 
       // Dog crouch + lunge bite progress (visual only).
       if (e.kind === "jackal" && e.data?.pounceAt != null) {
@@ -654,6 +663,9 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
 
 
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
+  // Once a shield soldier has caught this swing it is spent: no enemy takes any
+  // damage from it, not even the ones standing behind him.
+  if (d.blocked) return;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
   const dmg = stats.dmg * damageMultiplier(state);
   const tolerance = 14; // segment thickness
@@ -661,6 +673,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // Moses' facing direction so a visually connecting swing always lands.
   const reach = Math.hypot(tipX - cx, tipY - cy) + tolerance;
   const HALF_CONE = 0.85; // ~49 degrees each side of the facing direction
+  const candidates: Array<{ en: Entity; px: number; py: number }> = [];
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     if (hit.has(en.id)) continue;
@@ -682,30 +695,49 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
         inRange = Math.abs(Math.atan2(ey, ex)) <= HALF_CONE;
       }
     }
-    if (inRange) {
+    if (inRange) candidates.push({ en, px, py });
+  }
 
-      en.hp -= dmg;
-      hit.add(en.id);
-      // Small pixel-art blood burst on the enemy, at the staff contact point.
-      // One of five variations is picked at random so hits never look identical.
-      const bx = en.pos.x + (px - en.pos.x) * 0.5;
-      const by = en.pos.y - en.radius * 0.6 + (py - en.pos.y) * 0.3;
-      spawnVisualHazard(state, "staffblood", { x: bx, y: by }, 0.4, {
-        variant: Math.floor(Math.random() * 5),
-        seed: Math.floor(Math.random() * 1000),
-        dirX: facing,
-        maxTtl: 0.4,
-      });
-      // knockback
-      const kx = en.pos.x - state.player.pos.x;
-      const ky = en.pos.y - state.player.pos.y;
-      const kd = Math.hypot(kx, ky) || 1;
-      en.pos.x += (kx / kd) * 10;
-      en.pos.y += (ky / kd) * 10;
-      if (en.hp <= 0) killEnemy(state, en);
-    }
+  // A shield soldier in the swing's path stops it dead: metallic clang, sparks,
+  // zero damage anywhere.
+  const shielded = candidates.find((c) => c.en.kind === "shieldsoldier");
+  if (shielded) {
+    d.blocked = true;
+    shielded.en.data ??= {};
+    shielded.en.data.blockAt = state.now;
+    const sx = shielded.en.pos.x + (state.player.pos.x - shielded.en.pos.x) * 0.42;
+    const sy = shielded.en.pos.y - shielded.en.radius * 1.6;
+    spawnVisualHazard(state, "shieldclang", { x: sx, y: sy }, 0.24, {
+      seed: Math.floor(Math.random() * 1000),
+      maxTtl: 0.24,
+    });
+    playShieldBlock();
+    return;
+  }
+
+  for (const { en, px, py } of candidates) {
+    en.hp -= dmg;
+    hit.add(en.id);
+    // Small pixel-art blood burst on the enemy, at the staff contact point.
+    // One of five variations is picked at random so hits never look identical.
+    const bx = en.pos.x + (px - en.pos.x) * 0.5;
+    const by = en.pos.y - en.radius * 0.6 + (py - en.pos.y) * 0.3;
+    spawnVisualHazard(state, "staffblood", { x: bx, y: by }, 0.4, {
+      variant: Math.floor(Math.random() * 5),
+      seed: Math.floor(Math.random() * 1000),
+      dirX: facing,
+      maxTtl: 0.4,
+    });
+    // knockback
+    const kx = en.pos.x - state.player.pos.x;
+    const ky = en.pos.y - state.player.pos.y;
+    const kd = Math.hypot(kx, ky) || 1;
+    en.pos.x += (kx / kd) * 10;
+    en.pos.y += (ky / kd) * 10;
+    if (en.hp <= 0) killEnemy(state, en);
   }
 }
+
 
 /** True while a staff swing hazard is still playing (never interrupt it). */
 function staffSwingActive(state: GameState): boolean {
