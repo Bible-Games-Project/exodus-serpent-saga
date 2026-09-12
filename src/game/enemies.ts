@@ -3,6 +3,7 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { SPEAR_THROW_DUR } from "./spearSoldierArt";
+import { MAGE_CAST_DUR } from "./mageArt";
 
 
 export type EnemyBehavior =
@@ -14,6 +15,8 @@ export type EnemyBehavior =
   | "ambush"      // waits motionless, then sprints once the target is close
   | "skirmish"    // erratic hops, dash in, hit, dash out
   | "flyover"     // ignores obstacles
+  | "prowl"       // slow irregular stalking with sudden high-speed bursts
+  | "cavalry"     // gallops straight through the target and keeps running
   | "neutral";    // peaceful wanderer, never chases or attacks
 
 
@@ -130,7 +133,37 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 16, baseHp: 70, hpPerMinute: 30, speed: 34, contactDmg: 0, xp: 4,
     minMinute: 0, weight: 2, behavior: "neutral",
   },
+  lion: {
+    kind: "lion", category: "animal",
+    // Exactly three times the wolf in every way: health (34/20 -> 102/60) and
+    // bite damage (16 -> 48). It stalks slowly and irregularly, then bursts.
+    radius: 16, baseHp: 102, hpPerMinute: 60, speed: 58, contactDmg: 48, xp: 12,
+    minMinute: 0, weight: 3, behavior: "prowl",
+    chargeCooldown: 3.2, chargeSpeed: 300, chargeDuration: 1.1,
+  },
+  spearknight: {
+    kind: "spearknight", category: "human",
+    // Mounted lancer: never trades blows, he gallops clean through Moses and
+    // keeps going. All of his damage comes from the pass-through lance hit.
+    radius: 17, baseHp: 66, hpPerMinute: 34, speed: 150, contactDmg: 0, xp: 12,
+    minMinute: 0, weight: 3, behavior: "cavalry",
+    chargeCooldown: 2.2, chargeSpeed: 440, chargeDuration: 1.5,
+  },
+  mage: {
+    kind: "mage", category: "human",
+    // Egyptian sorcerer: plants his feet to cast, and one ball of light hits for
+    // exactly three archer arrows (9 -> 27).
+    radius: 12, baseHp: 46, hpPerMinute: 26, speed: 44, contactDmg: 6, xp: 12,
+    minMinute: 0, weight: 3, behavior: "ranged",
+    attack: {
+      cooldown: 3.1, range: 340, projectileSpeed: 225,
+      projectileDmg: 27, projectileKind: "magelight", projectileTtl: 2.8,
+    },
+  },
 };
+
+/** Fixed damage of one spear-knight pass-through lance hit. */
+export const KNIGHT_LANCE_DMG = 34;
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
 export const ENEMY_ORDER = [
@@ -146,6 +179,9 @@ export const ENEMY_ORDER = [
   "cobra",
   "spearsoldier",
   "camel",
+  "lion",
+  "spearknight",
+  "mage",
 ];
 
 /** Display names for menus. Unknown kinds fall back to a prettified key. */
@@ -162,6 +198,9 @@ const ENEMY_LABELS: Record<string, string> = {
   cobra: "Cobra",
   spearsoldier: "Spear Soldier",
   camel: "Camel",
+  lion: "Desert Lion",
+  spearknight: "Spear Knight",
+  mage: "Egyptian Sorcerer",
 };
 
 export function enemyLabel(kind: string): string {
@@ -390,7 +429,11 @@ export function enemyTick(
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
       e.data!.shootAt = state.now;
-      e.data!.shootHoldUntil = state.now + (e.kind === "spearsoldier" ? SPEAR_THROW_DUR : ARCHER_SHOOT_DUR);
+      e.data!.shootHoldUntil = state.now + (
+        e.kind === "spearsoldier" ? SPEAR_THROW_DUR
+          : e.kind === "mage" ? MAGE_CAST_DUR
+            : ARCHER_SHOOT_DUR
+      );
     }
 
     if (cd <= 0 && def.attack && d < def.attack.range) {
