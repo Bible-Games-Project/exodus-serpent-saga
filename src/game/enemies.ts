@@ -275,7 +275,7 @@ export function enemyTick(
   }
 
   // facing
-  if (e.kind === "jackal" || e.kind === "wolf" || e.kind === "lion") {
+  if (e.kind === "jackal" || e.kind === "lion") {
     e.facing = dx > 0 ? -1 : 1;
   } else {
     e.facing = dx > 0 ? 1 : -1;

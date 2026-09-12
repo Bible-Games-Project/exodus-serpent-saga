@@ -7,6 +7,7 @@ import { drawAxeSoldierArt, ensureAxeArt, AXE_ART } from "./axeSoldierArt";
 import { drawShieldSoldierArt, ensureShieldArt, SHIELD_ART } from "./shieldSoldierArt";
 import { drawHeavySoldierArt, ensureHeavyArt, HEAVY_ART } from "./heavySoldierArt";
 import { drawBatArt, ensureBatArt, BAT_ART } from "./batArt";
+import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
@@ -1576,6 +1577,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "shieldclang") { drawShieldClang(ctx, e, camX, camY); continue; }
     if (e.kind === "heavysoldier" && drawHeavySoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "bat" && drawBat(ctx, e, camX, camY)) continue;
+    if (e.kind === "wolf" && drawWolf(ctx, e, camX, camY)) continue;
 
 
     if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
@@ -1978,6 +1980,33 @@ function drawBat(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: n
     flip: e.facing === -1 ? -1 : 1,
     flapPhase: e.animT * 3.4,
   });
+  return true;
+}
+
+// -------------------- Desert wolf (layered supplied sprite) --------------------
+function drawWolf(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureWolfArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, WOLF_ART.W * WOLF_ART.PX * 0.42, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.9,
+  });
+  const leap = (e.data?.leapProgress as number | undefined) ?? null;
+  const awake = e.data?.awake != null;
+  drawWolfArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * (awake ? 7.5 : 1),
+    running: awake && leap == null,
+    leap,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 24;
+    const by = groundY - WOLF_ART.H * WOLF_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
   return true;
 }
 
