@@ -133,7 +133,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
-const ENEMY_ORDER = [
+export const ENEMY_ORDER = [
   "soldier",
   "jackal",
   "archer",
@@ -147,6 +147,27 @@ const ENEMY_ORDER = [
   "spearsoldier",
   "camel",
 ];
+
+/** Display names for menus. Unknown kinds fall back to a prettified key. */
+const ENEMY_LABELS: Record<string, string> = {
+  soldier: "Egyptian Soldier",
+  jackal: "Desert Dog",
+  archer: "Egyptian Archer",
+  axesoldier: "Axe Soldier",
+  shieldsoldier: "Shield Soldier",
+  bat: "Desert Bat",
+  heavysoldier: "Heavy Soldier",
+  wolf: "Desert Wolf",
+  agilesoldier: "Agile Soldier",
+  cobra: "Cobra",
+  spearsoldier: "Spear Soldier",
+  camel: "Camel",
+};
+
+export function enemyLabel(kind: string): string {
+  return ENEMY_LABELS[kind] ?? kind.charAt(0).toUpperCase() + kind.slice(1);
+}
+
 
 
 
@@ -167,16 +188,22 @@ function camelAllowed(state: GameState): boolean {
 }
 
 export function pickEnemyKind(state: GameState): string {
-  const eligible = ENEMY_ORDER.filter(
-    (k) => enemyUnlockLevel(k) <= state.level && (k !== "camel" || camelAllowed(state)),
-  );
+  // In the Test Map the session config decides what may spawn; the normal game
+  // keeps its untouched level-based unlock rule.
+  const tm = state.testMap;
+  const allowed = (k: string) =>
+    (tm ? tm.enemies[k] === true : enemyUnlockLevel(k) <= state.level)
+    && (k !== "camel" || camelAllowed(state));
+  const eligible = ENEMY_ORDER.filter(allowed);
+  if (eligible.length === 0) return "";
   const total = eligible.reduce((s, k) => s + ENEMY_DEFS[k].weight, 0);
   let r = Math.random() * total;
   for (const k of eligible) {
     r -= ENEMY_DEFS[k].weight;
     if (r <= 0) return k;
   }
-  return "soldier";
+  return eligible[0];
+
 }
 
 // ----- behaviour tick helpers (called from engine) -----

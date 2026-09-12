@@ -17,7 +17,9 @@ import { AGILE_STAB_DUR } from "./agileSoldierArt";
 import { COBRA_STRIKE_DUR } from "./cobraArt";
 
 import { playShieldBlock } from "./sfx";
-import { DEV_ENABLED, type DevConfig } from "./devMode";
+import type { TestMapConfig } from "./types";
+import { TEST_ATTACK_ORDER } from "./testMap";
+
 
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
@@ -67,7 +69,7 @@ function wrapDist2(state: GameState, a: Vec2, b: Vec2): number {
 
 
 // ---------- state factory ----------
-export function createInitialState(dev?: DevConfig | null): GameState {
+export function createInitialState(test?: TestMapConfig | null): GameState {
   const worldW = 8192; // multiple of 256 for seamless ground tiling
   const worldH = 8192;
 
@@ -110,18 +112,25 @@ export function createInitialState(dev?: DevConfig | null): GameState {
     worldH,
     passives: {},
     nextCompanionLevel: 5,
+    testMap: test ?? undefined,
   };
   state.entities.set(player.id, player);
   const DECOR_RADIUS: Record<string, number> = { palm: 12, rock: 16, pyramid: 44 };
   const obstacles: Array<{ pos: Vec2; r: number }> = [];
-  for (let i = 0; i < 60; i++) {
+  // The Test Map is its own environment: a sparser, more open arena so the
+  // selected enemies and attacks stay easy to read. Everything else (tiles,
+  // collision, wrapping) is the same shared system.
+  const decorCount = test ? 26 : 60;
+  for (let i = 0; i < decorCount; i++) {
     const k = Math.random();
-    const kind = k < 0.6 ? "palm" : k < 0.9 ? "rock" : "pyramid";
+    const kind = test
+      ? (k < 0.55 ? "palm" : "rock")
+      : (k < 0.6 ? "palm" : k < 0.9 ? "rock" : "pyramid");
     let px = 0, py = 0;
     for (let tries = 0; tries < 8; tries++) {
       px = rand(0, worldW);
       py = rand(0, worldH);
-      if (Math.hypot(px - player.pos.x, py - player.pos.y) > 220) break;
+      if (Math.hypot(px - player.pos.x, py - player.pos.y) > (test ? 420 : 220)) break;
     }
     const r = DECOR_RADIUS[kind] ?? 0;
     const dec: Entity = {
@@ -140,48 +149,43 @@ export function createInitialState(dev?: DevConfig | null): GameState {
   }
   // Throne decor + Ramses himself. Throne is placed slightly further away
   // so Ramses (spawned in ramses.ts at +180) renders in front of it.
-  const thronePos = { x: player.pos.x + 180, y: player.pos.y - 60 };
-  const throne: Entity = {
-    id: state.nextId++,
-    pos: thronePos,
-    vel: { x: 0, y: 0 },
-    radius: 0,
-    hp: 1, maxHp: 1,
-    team: "decor", facing: 1, animT: 0, born: 0,
-    kind: "throne",
-    data: {},
-  };
-  state.entities.set(throne.id, throne);
-  // Throne is a solid obstacle everyone must go around.
-  obstacles.push({ pos: thronePos, r: 40 });
+  const withRamses = test ? test.ramses : true;
+  if (withRamses) {
+    const thronePos = { x: player.pos.x + 180, y: player.pos.y - 60 };
+    const throne: Entity = {
+      id: state.nextId++,
+      pos: thronePos,
+      vel: { x: 0, y: 0 },
+      radius: 0,
+      hp: 1, maxHp: 1,
+      team: "decor", facing: 1, animT: 0, born: 0,
+      kind: "throne",
+      data: {},
+    };
+    state.entities.set(throne.id, throne);
+    // Throne is a solid obstacle everyone must go around.
+    obstacles.push({ pos: thronePos, r: 40 });
+  }
   state.obstacles = obstacles;
-  spawnRamses(state);
-  if (DEV_ENABLED && dev) applyDevConfig(state, dev);
+  if (withRamses) spawnRamses(state);
+  if (test) applyTestMapConfig(state, test);
   return state;
 }
 
 /**
- * Dev-only: seed the run's starting state so the *existing* progression systems
- * (enemy unlocks, Ramses phases, plague ranks) behave as if the player had
- * legitimately reached that level. Nothing persistent is written.
+ * Test Map only: hand the session the already-implemented attacks it selected.
+ * No damage, cooldown, visual or behaviour value is changed.
  */
-function applyDevConfig(state: GameState, dev: DevConfig) {
-  const lvl = Math.max(1, Math.min(999, Math.floor(dev.startLevel)));
-  state.level = lvl;
-  state.xp = 0;
-  state.xpToNext = Math.floor(5 + state.level * 3 + state.level ** 1.35);
-
-  if (dev.plagues !== "none") {
-    const upTo = dev.plagues === "all" ? Infinity : dev.plagues;
-    for (const id of PLAGUE_ORDER) {
-      if (PLAGUES[id].unlockLevel > upTo) continue;
-      if (!state.plagues.has(id)) {
-        state.plagues.set(id, 1);
-        state.plagueCooldown.set(id, 0.5);
-      }
-    }
+function applyTestMapConfig(state: GameState, test: TestMapConfig) {
+  const upTo = Math.max(-1, Math.min(TEST_ATTACK_ORDER.length - 1, Math.floor(test.maxAttackIndex)));
+  for (let i = 0; i <= upTo; i++) {
+    const id = TEST_ATTACK_ORDER[i];
+    if (!id || state.plagues.has(id)) continue;
+    state.plagues.set(id, 1);
+    state.plagueCooldown.set(id, 0.5);
   }
 }
+
 
 
 
@@ -898,6 +902,8 @@ function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
     const r = 480 + Math.random() * 120;
     const p = state.player.pos;
     const kind = pickEnemyKind(state);
+    if (!kind) return;
+
     const e = makeEnemy(state, kind, {
       x: p.x + Math.cos(angle) * r,
       y: p.y + Math.sin(angle) * r,

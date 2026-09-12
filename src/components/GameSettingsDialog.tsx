@@ -1,5 +1,5 @@
 import { useSettings } from "@/hooks/useSettings";
-import { DEV_ENABLED } from "@/game/devMode";
+
 
 /** Square-cornered pixel-art modal shell used by the in-game overlays. */
 export function PixelModal({
@@ -95,17 +95,8 @@ export function GameSettingsDialog({ open, onClose }: { open: boolean; onClose: 
           </div>
         )}
 
-        {DEV_ENABLED && (
-          <div className="flex items-center justify-between gap-3 border-t-[3px] border-[#3a2412] pt-4">
-            <span className="text-sm uppercase tracking-wider">Game Dev</span>
-            <button
-              onClick={() => update({ devMode: !settings.devMode })}
-              className="pixel-btn pixel-btn-press font-display bg-[#e9c168] px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-[#3a2412]"
-            >
-              {settings.devMode ? "On" : "Off"}
-            </button>
-          </div>
-        )}
+
+
 
         <PixelActionButton variant="primary" onClick={onClose}>
           Close

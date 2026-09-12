@@ -60,29 +60,53 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const d = r.data!;
   const p = state.player;
 
-  // Activation trigger — player reaches level 18: Ramses leaves his throne.
-  if (!d.active && state.level >= 18) {
-    d.active = true;
-    d.seated = false;
-    d.leapCd = 5;
-    d.atkPhase = "idle";
-    d.atkT = 0;
-    d.atkCd = 1.5;
-  }
-  // Leap (jumping) attack unlocks at player level 36.
-  if (!d.leapUnlocked && state.level >= 36) {
-    d.leapUnlocked = true;
-  }
-  // Chariot unlocks at player level 50 — Ramses mounts a war chariot.
-  if (!d.chariot && state.level >= 50) {
-    d.chariot = true;
-    r.radius = 34;
-    d.spearCd = 2;
-    d.contactDmg = 32;
+  // Test Map: the chosen phase is forced regardless of Moses' level. The normal
+  // game keeps its untouched level-based progression below.
+  const tm = state.testMap;
+  if (tm) {
+    const lvl = tm.ramsesLevel;
+    const shouldBeActive = lvl >= 2;
+    if (shouldBeActive && !d.active) {
+      d.active = true;
+      d.seated = false;
+      d.leapCd = 5;
+      d.atkPhase = "idle";
+      d.atkT = 0;
+      d.atkCd = 1.5;
+    }
+    d.leapUnlocked = lvl >= 3;
+    if (lvl >= 4 && !d.chariot) {
+      d.chariot = true;
+      r.radius = 34;
+      d.spearCd = 2;
+      d.contactDmg = 32;
+    }
+  } else {
+    // Activation trigger — player reaches level 18: Ramses leaves his throne.
+    if (!d.active && state.level >= 18) {
+      d.active = true;
+      d.seated = false;
+      d.leapCd = 5;
+      d.atkPhase = "idle";
+      d.atkT = 0;
+      d.atkCd = 1.5;
+    }
+    // Leap (jumping) attack unlocks at player level 36.
+    if (!d.leapUnlocked && state.level >= 36) {
+      d.leapUnlocked = true;
+    }
+    // Chariot unlocks at player level 50 — Ramses mounts a war chariot.
+    if (!d.chariot && state.level >= 50) {
+      d.chariot = true;
+      r.radius = 34;
+      d.spearCd = 2;
+      d.contactDmg = 32;
+    }
   }
   if (!d.active) {
     return;
   }
+
 
   const phase = d.leapPhase as string;
   const chariot = !!d.chariot;

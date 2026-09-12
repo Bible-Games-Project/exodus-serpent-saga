@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TestMapRouteImport } from './routes/test-map'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as MoreGamesRouteImport } from './routes/more-games'
@@ -16,6 +17,11 @@ import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicLeaderboardSubmitRouteImport } from './routes/api/public/leaderboard/submit'
 
+const TestMapRoute = TestMapRouteImport.update({
+  id: '/test-map',
+  path: '/test-map',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/test-map': typeof TestMapRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesByTo {
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/test-map': typeof TestMapRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRoutesById {
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/test-map': typeof TestMapRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
 }
 export interface FileRouteTypes {
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/more-games'
     | '/play'
     | '/sitemap.xml'
+    | '/test-map'
     | '/api/public/leaderboard/submit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/more-games'
     | '/play'
     | '/sitemap.xml'
+    | '/test-map'
     | '/api/public/leaderboard/submit'
   id:
     | '__root__'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/more-games'
     | '/play'
     | '/sitemap.xml'
+    | '/test-map'
     | '/api/public/leaderboard/submit'
   fileRoutesById: FileRoutesById
 }
@@ -106,11 +118,19 @@ export interface RootRouteChildren {
   MoreGamesRoute: typeof MoreGamesRoute
   PlayRoute: typeof PlayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TestMapRoute: typeof TestMapRoute
   ApiPublicLeaderboardSubmitRoute: typeof ApiPublicLeaderboardSubmitRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/test-map': {
+      id: '/test-map'
+      path: '/test-map'
+      fullPath: '/test-map'
+      preLoaderRoute: typeof TestMapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -162,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   MoreGamesRoute: MoreGamesRoute,
   PlayRoute: PlayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TestMapRoute: TestMapRoute,
   ApiPublicLeaderboardSubmitRoute: ApiPublicLeaderboardSubmitRoute,
 }
 export const routeTree = rootRouteImport
