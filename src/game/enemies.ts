@@ -2,6 +2,7 @@
 // New enemies can be added purely as data; engine dispatches by `behavior`.
 import type { Entity, GameState, Vec2 } from "./types";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
+import { SPEAR_THROW_DUR } from "./spearSoldierArt";
 
 
 export type EnemyBehavior =
@@ -12,7 +13,8 @@ export type EnemyBehavior =
   | "pack"        // wolves cluster with peers
   | "ambush"      // waits motionless, then sprints once the target is close
   | "skirmish"    // erratic hops, dash in, hit, dash out
-  | "flyover";    // ignores obstacles
+  | "flyover"     // ignores obstacles
+  | "neutral";    // peaceful wanderer, never chases or attacks
 
 
 export type EnemyDef = {
@@ -111,6 +113,23 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 11, baseHp: 30, hpPerMinute: 20, speed: 62, contactDmg: 4, xp: 5,
     minMinute: 0, weight: 3, behavior: "chase",
   },
+  spearsoldier: {
+    kind: "spearsoldier", category: "human",
+    // Behaves like the archer, but hurls spears instead of loosing arrows.
+    radius: 12, baseHp: 34, hpPerMinute: 24, speed: 50, contactDmg: 10, xp: 6,
+    minMinute: 0, weight: 4, behavior: "ranged",
+    attack: {
+      cooldown: 2.8, range: 320, projectileSpeed: 240,
+      projectileDmg: 14, projectileKind: "spear_e", projectileTtl: 2.4,
+    },
+  },
+  camel: {
+    kind: "camel", category: "animal",
+    // Completely neutral: wanders the desert, never attacks, and lends nearby
+    // Egyptian soldiers a +10% movement-speed aura.
+    radius: 16, baseHp: 70, hpPerMinute: 30, speed: 34, contactDmg: 0, xp: 4,
+    minMinute: 0, weight: 2, behavior: "neutral",
+  },
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
@@ -125,6 +144,8 @@ const ENEMY_ORDER = [
   "wolf",
   "agilesoldier",
   "cobra",
+  "spearsoldier",
+  "camel",
 ];
 
 
@@ -138,8 +159,17 @@ export function enemyUnlockLevel(kind: string): number {
 }
 
 // Weighted random selection filtered by player level (one new type / 3 levels).
+function camelAllowed(state: GameState): boolean {
+  const st = state as unknown as { __camelLevel?: number };
+  if (st.__camelLevel === state.level) return false;
+  for (const e of state.entities.values()) if (e.kind === "camel") return false;
+  return true;
+}
+
 export function pickEnemyKind(state: GameState): string {
-  const eligible = ENEMY_ORDER.filter((k) => enemyUnlockLevel(k) <= state.level);
+  const eligible = ENEMY_ORDER.filter(
+    (k) => enemyUnlockLevel(k) <= state.level && (k !== "camel" || camelAllowed(state)),
+  );
   const total = eligible.reduce((s, k) => s + ENEMY_DEFS[k].weight, 0);
   let r = Math.random() * total;
   for (const k of eligible) {
@@ -178,7 +208,9 @@ export function enemyTick(
     if (!def.ignoresObstacles) helpers.resolveObstacles(e.pos, e.radius);
   };
 
-  const spd = def.speed * helpers.baseSlow * freezeMul;
+  // Camel aura: nearby Egyptian soldiers move 10% faster for a short while.
+  const aura = def.category === "human" && state.now < ((e.data?.auraUntil as number) ?? 0) ? 1.1 : 1;
+  const spd = def.speed * helpers.baseSlow * freezeMul * aura;
 
   if (def.behavior === "chase" || def.behavior === "pack") {
     let mvx = nx, mvy = ny;
@@ -273,6 +305,35 @@ export function enemyTick(
         move((ds.hvx as number) ?? 0, (ds.hvy as number) ?? 0);
       }
     }
+  } else if (def.behavior === "neutral") {
+    // Peaceful desert wanderer: picks a random heading, strolls, pauses, repeats.
+    const dn = e.data!;
+    const until = (dn.wanderUntil as number) ?? 0;
+    if (state.now >= until) {
+      const walking = !dn.wanderWalk;
+      dn.wanderWalk = walking ? 1 : 0;
+      dn.wanderUntil = state.now + (walking ? 1.4 + Math.random() * 2.2 : 0.8 + Math.random() * 1.6);
+      if (walking) {
+        const a = Math.random() * Math.PI * 2;
+        dn.wvx = Math.cos(a) * spd;
+        dn.wvy = Math.sin(a) * spd;
+      }
+    }
+    if (dn.wanderWalk) {
+      const wvx = (dn.wvx as number) ?? 0;
+      const wvy = (dn.wvy as number) ?? 0;
+      move(wvx, wvy);
+      e.facing = wvx > 0 ? 1 : -1;
+    }
+    // Grant the speed aura to soldiers standing close by.
+    for (const other of state.entities.values()) {
+      if (other === e || other.team !== "enemy") continue;
+      if (ENEMY_DEFS[other.kind]?.category !== "human") continue;
+      if (dist2(other.pos, e.pos) < 200 * 200) {
+        if (other.data) other.data.auraUntil = state.now + 0.35;
+      }
+    }
+    return;
   } else if (def.behavior === "flyover") {
 
     move(nx * spd, ny * spd);
@@ -302,7 +363,7 @@ export function enemyTick(
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
       e.data!.shootAt = state.now;
-      e.data!.shootHoldUntil = state.now + ARCHER_SHOOT_DUR;
+      e.data!.shootHoldUntil = state.now + (e.kind === "spearsoldier" ? SPEAR_THROW_DUR : ARCHER_SHOOT_DUR);
     }
 
     if (cd <= 0 && def.attack && d < def.attack.range) {
@@ -348,6 +409,7 @@ export function enemyTick(
 
 export function makeEnemy(state: GameState, kind: string, pos: Vec2): Entity {
   const def = ENEMY_DEFS[kind] ?? ENEMY_DEFS.soldier;
+  if (kind === "camel") (state as unknown as { __camelLevel?: number }).__camelLevel = state.level;
   const mins = state.now / 60;
   const hp = def.baseHp + def.hpPerMinute * mins;
   return {

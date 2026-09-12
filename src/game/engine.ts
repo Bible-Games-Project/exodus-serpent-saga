@@ -9,6 +9,7 @@ import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
+import { SPEAR_THROW_DUR } from "./spearSoldierArt";
 import { AXE_SWING_DUR } from "./axeSoldierArt";
 import { HEAVY_SWING_DUR } from "./heavySoldierArt";
 import { WOLF_LEAP_DUR } from "./wolfArt";
@@ -384,6 +385,12 @@ export function update(state: GameState, dt: number) {
       // Archer bow draw + release progress (visual only).
       if (e.kind === "archer" && e.data?.shootAt != null) {
         const pp = (state.now - (e.data.shootAt as number)) / ARCHER_SHOOT_DUR;
+        if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
+        else e.data.shootProgress = pp;
+      }
+      // Spear soldier throw progress (visual only; he plants while throwing).
+      if (e.kind === "spearsoldier" && e.data?.shootAt != null) {
+        const pp = (state.now - (e.data.shootAt as number)) / SPEAR_THROW_DUR;
         if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
         else e.data.shootProgress = pp;
       }
