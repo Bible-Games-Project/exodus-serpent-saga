@@ -181,9 +181,18 @@ function MainMenu() {
         </div>
       </section>
 
+      {/* Small secondary entry point to the sandbox arena. */}
+      <Link
+        to="/test-map"
+        className="pixel-btn pixel-btn-press font-display absolute bottom-3 right-3 z-30 bg-[#f6e2ad] px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-[#7a5a30]"
+      >
+        Test Map
+      </Link>
+
       <footer className="font-pixel absolute bottom-3 left-0 right-0 z-20 text-center text-xs text-[#8a5a2c]">
         v0.1 — an original desert bullet-heaven
       </footer>
+
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </main>
