@@ -4,6 +4,8 @@ import { drawRamsesArt } from "./ramsesArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawAxeSoldierArt, ensureAxeArt, AXE_ART } from "./axeSoldierArt";
+import { drawShieldSoldierArt, ensureShieldArt, SHIELD_ART } from "./shieldSoldierArt";
+
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
 import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
