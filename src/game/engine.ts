@@ -771,7 +771,29 @@ function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
   }
 }
 
+/**
+ * Moses' body box (feet → head) tested against a projectile's path this frame.
+ * Returns the contact point, or null when nothing touched him.
+ */
+function playerBodyHit(state: GameState, e: Entity, dt: number): Vec2 | null {
+  const p = state.player;
+  const halfW = 13 + (e.radius ?? 4) * 0.5;
+  const top = p.pos.y - 58;
+  const bottom = p.pos.y + 8;
+  const prevX = e.pos.x - e.vel.x * dt;
+  const prevY = e.pos.y - e.vel.y * dt;
+  const steps = 4;
+  for (let i = steps; i >= 0; i--) {
+    const t = i / steps;
+    const x = prevX + (e.pos.x - prevX) * t;
+    const y = prevY + (e.pos.y - prevY) * t;
+    if (Math.abs(x - p.pos.x) <= halfW && y >= top && y <= bottom) return { x, y };
+  }
+  return null;
+}
+
 function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: string, speed: number, dmg: number, ttl: number) {
+
   const e: Entity = {
     id: state.nextId++,
     pos: { x: owner.pos.x, y: owner.pos.y },
