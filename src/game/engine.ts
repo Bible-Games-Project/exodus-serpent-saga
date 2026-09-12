@@ -21,6 +21,7 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 34, from: 0.4, to: 0.62 },
   jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
   axesoldier: { key: "axeAt", dur: AXE_SWING_DUR, gap: 34, from: 0.42, to: 0.6 },
+  heavysoldier: { key: "heavyAt", dur: HEAVY_SWING_DUR, gap: 36, from: 0.45, to: 0.62 },
 };
 
 
