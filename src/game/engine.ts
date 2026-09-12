@@ -182,7 +182,7 @@ function applyDevConfig(state: GameState, dev: DevConfig) {
   }
 }
 
-}
+
 
 
 // ---------- modular obstacle collision ----------
