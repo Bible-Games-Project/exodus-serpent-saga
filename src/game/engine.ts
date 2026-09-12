@@ -69,7 +69,7 @@ function wrapDist2(state: GameState, a: Vec2, b: Vec2): number {
 
 
 // ---------- state factory ----------
-export function createInitialState(dev?: DevConfig | null): GameState {
+export function createInitialState(test?: TestMapConfig | null): GameState {
   const worldW = 8192; // multiple of 256 for seamless ground tiling
   const worldH = 8192;
 
