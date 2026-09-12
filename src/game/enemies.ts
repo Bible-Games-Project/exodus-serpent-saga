@@ -467,11 +467,101 @@ export function enemyTick(
         move(nx * spd * 0.6, ny * spd * 0.6);
       }
     }
+  } else if (def.behavior === "prowl") {
+    // Lion: pads about slowly on an irregular heading, and every few seconds
+    // explodes into a short high-speed run straight at its prey.
+    const dl = e.data!;
+    const bursting = state.now < ((dl.burstUntil as number) ?? 0);
+    const pouncing = dl.maulAt != null;
+
+    if (pouncing) {
+      // Planted for the whole mauling pounce.
+      dl.lionRunning = 1;
+    } else if (bursting) {
+      dl.lionRunning = 1;
+      const standoff = e.radius + 26;
+      if (d > standoff) move(nx * (def.chargeSpeed ?? 300) * helpers.baseSlow * freezeMul, ny * (def.chargeSpeed ?? 300) * helpers.baseSlow * freezeMul);
+    } else {
+      const cd = ((dl.burstCd as number) ?? 0) - dt;
+      if (cd <= 0 && d < 430) {
+        dl.burstUntil = state.now + (def.chargeDuration ?? 1.1) * (0.7 + Math.random() * 0.6);
+        dl.burstCd = (def.chargeCooldown ?? 3.2) * (0.75 + Math.random() * 0.9);
+      } else {
+        dl.burstCd = cd;
+        // Slow, wavering stalk: heading re-picked often, with pauses.
+        const until = (dl.stalkUntil as number) ?? 0;
+        if (state.now >= until) {
+          const walking = !dl.stalkWalk;
+          dl.stalkWalk = walking ? 1 : 0;
+          dl.stalkUntil = state.now + (walking ? 0.7 + Math.random() * 1.3 : 0.3 + Math.random() * 0.7);
+          if (walking) {
+            const a = Math.atan2(ny, nx) + (Math.random() - 0.5) * 1.5;
+            dl.svx = Math.cos(a) * spd * (0.5 + Math.random() * 0.45);
+            dl.svy = Math.sin(a) * spd * (0.5 + Math.random() * 0.45);
+          }
+        }
+        if (dl.stalkWalk && d > e.radius + 26) {
+          move((dl.svx as number) ?? 0, (dl.svy as number) ?? 0);
+          dl.lionRunning = 1;
+        } else {
+          dl.lionRunning = 0;
+        }
+      }
+    }
+  } else if (def.behavior === "cavalry") {
+    // Spear knight: a cavalry pass. He lines up, gallops clean through the
+    // target without ever slowing, runs on, then wheels round for another pass.
+    const dk = e.data!;
+    const chargingUntil = (dk.chargingUntil as number) ?? 0;
+    const windupUntil = (dk.chargeWindupUntil as number) ?? 0;
+    const chargeSpd = (def.chargeSpeed ?? 440) * helpers.baseSlow * freezeMul;
+
+    if (state.now < windupUntil) {
+      // Short rear-up before the lance drops — he still trots forward.
+      dk.charging = 0;
+      move(nx * spd * 0.35, ny * spd * 0.35);
+    } else if (state.now < chargingUntil) {
+      dk.charging = 1;
+      const cvx = (dk.chargeVx as number) ?? nx;
+      const cvy = (dk.chargeVy as number) ?? ny;
+      move(cvx * chargeSpd, cvy * chargeSpd);
+    } else {
+      dk.charging = 0;
+      if (dk.chargeVx != null) {
+        // Charge just ended: forget this pass so the next one can hit again.
+        dk.lanceHit = 0;
+        dk.chargeVx = null;
+        dk.chargeVy = null;
+      }
+      const cd = ((dk.chargeCd as number) ?? 0) - dt;
+      if (cd <= 0 && d < 560 && d > 90) {
+        // Aim at where the target stands and commit to that straight line.
+        dk.chargeVx = nx;
+        dk.chargeVy = ny;
+        dk.lanceHit = 0;
+        dk.chargeWindupUntil = state.now + 0.3;
+        dk.chargingUntil = state.now + 0.3 + (def.chargeDuration ?? 1.5);
+        dk.chargeCd = def.chargeCooldown ?? 2.2;
+      } else {
+        dk.chargeCd = cd;
+        // Wheel around: keep circling at a lance-run distance, never standing.
+        const ring = 300;
+        const radial = d > ring + 40 ? 1 : d < ring - 40 ? -1 : 0;
+        const tx = -ny, ty = nx;
+        const mvx = nx * radial * 0.9 + tx * 0.8;
+        const mvy = ny * radial * 0.9 + ty * 0.8;
+        const m = Math.hypot(mvx, mvy) || 1;
+        move((mvx / m) * spd, (mvy / m) * spd);
+      }
+    }
   }
 
   // facing
-  if (e.kind === "jackal" || e.kind === "lion") {
+  if (e.kind === "jackal") {
     e.facing = dx > 0 ? -1 : 1;
+  } else if (e.kind === "spearknight" && e.data?.charging) {
+    // The lance must keep pointing along the charge, even after the pass.
+    e.facing = ((e.data.chargeVx as number) ?? dx) > 0 ? 1 : -1;
   } else {
     e.facing = dx > 0 ? 1 : -1;
   }
