@@ -10,6 +10,7 @@ import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { AXE_SWING_DUR } from "./axeSoldierArt";
+import { HEAVY_SWING_DUR } from "./heavySoldierArt";
 import { playShieldBlock } from "./sfx";
 
 
