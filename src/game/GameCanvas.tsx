@@ -3225,6 +3225,11 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     ctx.fillStyle = "#3a2010"; ctx.fillRect(-10, -1, 16, 2);
     ctx.fillStyle = "#a0a0a0"; ctx.fillRect(6, -3, 6, 5);
     ctx.fillStyle = "#ffffff"; ctx.fillRect(10, -1, 2, 2);
+  } else if (e.kind === "magelight") {
+    // Sorcerer's ball of light — chunky pixels, unrotated, in the staff's colour.
+    ctx.restore();
+    drawMageLightBall(ctx, x, y, e.animT);
+    return;
   } else if (e.kind === "magebolt") {
     const t = e.animT;
     ctx.fillStyle = "#c060ff"; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fill();
