@@ -133,7 +133,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
-const ENEMY_ORDER = [
+export const ENEMY_ORDER = [
   "soldier",
   "jackal",
   "archer",
@@ -147,6 +147,27 @@ const ENEMY_ORDER = [
   "spearsoldier",
   "camel",
 ];
+
+/** Display names for menus. Unknown kinds fall back to a prettified key. */
+const ENEMY_LABELS: Record<string, string> = {
+  soldier: "Egyptian Soldier",
+  jackal: "Desert Dog",
+  archer: "Egyptian Archer",
+  axesoldier: "Axe Soldier",
+  shieldsoldier: "Shield Soldier",
+  bat: "Desert Bat",
+  heavysoldier: "Heavy Soldier",
+  wolf: "Desert Wolf",
+  agilesoldier: "Agile Soldier",
+  cobra: "Cobra",
+  spearsoldier: "Spear Soldier",
+  camel: "Camel",
+};
+
+export function enemyLabel(kind: string): string {
+  return ENEMY_LABELS[kind] ?? kind.charAt(0).toUpperCase() + kind.slice(1);
+}
+
 
 
 
