@@ -17,7 +17,9 @@ import { AGILE_STAB_DUR } from "./agileSoldierArt";
 import { COBRA_STRIKE_DUR } from "./cobraArt";
 
 import { playShieldBlock } from "./sfx";
-import { DEV_ENABLED, type DevConfig } from "./devMode";
+import type { TestMapConfig } from "./types";
+import { TEST_ATTACK_ORDER } from "./testMap";
+
 
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
@@ -898,6 +900,8 @@ function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
     const r = 480 + Math.random() * 120;
     const p = state.player.pos;
     const kind = pickEnemyKind(state);
+    if (!kind) return;
+
     const e = makeEnemy(state, kind, {
       x: p.x + Math.cos(angle) * r,
       y: p.y + Math.sin(angle) * r,
