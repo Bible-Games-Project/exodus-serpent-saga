@@ -59,6 +59,11 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
       projectileDmg: 9, projectileKind: "arrow", projectileTtl: 2.4,
     },
   },
+  axesoldier: {
+    kind: "axesoldier", category: "human",
+    radius: 13, baseHp: 40, hpPerMinute: 26, speed: 52, contactDmg: 14, xp: 5,
+    minMinute: 0, weight: 4, behavior: "chase",
+  },
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
@@ -66,7 +71,9 @@ const ENEMY_ORDER = [
   "soldier",
   "jackal",
   "archer",
+  "axesoldier",
 ];
+
 
 
 /** Player level at which an enemy type is first allowed to spawn. */
