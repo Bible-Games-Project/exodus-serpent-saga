@@ -249,8 +249,9 @@ export function update(state: GameState, dt: number) {
 
   // Cobra venom: a 5-second damage-over-time effect. Re-bites refresh the timer
   // instead of stacking, and it stops dead when the 5 seconds are up.
-  {
-    const pd = state.player.data!;
+  if (state.player.data) {
+    const pd = state.player.data;
+
     const until = (pd.poisonUntil as number) ?? 0;
     if (state.now < until) {
       const dps = (pd.poisonDps as number) ?? 0;
