@@ -528,6 +528,24 @@ export function update(state: GameState, dt: number) {
         if (p.hp <= 0) { state.gameOver = true; state.running = false; }
       }
 
+      // ---- spear knight: the lance connects once per pass-through charge ----
+      if (!invuln && e.kind === "spearknight" && e.data?.charging && !e.data.lanceHit) {
+        const lanceReach = e.radius + p.radius + 22;
+        if (dd < lanceReach) {
+          e.data.lanceHit = 1;
+          p.hp -= KNIGHT_LANCE_DMG * shieldDamageMul(state);
+          state.damageImpactKind = "normal";
+          const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
+          const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+          const fd = Math.hypot(fdx, fdy) || 1;
+          const mx = p.pos.x - (fdx / fd) * (p.radius - 2);
+          const my = p.pos.y - (fdy / fd) * 4 - 26;
+          spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.2, { seed: e.id });
+          spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
+          if (p.hp <= 0) { state.gameOver = true; state.running = false; }
+        }
+      }
+
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
