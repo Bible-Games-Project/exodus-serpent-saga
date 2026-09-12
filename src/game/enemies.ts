@@ -17,6 +17,7 @@ export type EnemyBehavior =
   | "flyover"     // ignores obstacles
   | "prowl"       // slow irregular stalking with sudden high-speed bursts
   | "cavalry"     // gallops straight through the target and keeps running
+  | "chariot"     // never stops rolling; shoots on the move, hurts on contact
   | "neutral";    // peaceful wanderer, never chases or attacks
 
 
@@ -93,7 +94,9 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     // Half the basic soldier's speed (55 -> 27.5), four times his damage
     // (10 -> 40, i.e. twice the axe soldier's 20) and ten times his health
     // (26 base / 24 per minute -> 260 / 240).
-    radius: 15, baseHp: 260, hpPerMinute: 240, speed: 27.5, contactDmg: 40, xp: 8,
+    // Radius doubled alongside his 2x render scale so the hitbox still matches
+    // the visible body; HP, damage and speed are unchanged.
+    radius: 30, baseHp: 260, hpPerMinute: 240, speed: 27.5, contactDmg: 40, xp: 8,
     minMinute: 0, weight: 3, behavior: "chase",
   },
   wolf: {
@@ -160,6 +163,18 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
       projectileDmg: 27, projectileKind: "magelight", projectileTtl: 2.8,
     },
   },
+  chariotarcher: {
+    kind: "chariotarcher", category: "human",
+    // Mounted archer: the rig never stops rolling, looses arrows on the move,
+    // and the chariot itself runs Moses down on contact.
+    radius: 30, baseHp: 80, hpPerMinute: 40, speed: 135, contactDmg: 30, xp: 14,
+    minMinute: 0, weight: 3, behavior: "chariot",
+    attack: {
+      // Same arrow as the archer on foot (9 damage), fired while driving.
+      cooldown: 2.2, range: 400, projectileSpeed: 290,
+      projectileDmg: 9, projectileKind: "arrow", projectileTtl: 2.4,
+    },
+  },
 };
 
 /** Fixed damage of one spear-knight pass-through lance hit. */
@@ -182,6 +197,7 @@ export const ENEMY_ORDER = [
   "lion",
   "spearknight",
   "mage",
+  "chariotarcher",
 ];
 
 /** Display names for menus. Unknown kinds fall back to a prettified key. */
@@ -201,6 +217,7 @@ const ENEMY_LABELS: Record<string, string> = {
   lion: "Desert Lion",
   spearknight: "Spear Knight",
   mage: "Egyptian Sorcerer",
+  chariotarcher: "Archer Chariot",
 };
 
 export function enemyLabel(kind: string): string {
