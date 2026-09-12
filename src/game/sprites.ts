@@ -29,6 +29,7 @@ export function renderSprite(
   flipX = false,
 ): HTMLCanvasElement {
   const f = frame % sprite.frames.length;
+  if (!sprite.frames[f]) { console.error("BADSPRITE", String(frame), sprite.frames.length, sprite.w, sprite.h, new Error().stack); return document.createElement("canvas"); }
   const key = `${sprite.w}x${sprite.h}:${f}:${scale}:${flipX}:${sprite.frames[f].join("|")}`;
   const cached = cache.get(key);
   if (cached) return cached;
