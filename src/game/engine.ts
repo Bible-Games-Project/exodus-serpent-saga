@@ -386,6 +386,11 @@ export function update(state: GameState, dt: number) {
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
+      // A vanished spear (for example after TTL expiry) must never leave a
+      // surviving soldier permanently empty-handed.
+      if (e.kind === "spearsoldier" && e.data?.spearInFlight != null && !state.entities.has(e.data.spearInFlight as number)) {
+        delete e.data.spearInFlight;
+      }
       // Free-arm punch animation progress (visual only).
       if (e.kind === "soldier" && e.data?.punchAt != null) {
         const pp = (state.now - (e.data.punchAt as number)) / SOLDIER_PUNCH_DUR;
