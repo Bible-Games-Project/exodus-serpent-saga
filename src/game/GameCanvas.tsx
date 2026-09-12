@@ -1577,6 +1577,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
+    if (e.kind === "spearsoldier" && drawSpearSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "camel" && drawCamel(ctx, e, camX, camY, s)) continue;
     if (e.kind === "axesoldier" && drawAxeSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "shieldsoldier" && drawShieldSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "shieldclang") { drawShieldClang(ctx, e, camX, camY); continue; }
@@ -2098,6 +2100,58 @@ function drawPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameStat
 
 
 // ---------------- Egyptian archer (layered supplied sprite) ----------------
+// ---------------- spear soldier (layered supplied sprite) ----------------
+function drawSpearSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureSpearSoldierArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, SPEAR_SOLDIER_ART.W * SPEAR_SOLDIER_ART.PX * 0.3, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  const throwP = (e.data?.shootProgress as number | undefined) ?? null;
+  drawSpearSoldierArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * 5.2,
+    moving: throwP == null,
+    throwP,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 26;
+    const by = groundY - SPEAR_SOLDIER_ART.H * SPEAR_SOLDIER_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// ---------------- neutral camel (layered supplied sprite) ----------------
+function drawCamel(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState): boolean {
+  if (!ensureCamelArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 10);
+  drawPixelShadow(ctx, x, groundY + 1, CAMEL_ART.W * CAMEL_ART.PX * 0.5, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.6,
+  });
+  const moving = !!e.data?.wanderWalk;
+  drawCamelArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * 4.4,
+    moving,
+    now: s.now,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 30;
+    const by = groundY - CAMEL_ART.H * CAMEL_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
 function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
 
   if (!ensureArcherArt()) return false;
@@ -3067,6 +3121,11 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     ctx.fillStyle = "#f2ead4"; ctx.fillRect(-13, -3, 4, 2); ctx.fillRect(-13, 2, 4, 2);
     ctx.fillStyle = "#cfc3a5"; ctx.fillRect(-11, -2, 3, 1); ctx.fillRect(-11, 2, 3, 1);
   } else if (e.kind === "spear_e") {
+    // Restore the world transform: the supplied spear art rotates itself.
+    ctx.restore();
+    if (drawFlyingSpear(ctx, x, y, angle)) return;
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(angle);
     ctx.fillStyle = "#3a2010"; ctx.fillRect(-10, -1, 16, 2);
     ctx.fillStyle = "#a0a0a0"; ctx.fillRect(6, -3, 6, 5);
     ctx.fillStyle = "#ffffff"; ctx.fillRect(10, -1, 2, 2);
