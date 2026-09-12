@@ -1,33 +1,28 @@
-// Egyptian heavy soldier — the supplied pixel-art sprite, split once into four
-// layers so he animates without a single pixel being redrawn:
+// Egyptian armored greatsword soldier — the supplied PNG, kept at its original
+// proportions. Only the two legs are separated for walking; the helmet, torso,
+// armour, clothing, hands and complete two-handed weapon remain one intact body.
 //
-//   body  — helmet, armour, kilt (drawn over the legs' overlap rows)
+//   body  — the complete upper figure and greatsword
 //   legb  — trailing leg + sandal
 //   legf  — leading leg + sandal
-//   arm   — sword arm + sword (one rigid group, the grip never breaks)
-import bodyAsset from "@/assets/heavy-body.png.asset.json";
-import legBAsset from "@/assets/heavy-legb.png.asset.json";
-import legFAsset from "@/assets/heavy-legf.png.asset.json";
-import armAsset from "@/assets/heavy-arm.png.asset.json";
+import bodyAsset from "@/assets/armored-soldier-body.png.asset.json";
+import legBAsset from "@/assets/armored-soldier-legb.png.asset.json";
+import legFAsset from "@/assets/armored-soldier-legf.png.asset.json";
 
 export const HEAVY_ART = {
   /** sprite-pixel size of the shared layer canvas */
-  W: 50,
-  H: 76,
-  /** screen pixels per sprite pixel (matches the other Egyptian soldiers) */
-  // Exactly twice his original render scale (0.9 -> 1.8); pixels untouched.
-  PX: 1.8,
+  W: 1024,
+  H: 1536,
+  /** Keeps the replacement at the Heavy Soldier's existing 2× visual size. */
+  PX: 0.09,
   /** x of his body centre inside the sprite */
-  CX: 21,
+  CX: 512,
 } as const;
 
 /** duration (seconds) of the heavy sword swing — slow and readable */
 export const HEAVY_SWING_DUR = 0.7;
 
-/** Shoulder of the sword arm, in sprite pixels — pivot of the swing. */
-const HEAVY_SHOULDER = { x: 35, y: 26 } as const;
-
-type Layers = { body: HTMLImageElement; legB: HTMLImageElement; legF: HTMLImageElement; arm: HTMLImageElement };
+type Layers = { body: HTMLImageElement; legB: HTMLImageElement; legF: HTMLImageElement };
 let layers: Layers | null = null;
 
 function load(url: string): HTMLImageElement {
@@ -43,11 +38,10 @@ export function ensureHeavyArt(): boolean {
       body: load(bodyAsset.url),
       legB: load(legBAsset.url),
       legF: load(legFAsset.url),
-      arm: load(armAsset.url),
     };
   }
   const l = layers;
-  return [l.body, l.legB, l.legF, l.arm].every((i) => i.complete && i.naturalWidth > 0);
+  return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);
 }
 
 /** Rotation (radians) of the sword arm over the swing progress. */
@@ -81,10 +75,9 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
   const stepB = -stepF;
   const liftF = gait !== 0 && stepF > 0 ? -1 : 0;
   const liftB = gait !== 0 && stepB > 0 ? -1 : 0;
-  const armStep = -stepF;
-  const armLift = gait > 0 ? -1 : 0;
-  // the whole armoured torso sinks a pixel as each boot lands
-  const bodyDY = pose.moving && !swinging && Math.cos(pose.walkPhase) < -0.5 ? 1 : 0;
+  // The supplied torso is never cut or deformed. A small whole-body lean gives
+  // the existing heavy swing readable weight while both hands stay on the blade.
+  const bodyDY = pose.moving && !swinging && Math.cos(pose.walkPhase) < -0.5 ? 8 : 0;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -96,19 +89,18 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  stamp(l.legB, stepB, liftB);
-  stamp(l.legF, stepF, liftF);
-  stamp(l.body, 0, bodyDY);
+  stamp(l.legB, stepB * 8, liftB * 8);
+  stamp(l.legF, stepF * 8, liftF * 8);
   if (swinging) {
     const a = heavySwingAngle(sw);
     ctx.save();
-    ctx.translate(HEAVY_SHOULDER.x * PX, HEAVY_SHOULDER.y * PX);
-    ctx.rotate(a);
-    ctx.translate(-HEAVY_SHOULDER.x * PX, -HEAVY_SHOULDER.y * PX);
-    stamp(l.arm, 0, 0);
+    ctx.translate(CX * PX, H * PX);
+    ctx.rotate(a * 0.045);
+    ctx.translate(-CX * PX, -H * PX);
+    stamp(l.body, 0, Math.round(Math.sin(Math.PI * sw) * 8));
     ctx.restore();
   } else {
-    stamp(l.arm, armStep, armLift + bodyDY);
+    stamp(l.body, 0, bodyDY);
   }
   ctx.restore();
 }

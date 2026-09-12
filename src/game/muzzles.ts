@@ -24,7 +24,7 @@ const MUZZLES: Record<string, Muzzle> = {
   // Bow grip / string release, just in front of the archer's leading hand.
   archer: { mx: 42, my: 26, ...ARCHER_ART },
   // Tip of the spear as it leaves his hand.
-  spearsoldier: { mx: 64, my: 20, ...SPEAR_SOLDIER_ART },
+  spearsoldier: { mx: 790, my: 205, ...SPEAR_SOLDIER_ART },
   // The crystal at the head of the staff.
   mage: { mx: MAGE_STAFF_TIP.x, my: MAGE_STAFF_TIP.y, ...MAGE_ART, facesLeft: true },
   // Bow of the archer riding the chariot.

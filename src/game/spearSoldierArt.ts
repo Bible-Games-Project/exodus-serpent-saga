@@ -1,24 +1,23 @@
-// Egyptian spear soldier — the supplied pixel-art sprite, split once into four
-// layers so it animates without a single pixel being redrawn:
+// Egyptian spear soldier — the supplied PNG. The complete torso and clothing
+// stay intact; only the legs are separated for walking. A second body layer is
+// the same supplied art with the exposed spear removed for the release frame.
 //
-//   body   — head, torso, kilt, throwing arm (drawn over the legs' overlap rows)
+//   body   — head, torso, kilt, arms and held spear
 //   legb   — trailing leg + sandal
 //   legf   — leading leg + sandal
-//   held   — the spear he carries (hidden while a thrown spear is in the air)
-import bodyAsset from "@/assets/spear-body.png.asset.json";
-import legBAsset from "@/assets/spear-legb.png.asset.json";
-import legFAsset from "@/assets/spear-legf.png.asset.json";
-import heldAsset from "@/assets/spear-held.png.asset.json";
+import bodyAsset from "@/assets/spear-soldier-body.png.asset.json";
+import releasedAsset from "@/assets/spear-soldier-released.png.asset.json";
+import legBAsset from "@/assets/spear-soldier-legb.png.asset.json";
+import legFAsset from "@/assets/spear-soldier-legf.png.asset.json";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
 import flyAsset from "@/assets/spear-fly2.png.asset.json";
 
 export const SPEAR_SOLDIER_ART = {
-  W: 70,
-  H: 78,
-  /** screen pixels per sprite pixel (matches the other Egyptian soldiers) */
-  PX: 0.9,
+  W: 1024,
+  H: 1536,
+  PX: 0.066,
   /** x of his body centre inside the sprite */
-  CX: 37,
+  CX: 512,
 } as const;
 
 /** duration (seconds) of the wind-up + throw animation */
@@ -31,9 +30,9 @@ export const SPEAR_FLY_ART = { W: 175, H: 114, PX: 0.32, ANGLE: -0.5216 } as con
 
 type Layers = {
   body: HTMLImageElement;
+  released: HTMLImageElement;
   legB: HTMLImageElement;
   legF: HTMLImageElement;
-  held: HTMLImageElement;
   fly: HTMLImageElement;
 };
 let layers: Layers | null = null;
@@ -49,21 +48,14 @@ export function ensureSpearSoldierArt(): boolean {
   if (!layers) {
     layers = {
       body: load(bodyAsset.url),
+      released: load(releasedAsset.url),
       legB: load(legBAsset.url),
       legF: load(legFAsset.url),
-      held: load(heldAsset.url),
       fly: load(flyAsset.url),
     };
   }
   const l = layers;
-  return [l.body, l.legB, l.legF, l.held, l.fly].every((i) => i.complete && i.naturalWidth > 0);
-}
-
-/** Spear-arm offset (sprite px) across the throw: cock back, then snap forward. */
-function throwOffset(progress: number): number {
-  const p = Math.max(0, Math.min(1, progress));
-  if (p < SPEAR_RELEASE_AT) return -4 * (p / SPEAR_RELEASE_AT);
-  return -4 + 6 * ((p - SPEAR_RELEASE_AT) / (1 - SPEAR_RELEASE_AT));
+  return [l.body, l.released, l.legB, l.legF, l.fly].every((i) => i.complete && i.naturalWidth > 0);
 }
 
 export type SpearSoldierPose = {
@@ -89,8 +81,6 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
   const stepB = -stepF;
   const liftF = swing !== 0 && stepF > 0 ? -1 : 0;
   const liftB = swing !== 0 && stepB > 0 ? -1 : 0;
-  const armStep = throwing ? throwOffset(t) : -stepF;
-  const armLift = throwing ? -1 : swing > 0 ? -1 : 0;
   // the held spear vanishes the instant it is released
   const released = t != null && t >= SPEAR_RELEASE_AT;
 
@@ -104,10 +94,11 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  stamp(l.legB, stepB, liftB);
-  stamp(l.legF, stepF, liftF);
-  stamp(l.body, 0, 0);
-  if (!released) stamp(l.held, armStep, armLift);
+  stamp(l.legB, stepB * 8, liftB * 8);
+  stamp(l.legF, stepF * 8, liftF * 8);
+  // Wind-up moves the intact supplied pose as one unit; no torso seam is made.
+  const windup = throwing && t < SPEAR_RELEASE_AT ? -Math.round((t / SPEAR_RELEASE_AT) * 10) : 0;
+  stamp(released ? l.released : l.body, windup, throwing ? -4 : 0);
   ctx.restore();
 }
 

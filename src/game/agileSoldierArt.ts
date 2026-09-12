@@ -12,8 +12,8 @@ export const AGILE_ART = {
   /** sprite-pixel size of the shared layer canvas */
   W: 52,
   H: 74,
-  /** screen pixels per sprite pixel (matches the other Egyptian soldiers) */
-  PX: 0.9,
+  /** Exactly half the previous visual size (0.9 → 0.45). */
+  PX: 0.45,
   /** x of his body centre inside the sprite */
   CX: 24,
 } as const;
@@ -92,6 +92,8 @@ export function drawAgileSoldierArt(ctx: CanvasRenderingContext2D, pose: AgilePo
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  // Preserve the supplied design while shifting its palette toward black.
+  ctx.filter = "brightness(0.48) saturate(0.7) contrast(1.15)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);

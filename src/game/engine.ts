@@ -37,7 +37,7 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   wolf: { key: "leapAt", dur: WOLF_LEAP_DUR, gap: 30, from: 0.32, to: 0.58 },
   agilesoldier: { key: "stabAt", dur: AGILE_STAB_DUR, gap: 30, from: 0.35, to: 0.58 },
   cobra: { key: "strikeAt", dur: COBRA_STRIKE_DUR, gap: 26, from: 0.34, to: 0.55 },
-  lion: { key: "maulAt", dur: LION_MAUL_DUR, gap: 30, from: 0.3, to: 0.58 },
+  lion: { key: "maulAt", dur: LION_MAUL_DUR, gap: 30, from: 0.45, to: 0.75 },
 
 };
 
@@ -662,15 +662,29 @@ export function update(state: GameState, dt: number) {
 
       if (e.kind === "hailstone" || e.kind === "fireball") continue;
       const hit = e.data?.hit as Set<number> | undefined;
+      const prev = { x: e.pos.x - e.vel.x * dt, y: e.pos.y - e.vel.y * dt };
+      const vx = e.pos.x - prev.x, vy = e.pos.y - prev.y;
+      const pathLen2 = vx * vx + vy * vy;
+      const contacts: Array<{ en: Entity; t: number }> = [];
       for (const en of state.entities.values()) {
         if (en.team !== "enemy") continue;
         if (hit?.has(en.id)) continue;
-        if (dist2(en.pos, e.pos) < (en.radius + e.radius) ** 2) {
-          en.hp -= e.dmg ?? 0;
-          if (hit) hit.add(en.id);
-          if (!e.data?.pierce) { state.entities.delete(e.id); break; }
-          if (en.hp <= 0) killEnemy(state, en);
+        const wx = en.pos.x - prev.x, wy = en.pos.y - prev.y;
+        const t = Math.max(0, Math.min(1, (wx * vx + wy * vy) / (pathLen2 || 1)));
+        const px = prev.x + vx * t, py = prev.y + vy * t;
+        if ((en.pos.x - px) ** 2 + (en.pos.y - py) ** 2 < (en.radius + e.radius) ** 2) contacts.push({ en, t });
+      }
+      contacts.sort((a, b) => a.t - b.t);
+      for (const { en } of contacts) {
+        if (en.kind === "shieldsoldier") {
+          triggerShieldBlock(state, en, e.pos);
+          state.entities.delete(e.id);
+          break;
         }
+        en.hp -= e.dmg ?? 0;
+        if (hit) hit.add(en.id);
+        if (!e.data?.pierce) { state.entities.delete(e.id); break; }
+        if (en.hp <= 0) killEnemy(state, en);
       }
     } else if (e.team === "hazard") {
       e.ttl = (e.ttl ?? 0) - dt;
@@ -851,15 +865,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const shielded = candidates.find((c) => c.en.kind === "shieldsoldier");
   if (shielded) {
     d.blocked = true;
-    shielded.en.data ??= {};
-    shielded.en.data.blockAt = state.now;
-    const sx = shielded.en.pos.x + (state.player.pos.x - shielded.en.pos.x) * 0.42;
-    const sy = shielded.en.pos.y - shielded.en.radius * 1.6;
-    spawnVisualHazard(state, "shieldclang", { x: sx, y: sy }, 0.24, {
-      seed: Math.floor(Math.random() * 1000),
-      maxTtl: 0.24,
-    });
-    playShieldBlock();
+    triggerShieldBlock(state, shielded.en, state.player.pos);
     return;
   }
 
@@ -884,6 +890,19 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     en.pos.y += (ky / kd) * 10;
     if (en.hp <= 0) killEnemy(state, en);
   }
+}
+
+/** Consume one incoming attack at the Shield Soldier and reuse its metal FX. */
+function triggerShieldBlock(state: GameState, shield: Entity, source: Vec2) {
+  shield.data ??= {};
+  shield.data.blockAt = state.now;
+  const sx = shield.pos.x + (source.x - shield.pos.x) * 0.42;
+  const sy = shield.pos.y - shield.radius * 1.6;
+  spawnVisualHazard(state, "shieldclang", { x: sx, y: sy }, 0.24, {
+    seed: Math.floor(Math.random() * 1000),
+    maxTtl: 0.24,
+  });
+  playShieldBlock();
 }
 
 
