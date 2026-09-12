@@ -1863,6 +1863,71 @@ function drawAxeSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, 
   return true;
 }
 
+// -------------- Egyptian shield soldier (layered supplied sprite) --------------
+function drawShieldSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureShieldArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, SHIELD_ART.W * SHIELD_ART.PX * 0.5, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  const block = (e.data?.blockProgress as number | undefined) ?? null;
+  drawShieldSoldierArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * 5.0,
+    moving: true,
+    block,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 28;
+    const by = groundY - SHIELD_ART.H * SHIELD_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+/** Blocked staff blow: compact pixel sparks + a one-frame flash, no glow. */
+function drawShieldClang(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.24;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const seed = (e.data?.seed as number) ?? 0;
+  const rnd = (i: number) => {
+    const v = Math.sin((seed + i * 37.13) * 12.9898) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  // impact flash: a small stepped pixel star right at the contact point
+  if (t < 0.35) {
+    ctx.fillStyle = "#fffdf0";
+    const r = 3 + Math.round(t * 10);
+    ctx.fillRect(cx - r, cy - 1, r * 2, 3);
+    ctx.fillRect(cx - 1, cy - r, 3, r * 2);
+    ctx.fillRect(cx - 2, cy - 2, 4, 4);
+  }
+  // sparks: bright pixels flung outward, fading through gold
+  for (let i = 0; i < 9; i++) {
+    const a = rnd(i) * Math.PI * 2;
+    const sp = 26 + rnd(i + 50) * 46;
+    const dx = Math.cos(a) * sp * t;
+    const dy = Math.sin(a) * sp * t + t * t * 26;
+    const px = Math.round(cx + dx);
+    const py = Math.round(cy + dy);
+    ctx.fillStyle = t < 0.3 ? "#ffffff" : t < 0.6 ? "#ffe27a" : "#c89238";
+    const sz = t < 0.5 ? 2 : 1;
+    ctx.fillRect(px, py, sz, sz);
+  }
+  ctx.restore();
+}
+
+
 // ---------------- Egyptian archer (layered supplied sprite) ----------------
 function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
 
