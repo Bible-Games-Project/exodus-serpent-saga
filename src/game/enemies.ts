@@ -175,7 +175,9 @@ export function enemyTick(
     // Stop just beside the target so the melee animation can reach it without
     // the sprites overlapping.
     const standoff = e.radius + 36;
-    if (d > standoff) move(mvx * spd, mvy * spd);
+    // The heavy soldier plants his boots for the whole sword swing.
+    const planted = e.kind === "heavysoldier" && e.data?.heavyAt != null;
+    if (d > standoff && !planted) move(mvx * spd, mvy * spd);
 
     // Melee swing anim for humans in close range.
     if (def.category === "human" && d < e.radius + 26) {
