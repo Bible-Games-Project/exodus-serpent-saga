@@ -9,6 +9,7 @@ import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
+import { AXE_SWING_DUR } from "./axeSoldierArt";
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
 // `gap` = extra distance beyond the two sprite radii, `from`/`to` = the slice of
@@ -16,7 +17,9 @@ import { ARCHER_SHOOT_DUR } from "./archerArt";
 const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; from: number; to: number }> = {
   soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 34, from: 0.4, to: 0.62 },
   jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
+  axesoldier: { key: "axeAt", dur: AXE_SWING_DUR, gap: 34, from: 0.42, to: 0.6 },
 };
+
 
 
 
