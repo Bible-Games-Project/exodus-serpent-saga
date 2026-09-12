@@ -50,10 +50,14 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 10, baseHp: 14, hpPerMinute: 14, speed: 95, contactDmg: 12, xp: 2,
     minMinute: 1.5, weight: 5, behavior: "chase",
   },
-  swordsoldier: {
-    kind: "swordsoldier", category: "human",
-    radius: 12, baseHp: 42, hpPerMinute: 26, speed: 70, contactDmg: 14, xp: 4,
-    minMinute: 3, weight: 4, behavior: "chase",
+  archer: {
+    kind: "archer", category: "human",
+    radius: 12, baseHp: 30, hpPerMinute: 22, speed: 50, contactDmg: 8, xp: 4,
+    minMinute: 0, weight: 4, behavior: "ranged",
+    attack: {
+      cooldown: 2.4, range: 330, projectileSpeed: 270,
+      projectileDmg: 9, projectileKind: "arrow", projectileTtl: 2.4,
+    },
   },
 };
 
@@ -61,7 +65,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
 const ENEMY_ORDER = [
   "soldier",
   "jackal",
-  "swordsoldier",
+  "archer",
 ];
 
 
@@ -170,9 +174,10 @@ export function enemyTick(
     else if (d < preferred + 20) { mvx = -ny; mvy = nx; }
     move(mvx * spd, mvy * spd);
     const cd = ((e.data!.atkCd as number) ?? 0) - dt;
-    // Trigger a short windup before firing.
+    // Trigger a short windup before firing (the archer draws his bow here).
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
+      e.data!.shootAt = state.now;
     }
     if (cd <= 0 && def.attack && d < def.attack.range) {
       helpers.spawnEnemyProjectile(e, { x: nx, y: ny }, def.attack.projectileKind, def.attack.projectileSpeed, def.attack.projectileDmg, def.attack.projectileTtl);

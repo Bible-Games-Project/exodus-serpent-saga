@@ -8,16 +8,14 @@ import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
-import { SWORD_THRUST_DUR } from "./swordSoldierArt";
+import { ARCHER_SHOOT_DUR } from "./archerArt";
 
 // Basic melee enemies attack from just beside Moses instead of overlapping him.
 // `gap` = extra distance beyond the two sprite radii, `from`/`to` = the slice of
 // the attack animation during which the blow actually connects.
 const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; from: number; to: number }> = {
   soldier: { key: "punchAt", dur: SOLDIER_PUNCH_DUR, gap: 34, from: 0.4, to: 0.62 },
-  swordsoldier: { key: "thrustAt", dur: SWORD_THRUST_DUR, gap: 38, from: 0.35, to: 0.65 },
   jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
-
 };
 
 
@@ -293,6 +291,13 @@ export function update(state: GameState, dt: number) {
   for (const [id, level] of state.plagues) {
     const cd = (state.plagueCooldown.get(id) ?? 0) - dt;
     if (cd <= 0) {
+      // Moses only swings the staff when a foe is actually inside his frontal
+      // cone. A swing that HAS started is never cancelled: the hazard entity
+      // owns the whole animation, and we simply wait for it to expire.
+      if (id === "staff" && (staffSwingActive(state) || !enemyInStaffCone(state))) {
+        state.plagueCooldown.set(id, 0);
+        continue;
+      }
       castPlague(state, id, level);
       const def = PLAGUES[id];
       state.plagueCooldown.set(id, def.scale(level).cooldown);
@@ -317,11 +322,11 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.punchAt; delete e.data.punchProgress; }
         else e.data.punchProgress = pp;
       }
-      // Sword thrust progress (visual only).
-      if (e.kind === "swordsoldier" && e.data?.thrustAt != null) {
-        const pp = (state.now - (e.data.thrustAt as number)) / SWORD_THRUST_DUR;
-        if (pp >= 1) { delete e.data.thrustAt; delete e.data.thrustProgress; }
-        else e.data.thrustProgress = pp;
+      // Archer bow draw + release progress (visual only).
+      if (e.kind === "archer" && e.data?.shootAt != null) {
+        const pp = (state.now - (e.data.shootAt as number)) / ARCHER_SHOOT_DUR;
+        if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
+        else e.data.shootProgress = pp;
       }
       // Dog crouch + lunge bite progress (visual only).
       if (e.kind === "jackal" && e.data?.pounceAt != null) {
@@ -474,6 +479,9 @@ export function update(state: GameState, dt: number) {
           p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
+          // Small impact + blood exactly where the projectile struck Moses.
+          spawnVisualHazard(state, "hitspark", { x: e.pos.x, y: e.pos.y }, 0.18, { seed: e.id, small: 1 });
+          spawnVisualHazard(state, "bloodhit", { x: e.pos.x, y: e.pos.y }, 0.45, { seed: e.id, maxTtl: 0.45 });
           state.entities.delete(e.id);
           if (p.hp <= 0) { state.gameOver = true; state.running = false; }
         }
@@ -663,6 +671,16 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
 
       en.hp -= dmg;
       hit.add(en.id);
+      // Small pixel-art blood burst on the enemy, at the staff contact point.
+      // One of five variations is picked at random so hits never look identical.
+      const bx = en.pos.x + (px - en.pos.x) * 0.5;
+      const by = en.pos.y - en.radius * 0.6 + (py - en.pos.y) * 0.3;
+      spawnVisualHazard(state, "staffblood", { x: bx, y: by }, 0.4, {
+        variant: Math.floor(Math.random() * 5),
+        seed: Math.floor(Math.random() * 1000),
+        dirX: facing,
+        maxTtl: 0.4,
+      });
       // knockback
       const kx = en.pos.x - state.player.pos.x;
       const ky = en.pos.y - state.player.pos.y;
@@ -672,6 +690,38 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
       if (en.hp <= 0) killEnemy(state, en);
     }
   }
+}
+
+/** True while a staff swing hazard is still playing (never interrupt it). */
+function staffSwingActive(state: GameState): boolean {
+  for (const e of state.entities.values()) if (e.kind === "staffswing") return true;
+  return false;
+}
+
+/**
+ * Is at least one enemy inside Moses' frontal staff cone right now? Uses the
+ * same geometry as applyStaffSwingHits, sampled at the swing's peak.
+ */
+function enemyInStaffCone(state: GameState): boolean {
+  const facing = state.player.facing;
+  const { HAND, TIP, CX, H, PX } = MOSES_ART;
+  const cx = state.player.pos.x + (HAND.x - CX) * PX * facing;
+  const cy = state.player.pos.y + 8 - (H - HAND.y) * PX;
+  const ang = mosesSwingAngle(0.5);
+  const c = Math.cos(ang), s = Math.sin(ang);
+  const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
+  const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
+  const reach = Math.hypot(tipX - cx, tipY - cy) + 14;
+  const HALF_CONE = 0.85;
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy") continue;
+    const ex = (en.pos.x - cx) * facing;
+    const ey = en.pos.y - cy;
+    if (ex <= 0) continue;
+    if (Math.hypot(ex, ey) > reach + en.radius) continue;
+    if (Math.abs(Math.atan2(ey, ex)) <= HALF_CONE) return true;
+  }
+  return false;
 }
 
 // ---------- red sea walls ----------

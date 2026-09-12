@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
-import { drawSwordSoldierArt, ensureSwordSoldierArt, SWORD_ART as SWORDSOL_ART } from "./swordSoldierArt";
+import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
 import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
 export { mosesSwingAngle };
@@ -1564,10 +1564,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
-    if (e.kind === "swordsoldier" && drawSwordSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
     if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
     if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
     if (e.kind === "bloodhit") { drawBloodHit(ctx, e, camX, camY); continue; }
+    if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
 
 
     // Programmatic enemy renderers
@@ -1832,24 +1833,25 @@ function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, cam
   return true;
 }
 
-// ------------- Egyptian sword soldier (layered supplied sprite) -------------
-function drawSwordSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
-  if (!ensureSwordSoldierArt()) return false;
+// ---------------- Egyptian archer (layered supplied sprite) ----------------
+function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureArcherArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
-  drawPixelShadow(ctx, x, groundY + 1, SWORDSOL_ART.W * SWORDSOL_ART.PX * 0.42, {
+  drawPixelShadow(ctx, x, groundY + 1, ARCHER_ART.W * ARCHER_ART.PX * 0.45, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
-  drawSwordSoldierArt(ctx, {
+  const shoot = (e.data?.shootProgress as number | undefined) ?? null;
+  drawArcherArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
     walkPhase: e.animT * 5.2,
-    moving: true,
-    thrust: (e.data?.thrustProgress as number | undefined) ?? null,
+    moving: shoot == null,
+    shoot,
   });
   if (e.hp < e.maxHp) {
     const bw = 26;
-    const by = groundY - SWORDSOL_ART.H * SWORDSOL_ART.PX - 6;
+    const by = groundY - ARCHER_ART.H * ARCHER_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
@@ -1884,6 +1886,70 @@ function drawDog(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: n
 }
 
 // A few small pixel-art blood drops flicked off Moses at the moment of impact.
+// Staff impact blood — five small pixel-art variations, picked at random per
+// hit so no two staff connections look alike.
+function drawStaffBlood(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.4;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const variant = ((e.data?.variant as number) ?? 0) % 5;
+  const seed = ((e.data?.seed as number) ?? e.id) % 101;
+  const dir = ((e.data?.dirX as number) ?? 1) >= 0 ? 1 : -1;
+  const dark = "#8f0d15";
+  const mid = "#c9161d";
+  const bright = "#ee3a34";
+  const rnd = (i: number) => (((seed + 1) * (i * 37 + 11)) % 100) / 100;
+
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, life * 1.7);
+  const drop = (px: number, py: number, size: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(Math.round(px), Math.round(py), size, size);
+  };
+
+  if (variant === 0) {
+    // a few pixels scattering straight up
+    for (let i = 0; i < 5; i++) {
+      const r = rnd(i);
+      drop(cx + (r - 0.5) * 14, cy - (14 + r * 16) * t + 60 * t * t, i % 2 ? 2 : 3, i % 2 ? mid : bright);
+    }
+  } else if (variant === 1) {
+    // droplets flicking diagonally along the swing direction
+    for (let i = 0; i < 5; i++) {
+      const r = rnd(i);
+      drop(cx + dir * (6 + r * 26) * t, cy - (10 + r * 14) * t + 70 * t * t, 2, i % 2 ? mid : dark);
+    }
+  } else if (variant === 2) {
+    // short radial burst
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + rnd(i);
+      const d = (8 + rnd(i + 3) * 12) * (0.4 + t);
+      drop(cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.7, 2, i % 3 ? mid : bright);
+    }
+  } else if (variant === 3) {
+    // two fat droplets trailed by small pixels
+    drop(cx + dir * 5 + dir * 16 * t, cy - 12 * t + 55 * t * t, 4, dark);
+    drop(cx - dir * 3 + dir * 9 * t, cy - 16 * t + 60 * t * t, 3, mid);
+    for (let i = 0; i < 3; i++) {
+      const r = rnd(i);
+      drop(cx + dir * (r * 18) * t, cy - (6 + r * 8) * t + 50 * t * t, 2, bright);
+    }
+  } else {
+    // sideways spray hugging the ground
+    for (let i = 0; i < 6; i++) {
+      const r = rnd(i);
+      drop(cx + dir * (10 + r * 30) * t, cy - 4 * t + (r * 10) * t + 24 * t * t, i % 2 ? 2 : 3, i % 2 ? dark : mid);
+    }
+  }
+  // brief contact fleck at the hit point itself
+  ctx.globalAlpha = Math.min(1, life * 1.2);
+  drop(cx - 1, cy - 1, 3, bright);
+  ctx.restore();
+}
+
 function drawBloodHit(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const maxTtl = (e.data?.maxTtl as number) ?? 0.45;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
@@ -1989,127 +2055,6 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     }
   };
 
-  // ---------- Sword soldier (Egyptian infantry, khopesh + shield) ----------
-  if (e.kind === "swordsoldier") {
-    shadow(14);
-    const swinging = now < ((e.data?.swingUntil as number) ?? 0);
-    const swingPhase = swinging ? 1 - Math.max(0, ((e.data!.swingUntil as number) - now) / 0.28) : 0;
-    // legs — alternate step
-    p(-3, -3, 2, 3, "#4a2a14"); p(1, -3, 2, 3, "#4a2a14");
-    if (walk) { p(-3, 0, 2, 1, "#2b1a08"); p(1, 0, 3, 1, "#2b1a08"); }
-    else { p(-4, 0, 3, 1, "#2b1a08"); p(1, 0, 2, 1, "#2b1a08"); }
-    // white kilt with red trim
-    p(-5, -6, 10, 3, "#f6efdc");
-    p(-5, -4, 10, 1, "#a12b2b");
-    p(-5, -6, 10, 1, "#d8b98a");
-    // torso — bronze cuirass
-    p(-5, -11, 10, 5, "#c99a6c");
-    p(-5, -11, 10, 1, "#8a5a34");
-    p(-5, -8, 10, 1, "#7a5230");
-    // pectoral gold
-    p(-2, -10, 4, 1, "#e6c261");
-    // arms
-    p(-6, -10, 1, 4, "#c99a6c"); p(5, -10, 1, 4, "#c99a6c");
-    // neck
-    p(-2, -13, 4, 2, "#c99a6c");
-    // head
-    p(-4, -17, 8, 4, "#c99a6c");
-    // face detail
-    p(-2, -15, 1, 1, "#2b1d14"); p(1, -15, 1, 1, "#2b1d14");
-    p(-1, -13, 2, 1, "#8a5a34"); // mouth line
-    // bronze helmet with gold band
-    p(-5, -20, 10, 3, "#b98550");
-    p(-5, -20, 10, 1, "#e6c261");
-    p(-5, -18, 10, 1, "#7a5230");
-    p(-1, -22, 2, 2, "#a12b2b"); // red plume base
-    p(0, -23, 1, 1, "#e05a48");
-    // shield on trailing arm (opposite of weapon)
-    p(-7, -10, 2, 6, "#7a5230");
-    p(-7, -10, 2, 1, "#e6c261");
-    p(-7, -7, 2, 1, "#e6c261");
-    p(-6, -9, 1, 4, "#c9a05a");
-    // khopesh — curved sword, swings on attack
-    ctx.save();
-    const armX = x + flip * 5 * PX;
-    const armY = y - 9 * PX;
-    ctx.translate(armX, armY);
-    const swingAng = swinging
-      ? (-Math.PI * 0.4 + swingPhase * Math.PI * 0.95)
-      : -Math.PI * 0.15 + Math.sin(t) * 0.05;
-    ctx.rotate(flip === 1 ? swingAng : Math.PI - swingAng);
-    // hilt
-    ctx.fillStyle = "#5a3820"; ctx.fillRect(0, -3, 3, 6);
-    ctx.fillStyle = "#e6c261"; ctx.fillRect(0, -1, 3, 2);
-    // curved blade
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 5; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
-    ctx.strokeStyle = "#dbe9f7"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
-    ctx.strokeStyle = "#f6efdc"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(3, 0); ctx.quadraticCurveTo(16, -6, 20, 8); ctx.stroke();
-    ctx.restore();
-    hpBar(); return true;
-  }
-
-  // ---------- Nubian archer ----------
-  if (e.kind === "archer") {
-    shadow(13);
-    const windup = now < ((e.data?.windupUntil as number) ?? 0);
-    const justFired = now - ((e.data?.lastAtkAt as number) ?? -99) < 0.18;
-    // legs
-    p(-3, -3, 2, 3, "#4a2a14"); p(1, -3, 2, 3, "#4a2a14");
-    if (walk) { p(-3, 0, 2, 1, "#2b1a08"); p(2, 0, 2, 1, "#2b1a08"); }
-    else { p(-4, 0, 2, 1, "#2b1a08"); p(1, 0, 2, 1, "#2b1a08"); }
-    // linen loincloth
-    p(-4, -6, 8, 3, "#e6c9a1");
-    p(-4, -4, 8, 1, "#a17048");
-    // torso — darker Nubian skin
-    p(-4, -11, 8, 5, "#8a5a34");
-    p(-4, -8, 8, 1, "#4a2c18");
-    // pectoral scar/paint
-    p(-1, -10, 2, 1, "#a12b2b");
-    // arms
-    p(-5, -10, 1, 4, "#8a5a34"); p(4, -10, 1, 4, "#8a5a34");
-    // neck + head
-    p(-2, -13, 4, 2, "#8a5a34");
-    p(-4, -17, 8, 4, "#8a5a34");
-    p(-2, -15, 1, 1, "#f6efdc"); p(1, -15, 1, 1, "#f6efdc"); // eye whites
-    p(-2, -15, 1, 1, "#2b1d14"); p(1, -15, 1, 1, "#2b1d14");
-    // leather headwrap
-    p(-4, -19, 8, 2, "#4a2a14");
-    p(-4, -19, 8, 1, "#7a4a2b");
-    p(-5, -18, 1, 2, "#4a2a14"); p(4, -18, 1, 2, "#4a2a14");
-    // quiver on back
-    p(-6, -14, 2, 6, "#4a2a14");
-    p(-6, -14, 2, 1, "#8a5a34");
-    p(-6, -16, 1, 3, "#f6efdc"); // fletching
-    // Bow — draw string tension changes on windup/release
-    ctx.save();
-    ctx.translate(x + flip * 6 * PX, y - 9 * PX);
-    ctx.scale(flip, 1);
-    const draw = windup ? 4 : justFired ? -2 : 0;
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 4; ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(0, -12); ctx.quadraticCurveTo(11, -6, 8, 0); ctx.quadraticCurveTo(11, 6, 0, 12);
-    ctx.stroke();
-    ctx.strokeStyle = "#7a4a2b"; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, -12); ctx.quadraticCurveTo(11, -6, 8, 0); ctx.quadraticCurveTo(11, 6, 0, 12);
-    ctx.stroke();
-    // string with nocked arrow
-    ctx.strokeStyle = "#f6efdc"; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, -12); ctx.lineTo(2 - draw, 0); ctx.lineTo(0, 12); ctx.stroke();
-    // arrow shaft while drawn
-    if (windup || justFired) {
-      ctx.strokeStyle = "#5a3820"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(2 - draw, 0); ctx.lineTo(14, 0); ctx.stroke();
-      ctx.fillStyle = "#dbe9f7";
-      ctx.beginPath(); ctx.moveTo(14, -2); ctx.lineTo(18, 0); ctx.lineTo(14, 2); ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
-    hpBar(); return true;
-  }
 
   // ---------- Mounted knight (Egyptian officer on horse) ----------
   if (e.kind === "knight") {
@@ -2849,9 +2794,13 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   ctx.save();
   ctx.translate(x, y); ctx.rotate(angle);
   if (e.kind === "arrow") {
-    ctx.fillStyle = "#5a3820"; ctx.fillRect(-8, -1, 12, 2);
-    ctx.fillStyle = "#c0c0c0"; ctx.fillRect(4, -2, 4, 4);
-    ctx.fillStyle = "#eee"; ctx.fillRect(-8, -2, 2, 4);
+    // plain wooden Egyptian arrow — shaft, bronze head, pale fletching
+    ctx.fillStyle = "#6b421f"; ctx.fillRect(-11, -1, 16, 3);
+    ctx.fillStyle = "#8a5a2b"; ctx.fillRect(-11, -1, 16, 1);
+    ctx.fillStyle = "#b9832f"; ctx.fillRect(5, -2, 5, 5);
+    ctx.fillStyle = "#e8d08a"; ctx.fillRect(9, -1, 3, 3);
+    ctx.fillStyle = "#f2ead4"; ctx.fillRect(-13, -3, 4, 2); ctx.fillRect(-13, 2, 4, 2);
+    ctx.fillStyle = "#cfc3a5"; ctx.fillRect(-11, -2, 3, 1); ctx.fillRect(-11, 2, 3, 1);
   } else if (e.kind === "spear_e") {
     ctx.fillStyle = "#3a2010"; ctx.fillRect(-10, -1, 16, 2);
     ctx.fillStyle = "#a0a0a0"; ctx.fillRect(6, -3, 6, 5);
