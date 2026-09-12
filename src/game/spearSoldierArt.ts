@@ -9,7 +9,8 @@ import bodyAsset from "@/assets/spear-body.png.asset.json";
 import legBAsset from "@/assets/spear-legb.png.asset.json";
 import legFAsset from "@/assets/spear-legf.png.asset.json";
 import heldAsset from "@/assets/spear-held.png.asset.json";
-import flyAsset from "@/assets/spear-fly.png.asset.json";
+// The thrown spear is the supplied spear PNG, used exactly as provided.
+import flyAsset from "@/assets/spear-fly2.png.asset.json";
 
 export const SPEAR_SOLDIER_ART = {
   W: 70,
@@ -25,8 +26,8 @@ export const SPEAR_THROW_DUR = 0.6;
 /** progress at which the spear leaves his hand */
 export const SPEAR_RELEASE_AT = 0.6;
 
-/** flying-spear art: same pixels as the held spear, drawn tight */
-export const SPEAR_FLY_ART = { W: 67, H: 24, PX: 0.9, ANGLE: -0.3684 } as const;
+/** flying-spear art: the supplied spear PNG; ANGLE is its resting tilt */
+export const SPEAR_FLY_ART = { W: 175, H: 114, PX: 0.32, ANGLE: -0.5216 } as const;
 
 type Layers = {
   body: HTMLImageElement;
