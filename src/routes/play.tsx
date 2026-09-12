@@ -4,6 +4,9 @@ import { GameCanvas } from "@/game/GameCanvas";
 import { submitScore } from "@/lib/leaderboard";
 import { PixelIcon, HOME_ART, GEAR_ART } from "@/components/PixelIcon";
 import { PixelModal, PixelActionButton, GameSettingsDialog } from "@/components/GameSettingsDialog";
+import { DEV_ENABLED, type DevConfig } from "@/game/devMode";
+import { useSettings } from "@/hooks/useSettings";
+import { DevPanel } from "@/components/DevPanel";
 
 export const Route = createFileRoute("/play")({
   head: () => ({
@@ -47,6 +50,12 @@ function PlayPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings] = useSettings();
+  // Dev-only pre-match config. In production DEV_ENABLED is statically false,
+  // so this gate (and the panel) is stripped from the bundle.
+  const devGate = DEV_ENABLED && settings.devMode;
+  const [devConfig, setDevConfig] = useState<DevConfig | null>(null);
+  const devPending = devGate && !devConfig;
   const navigate = useNavigate();
 
   // The intro fade runs from the first painted frame; this clears the overlay
@@ -83,7 +92,8 @@ function PlayPage() {
     <main className="fixed inset-0 flex flex-col bg-background" style={{ touchAction: "none" }}>
       <div className="relative flex-1">
         <GameCanvas
-          paused={paused || homeOpen || settingsOpen}
+          devConfig={devConfig}
+          paused={paused || homeOpen || settingsOpen || devPending}
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
@@ -121,6 +131,8 @@ function PlayPage() {
         </PixelModal>
 
         <GameSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+        {devPending && <DevPanel onStart={(cfg) => setDevConfig(cfg)} />}
       </div>
 
 
