@@ -188,7 +188,9 @@ export function enemyTick(
     if (def.attack && d < def.attack.range && cd < 0.35 && cd > 0 && !(e.data!.windupUntil as number | undefined)) {
       e.data!.windupUntil = state.now + cd;
       e.data!.shootAt = state.now;
+      e.data!.shootHoldUntil = state.now + ARCHER_SHOOT_DUR;
     }
+
     if (cd <= 0 && def.attack && d < def.attack.range) {
       helpers.spawnEnemyProjectile(e, { x: nx, y: ny }, def.attack.projectileKind, def.attack.projectileSpeed, def.attack.projectileDmg, def.attack.projectileTtl);
       e.data!.atkCd = def.attack.cooldown;
