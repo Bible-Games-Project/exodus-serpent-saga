@@ -1835,8 +1835,35 @@ function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, cam
   return true;
 }
 
+// ---------------- Egyptian axe soldier (layered supplied sprite) ----------------
+function drawAxeSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureAxeArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, AXE_ART.W * AXE_ART.PX * 0.5, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  const swing = (e.data?.axeProgress as number | undefined) ?? null;
+  drawAxeSoldierArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * 5.2,
+    moving: swing == null,
+    swing,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 26;
+    const by = groundY - AXE_ART.H * AXE_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
 // ---------------- Egyptian archer (layered supplied sprite) ----------------
 function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+
   if (!ensureArcherArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
