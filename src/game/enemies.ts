@@ -10,6 +10,7 @@ export type EnemyBehavior =
   | "charge"      // periodic dash toward target
   | "erratic"     // jittery flying (bats)
   | "pack"        // wolves cluster with peers
+  | "ambush"      // waits motionless, then sprints once the target is close
   | "flyover";    // ignores obstacles
 
 export type EnemyDef = {
@@ -87,6 +88,13 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 15, baseHp: 90, hpPerMinute: 34, speed: 27.5, contactDmg: 40, xp: 8,
     minMinute: 0, weight: 3, behavior: "chase",
   },
+  wolf: {
+    kind: "wolf", category: "animal",
+    // Lies in wait, then sprints at 80% of the bat's speed (190 -> 152), which
+    // is 1.6x the dog's 95.
+    radius: 12, baseHp: 34, hpPerMinute: 20, speed: 152, contactDmg: 16, xp: 4,
+    minMinute: 0, weight: 4, behavior: "ambush",
+  },
 };
 
 // Introduction order. Exactly ONE new enemy type unlocks every 3 player levels.
@@ -98,6 +106,7 @@ const ENEMY_ORDER = [
   "shieldsoldier",
   "bat",
   "heavysoldier",
+  "wolf",
 ];
 
 
@@ -189,6 +198,18 @@ export function enemyTick(
         e.data!.swingCd = swingCd;
       }
     }
+  } else if (def.behavior === "ambush") {
+    // Waits in place like a wild animal until the target strays close enough,
+    // then commits and sprints straight at him for good.
+    const dw = e.data!;
+    const TRIGGER = 260;
+    if (!dw.awake && d < TRIGGER) dw.awake = 1;
+    if (dw.awake) {
+      // Plant the paws for the whole leap animation.
+      const leaping = dw.leapAt != null;
+      const standoff = e.radius + 26;
+      if (!leaping && d > standoff) move(nx * spd, ny * spd);
+    }
   } else if (def.behavior === "flyover") {
     move(nx * spd, ny * spd);
     // gentle vertical bob
@@ -254,7 +275,7 @@ export function enemyTick(
   }
 
   // facing
-  if (e.kind === "jackal" || e.kind === "wolf" || e.kind === "lion") {
+  if (e.kind === "jackal" || e.kind === "lion") {
     e.facing = dx > 0 ? -1 : 1;
   } else {
     e.facing = dx > 0 ? 1 : -1;

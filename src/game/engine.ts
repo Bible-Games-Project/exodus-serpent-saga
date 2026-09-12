@@ -11,6 +11,7 @@ import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { AXE_SWING_DUR } from "./axeSoldierArt";
 import { HEAVY_SWING_DUR } from "./heavySoldierArt";
+import { WOLF_LEAP_DUR } from "./wolfArt";
 import { playShieldBlock } from "./sfx";
 
 
@@ -22,6 +23,7 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   jackal: { key: "pounceAt", dur: DOG_POUNCE_DUR, gap: 30, from: 0.45, to: 0.75 },
   axesoldier: { key: "axeAt", dur: AXE_SWING_DUR, gap: 34, from: 0.42, to: 0.6 },
   heavysoldier: { key: "heavyAt", dur: HEAVY_SWING_DUR, gap: 36, from: 0.45, to: 0.62 },
+  wolf: { key: "leapAt", dur: WOLF_LEAP_DUR, gap: 30, from: 0.32, to: 0.58 },
 };
 
 
@@ -346,6 +348,12 @@ export function update(state: GameState, dt: number) {
         const pp = (state.now - (e.data.heavyAt as number)) / HEAVY_SWING_DUR;
         if (pp >= 1) { delete e.data.heavyAt; delete e.data.heavyProgress; }
         else e.data.heavyProgress = pp;
+      }
+      // Wolf leap attack progress (visual only; it plants for the whole leap).
+      if (e.kind === "wolf" && e.data?.leapAt != null) {
+        const pp = (state.now - (e.data.leapAt as number)) / WOLF_LEAP_DUR;
+        if (pp >= 1) { delete e.data.leapAt; delete e.data.leapProgress; }
+        else e.data.leapProgress = pp;
       }
       // Shield soldier brace recoil after blocking a staff blow (visual only).
       if (e.kind === "shieldsoldier" && e.data?.blockAt != null) {
