@@ -17,6 +17,8 @@ import { AGILE_STAB_DUR } from "./agileSoldierArt";
 import { COBRA_STRIKE_DUR } from "./cobraArt";
 import { LION_MAUL_DUR } from "./lionArt";
 import { MAGE_CAST_DUR } from "./mageArt";
+import { CHARIOT_SHOOT_DUR } from "./chariotArt";
+import { weaponMuzzle } from "./muzzles";
 
 import { playShieldBlock } from "./sfx";
 import type { TestMapConfig } from "./types";
