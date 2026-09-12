@@ -331,6 +331,13 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.shootAt; delete e.data.shootProgress; }
         else e.data.shootProgress = pp;
       }
+      // Axe soldier swing progress (visual only).
+      if (e.kind === "axesoldier" && e.data?.axeAt != null) {
+        const pp = (state.now - (e.data.axeAt as number)) / AXE_SWING_DUR;
+        if (pp >= 1) { delete e.data.axeAt; delete e.data.axeProgress; }
+        else e.data.axeProgress = pp;
+      }
+
       // Dog crouch + lunge bite progress (visual only).
       if (e.kind === "jackal" && e.data?.pounceAt != null) {
         const pp = (state.now - (e.data.pounceAt as number)) / DOG_POUNCE_DUR;
