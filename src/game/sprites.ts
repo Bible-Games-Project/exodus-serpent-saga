@@ -28,7 +28,8 @@ export function renderSprite(
   scale: number,
   flipX = false,
 ): HTMLCanvasElement {
-  const f = frame % sprite.frames.length;
+  let f = frame % sprite.frames.length;
+  if (!Number.isFinite(f) || !sprite.frames[f]) { console.error("BADSPRITE", frame, sprite.frames.length, sprite.w, sprite.h); f = 0; }
   const key = `${sprite.w}x${sprite.h}:${f}:${scale}:${flipX}:${sprite.frames[f].join("|")}`;
   const cached = cache.get(key);
   if (cached) return cached;
