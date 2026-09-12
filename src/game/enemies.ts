@@ -198,6 +198,18 @@ export function enemyTick(
         e.data!.swingCd = swingCd;
       }
     }
+  } else if (def.behavior === "ambush") {
+    // Waits in place like a wild animal until the target strays close enough,
+    // then commits and sprints straight at him for good.
+    const dw = e.data!;
+    const TRIGGER = 260;
+    if (!dw.awake && d < TRIGGER) dw.awake = 1;
+    if (dw.awake) {
+      // Plant the paws for the whole leap animation.
+      const leaping = dw.leapAt != null;
+      const standoff = e.radius + 26;
+      if (!leaping && d > standoff) move(nx * spd, ny * spd);
+    }
   } else if (def.behavior === "flyover") {
     move(nx * spd, ny * spd);
     // gentle vertical bob
