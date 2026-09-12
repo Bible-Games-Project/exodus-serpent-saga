@@ -1937,6 +1937,50 @@ function drawShieldClang(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 }
 
 
+// -------------- Egyptian heavy soldier (layered supplied sprite) --------------
+function drawHeavySoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureHeavyArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, HEAVY_ART.W * HEAVY_ART.PX * 0.5, {
+    px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6,
+  });
+  const swing = (e.data?.heavyProgress as number | undefined) ?? null;
+  drawHeavySoldierArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    walkPhase: e.animT * 2.6,
+    moving: swing == null,
+    swing,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 30;
+    const by = groundY - HEAVY_ART.H * HEAVY_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// -------------------- Bat (layered supplied sprite, flying) --------------------
+function drawBat(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureBatArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  // it flies: the sprite floats above its ground position, shadow stays below
+  const hover = 22 + Math.sin(e.animT * 1.6 + e.id) * 3;
+  const y = Math.round(e.pos.y - camY - hover);
+  drawPixelShadow(ctx, x, Math.round(e.pos.y - camY + 4), BAT_ART.W * BAT_ART.PX * 0.3, {
+    px: 2, alpha: 0.16, seed: e.id, phase: e.animT, sway: 1.2,
+  });
+  drawBatArt(ctx, {
+    x, y,
+    flip: e.facing === -1 ? -1 : 1,
+    flapPhase: e.animT * 3.4,
+  });
+  return true;
+}
+
 // ---------------- Egyptian archer (layered supplied sprite) ----------------
 function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
 
