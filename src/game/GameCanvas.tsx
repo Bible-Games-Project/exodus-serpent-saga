@@ -6,6 +6,9 @@ import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawAxeSoldierArt, ensureAxeArt, AXE_ART } from "./axeSoldierArt";
 import { drawShieldSoldierArt, ensureShieldArt, SHIELD_ART } from "./shieldSoldierArt";
 import { drawHeavySoldierArt, ensureHeavyArt, HEAVY_ART } from "./heavySoldierArt";
+import { drawAgileSoldierArt, ensureAgileArt, AGILE_ART } from "./agileSoldierArt";
+import { drawCobraArt, ensureCobraArt, COBRA_ART } from "./cobraArt";
+
 import { drawBatArt, ensureBatArt, BAT_ART } from "./batArt";
 import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
 
@@ -1568,7 +1571,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1578,6 +1581,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "heavysoldier" && drawHeavySoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "bat" && drawBat(ctx, e, camX, camY)) continue;
     if (e.kind === "wolf" && drawWolf(ctx, e, camX, camY)) continue;
+    if (e.kind === "agilesoldier" && drawAgileSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "cobra" && drawCobra(ctx, e, camX, camY)) continue;
+
 
 
     if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
@@ -2009,6 +2015,85 @@ function drawWolf(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   }
   return true;
 }
+
+// ---------------- Agile soldier (layered supplied sprite) ----------------
+function drawAgileSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureAgileArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const hop = (e.data?.hopProgress as number | undefined) ?? null;
+  drawPixelShadow(ctx, x, groundY + 1, AGILE_ART.W * AGILE_ART.PX * (hop != null ? 0.34 : 0.44), {
+    px: 3, alpha: hop != null ? 0.18 : 0.26, seed: e.id, phase: e.animT, sway: 0.8,
+  });
+  drawAgileSoldierArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    hop,
+    stab: (e.data?.stabProgress as number | undefined) ?? null,
+    dashing: e.data?.dashing ? true : false,
+    phase: e.animT,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 24;
+    const by = groundY - AGILE_ART.H * AGILE_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+// ---------------- Cobra (layered supplied sprite) ----------------
+function drawCobra(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureCobraArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  drawPixelShadow(ctx, x, groundY + 1, COBRA_ART.W * COBRA_ART.PX * 0.5, {
+    px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.5,
+  });
+  drawCobraArt(ctx, {
+    x, groundY,
+    flip: e.facing === -1 ? -1 : 1,
+    phase: e.animT,
+    moving: e.data?.strikeAt == null,
+    strike: (e.data?.strikeProgress as number | undefined) ?? null,
+  });
+  if (e.hp < e.maxHp) {
+    const bw = 22;
+    const by = groundY - COBRA_ART.H * COBRA_ART.PX - 6;
+    ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+  }
+  return true;
+}
+
+/** Chunky pixel venom bubbles rising around Moses while the cobra's poison lasts. */
+function drawPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
+  const until = (e.data?.poisonUntil as number | undefined) ?? 0;
+  if (s.now >= until) return;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const PX = 3;
+  const cols = ["#6ee07a", "#3faa54", "#a8f39a"];
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  for (let i = 0; i < 7; i++) {
+    const t = (s.now * (0.7 + (i % 3) * 0.12) + i * 0.37) % 1;
+    const bx = x + Math.round((((i * 7) % 5) - 2) * 5 + Math.sin(s.now * 2 + i) * 3);
+    const by = groundY - 6 - Math.round(t * 42);
+    const sz = (i % 3 === 0 ? 2 : 1) * PX;
+    ctx.globalAlpha = 0.85 * (1 - t * 0.7);
+    ctx.fillStyle = cols[i % cols.length];
+    ctx.fillRect(bx, by, sz, sz);
+    if (i % 3 === 0) {
+      ctx.fillStyle = "#eafff0";
+      ctx.fillRect(bx, by, PX, PX);
+    }
+  }
+  ctx.restore();
+}
+
 
 // ---------------- Egyptian archer (layered supplied sprite) ----------------
 function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
