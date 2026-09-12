@@ -125,18 +125,20 @@ function makeSandTile(): HTMLCanvasElement {
 
 
 type Props = {
+  /** Dev-only run overrides; ignored entirely in production builds. */
+  devConfig?: import("./devMode").DevConfig | null;
   onGameOver: (info: { level: number; survivalSeconds: number; kills: number }) => void;
   paused: boolean;
   onTogglePause: () => void;
 };
 
-export function GameCanvas({ onGameOver, paused, onTogglePause }: Props) {
+export function GameCanvas({ onGameOver, paused, onTogglePause, devConfig }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(null!);
   const [uiTick, setUiTick] = useState(0);
 
   useEffect(() => {
-    stateRef.current = createInitialState();
+    stateRef.current = createInitialState(devConfig ?? null);
     // A new run starts with a clean renderer baseline, so the first frame is
     // never mistaken for a damage event from a previous session.
     lastRenderedPlayerHp = 0;
