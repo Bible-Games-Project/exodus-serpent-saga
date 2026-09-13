@@ -173,6 +173,8 @@ export type GameState = {
 
   // Ramses world boss (ramses.ts).
   ramsesId?: number;
+  /** Ramses waits for the first measured viewport before being placed. */
+  ramsesPending?: boolean;
 
   // Floating notifications (bonus pickups, plague unlocks, etc.)
   notifications?: Array<{ id: number; text: string; color: string; born: number; ttl: number }>;

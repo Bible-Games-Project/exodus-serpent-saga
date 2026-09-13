@@ -20,6 +20,7 @@ import { MAGE_CAST_DUR } from "./mageArt";
 import { CHARIOT_SHOOT_DUR } from "./chariotArt";
 import { resolvePlayerDefeat } from "./playerDefeat";
 import { weaponMuzzle } from "./muzzles";
+import { offscreenEnemySpawn } from "./enemySpawn";
 
 import { playShieldBlock } from "./sfx";
 import type { TestMapConfig } from "./types";
@@ -153,27 +154,11 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
     state.entities.set(dec.id, dec);
     if (r > 0) obstacles.push({ pos: dec.pos, r });
   }
-  // Throne decor + Ramses himself. Throne is placed slightly further away
-  // so Ramses (spawned in ramses.ts at +180) renders in front of it.
+  // Ramses and his throne wait for the first measured viewport so their shared
+  // spawn point is guaranteed to sit beyond the actual visible camera area.
   const withRamses = test ? test.ramses : true;
-  if (withRamses) {
-    const thronePos = { x: player.pos.x + 180, y: player.pos.y - 60 };
-    const throne: Entity = {
-      id: state.nextId++,
-      pos: thronePos,
-      vel: { x: 0, y: 0 },
-      radius: 0,
-      hp: 1, maxHp: 1,
-      team: "decor", facing: 1, animT: 0, born: 0,
-      kind: "throne",
-      data: {},
-    };
-    state.entities.set(throne.id, throne);
-    // Throne is a solid obstacle everyone must go around.
-    obstacles.push({ pos: thronePos, r: 40 });
-  }
   state.obstacles = obstacles;
-  if (withRamses) spawnRamses(state);
+  state.ramsesPending = withRamses;
   if (test) applyTestMapConfig(state, test);
   return state;
 }
@@ -284,6 +269,11 @@ export function update(state: GameState, dt: number) {
   if (state.paused || state.gameOver || state.levelUpPending) return;
   state.now += dt;
   state.survivalSeconds = state.now;
+
+  if (state.ramsesPending && state.viewport) {
+    state.ramsesPending = false;
+    spawnRamses(state);
+  }
 
   // Cobra venom: a 5-second damage-over-time effect. Re-bites refresh the timer
   // instead of stacking, and it stops dead when the 5 seconds are up.
@@ -964,16 +954,10 @@ function applyRedSeaWallHits(state: GameState, wall: Entity) {
 function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
   const chance = ratePerSec * dt;
   if (Math.random() < chance) {
-    const angle = Math.random() * Math.PI * 2;
-    const r = 480 + Math.random() * 120;
-    const p = state.player.pos;
     const kind = pickEnemyKind(state);
     if (!kind) return;
-
-    const e = makeEnemy(state, kind, {
-      x: p.x + Math.cos(angle) * r,
-      y: p.y + Math.sin(angle) * r,
-    });
+    const def = ENEMY_DEFS[kind];
+    const e = makeEnemy(state, kind, offscreenEnemySpawn(state, def.radius * 2));
     state.entities.set(e.id, e);
   }
 }
@@ -1018,7 +1002,7 @@ function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: 
     data: { enemyOwned: true, angle: Math.atan2(dir.y, dir.x) },
   };
   state.entities.set(e.id, e);
-  if (owner.kind === "spearsoldier" && kind === "spear") {
+  if (owner.kind === "spearsoldier" && kind === "spear_e") {
     owner.data!.spearInFlight = e.id;
   }
 }
@@ -1461,8 +1445,14 @@ function syncOrbitFlies(state: GameState, dt: number) {
 function killEnemy(state: GameState, e: Entity) {
   // Ramses cannot die from normal death — clamp.
   if (e.kind === "ramses") { e.hp = 1; return; }
+  if (!state.entities.has(e.id)) return;
   state.entities.delete(e.id);
   state.kills++;
+  spawnVisualHazard(state, "deathpuff", e.pos, 0.48, {
+    variant: Math.floor(Math.random() * 6),
+    seed: Math.floor(Math.random() * 100000),
+    scale: Math.max(0.75, Math.min(1.35, e.radius / 16)),
+  });
   const gem: Entity = {
     id: state.nextId++,
     pos: { x: e.pos.x, y: e.pos.y },

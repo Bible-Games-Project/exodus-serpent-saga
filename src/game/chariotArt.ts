@@ -1,32 +1,34 @@
 // Egyptian archer chariot — the supplied pixel-art sprite separated only at
 // the horses' legs and wheel. Both horse bodies, their riders and the cab stay
 // intact while the feet stride underneath and the wheel visibly rolls.
-import rigUrl from "@/assets/chariot-rig.png";
-import legsAUrl from "@/assets/chariot-legs-a.png";
-import legsBUrl from "@/assets/chariot-legs-b.png";
-import wheelUrl from "@/assets/chariot-wheel.png";
+import bodyAsset from "@/assets/chariot-v2-body.png.asset.json";
+import legBAsset from "@/assets/chariot-v2-legb.png.asset.json";
+import legFAsset from "@/assets/chariot-v2-legf.png.asset.json";
+import wheelAsset from "@/assets/chariot-v2-wheel.png.asset.json";
 
 export const CHARIOT_ART = {
-  W: 192,
-  H: 124,
+  W: 1536,
+  H: 1024,
   /** screen pixels per sprite pixel */
   /** Matches the mounted spear knight's 168px-wide rendered footprint. */
-  PX: 0.875,
+  PX: 0.125,
   /** x of the rig's centre inside the sprite */
-  CX: 96,
+  CX: 760,
 } as const;
 
+export const CHARIOT_WHEEL = { W: 1254, H: 1254, PX: 0.056, X: 300, Y: 738 } as const;
+
 /** Bow/string release point inside the sprite (unflipped art drives RIGHT). */
-export const CHARIOT_BOW = { x: 79, y: 28 } as const;
+export const CHARIOT_BOW = { x: 575, y: 215 } as const;
 
 /** duration (seconds) of the draw + release; movement is never interrupted */
 export const CHARIOT_SHOOT_DUR = 0.55;
 /** progress at which the arrow leaves the bow */
 export const CHARIOT_RELEASE_AT = 0.62;
 
-let rigImg: HTMLImageElement | null = null;
-let legsAImg: HTMLImageElement | null = null;
-let legsBImg: HTMLImageElement | null = null;
+let bodyImg: HTMLImageElement | null = null;
+let legBImg: HTMLImageElement | null = null;
+let legFImg: HTMLImageElement | null = null;
 let wheelImg: HTMLImageElement | null = null;
 
 function load(url: string): HTMLImageElement {
@@ -37,11 +39,11 @@ function load(url: string): HTMLImageElement {
 
 export function ensureChariotArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!rigImg) rigImg = load(rigUrl);
-  if (!legsAImg) legsAImg = load(legsAUrl);
-  if (!legsBImg) legsBImg = load(legsBUrl);
-  if (!wheelImg) wheelImg = load(wheelUrl);
-  return [rigImg, legsAImg, legsBImg, wheelImg].every(image => image!.complete && image!.naturalWidth > 0);
+  if (!bodyImg) bodyImg = load(bodyAsset.url);
+  if (!legBImg) legBImg = load(legBAsset.url);
+  if (!legFImg) legFImg = load(legFAsset.url);
+  if (!wheelImg) wheelImg = load(wheelAsset.url);
+  return [bodyImg, legBImg, legFImg, wheelImg].every(image => image?.complete && image.naturalWidth > 0);
 }
 
 export type ChariotPose = {
@@ -50,6 +52,7 @@ export type ChariotPose = {
   flip: 1 | -1;
   /** drives the gallop bounce */
   phase: number;
+  wheelAngle: number;
   /** 0..1 progress of the shot; null = not shooting */
   shoot?: number | null;
 };
@@ -64,12 +67,12 @@ export function chariotBowPoint(pose: { x: number; groundY: number; flip: 1 | -1
 }
 
 export function drawChariotArt(ctx: CanvasRenderingContext2D, pose: ChariotPose): void {
-  if (!ensureChariotArt() || !rigImg || !legsAImg || !legsBImg || !wheelImg) return;
+  if (!ensureChariotArt() || !bodyImg || !legBImg || !legFImg || !wheelImg) return;
   const { W, H, PX, CX } = CHARIOT_ART;
   const bounce = Math.sin(pose.phase) > 0.35 ? -1 : 0;
-  const stride = Math.sin(pose.phase) * 2.4;
-  const liftA = Math.max(0, Math.sin(pose.phase)) * -2;
-  const liftB = Math.max(0, -Math.sin(pose.phase)) * -2;
+  const stride = Math.sin(pose.phase) * 22;
+  const liftA = Math.max(0, Math.sin(pose.phase)) * -14;
+  const liftB = Math.max(0, -Math.sin(pose.phase)) * -14;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -77,20 +80,25 @@ export function drawChariotArt(ctx: CanvasRenderingContext2D, pose: ChariotPose)
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
 
-  // Wheel turns around its real axle while the rest of the chariot remains
-  // fixed to the rig. The source wheel is still the supplied artwork.
+  // The supplied wheel remains a separate, undeformed sprite rotating around
+  // the fixed axle on the supplied wheel-less chariot.
   ctx.save();
-  ctx.translate(29 * PX, 101 * PX);
-  ctx.rotate(pose.phase * 0.32);
-  ctx.translate(-29 * PX, -101 * PX);
-  ctx.drawImage(wheelImg, 0, 0, W * PX, H * PX);
+  ctx.translate(CHARIOT_WHEEL.X * PX, CHARIOT_WHEEL.Y * PX);
+  ctx.rotate(pose.wheelAngle);
+  ctx.drawImage(
+    wheelImg,
+    -CHARIOT_WHEEL.W * CHARIOT_WHEEL.PX / 2,
+    -CHARIOT_WHEEL.H * CHARIOT_WHEEL.PX / 2,
+    CHARIOT_WHEEL.W * CHARIOT_WHEEL.PX,
+    CHARIOT_WHEEL.H * CHARIOT_WHEEL.PX,
+  );
   ctx.restore();
 
   // Opposing horse-leg groups produce a four-beat gallop. Their masks overlap
   // beneath the belly, and the complete bodies are stamped over those joints.
-  ctx.drawImage(legsAImg, stride * PX, liftA * PX, W * PX, H * PX);
-  ctx.drawImage(legsBImg, -stride * PX, liftB * PX, W * PX, H * PX);
-  ctx.drawImage(rigImg, 0, 0, W * PX, H * PX);
+  ctx.drawImage(legBImg, -stride * PX, liftB * PX, W * PX, H * PX);
+  ctx.drawImage(legFImg, stride * PX, liftA * PX, W * PX, H * PX);
+  ctx.drawImage(bodyImg, 0, 0, W * PX, H * PX);
   ctx.restore();
 
   // Nocked arrow on the string: pulled back, then gone the instant it flies.
