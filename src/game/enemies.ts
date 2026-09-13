@@ -591,6 +591,9 @@ export function enemyTick(
     move(mvx * spd, mvy * spd);
     dch.driveX = mvx;
     dch.driveY = mvy;
+    // The wheel is a separate anchored layer. Canvas mirroring handles the
+    // opposite visual rotation when the chariot turns around.
+    dch.wheelAngle = ((dch.wheelAngle as number) ?? 0) + (spd * dt) / 35;
 
     // Aim and fire while rolling — nothing here ever stops the movement.
     const cd = ((dch.atkCd as number) ?? 0) - dt;

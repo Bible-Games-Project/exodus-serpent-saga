@@ -4,12 +4,14 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import { shieldDamageMul } from "./bonuses";
 import { resolvePlayerDefeat } from "./playerDefeat";
+import { offscreenEnemySpawn } from "./enemySpawn";
 
 const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
 export function spawnRamses(state: GameState): void {
-  const cx = state.player.pos.x + 180;
-  const cy = state.player.pos.y - 40;
+  const spawn = offscreenEnemySpawn(state, 72);
+  const cx = spawn.x;
+  const cy = spawn.y;
 
   const r: Entity = {
     id: state.nextId++,
@@ -50,6 +52,19 @@ export function spawnRamses(state: GameState): void {
   };
   state.entities.set(r.id, r);
   state.ramsesId = r.id;
+  const thronePos = { x: cx, y: cy - 20 };
+  const throne: Entity = {
+    id: state.nextId++,
+    pos: thronePos,
+    vel: { x: 0, y: 0 },
+    radius: 0,
+    hp: 1, maxHp: 1,
+    team: "decor", facing: 1, animT: 0, born: state.now,
+    kind: "throne",
+    data: {},
+  };
+  state.entities.set(throne.id, throne);
+  state.obstacles?.push({ pos: thronePos, r: 40 });
 }
 
 // Called every frame in engine update.

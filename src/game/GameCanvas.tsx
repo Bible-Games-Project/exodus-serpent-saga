@@ -1605,6 +1605,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
     if (e.kind === "bloodhit") { drawBloodHit(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
+    if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
 
 
     // Programmatic enemy renderers
@@ -2263,6 +2264,7 @@ function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
     phase: e.animT * 6,
+    wheelAngle: (e.data?.wheelAngle as number | undefined) ?? 0,
     shoot: (e.data?.shootProgress as number | undefined) ?? null,
   });
   if (e.hp < e.maxHp) {
@@ -2419,6 +2421,53 @@ function drawBloodHit(ctx: CanvasRenderingContext2D, e: Entity, camX: number, ca
   ctx.globalAlpha = Math.min(1, life * 1.2);
   ctx.fillRect(cx - 3, cy - 1, 6, 2);
   ctx.fillRect(cx - 1, cy - 3, 2, 6);
+  ctx.restore();
+}
+
+/** Six compact, deterministic dust/smoke variations drawn without DOM work. */
+function drawDeathPuff(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.48;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY + 4);
+  const variant = ((e.data?.variant as number) ?? 0) % 6;
+  const seed = (e.data?.seed as number) ?? e.id;
+  const scale = (e.data?.scale as number) ?? 1;
+  const count = 6 + (variant % 3) * 2;
+  const rnd = (i: number) => {
+    const value = Math.sin((seed + i * 43.17) * 12.9898) * 43758.5453;
+    return value - Math.floor(value);
+  };
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = Math.min(0.72, life * 1.35);
+  for (let i = 0; i < count; i++) {
+    const r1 = rnd(i);
+    const r2 = rnd(i + 31);
+    const angle = r1 * Math.PI * 2;
+    const sideways = variant === 1 || variant === 4;
+    const rising = variant === 2 || variant === 3;
+    const burst = variant === 5;
+    const speed = (10 + r2 * (burst ? 34 : 22)) * scale;
+    let vx = Math.cos(angle) * speed;
+    let vy = Math.sin(angle) * speed * 0.55;
+    if (sideways) vx *= 1.65;
+    if (rising) vy = -Math.abs(vy) - (10 + r1 * 18) * scale;
+    const px = Math.round(cx + vx * t);
+    const py = Math.round(cy + vy * t - (variant === 3 ? 16 * t : 5 * t));
+    const size = Math.max(2, Math.round((2 + rnd(i + 67) * (variant === 0 ? 3 : 4)) * scale));
+    ctx.fillStyle = i % 3 === 0 ? "#9c7650" : i % 3 === 1 ? "#bea176" : "#756255";
+    ctx.fillRect(px, py, size, size);
+  }
+  if (t < 0.28 && variant !== 2) {
+    ctx.globalAlpha *= 0.65;
+    ctx.fillStyle = "#d2b98b";
+    const core = Math.round((8 + variant * 1.5) * scale * (1 - t));
+    ctx.fillRect(cx - core, cy - Math.round(core / 2), core * 2, Math.max(2, core));
+  }
   ctx.restore();
 }
 
