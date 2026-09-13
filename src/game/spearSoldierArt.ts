@@ -5,10 +5,10 @@
 //   body   — head, torso, kilt, arms and held spear
 //   legb   — trailing leg + sandal
 //   legf   — leading leg + sandal
-import bodyAsset from "@/assets/spear-soldier-body.png.asset.json";
-import releasedAsset from "@/assets/spear-soldier-released.png.asset.json";
-import legBAsset from "@/assets/spear-soldier-legb.png.asset.json";
-import legFAsset from "@/assets/spear-soldier-legf.png.asset.json";
+import bodyAsset from "@/assets/spear-v2-body.png.asset.json";
+import releasedAsset from "@/assets/spear-v2-released.png.asset.json";
+import legBAsset from "@/assets/spear-v2-legb.png.asset.json";
+import legFAsset from "@/assets/spear-v2-legf.png.asset.json";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
 import flyAsset from "@/assets/spear-fly2.png.asset.json";
 
@@ -17,7 +17,7 @@ export const SPEAR_SOLDIER_ART = {
   H: 1536,
   PX: 0.066,
   /** x of his body centre inside the sprite */
-  CX: 512,
+  CX: 372,
 } as const;
 
 /** duration (seconds) of the wind-up + throw animation */
@@ -79,7 +79,7 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
   const throwing = t != null && t > 0 && t < 1;
   // Forward/backward stride along the facing direction (never sideways).
   const swing = pose.moving && !throwing ? Math.sin(pose.walkPhase) : 0;
-  const stepF = Math.round(swing * 2);
+  const stepF = Math.round(swing * 2.2);
   const stepB = -stepF;
   const liftF = swing !== 0 && stepF > 0 ? -1 : 0;
   const liftB = swing !== 0 && stepB > 0 ? -1 : 0;
@@ -96,8 +96,8 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  stamp(l.legB, stepB * 8, liftB * 8);
-  stamp(l.legF, stepF * 8, liftF * 8);
+  stamp(l.legB, stepB * 7, liftB * 8);
+  stamp(l.legF, stepF * 7, liftF * 8);
   // Wind-up moves the intact supplied pose as one unit; no torso seam is made.
   const windup = throwing && t < SPEAR_RELEASE_AT ? -Math.round((t / SPEAR_RELEASE_AT) * 10) : 0;
   stamp(released ? l.released : l.body, windup, throwing ? -4 : 0);

@@ -11,12 +11,12 @@ import heavysoldier from "@/assets/armored-soldier-source.png.asset.json";
 import wolf from "@/assets/wolf-body.png.asset.json";
 import agilesoldier from "@/assets/agile-body.png.asset.json";
 import cobra from "@/assets/cobra-head.png.asset.json";
-import spearsoldier from "@/assets/spear-soldier-source.png.asset.json";
+import spearsoldier from "@/assets/spear-v2-source.png.asset.json";
 import camel from "@/assets/camel-body.png.asset.json";
 import lion from "@/assets/lion-body.png.asset.json";
-import spearknight from "@/assets/knight-body.png.asset.json";
+import spearknight from "@/assets/knight-v2-source.png.asset.json";
 import mage from "@/assets/mage-body.png.asset.json";
-import chariotarcher from "@/assets/chariot-body.png.asset.json";
+import chariotarcher from "@/assets/chariot-v2-source.png.asset.json";
 import ramses from "@/assets/ramses-body.png.asset.json";
 
 const SPRITES: Record<string, string> = {
