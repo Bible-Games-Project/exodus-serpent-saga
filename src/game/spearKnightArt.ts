@@ -4,9 +4,9 @@
 //   body — rider, levelled spear, horse torso, head and tail
 //   legb — hind legs
 //   legf — fore legs
-import bodyAsset from "@/assets/knight-v2-body.png.asset.json";
-import legBAsset from "@/assets/knight-v2-legb.png.asset.json";
-import legFAsset from "@/assets/knight-v2-legf.png.asset.json";
+import bodyAsset from "@/assets/knight-v2-body-intact.png.asset.json";
+import legBAsset from "@/assets/knight-v2-legb-intact.png.asset.json";
+import legFAsset from "@/assets/knight-v2-legf-intact.png.asset.json";
 
 export const SPEAR_KNIGHT_ART = {
   W: 1536,
@@ -64,6 +64,7 @@ export function drawSpearKnightArt(ctx: CanvasRenderingContext2D, pose: SpearKni
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  ctx.filter = "sepia(7%) saturate(110%) brightness(98%) contrast(103%)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);

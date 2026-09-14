@@ -76,6 +76,7 @@ export function drawChariotArt(ctx: CanvasRenderingContext2D, pose: ChariotPose)
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  ctx.filter = "sepia(8%) saturate(112%) brightness(98%) contrast(103%)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY) + bounce);
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);

@@ -48,8 +48,8 @@ export function ensureHeavyArt(): boolean {
 export function heavySwingAngle(progress: number): number {
   const p = Math.max(0, Math.min(1, progress));
   if (p < 0.34) return -0.3 * (p / 0.34);                  // heave the blade back
-  if (p < 0.6) return -0.3 + 1.95 * ((p - 0.34) / 0.26);   // heavy chop down
-  return 1.65 * (1 - (p - 0.6) / 0.4);                     // slow recovery
+  if (p < 0.62) return -0.3 + 2.38 * ((p - 0.34) / 0.28);  // weapon reaches Moses
+  return 2.08 * (1 - (p - 0.62) / 0.38);                   // slow recovery
 }
 
 export type HeavyPose = {
@@ -96,7 +96,7 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
     const a = heavySwingAngle(sw);
     ctx.save();
     ctx.translate(CX * PX, H * PX);
-    ctx.rotate(a * 0.045);
+    ctx.rotate(a * 0.09);
     ctx.translate(-CX * PX, -H * PX);
     stamp(l.body, 0, Math.round(Math.sin(Math.PI * sw) * 8));
     ctx.restore();

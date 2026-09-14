@@ -6,7 +6,7 @@
 //   legb   — trailing leg + sandal
 //   legf   — leading leg + sandal
 import bodyAsset from "@/assets/spear-v2-body.png.asset.json";
-import releasedAsset from "@/assets/spear-v2-released.png.asset.json";
+import releasedAsset from "@/assets/spear-v2-released-fixed.png.asset.json";
 import legBAsset from "@/assets/spear-v2-legb.png.asset.json";
 import legFAsset from "@/assets/spear-v2-legf.png.asset.json";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
