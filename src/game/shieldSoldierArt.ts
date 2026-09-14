@@ -9,14 +9,16 @@ import legBAsset from "@/assets/shield-green-legb.png.asset.json";
 import legFAsset from "@/assets/shield-green-legf.png.asset.json";
 
 export const SHIELD_ART = {
-  W: 50,
-  H: 71,
-  /** Previous visual scale multiplied by exactly 1.25. */
-  PX: 1.12725,
+  W: 1024,
+  H: 1536,
+  /** Preserve the PNG's aspect ratio at exactly 1.25x the former 71px-tall artwork. */
+  PX: (71 * 0.9018 * 1.25) / 1536,
+  /** Animation offsets retain the previous motion and scale with the artwork. */
+  MOTION_PX: 0.9018 * 1.25,
   /** x of the soldier's body centre inside the sprite */
-  CX: 22,
+  CX: (22 / 50) * 1024,
   /** shield face centre, in sprite pixels — where a staff blow lands */
-  SHIELD: { x: 38, y: 34 },
+  SHIELD: { x: (38 / 50) * 1024, y: (34 / 71) * 1536 },
 } as const;
 
 type Layers = { body: HTMLImageElement; legB: HTMLImageElement; legF: HTMLImageElement };
@@ -58,7 +60,7 @@ export function shieldFacePoint(x: number, groundY: number, flip: 1 | -1) {
 
 export function drawShieldSoldierArt(ctx: CanvasRenderingContext2D, pose: ShieldPose): void {
   if (!ensureShieldArt() || !layers) return;
-  const { W, H, PX, CX } = SHIELD_ART;
+  const { W, H, PX, CX, MOTION_PX } = SHIELD_ART;
   const l = layers;
 
   const gait = pose.moving ? Math.sin(pose.walkPhase) : 0;
@@ -76,7 +78,7 @@ export function drawShieldSoldierArt(ctx: CanvasRenderingContext2D, pose: Shield
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
   const stamp = (img: HTMLImageElement, dx: number, dy: number) => {
-    ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
+    ctx.drawImage(img, dx * MOTION_PX, dy * MOTION_PX, W * PX, H * PX);
   };
   stamp(l.legB, stepB, liftB);
   stamp(l.legF, stepF + recoil, liftF);
