@@ -2119,7 +2119,7 @@ function drawSpearSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   // The supplied spear extends below the rear foot; lift the art slightly while
   // keeping its shadow on the actual ground line so neither reads as buried.
   const groundY = Math.round(e.pos.y - camY + 5);
-  const shadowY = Math.round(e.pos.y - camY + 9);
+  const shadowY = Math.round(e.pos.y - camY + 6);
   drawPixelShadow(ctx, x, shadowY, SPEAR_SOLDIER_ART.W * SPEAR_SOLDIER_ART.PX * 0.3, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });

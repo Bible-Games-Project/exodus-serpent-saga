@@ -11,7 +11,7 @@ import legFAsset from "@/assets/shield-legf.png.asset.json";
 export const SHIELD_ART = {
   W: 50,
   H: 71,
-  PX: 0.9,
+  PX: 0.9018,
   /** x of the soldier's body centre inside the sprite */
   CX: 22,
   /** shield face centre, in sprite pixels — where a staff blow lands */
@@ -71,6 +71,7 @@ export function drawShieldSoldierArt(ctx: CanvasRenderingContext2D, pose: Shield
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  ctx.filter = "sepia(7%) saturate(112%) brightness(98%) contrast(103%)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
