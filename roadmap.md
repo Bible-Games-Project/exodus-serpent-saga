@@ -14,3 +14,5 @@
 - [x] Rebuild the mounted horse layers with the full belly, torso, chest, back, neck, and head intact.
 - [x] Extend the Armored Soldier weapon swing to visible contact and synchronize its existing damage feedback.
 - [x] Validate all corrected animations in motion without changing gameplay balance.
+- [x] Replace the Shield Soldier with the supplied green PNG and preserve its existing layered animation.
+- [x] Scale the Shield Soldier artwork and aligned hitbox by exactly 1.25 without changing gameplay stats.

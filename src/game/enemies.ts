@@ -79,7 +79,8 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   shieldsoldier: {
     kind: "shieldsoldier", category: "human",
     // Purely defensive: he closes in but never attacks (contactDmg 0).
-    radius: 14, baseHp: 60, hpPerMinute: 30, speed: 46, contactDmg: 0, xp: 5,
+    // Radius follows the requested 1.25x visual replacement; all stats stay fixed.
+    radius: 17.5, baseHp: 60, hpPerMinute: 30, speed: 46, contactDmg: 0, xp: 5,
     minMinute: 0, weight: 3, behavior: "chase",
   },
   bat: {

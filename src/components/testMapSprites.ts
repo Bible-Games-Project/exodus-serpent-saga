@@ -5,7 +5,7 @@ import soldier from "@/assets/soldier-body.png.asset.json";
 import jackal from "@/assets/dog-body.png.asset.json";
 import archer from "@/assets/archer-body.png.asset.json";
 import axesoldier from "@/assets/axe-body.png.asset.json";
-import shieldsoldier from "@/assets/shield-body.png.asset.json";
+import shieldsoldier from "@/assets/shield-green-source.png.asset.json";
 import bat from "@/assets/bat-body.png.asset.json";
 import heavysoldier from "@/assets/armored-soldier-source.png.asset.json";
 import wolf from "@/assets/wolf-body.png.asset.json";

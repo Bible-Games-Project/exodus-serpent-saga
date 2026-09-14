@@ -4,14 +4,15 @@
 //   body  — headdress, head, torso, shield arm + shield (one rigid group)
 //   legb  — trailing leg + sandal
 //   legf  — leading leg + sandal
-import bodyAsset from "@/assets/shield-body.png.asset.json";
-import legBAsset from "@/assets/shield-legb.png.asset.json";
-import legFAsset from "@/assets/shield-legf.png.asset.json";
+import bodyAsset from "@/assets/shield-green-body.png.asset.json";
+import legBAsset from "@/assets/shield-green-legb.png.asset.json";
+import legFAsset from "@/assets/shield-green-legf.png.asset.json";
 
 export const SHIELD_ART = {
   W: 50,
   H: 71,
-  PX: 0.9018,
+  /** Previous visual scale multiplied by exactly 1.25. */
+  PX: 1.12725,
   /** x of the soldier's body centre inside the sprite */
   CX: 22,
   /** shield face centre, in sprite pixels — where a staff blow lands */
@@ -71,7 +72,6 @@ export function drawShieldSoldierArt(ctx: CanvasRenderingContext2D, pose: Shield
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
-  ctx.filter = "sepia(7%) saturate(112%) brightness(98%) contrast(103%)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
