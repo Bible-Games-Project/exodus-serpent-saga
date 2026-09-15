@@ -15,7 +15,7 @@ import { drawBatArt, ensureBatArt, BAT_ART } from "./batArt";
 import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
 import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
 import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
-import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall } from "./mageArt";
+import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall, drawMageAura } from "./mageArt";
 import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
 
 
@@ -2230,9 +2230,11 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   drawPixelShadow(ctx, x, groundY + 1, MAGE_ART.W * MAGE_ART.PX * 0.42, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.7,
   });
-  // The supplied sprite faces left, so its flip is the mirror of the others.
-  const flip: 1 | -1 = e.facing === -1 ? 1 : -1;
+  // The supplied sprite faces right, matching the standard enemy orientation.
+  const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const pose = { x, groundY, flip };
+  const charge = castP != null ? Math.max(0, 1 - Math.abs(castP - 0.55) * 2) : 0;
+  drawMageAura(ctx, x, groundY, s.now, e.id, charge);
   drawMageArt(ctx, {
     ...pose,
     walkPhase: e.animT * 5,
@@ -2241,7 +2243,7 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
     now: s.now,
   });
   const tip = mageStaffTip(pose);
-  drawMageStaffLight(ctx, tip.x, tip.y, s.now, castP != null ? 1 - Math.abs(castP - 0.55) * 2 : 0);
+  drawMageStaffLight(ctx, tip.x, tip.y, s.now, charge);
   if (e.hp < e.maxHp) {
     const bw = 26;
     const by = groundY - MAGE_ART.H * MAGE_ART.PX - 6;
