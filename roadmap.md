@@ -16,8 +16,8 @@
 - [x] Validate all corrected animations in motion without changing gameplay balance.
 - [x] Replace the Shield Soldier with the supplied green PNG and preserve its existing layered animation.
 - [x] Scale the Shield Soldier artwork and aligned hitbox by exactly 1.25 without changing gameplay stats.
-- [ ] Scale only the Axe Soldier artwork and aligned hitbox by exactly 1.25.
-- [ ] Reduce only the Shield Soldier movement speed to exactly 75% of its current value.
-- [ ] Replace the Heavy Soldier artwork with the supplied PNG using intact-body animation layers.
-- [ ] Add a connected shoulder-and-elbow Heavy Soldier axe swing with visual-contact damage timing.
-- [ ] Validate the three requested enemy changes in motion without changing unrelated gameplay.
+- [x] Scale only the Axe Soldier artwork and aligned hitbox by exactly 1.25.
+- [x] Reduce only the Shield Soldier movement speed to exactly 75% of its current value.
+- [x] Replace the Heavy Soldier artwork with the supplied PNG using intact-body animation layers.
+- [x] Add a connected shoulder-and-elbow Heavy Soldier axe swing with visual-contact damage timing.
+- [x] Validate the three requested enemy changes in motion without changing unrelated gameplay.
