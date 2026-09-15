@@ -15,6 +15,8 @@ export const SPEAR_KNIGHT_ART = {
   PX: 0.11,
   /** x of the horse's centre inside the sprite */
   CX: 768,
+  /** Transparent source rows below the visible hooves. */
+  FOOT_Y: 978,
 } as const;
 
 type Layers = { body: HTMLImageElement; legB: HTMLImageElement; legF: HTMLImageElement };
@@ -47,7 +49,7 @@ export type SpearKnightPose = {
 
 export function drawSpearKnightArt(ctx: CanvasRenderingContext2D, pose: SpearKnightPose): void {
   if (!ensureSpearKnightArt() || !layers) return;
-  const { W, H, PX, CX } = SPEAR_KNIGHT_ART;
+  const { W, H, PX, CX, FOOT_Y } = SPEAR_KNIGHT_ART;
   const l = layers;
 
   const amp = pose.charging ? 24 : 14;
@@ -69,7 +71,7 @@ export function drawSpearKnightArt(ctx: CanvasRenderingContext2D, pose: SpearKni
   ctx.translate(-CX * PX, -H * PX);
 
   const stamp = (img: HTMLImageElement, dx: number, dy: number) => {
-    ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
+    ctx.drawImage(img, dx * PX, (H - FOOT_Y + dy) * PX, W * PX, H * PX);
   };
 
   stamp(l.legB, stepB, liftB);

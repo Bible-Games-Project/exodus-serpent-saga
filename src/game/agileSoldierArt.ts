@@ -10,6 +10,8 @@ export const AGILE_ART = {
   PX: 0.024,
   /** x of his body centre inside the sprite */
   CX: 512,
+  /** Transparent source rows below the visible feet. */
+  FOOT_Y: 1371,
 } as const;
 
 /** duration (seconds) of the quick dagger stab */
@@ -56,7 +58,7 @@ function hopCurve(p: number): number {
 
 export function drawAgileSoldierArt(ctx: CanvasRenderingContext2D, pose: AgilePose): void {
   if (!ensureAgileArt() || !sprite) return;
-  const { W, H, PX, CX } = AGILE_ART;
+  const { W, H, PX, CX, FOOT_Y } = AGILE_ART;
 
   const hopping = pose.hop != null && pose.hop > 0 && pose.hop < 1;
   const lift = hopping ? hopCurve(pose.hop as number) : 0;
@@ -74,6 +76,6 @@ export function drawAgileSoldierArt(ctx: CanvasRenderingContext2D, pose: AgilePo
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
-  ctx.drawImage(sprite, stabPush * 0.5 * PX, (bounce - lift) * PX, W * PX, H * PX);
+  ctx.drawImage(sprite, stabPush * 0.5 * PX, (H - FOOT_Y + bounce - lift) * PX, W * PX, H * PX);
   ctx.restore();
 }
