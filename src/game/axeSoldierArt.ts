@@ -14,8 +14,8 @@ export const AXE_ART = {
   /** sprite-pixel size of the shared layer canvas */
   W: 41,
   H: 78,
-  /** screen pixels per sprite pixel (matches the other Egyptian soldiers) */
-  PX: 0.9,
+  /** Exactly 1.25× the previous 0.9 screen-pixel scale. */
+  PX: 1.125,
   /** x of his body centre inside the sprite */
   CX: 15,
 } as const;

@@ -1,13 +1,17 @@
-// Egyptian armored greatsword soldier — the supplied PNG, kept at its original
-// proportions. Only the two legs are separated for walking; the helmet, torso,
-// armour, clothing, hands and complete two-handed weapon remain one intact body.
+// Egyptian armored axe soldier — the supplied PNG, kept at its original colors
+// and proportions. The head and torso stay intact; only legs and the attacking
+// upper-arm/forearm/axe chain are separated at their natural joints.
 //
-//   body  — the complete upper figure and greatsword
+//   body  — intact head, torso, skirt and resting arm
 //   legb  — trailing leg + sandal
 //   legf  — leading leg + sandal
-import bodyAsset from "@/assets/armored-soldier-body.png.asset.json";
-import legBAsset from "@/assets/armored-soldier-legb.png.asset.json";
-import legFAsset from "@/assets/armored-soldier-legf.png.asset.json";
+//   upper — attacking upper arm, joined at the shoulder
+//   fore  — forearm, hand and exact supplied axe, joined at the elbow
+import bodyAsset from "@/assets/heavy-new-body.png.asset.json";
+import legBAsset from "@/assets/heavy-new-legb.png.asset.json";
+import legFAsset from "@/assets/heavy-new-legf.png.asset.json";
+import upperAsset from "@/assets/heavy-new-upperarm.png.asset.json";
+import foreAsset from "@/assets/heavy-new-forearm.png.asset.json";
 
 export const HEAVY_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -19,10 +23,19 @@ export const HEAVY_ART = {
   CX: 512,
 } as const;
 
-/** duration (seconds) of the heavy sword swing — slow and readable */
+/** Duration (seconds) of the heavy axe swing — slow and readable. */
 export const HEAVY_SWING_DUR = 0.7;
 
-type Layers = { body: HTMLImageElement; legB: HTMLImageElement; legF: HTMLImageElement };
+const SHOULDER = { x: 604, y: 626 } as const;
+const ELBOW = { x: 724, y: 526 } as const;
+
+type Layers = {
+  body: HTMLImageElement;
+  legB: HTMLImageElement;
+  legF: HTMLImageElement;
+  upper: HTMLImageElement;
+  fore: HTMLImageElement;
+};
 let layers: Layers | null = null;
 
 function load(url: string): HTMLImageElement {
@@ -38,18 +51,28 @@ export function ensureHeavyArt(): boolean {
       body: load(bodyAsset.url),
       legB: load(legBAsset.url),
       legF: load(legFAsset.url),
+      upper: load(upperAsset.url),
+      fore: load(foreAsset.url),
     };
   }
   const l = layers;
-  return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);
+  return [l.body, l.legB, l.legF, l.upper, l.fore].every((i) => i.complete && i.naturalWidth > 0);
 }
 
-/** Rotation (radians) of the sword arm over the swing progress. */
-export function heavySwingAngle(progress: number): number {
+/** Shoulder rotation: a measured wind-up followed by the forceful downward chop. */
+function heavyShoulderAngle(progress: number): number {
   const p = Math.max(0, Math.min(1, progress));
-  if (p < 0.34) return -0.3 * (p / 0.34);                  // heave the blade back
-  if (p < 0.62) return -0.3 + 2.38 * ((p - 0.34) / 0.28);  // weapon reaches Moses
-  return 2.08 * (1 - (p - 0.62) / 0.38);                   // slow recovery
+  if (p < 0.3) return -0.2 * (p / 0.3);
+  if (p < 0.6) return -0.2 + 0.95 * ((p - 0.3) / 0.3);
+  return 0.75 * (1 - (p - 0.6) / 0.4);
+}
+
+/** Extra elbow bend keeps the arm connected while carrying the axe to contact. */
+function heavyElbowAngle(progress: number): number {
+  const p = Math.max(0, Math.min(1, progress));
+  if (p < 0.3) return -0.35 * (p / 0.3);
+  if (p < 0.6) return -0.35 + 2.15 * ((p - 0.3) / 0.3);
+  return 1.8 * (1 - (p - 0.6) / 0.4);
 }
 
 export type HeavyPose = {
@@ -75,13 +98,11 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
   const stepB = -stepF;
   const liftF = gait !== 0 && stepF > 0 ? -1 : 0;
   const liftB = gait !== 0 && stepB > 0 ? -1 : 0;
-  // The supplied torso is never cut or deformed. A small whole-body lean gives
-  // the existing heavy swing readable weight while both hands stay on the blade.
+  // The supplied torso is never cut or deformed. Preserve the existing body dip.
   const bodyDY = pose.moving && !swinging && Math.cos(pose.walkPhase) < -0.5 ? 8 : 0;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
-  ctx.filter = "sepia(8%) saturate(115%) brightness(110%)";
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
@@ -93,16 +114,29 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
   stamp(l.legB, stepB * 8, liftB * 8);
   stamp(l.legF, stepF * 8, liftF * 8);
   if (swinging) {
-    const a = heavySwingAngle(sw);
+    const shoulderA = heavyShoulderAngle(sw);
+    const elbowA = heavyElbowAngle(sw);
+    const lean = Math.sin(Math.PI * sw);
     ctx.save();
     ctx.translate(CX * PX, H * PX);
-    ctx.rotate(a * 0.09);
+    ctx.rotate(lean * 0.14);
     ctx.translate(-CX * PX, -H * PX);
-    stamp(l.body, 0, Math.round(Math.sin(Math.PI * sw) * 8));
+    stamp(l.body, 0, Math.round(lean * 8));
+    ctx.save();
+    ctx.translate(SHOULDER.x * PX, SHOULDER.y * PX);
+    ctx.rotate(shoulderA);
+    ctx.translate(-SHOULDER.x * PX, -SHOULDER.y * PX);
+    stamp(l.upper, 0, Math.round(lean * 8));
+    ctx.translate(ELBOW.x * PX, ELBOW.y * PX);
+    ctx.rotate(elbowA);
+    ctx.translate(-ELBOW.x * PX, -ELBOW.y * PX);
+    stamp(l.fore, 0, Math.round(lean * 8));
+    ctx.restore();
     ctx.restore();
   } else {
     stamp(l.body, 0, bodyDY);
+    stamp(l.upper, 0, bodyDY);
+    stamp(l.fore, 0, bodyDY);
   }
-  ctx.filter = "none";
   ctx.restore();
 }
