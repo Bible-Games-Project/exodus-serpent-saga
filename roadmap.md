@@ -21,3 +21,6 @@
 - [x] Replace the Heavy Soldier artwork with the supplied PNG using intact-body animation layers.
 - [x] Add a connected shoulder-and-elbow Heavy Soldier axe swing with visual-contact damage timing.
 - [x] Validate the three requested enemy changes in motion without changing unrelated gameplay.
+
+- [ ] Replace the Agile Soldier with the supplied PNG and random short-jump movement.
+- [ ] Replace the Mounted Soldier with the supplied PNG and natural-joint horse leg animation.
