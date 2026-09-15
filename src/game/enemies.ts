@@ -349,44 +349,49 @@ export function enemyTick(
       if (!leaping && d > standoff) move(nx * spd, ny * spd);
     }
   } else if (def.behavior === "skirmish") {
-    // Agile soldier: unpredictable short hops, a fast run-in when the target is
-    // near, then an immediate fast retreat after the stab.
+    // Agile soldier: every displacement is a short jump. Each takeoff chooses
+    // a fresh direction — toward the target, sideways, or away — while attacks
+    // remain planted so the existing stab timing and contact stay unchanged.
     const ds = e.data!;
     if (ds.stabAt != null) {
       ds.pendingRetreat = 1;
-      ds.dashing = 1;
+      ds.dashing = 0;
     } else if (ds.pendingRetreat) {
       ds.pendingRetreat = 0;
-      ds.retreatUntil = state.now + 0.75;
+      ds.forceAwayHop = 1;
+      delete ds.hopAt;
     }
-    const retreating = state.now < ((ds.retreatUntil as number) ?? 0);
-    const standoff = e.radius + 34;
-
     if (ds.stabAt != null) {
       // Plant during the stab so the blow reads as contact, not a slide.
-      ds.dashing = 1;
-    } else if (retreating) {
-      ds.dashing = 1;
-      move(-nx * spd * 1.15, -ny * spd * 1.15);
-    } else if (d < 210) {
-      ds.dashing = 1;
-      if (d > standoff) move(nx * spd * 1.3, ny * spd * 1.3);
-    } else {
       ds.dashing = 0;
-      // Wander in short springy hops toward no particular place.
-      const hopAt = (ds.hopAt as number) ?? -1;
-      const elapsed = state.now - hopAt;
-      if (hopAt < 0 || elapsed > ((ds.hopGap as number) ?? 0.6)) {
-        const bias = Math.atan2(ny, nx);
-        const a = Math.random() < 0.45
-          ? bias + (Math.random() - 0.5) * 1.6
-          : Math.random() * Math.PI * 2;
+    } else {
+      const hopAt = ds.hopAt as number | undefined;
+      const elapsed = hopAt == null ? Infinity : state.now - hopAt;
+      const hopDur = 0.42;
+      const readyAt = (ds.nextHopAt as number) ?? 0;
+      if (hopAt == null && state.now >= readyAt) {
+        const toward = Math.atan2(ny, nx);
+        const forcedAway = !!ds.forceAwayHop;
+        const choice = Math.random();
+        const a = forcedAway
+          ? toward + Math.PI + (Math.random() - 0.5) * 0.55
+          : choice < (d > 230 ? 0.58 : 0.36)
+            ? toward + (Math.random() - 0.5) * 0.7
+            : choice < 0.78
+              ? toward + (Math.random() < 0.5 ? -1 : 1) * (Math.PI / 2 + (Math.random() - 0.5) * 0.55)
+              : toward + Math.PI + (Math.random() - 0.5) * 0.7;
         ds.hopAt = state.now;
-        ds.hopGap = 0.5 + Math.random() * 0.35;
-        ds.hvx = Math.cos(a) * spd * 1.1;
-        ds.hvy = Math.sin(a) * spd * 1.1;
-      } else if (elapsed < 0.34) {
-        move((ds.hvx as number) ?? 0, (ds.hvy as number) ?? 0);
+        ds.nextHopAt = state.now + hopDur + 0.06 + Math.random() * 0.12;
+        ds.hvx = Math.cos(a) * spd * (forcedAway ? 1.7 : 1.45);
+        ds.hvy = Math.sin(a) * spd * (forcedAway ? 1.7 : 1.45);
+        ds.forceAwayHop = 0;
+        ds.dashing = 1;
+      } else if (hopAt != null && elapsed < hopDur) {
+        const travelEase = Math.sin(Math.PI * Math.max(0, Math.min(1, elapsed / hopDur)));
+        move(((ds.hvx as number) ?? 0) * travelEase, ((ds.hvy as number) ?? 0) * travelEase);
+        ds.dashing = 1;
+      } else {
+        ds.dashing = 0;
       }
     }
   } else if (def.behavior === "neutral") {
