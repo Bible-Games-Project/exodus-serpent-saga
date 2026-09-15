@@ -16,7 +16,7 @@ type Muzzle = {
   H: number;
   PX: number;
   CX: number;
-  /** true when the unflipped art faces left (the sorcerer) */
+  /** true when the unflipped art faces left */
   facesLeft?: boolean;
 };
 
@@ -26,7 +26,7 @@ const MUZZLES: Record<string, Muzzle> = {
   // Tip of the spear as it leaves his hand.
   spearsoldier: { mx: 1000, my: 290, ...SPEAR_SOLDIER_ART },
   // The crystal at the head of the staff.
-  mage: { mx: MAGE_STAFF_TIP.x, my: MAGE_STAFF_TIP.y, ...MAGE_ART, facesLeft: true },
+  mage: { mx: MAGE_STAFF_TIP.x, my: MAGE_STAFF_TIP.y, ...MAGE_ART },
   // Bow of the archer riding the chariot.
   chariotarcher: { mx: CHARIOT_BOW.x, my: CHARIOT_BOW.y, ...CHARIOT_ART },
 };
