@@ -13,7 +13,7 @@ import { SPEAR_THROW_DUR } from "./spearSoldierArt";
 import { AXE_SWING_DUR } from "./axeSoldierArt";
 import { HEAVY_SWING_DUR } from "./heavySoldierArt";
 import { WOLF_LEAP_DUR } from "./wolfArt";
-import { AGILE_STAB_DUR } from "./agileSoldierArt";
+import { AGILE_HOP_DUR, AGILE_STAB_DUR } from "./agileSoldierArt";
 import { COBRA_STRIKE_DUR } from "./cobraArt";
 import { LION_MAUL_DUR } from "./lionArt";
 import { MAGE_CAST_DUR } from "./mageArt";
@@ -422,8 +422,8 @@ export function update(state: GameState, dt: number) {
         const hopAt = (e.data?.hopAt as number | undefined) ?? null;
         if (hopAt == null) delete e.data!.hopProgress;
         else {
-          const pp = (state.now - hopAt) / 0.34;
-          if (pp >= 1) delete e.data!.hopProgress;
+          const pp = (state.now - hopAt) / AGILE_HOP_DUR;
+          if (pp >= 1) { delete e.data!.hopAt; delete e.data!.hopProgress; }
           else e.data!.hopProgress = pp;
         }
       }
