@@ -73,14 +73,15 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   axesoldier: {
     kind: "axesoldier", category: "human",
     // Exactly twice the basic soldier's staff damage (10 -> 20).
-    radius: 13, baseHp: 40, hpPerMinute: 26, speed: 52, contactDmg: 20, xp: 5,
+    // Radius follows the requested exact 1.25x visual scale; gameplay stats stay fixed.
+    radius: 16.25, baseHp: 40, hpPerMinute: 26, speed: 52, contactDmg: 20, xp: 5,
     minMinute: 0, weight: 4, behavior: "chase",
   },
   shieldsoldier: {
     kind: "shieldsoldier", category: "human",
     // Purely defensive: he closes in but never attacks (contactDmg 0).
     // Radius follows the requested 1.25x visual replacement; all stats stay fixed.
-    radius: 17.5, baseHp: 60, hpPerMinute: 30, speed: 46, contactDmg: 0, xp: 5,
+    radius: 17.5, baseHp: 60, hpPerMinute: 30, speed: 34.5, contactDmg: 0, xp: 5,
     minMinute: 0, weight: 3, behavior: "chase",
   },
   bat: {
