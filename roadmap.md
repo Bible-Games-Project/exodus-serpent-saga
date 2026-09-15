@@ -27,4 +27,4 @@
 - [x] Replace the Egyptian Sorcerer with the supplied red-staff PNG without changing gameplay.
 - [x] Match the Sorcerer's staff light and projectile to the new red magic palette.
 - [x] Add a subtle lightweight pixel-art evil aura around the Sorcerer.
-- [ ] Verify the Sorcerer artwork, aura, and projectile in the Test Map.
+- [x] Verify the Sorcerer artwork, aura, and projectile in the Test Map.
