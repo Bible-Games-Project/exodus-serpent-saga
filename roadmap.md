@@ -34,4 +34,4 @@
 - [x] Scale the Agile Soldier artwork and collision radius to exactly 3× current size.
 - [x] Replace Moses’ snake projectile with the supplied PNG and animate it in flight.
 - [x] Keep snakes active until shield impact or complete viewport exit.
-- [ ] Validate all requested changes without altering unrelated gameplay.
+- [x] Validate all requested changes without altering unrelated gameplay.
