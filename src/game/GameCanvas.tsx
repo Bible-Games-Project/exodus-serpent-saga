@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SERPENT, SOLDIER, renderSprite, type Sprite } from "./sprites";
+import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
@@ -21,6 +21,7 @@ import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
 import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
+import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
@@ -46,7 +47,6 @@ let damageImpactKind: "normal" | "ramses" = "normal";
 
 
 const SPRITE_MAP: Record<string, Sprite> = {
-  serpent: SERPENT,
   soldier: SOLDIER,
   
   frog: FROG,
@@ -1564,6 +1564,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   for (const e of drawList) {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
+    if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
     if (e.kind === "companionmelee") { drawCompanionMelee(ctx, e, camX, camY); continue; }
     if (e.kind === "bolt") { drawBolt(ctx, e, camX, camY); continue; }
     if (e.kind === "gnatswarm") { drawGnatSwarm(ctx, e, camX, camY); continue; }
@@ -1785,22 +1786,6 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   const drawH = img.height * scaleY;
   const sx = Math.round(e.pos.x - camX - drawW / 2);
   const sy = Math.round(e.pos.y - camY - drawH + 8 + hopOffY);
-  if (e.kind === "serpent") {
-    const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
-    const rotImg = renderSprite(sprite, frameIdx, SCALE, false);
-    ctx.save();
-    ctx.translate(e.pos.x - camX, e.pos.y - camY + 6);
-    ctx.rotate(angle);
-    ctx.fillStyle = "rgba(0,0,0,0.22)";
-    ctx.beginPath(); ctx.ellipse(0, 0, rotImg.width * 0.45, 3, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-    ctx.save();
-    ctx.translate(e.pos.x - camX, e.pos.y - camY);
-    ctx.rotate(angle);
-    ctx.drawImage(rotImg, -rotImg.width / 2, -rotImg.height / 2);
-    ctx.restore();
-    return;
-  }
   const downed = e.team === "ally" && e.data?.downedUntil != null;
   const shadowScale = e.kind === "frog" ? Math.max(0.5, 1 - Math.abs(hopOffY) / 40) : 1;
   // Shadow: for downed companions, put it under the resting body (at sprite center).
@@ -1966,7 +1951,7 @@ function drawHeavySoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   if (!ensureHeavyArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
-  drawPixelShadow(ctx, x, groundY + 1, HEAVY_ART.W * HEAVY_ART.PX * 0.5, {
+  drawPixelShadow(ctx, x, groundY - 2, HEAVY_ART.W * HEAVY_ART.PX * 0.5, {
     px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6,
   });
   const swing = (e.data?.heavyProgress as number | undefined) ?? null;
@@ -1985,6 +1970,20 @@ function drawHeavySoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
+}
+
+function drawSerpentProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const x = e.pos.x - camX;
+  const y = e.pos.y - camY;
+  const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y + SERPENT_ART.DRAW_H * 0.34));
+  ctx.rotate(angle);
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = "#3c2612";
+  ctx.fillRect(-SERPENT_ART.DRAW_W * 0.38, -2, SERPENT_ART.DRAW_W * 0.76, 4);
+  ctx.restore();
+  drawSerpentArt(ctx, x, y, angle, e.animT * 0.85 + e.id * 0.37);
 }
 
 // -------------------- Bat (layered supplied sprite, flying) --------------------
