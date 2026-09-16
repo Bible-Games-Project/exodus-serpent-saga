@@ -579,8 +579,10 @@ export function update(state: GameState, dt: number) {
     } else if (e.team === "ally") {
       updateCompanion(state, e, dt);
     } else if (e.team === "projectile") {
-      e.ttl = (e.ttl ?? 0) - dt;
-      if (e.ttl <= 0) {
+      // The living serpent is viewport-bound, not timer-bound: it remains in
+      // play for as long as Moses can still see any part of it.
+      if (e.kind !== "serpent") e.ttl = (e.ttl ?? 0) - dt;
+      if (e.kind !== "serpent" && (e.ttl ?? 0) <= 0) {
           if (e.kind === "fireball") {
           const R = (e.data?.radius as number) ?? 110;
           const fireDmg = e.dmg ?? 60;
@@ -634,6 +636,20 @@ export function update(state: GameState, dt: number) {
       } else {
         e.pos.x += e.vel.x * dt;
         e.pos.y += e.vel.y * dt;
+      }
+
+      if (e.kind === "serpent") {
+        const vw = state.viewport?.w ?? 800;
+        const vh = state.viewport?.h ?? 600;
+        const dx = Math.abs(wrapDelta(e.pos.x, state.camera.x, state.worldW));
+        const dy = Math.abs(wrapDelta(e.pos.y, state.camera.y, state.worldH));
+        // The supplied art is 104x42 on screen. Cull only after the complete
+        // snake has crossed an edge, never while any part remains visible.
+        const halfDiagonal = Math.hypot(104, 42) / 2;
+        if (dx > vw / 2 + halfDiagonal || dy > vh / 2 + halfDiagonal) {
+          removeProjectile(state, e);
+          continue;
+        }
       }
 
       // Enemy-owned projectile hits player: tested against Moses' whole visible
@@ -1068,7 +1084,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         hp: 1, maxHp: 1,
         team: "projectile", facing: Math.cos(ang) > 0 ? 1 : -1,
         animT: 0, born: state.now,
-        ttl: stats.ttl, dmg: stats.dmg * dmul,
+        dmg: stats.dmg * dmul,
         kind: "serpent",
         data: { pierce: 1, hit: new Set<number>(), angle: ang },
       };

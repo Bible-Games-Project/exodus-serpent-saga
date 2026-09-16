@@ -111,29 +111,36 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  stamp(l.legB, stepB * 8, liftB * 8);
-  stamp(l.legF, stepF * 8, liftF * 8);
   if (swinging) {
     const shoulderA = heavyShoulderAngle(sw);
     const elbowA = heavyElbowAngle(sw);
     const lean = Math.sin(Math.PI * sw);
     ctx.save();
+    // Lean the complete assembled figure around the planted feet. Keeping the
+    // legs, hips and torso in one transform prevents the former waist/hip split.
     ctx.translate(CX * PX, H * PX);
     ctx.rotate(lean * 0.14);
     ctx.translate(-CX * PX, -H * PX);
-    stamp(l.body, 0, Math.round(lean * 8));
+    ctx.translate(0, Math.round(lean * 8) * PX);
+    stamp(l.legB, 0, 0);
+    stamp(l.legF, 0, 0);
+    stamp(l.body, 0, 0);
     ctx.save();
     ctx.translate(SHOULDER.x * PX, SHOULDER.y * PX);
     ctx.rotate(shoulderA);
     ctx.translate(-SHOULDER.x * PX, -SHOULDER.y * PX);
-    stamp(l.upper, 0, Math.round(lean * 8));
+    stamp(l.upper, 0, 0);
+    // The forearm remains inside the shoulder transform and pivots only at the
+    // elbow, preserving the generous source-layer overlap at both joints.
     ctx.translate(ELBOW.x * PX, ELBOW.y * PX);
     ctx.rotate(elbowA);
     ctx.translate(-ELBOW.x * PX, -ELBOW.y * PX);
-    stamp(l.fore, 0, Math.round(lean * 8));
+    stamp(l.fore, 0, 0);
     ctx.restore();
     ctx.restore();
   } else {
+    stamp(l.legB, stepB * 8, liftB * 8);
+    stamp(l.legF, stepF * 8, liftF * 8);
     stamp(l.body, 0, bodyDY);
     stamp(l.upper, 0, bodyDY);
     stamp(l.fore, 0, bodyDY);

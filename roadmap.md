@@ -29,9 +29,9 @@
 - [x] Add a subtle lightweight pixel-art evil aura around the Sorcerer.
 - [x] Verify the Sorcerer artwork, aura, and projectile in the Test Map.
 
-- [ ] Repair the Armored Soldier axe animation without visible body or joint cuts.
-- [ ] Raise only the Armored Soldier shadow slightly while preserving alignment.
-- [ ] Scale the Agile Soldier artwork and collision radius to exactly 3× current size.
-- [ ] Replace Moses’ snake projectile with the supplied PNG and animate it in flight.
-- [ ] Keep snakes active until shield impact or complete viewport exit.
-- [ ] Validate all requested changes without altering unrelated gameplay.
+- [x] Repair the Armored Soldier axe animation without visible body or joint cuts.
+- [x] Raise only the Armored Soldier shadow slightly while preserving alignment.
+- [x] Scale the Agile Soldier artwork and collision radius to exactly 3× current size.
+- [x] Replace Moses’ snake projectile with the supplied PNG and animate it in flight.
+- [x] Keep snakes active until shield impact or complete viewport exit.
+- [x] Validate all requested changes without altering unrelated gameplay.

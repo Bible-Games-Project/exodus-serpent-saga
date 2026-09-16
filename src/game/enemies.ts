@@ -111,8 +111,9 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   agilesoldier: {
     kind: "agilesoldier", category: "human",
     // The heavy soldier's opposite: paper-thin, very fast, damage barely above
-    // the basic soldier's 10.
-    radius: 6, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
+    // the basic soldier's 10. Radius is exactly 3x its former value so the
+    // collision area follows the exactly 3x artwork without changing its stats.
+    radius: 18, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
     minMinute: 0, weight: 4, behavior: "skirmish",
   },
   cobra: {
