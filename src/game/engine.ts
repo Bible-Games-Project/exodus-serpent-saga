@@ -645,7 +645,8 @@ export function update(state: GameState, dt: number) {
         const dy = Math.abs(wrapDelta(e.pos.y, state.camera.y, state.worldH));
         // The supplied art is 104x42 on screen. Cull only after the complete
         // snake has crossed an edge, never while any part remains visible.
-        if (dx > vw / 2 + 52 || dy > vh / 2 + 21) {
+        const halfDiagonal = Math.hypot(104, 42) / 2;
+        if (dx > vw / 2 + halfDiagonal || dy > vh / 2 + halfDiagonal) {
           removeProjectile(state, e);
           continue;
         }
