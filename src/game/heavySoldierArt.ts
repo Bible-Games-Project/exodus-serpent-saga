@@ -59,7 +59,7 @@ export function ensureHeavyArt(): boolean {
   return [l.body, l.legB, l.legF, l.upper, l.fore].every((i) => i.complete && i.naturalWidth > 0);
 }
 
-/** Shoulder rotation: a measured wind-up followed by the forceful downward chop. */
+/** Existing wind-up contribution, now carried by the elbow-only weapon swing. */
 function heavyShoulderAngle(progress: number): number {
   const p = Math.max(0, Math.min(1, progress));
   if (p < 0.3) return -0.2 * (p / 0.3);
@@ -112,8 +112,9 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
   };
 
   if (swinging) {
-    const shoulderA = heavyShoulderAngle(sw);
-    const elbowA = heavyElbowAngle(sw);
+    // The upper arm remains attached to the shoulder/body. The complete motion
+    // is transferred to the forearm-and-axe group at the anatomical elbow.
+    const elbowA = heavyShoulderAngle(sw) + heavyElbowAngle(sw);
     const lean = Math.sin(Math.PI * sw);
     ctx.save();
     // Lean the complete assembled figure around the planted feet. Keeping the
@@ -125,18 +126,14 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
     stamp(l.legB, 0, 0);
     stamp(l.legF, 0, 0);
     stamp(l.body, 0, 0);
-    ctx.save();
-    ctx.translate(SHOULDER.x * PX, SHOULDER.y * PX);
-    ctx.rotate(shoulderA);
-    ctx.translate(-SHOULDER.x * PX, -SHOULDER.y * PX);
     stamp(l.upper, 0, 0);
-    // The forearm remains inside the shoulder transform and pivots only at the
-    // elbow, preserving the generous source-layer overlap at both joints.
+    ctx.save();
+    // A perpendicular elbow cut with overlap keeps the joint sealed while the
+    // connected forearm, hand, and axe rotate as one rigid piece.
     ctx.translate(ELBOW.x * PX, ELBOW.y * PX);
     ctx.rotate(elbowA);
     ctx.translate(-ELBOW.x * PX, -ELBOW.y * PX);
     stamp(l.fore, 0, 0);
-    ctx.restore();
     ctx.restore();
   } else {
     stamp(l.legB, stepB * 8, liftB * 8);

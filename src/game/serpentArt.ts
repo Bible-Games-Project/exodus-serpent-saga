@@ -6,8 +6,9 @@ import serpentAsset from "@/assets/moses-snake.png.asset.json";
 export const SERPENT_ART = {
   W: 1983,
   H: 793,
-  DRAW_W: 104,
-  DRAW_H: 42,
+  /** Exactly 75% of the previous 104 × 42 screen-pixel size. */
+  DRAW_W: 78,
+  DRAW_H: 31.5,
 } as const;
 
 let serpent: HTMLImageElement | null = null;
@@ -29,6 +30,7 @@ export function drawSerpentArt(
   x: number,
   y: number,
   angle: number,
+  facing: 1 | -1,
   phase: number,
 ): boolean {
   if (!ensureSerpentArt() || !serpent) return false;
@@ -40,7 +42,14 @@ export function drawSerpentArt(
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.translate(Math.round(x), Math.round(y));
-  ctx.rotate(angle + Math.sin(phase * 0.55) * 0.025);
+  // The supplied artwork faces right. For leftward travel, remove the half-turn
+  // from the trajectory and mirror horizontally, rather than rotating it upside
+  // down. This preserves the same upright silhouette in either direction.
+  const uprightAngle = facing === -1
+    ? angle + (angle > 0 ? -Math.PI : Math.PI)
+    : angle;
+  ctx.rotate(uprightAngle + Math.sin(phase * 0.55) * 0.025);
+  ctx.scale(facing, 1);
   for (let i = 0; i < strips; i++) {
     const wave = Math.round(Math.sin(phase + i * 0.72) * 2);
     const sx = Math.floor(i * sourceStep);

@@ -1,10 +1,10 @@
 // Egyptian soldier (first NPC enemy) — the supplied pixel-art sprite, split
 // once into four layers so he can be animated without redrawing a single pixel:
 //
-//   body  — head, nemes, torso, kilt and the lower part of his staff
+//   body  — head, nemes, torso and kilt
 //   legb  — the trailing leg + sandal
 //   legf  — the leading leg + sandal
-//   arm   — his forearm, fist and the staff he grips (they always move together)
+//   arm   — his forearm, fist and the complete staff (one rigid weapon layer)
 //
 // The leg layers carry two columns of overlap with each other and two rows of
 // overlap tucked under the kilt, and the body is stamped after them, so a

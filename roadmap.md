@@ -35,3 +35,9 @@
 - [x] Replace Moses’ snake projectile with the supplied PNG and animate it in flight.
 - [x] Keep snakes active until shield impact or complete viewport exit.
 - [x] Validate all requested changes without altering unrelated gameplay.
+
+- [x] Replace the thrown snake shadow with a subtle animated pixel-art S shape.
+- [x] Mirror left-moving snakes correctly and scale their artwork to exactly 75%.
+- [x] Move the Armored Soldier weapon articulation to a seamless elbow-only pivot.
+- [x] Keep the Basic Egyptian Soldier staff continuous throughout its existing swing.
+- [x] Validate all three visual corrections in motion without changing gameplay.
