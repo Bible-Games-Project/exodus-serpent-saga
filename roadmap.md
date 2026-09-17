@@ -40,4 +40,4 @@
 - [x] Mirror left-moving snakes correctly and scale their artwork to exactly 75%.
 - [x] Move the Armored Soldier weapon articulation to a seamless elbow-only pivot.
 - [x] Keep the Basic Egyptian Soldier staff continuous throughout its existing swing.
-- [ ] Validate all three visual corrections in motion without changing gameplay.
+- [x] Validate all three visual corrections in motion without changing gameplay.
