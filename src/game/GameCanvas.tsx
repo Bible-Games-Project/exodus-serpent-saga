@@ -1976,14 +1976,30 @@ function drawSerpentProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   const x = e.pos.x - camX;
   const y = e.pos.y - camY;
   const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
+  const facing: 1 | -1 = e.vel.x < 0 ? -1 : 1;
+  const uprightAngle = facing === -1
+    ? angle + (angle > 0 ? -Math.PI : Math.PI)
+    : angle;
+  const phase = e.animT * 0.85 + e.id * 0.37;
+
+  // A stepped S-shaped shadow echoes the living snake's silhouette. It is made
+  // only from square pixel cells, with a tiny travelling wave to follow motion.
   ctx.save();
-  ctx.translate(Math.round(x), Math.round(y + SERPENT_ART.DRAW_H * 0.34));
-  ctx.rotate(angle);
-  ctx.globalAlpha = 0.2;
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(Math.round(x), Math.round(y + SERPENT_ART.DRAW_H * 0.38));
+  ctx.rotate(uprightAngle);
+  ctx.scale(facing, 1);
+  ctx.globalAlpha = 0.16;
   ctx.fillStyle = "#3c2612";
-  ctx.fillRect(-SERPENT_ART.DRAW_W * 0.38, -2, SERPENT_ART.DRAW_W * 0.76, 4);
+  const shadowCells = 13;
+  const cell = 4;
+  for (let i = 0; i < shadowCells; i++) {
+    const sx = (i - (shadowCells - 1) / 2) * cell;
+    const sy = Math.round(Math.sin(phase + i * 0.72) * 1.35) * 2;
+    ctx.fillRect(sx - 2, sy - 1, cell + (i % 4 === 0 ? 2 : 0), 3);
+  }
   ctx.restore();
-  drawSerpentArt(ctx, x, y, angle, e.animT * 0.85 + e.id * 0.37);
+  drawSerpentArt(ctx, x, y, angle, facing, phase);
 }
 
 // -------------------- Bat (layered supplied sprite, flying) --------------------
