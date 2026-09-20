@@ -90,7 +90,7 @@ export function drawMageStaffLight(
   now: number,
   charge = 0,
 ): void {
-  const P = 2;
+  const P = Math.max(2, Math.round(2 * MAGE_SCALE));
   const pulse = 0.55 + 0.45 * Math.sin(now * 5.5);
   const boost = Math.max(0, Math.min(1, charge));
   ctx.save();
@@ -139,10 +139,10 @@ export function drawMageAura(
     const life = phase - Math.floor(phase);
     if (life < 0.12 || life > 0.9) continue;
     const side = ((seed + i * 13) % 2 === 0 ? 1 : -1);
-    const drift = Math.sin(phase * 5.3 + i) * 4;
-    const px = i % 3 === 0 ? 3 : 2;
-    const pxX = Math.round(x + side * (14 + (i % 3) * 5) + drift);
-    const pxY = Math.round(groundY - 8 - life * (34 + (i % 2) * 13));
+    const drift = Math.sin(phase * 5.3 + i) * 4 * MAGE_SCALE;
+    const px = Math.max(2, Math.round((i % 3 === 0 ? 3 : 2) * MAGE_SCALE));
+    const pxX = Math.round(x + side * (14 + (i % 3) * 5) * MAGE_SCALE + drift);
+    const pxY = Math.round(groundY - (8 + life * (34 + (i % 2) * 13)) * MAGE_SCALE);
     const fade = Math.sin(life * Math.PI);
     ctx.globalAlpha = (0.16 + boost * 0.12) * fade;
     ctx.fillStyle = colors[(seed + i) % colors.length];
@@ -153,11 +153,12 @@ export function drawMageAura(
   for (let i = 0; i < 2; i++) {
     const phase = now * (1.05 + i * 0.18) + seed * 0.37 + i * 2.4;
     const side = i === 0 ? -1 : 1;
-    const y = groundY - 12 - ((Math.sin(phase) + 1) * 8);
+    const y = groundY - (12 + (Math.sin(phase) + 1) * 8) * MAGE_SCALE;
     ctx.globalAlpha = 0.1 + boost * 0.08;
     ctx.fillStyle = i === 0 ? MAGE_LIGHT.deep : MAGE_LIGHT.outer;
-    ctx.fillRect(Math.round(x + side * 15), Math.round(y), 6, 2);
-    ctx.fillRect(Math.round(x + side * 19), Math.round(y - 3), 3, 2);
+    const ww = Math.round(6 * MAGE_SCALE), hh = Math.max(2, Math.round(2 * MAGE_SCALE));
+    ctx.fillRect(Math.round(x + side * 15 * MAGE_SCALE), Math.round(y), ww, hh);
+    ctx.fillRect(Math.round(x + side * 19 * MAGE_SCALE), Math.round(y - 3 * MAGE_SCALE), Math.round(3 * MAGE_SCALE), hh);
   }
   ctx.restore();
 }
@@ -205,10 +206,12 @@ export function drawMageArt(ctx: CanvasRenderingContext2D, pose: MagePose): void
   const { W, H, PX, CX, FOOT_Y } = MAGE_ART;
   const t = pose.castP;
   const casting = t != null && t > 0 && t < 1;
-  const stride = pose.moving && !casting ? Math.sin(pose.walkPhase) : 0;
+  // He plants his feet to cast, so the walk cycle only runs while he is moving.
+  const walking = pose.moving && !casting;
+  const stride = walking ? Math.sin(pose.walkPhase) : 0;
   const bob = casting
     ? Math.round(castOffset(t as number) * 0.35)
-    : pose.moving
+    : walking
       ? (Math.cos(pose.walkPhase * 2) > 0.35 ? -10 : 0)
       : (Math.sin(pose.now * 1.8) > 0.55 ? -6 : 0);
   const castPush = casting ? castOffset(t as number) : 0;
@@ -218,12 +221,30 @@ export function drawMageArt(ctx: CanvasRenderingContext2D, pose: MagePose): void
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
-  ctx.drawImage(
-    sprite,
-    (castPush + stride * 2) * PX,
-    (H - FOOT_Y + bob) * PX,
-    W * PX,
-    H * PX,
-  );
+
+  const ox = (castPush + stride * 2) * PX;
+  const oy = (H - FOOT_Y + bob) * PX;
+  const slice = (sx: number, sy: number, sw: number, sh: number, dx = 0, dy = 0) => {
+    ctx.drawImage(
+      sprite!,
+      sx, sy, sw, sh,
+      ox + (sx + dx) * PX, oy + (sy + dy) * PX, sw * PX, sh * PX,
+    );
+  };
+
+  // Feet first, then the complete upper figure on top: the torso, hips, robe,
+  // arms, head and staff stay one uncut piece, and the ankles are covered.
+  const lowH = H - HEM_Y;
+  // Front foot steps out while the back foot pushes off; a small lift keeps the
+  // ankles inside the robe so no gap or seam can appear.
+  const fDx = stride * 11;
+  const fDy = -Math.max(0, stride) * 7;
+  const bDx = -stride * 9;
+  const bDy = -Math.max(0, -stride) * 7;
+  slice(BAND_BACK_FOOT.x, HEM_Y, BAND_BACK_FOOT.w, lowH, bDx, bDy);
+  slice(BAND_FRONT_FOOT.x, HEM_Y, BAND_FRONT_FOOT.w, lowH, fDx, fDy);
+  // The staff's lower shaft belongs to the body and never steps.
+  slice(BAND_STAFF_FOOT.x, HEM_Y, BAND_STAFF_FOOT.w, lowH);
+  slice(0, 0, W, HEM_Y);
   ctx.restore();
 }
