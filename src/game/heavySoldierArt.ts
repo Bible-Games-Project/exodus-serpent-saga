@@ -135,6 +135,11 @@ export function drawHeavySoldierArt(ctx: CanvasRenderingContext2D, pose: HeavyPo
     ctx.translate(-ELBOW.x * PX, -ELBOW.y * PX);
     stamp(l.fore, 0, 0);
     ctx.restore();
+    // Close the lean transform as well. Leaving it open leaked this soldier's
+    // translate/rotate/scale into every later draw, which visually displaced
+    // Moses and the camera framing even though his world position never moved.
+    ctx.restore();
+
   } else {
     stamp(l.legB, stepB * 8, liftB * 8);
     stamp(l.legF, stepF * 8, liftF * 8);
