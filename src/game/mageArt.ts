@@ -3,16 +3,32 @@
 // no part of the head, torso, robe, arm or staff is cut or redrawn.
 import spriteAsset from "@/assets/mage-red-source.png.asset.json";
 
+/** Original on-screen density of the supplied sprite, before the 40% upscale. */
+const MAGE_BASE_PX = 0.043;
+/** Requested proportional enlargement of the whole sorcerer (sprite + effects). */
+export const MAGE_SCALE = 1.4;
+
 export const MAGE_ART = {
   W: 1024,
   H: 1536,
-  /** Keeps the replacement at the established Egyptian Sorcerer footprint. */
-  PX: 0.043,
+  /** Keeps the replacement at the established footprint, 40% larger. */
+  PX: MAGE_BASE_PX * MAGE_SCALE,
   /** Body/feet centre inside the supplied sprite, excluding the extended staff. */
   CX: 460,
   /** Bottom of the visible sandals; transparent source rows sit below them. */
   FOOT_Y: 1507,
 } as const;
+
+/**
+ * Walk cycle geometry, measured from the supplied PNG's alpha channel.
+ * Below HEM_Y the silhouette is already two separate feet plus the staff foot,
+ * so the legs animate at their natural articulation without ever cutting the
+ * robe, hips, torso or head.
+ */
+const HEM_Y = 1416;
+const BAND_BACK_FOOT = { x: 262, w: 226 } as const;
+const BAND_FRONT_FOOT = { x: 488, w: 226 } as const;
+const BAND_STAFF_FOOT = { x: 716, w: 120 } as const;
 
 /** Red jewel at the head of the staff in the supplied, right-facing sprite. */
 export const MAGE_STAFF_TIP = { x: 895, y: 174 } as const;
