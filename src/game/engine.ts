@@ -982,19 +982,46 @@ function spawnEnemies(state: GameState, dt: number, ratePerSec: number) {
  * Moses' body box (feet → head) tested against a projectile's path this frame.
  * Returns the contact point, or null when nothing touched him.
  */
+/**
+ * Half-extent of what the projectile actually *draws*, so hit detection always
+ * matches the pixels on screen. The sorcerer's ball of light is stamped out to
+ * 3 art pixels of 3px (±9px) — its old 6px collider was smaller than the art,
+ * which is why a ball could visibly touch Moses without registering.
+ */
+function projectileVisualRadius(e: Entity): number {
+  switch (e.kind) {
+    case "magelight": return 9;
+    case "magebolt": return 9;
+    default: return e.radius ?? 4;
+  }
+}
+
+/**
+ * Swept world-space test of a projectile against Moses' whole visible body
+ * (feet -> head), padded by the projectile's drawn size on both axes and
+ * sub-stepped finely enough that a fast shot can never tunnel through him.
+ * World wrapping is respected, so the check is never thrown off near a seam.
+ */
 function playerBodyHit(state: GameState, e: Entity, dt: number): Vec2 | null {
   const p = state.player;
-  const halfW = 13 + (e.radius ?? 4) * 0.5;
-  const top = p.pos.y - 58;
-  const bottom = p.pos.y + 8;
+  const r = projectileVisualRadius(e);
+  const halfW = 13 + r;
+  const top = p.pos.y - 58 - r;
+  const bottom = p.pos.y + 8 + r;
   const prevX = e.pos.x - e.vel.x * dt;
   const prevY = e.pos.y - e.vel.y * dt;
-  const steps = 4;
+  const travel = Math.hypot(e.pos.x - prevX, e.pos.y - prevY);
+  // One sample every 3 world px at most — no frame-rate dependent gaps.
+  const steps = Math.max(4, Math.min(64, Math.ceil(travel / 3)));
   for (let i = steps; i >= 0; i--) {
     const t = i / steps;
     const x = prevX + (e.pos.x - prevX) * t;
     const y = prevY + (e.pos.y - prevY) * t;
-    if (Math.abs(x - p.pos.x) <= halfW && y >= top && y <= bottom) return { x, y };
+    const dx = wrapDelta(x, p.pos.x, state.worldW);
+    const dy = wrapDelta(y, p.pos.y, state.worldH);
+    if (Math.abs(dx) <= halfW && dy >= top - p.pos.y && dy <= bottom - p.pos.y) {
+      return { x, y };
+    }
   }
   return null;
 }
