@@ -35,14 +35,16 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     scripture:
       "Exodus 7:10-12 — Aaron cast down his rod before Pharaoh, and it became a serpent. It swallowed the sorcerers' serpents whole.",
     unlockLevel: 3,
-    base: { level: 1, cooldown: 1.1, dmg: 14, count: 1, speed: 260, ttl: 1.6 },
-    scale: scale({ level: 1, cooldown: 1.1, dmg: 14, count: 1, speed: 260, ttl: 1.6 }, {
+    // Snake travel speed is exactly 70% of the original (260 → 182, +7/level).
+    base: { level: 1, cooldown: 1.1, dmg: 14, count: 1, speed: 182, ttl: 1.6 },
+    scale: scale({ level: 1, cooldown: 1.1, dmg: 14, count: 1, speed: 182, ttl: 1.6 }, {
       cooldown: 0.08,
       dmg: 4,
       count: 0.25,
-      speed: 10,
+      speed: 7,
       ttl: 0.05,
     }),
+
   },
   blood: {
     id: "blood",
