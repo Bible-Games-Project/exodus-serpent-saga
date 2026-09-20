@@ -2253,7 +2253,8 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   drawMageArt(ctx, {
     ...pose,
     walkPhase: e.animT * 5,
-    moving: castP == null,
+    // Walk cycle only while he is actually travelling; casting plants his feet.
+    moving: castP == null && Math.hypot(e.vel.x, e.vel.y) > 4,
     castP,
     now: s.now,
   });

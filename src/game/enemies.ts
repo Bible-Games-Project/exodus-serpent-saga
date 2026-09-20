@@ -158,7 +158,9 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     kind: "mage", category: "human",
     // Egyptian sorcerer: plants his feet to cast, and one ball of light hits for
     // exactly three archer arrows (9 -> 27).
-    radius: 12, baseHp: 46, hpPerMinute: 26, speed: 44, contactDmg: 6, xp: 12,
+    // Radius follows the 40% larger visible body (12 -> 17); HP, damage, speed,
+    // cooldown and AI are unchanged.
+    radius: 17, baseHp: 46, hpPerMinute: 26, speed: 44, contactDmg: 6, xp: 12,
     minMinute: 0, weight: 3, behavior: "ranged",
     attack: {
       cooldown: 3.1, range: 340, projectileSpeed: 225,
