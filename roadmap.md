@@ -41,3 +41,9 @@
 - [x] Move the Armored Soldier weapon articulation to a seamless elbow-only pivot.
 - [x] Keep the Basic Egyptian Soldier staff continuous throughout its existing swing.
 - [x] Validate all three visual corrections in motion without changing gameplay.
+
+- [ ] Reduce only the Mage movement speed to ×0.3333 and make walking/casting visually accurate.
+- [ ] Replace Mage projectile blood feedback with a small magical smoke impact.
+- [ ] Add the Agile Soldier randomized 15–20-jump assassination dash and jump dust.
+- [ ] Repair Spear Soldier character rendering and preserve its dedicated supplied spear projectile.
+- [ ] Validate all three requested enemy changes in the Test Map on desktop and mobile.
