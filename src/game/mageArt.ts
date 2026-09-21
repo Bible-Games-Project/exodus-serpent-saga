@@ -212,7 +212,7 @@ export function drawMageArt(ctx: CanvasRenderingContext2D, pose: MagePose): void
   const bob = casting
     ? Math.round(castOffset(t as number) * 0.35)
     : walking
-      ? (Math.cos(pose.walkPhase * 2) > 0.35 ? -10 : 0)
+      ? 0
       : (Math.sin(pose.now * 1.8) > 0.55 ? -6 : 0);
   const castPush = casting ? castOffset(t as number) : 0;
 
@@ -222,7 +222,7 @@ export function drawMageArt(ctx: CanvasRenderingContext2D, pose: MagePose): void
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
 
-  const ox = (castPush + stride * 2) * PX;
+  const ox = castPush * PX;
   const oy = (H - FOOT_Y + bob) * PX;
   const slice = (sx: number, sy: number, sw: number, sh: number, dx = 0, dy = 0) => {
     ctx.drawImage(
@@ -237,10 +237,10 @@ export function drawMageArt(ctx: CanvasRenderingContext2D, pose: MagePose): void
   const lowH = H - HEM_Y;
   // Front foot steps out while the back foot pushes off; a small lift keeps the
   // ankles inside the robe so no gap or seam can appear.
-  const fDx = stride * 11;
-  const fDy = -Math.max(0, stride) * 7;
-  const bDx = -stride * 9;
-  const bDy = -Math.max(0, -stride) * 7;
+  const fDx = stride * 46;
+  const fDy = -Math.max(0, stride) * 16;
+  const bDx = -stride * 40;
+  const bDy = -Math.max(0, -stride) * 16;
   slice(BAND_BACK_FOOT.x, HEM_Y, BAND_BACK_FOOT.w, lowH, bDx, bDy);
   slice(BAND_FRONT_FOOT.x, HEM_Y, BAND_FRONT_FOOT.w, lowH, fDx, fDy);
   // The staff's lower shaft belongs to the body and never steps.

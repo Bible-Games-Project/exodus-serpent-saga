@@ -160,7 +160,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     // exactly three archer arrows (9 -> 27).
     // Radius follows the 40% larger visible body (12 -> 17); HP, damage, speed,
     // cooldown and AI are unchanged.
-    radius: 17, baseHp: 46, hpPerMinute: 26, speed: 44, contactDmg: 6, xp: 12,
+    radius: 17, baseHp: 46, hpPerMinute: 26, speed: 14.6652, contactDmg: 6, xp: 12,
     minMinute: 0, weight: 3, behavior: "ranged",
     attack: {
       cooldown: 3.1, range: 340, projectileSpeed: 225,
@@ -278,6 +278,7 @@ export function enemyTick(
     baseSlow: number;
     resolveObstacles: (pos: Vec2, r: number) => void;
     spawnEnemyProjectile: (owner: Entity, dir: Vec2, kind: string, speed: number, dmg: number, ttl: number) => void;
+    spawnFx: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>) => void;
   },
 ): void {
   const def = ENEMY_DEFS[e.kind];
@@ -356,7 +357,25 @@ export function enemyTick(
     // a fresh direction — toward the target, sideways, or away — while attacks
     // remain planted so the existing stab timing and contact stay unchanged.
     const ds = e.data!;
-    if (ds.stabAt != null) {
+    if (ds.jumpTarget == null) ds.jumpTarget = 15 + Math.floor(Math.random() * 6);
+    const specialDash = !!ds.specialDash;
+    if (specialDash) {
+      const dashVx = (ds.specialDashVx as number) ?? nx;
+      const dashVy = (ds.specialDashVy as number) ?? ny;
+      const dashSpeed = 620 * helpers.baseSlow * freezeMul;
+      move(dashVx * dashSpeed, dashVy * dashSpeed);
+      ds.specialDashRemaining = ((ds.specialDashRemaining as number) ?? 0) - dashSpeed * dt;
+      ds.dashing = 1;
+      e.facing = dashVx >= 0 ? 1 : -1;
+      if ((ds.specialDashRemaining as number) <= 0) {
+        ds.specialDash = 0;
+        ds.specialDashHit = 0;
+        ds.jumpCount = 0;
+        ds.jumpTarget = 15 + Math.floor(Math.random() * 6);
+        ds.nextHopAt = state.now + 0.12;
+        ds.dashing = 0;
+      }
+    } else if (ds.stabAt != null) {
       ds.pendingRetreat = 1;
       ds.dashing = 0;
     } else if (ds.pendingRetreat) {
@@ -373,6 +392,19 @@ export function enemyTick(
       const hopDur = 0.42;
       const readyAt = (ds.nextHopAt as number) ?? 0;
       if (hopAt == null && state.now >= readyAt) {
+        if (((ds.jumpCount as number) ?? 0) >= (ds.jumpTarget as number)) {
+          const pdx = ((state.player.pos.x - e.pos.x + state.worldW / 2) % state.worldW + state.worldW) % state.worldW - state.worldW / 2;
+          const pdy = ((state.player.pos.y - e.pos.y + state.worldH / 2) % state.worldH + state.worldH) % state.worldH - state.worldH / 2;
+          const pd = Math.hypot(pdx, pdy) || 1;
+          ds.specialDash = 1;
+          ds.specialDashVx = pdx / pd;
+          ds.specialDashVy = pdy / pd;
+          ds.specialDashRemaining = pd + 260;
+          ds.specialDashHit = 0;
+          ds.dashing = 1;
+          e.facing = pdx >= 0 ? 1 : -1;
+          return;
+        }
         const toward = Math.atan2(ny, nx);
         const forcedAway = !!ds.forceAwayHop;
         const choice = Math.random();
@@ -389,6 +421,9 @@ export function enemyTick(
         ds.hvy = Math.sin(a) * spd * (forcedAway ? 1.7 : 1.45);
         ds.forceAwayHop = 0;
         ds.dashing = 1;
+        helpers.spawnFx("agiledust", e.pos, 0.28, {
+          seed: e.id * 97 + Math.floor(state.now * 1000), maxTtl: 0.28,
+        });
       } else if (hopAt != null && elapsed < hopDur) {
         const travelEase = Math.sin(Math.PI * Math.max(0, Math.min(1, elapsed / hopDur)));
         move(((ds.hvx as number) ?? 0) * travelEase, ((ds.hvy as number) ?? 0) * travelEase);
@@ -448,7 +483,9 @@ export function enemyTick(
     else if (d < preferred + 20) { mvx = -ny; mvy = nx; }
     // Plant himself while the aim/shoot animation is playing: no sliding.
     const shootUntil = (e.data!.shootHoldUntil as number) ?? 0;
-    if (state.now >= shootUntil) move(mvx * spd, mvy * spd);
+    const rangedMoving = state.now >= shootUntil && Math.hypot(mvx, mvy) > 0.01;
+    if (rangedMoving) move(mvx * spd, mvy * spd);
+    if (e.kind === "mage") e.data!.mageMoving = rangedMoving ? 1 : 0;
 
     const cd = ((e.data!.atkCd as number) ?? 0) - dt;
     // Trigger a short windup before firing (the archer draws his bow here).

@@ -55,7 +55,9 @@ export function ensureSpearSoldierArt(): boolean {
     };
   }
   const l = layers;
-  return [l.body, l.released, l.legB, l.legF, l.fly].every((i) => i.complete && i.naturalWidth > 0);
+  // Idle and walking only depend on the body and legs. A delayed secondary
+  // frame or projectile image must never make the whole soldier disappear.
+  return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);
 }
 
 export type SpearSoldierPose = {
@@ -100,13 +102,16 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
   stamp(l.legF, stepF * 7, liftF * 8);
   // Wind-up moves the intact supplied pose as one unit; no torso seam is made.
   const windup = throwing && t < SPEAR_RELEASE_AT ? -Math.round((t / SPEAR_RELEASE_AT) * 10) : 0;
-  stamp(released ? l.released : l.body, windup, throwing ? -4 : 0);
+  const releasedReady = l.released.complete && l.released.naturalWidth > 0;
+  stamp(released && releasedReady ? l.released : l.body, windup, throwing ? -4 : 0);
   ctx.restore();
 }
 
 /** Draws a thrown spear, oriented along its flight angle. */
 export function drawFlyingSpear(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number): boolean {
-  if (!ensureSpearSoldierArt() || !layers) return false;
+  if (typeof document === "undefined") return false;
+  if (!layers) ensureSpearSoldierArt();
+  if (!layers || !layers.fly.complete || layers.fly.naturalWidth <= 0) return false;
   const { W, H, PX, ANGLE } = SPEAR_FLY_ART;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
