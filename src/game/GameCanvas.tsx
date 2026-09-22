@@ -1605,6 +1605,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "jackal" && drawDog(ctx, e, camX, camY)) continue;
     if (e.kind === "hitspark") { drawHitSpark(ctx, e, camX, camY); continue; }
     if (e.kind === "bloodhit") { drawBloodHit(ctx, e, camX, camY); continue; }
+    if (e.kind === "mageimpact") { drawMageImpact(ctx, e, camX, camY); continue; }
+    if (e.kind === "agiledust") { drawAgileDust(ctx, e, camX, camY); continue; }
+    if (e.kind === "agileslash") { drawAgileSlash(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
 
@@ -2254,7 +2257,7 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
     ...pose,
     walkPhase: e.animT * 5,
     // Walk cycle only while he is actually travelling; casting plants his feet.
-    moving: castP == null && Math.hypot(e.vel.x, e.vel.y) > 4,
+    moving: castP == null && !!e.data?.mageMoving,
     castP,
     now: s.now,
   });
@@ -2439,6 +2442,96 @@ function drawBloodHit(ctx: CanvasRenderingContext2D, e: Entity, camX: number, ca
   ctx.globalAlpha = Math.min(1, life * 1.2);
   ctx.fillRect(cx - 3, cy - 1, 6, 2);
   ctx.fillRect(cx - 1, cy - 3, 2, 6);
+  ctx.restore();
+}
+
+/** Compact red-staff magic smoke at the exact projectile contact point. */
+function drawMageImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.34;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const seed = (e.data?.seed as number) ?? e.id;
+  const colors = ["#591124", "#bd2730", "#d79a3b", "#fff0b8"];
+  const rnd = (i: number) => {
+    const v = Math.sin((seed + i * 31.7) * 12.9898) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = Math.min(0.9, life * 1.7);
+  for (let i = 0; i < 10; i++) {
+    const a = rnd(i) * Math.PI * 2;
+    const distance = (5 + rnd(i + 20) * 18) * t;
+    const rise = (4 + rnd(i + 40) * 12) * t;
+    const size = i % 4 === 0 ? 4 : 3;
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(
+      Math.round(cx + Math.cos(a) * distance - size / 2),
+      Math.round(cy + Math.sin(a) * distance * 0.55 - rise - size / 2),
+      size, size,
+    );
+  }
+  if (t < 0.3) {
+    ctx.fillStyle = "#fff0b8";
+    ctx.fillRect(cx - 4, cy - 2, 8, 4);
+    ctx.fillRect(cx - 2, cy - 4, 4, 8);
+  }
+  ctx.restore();
+}
+
+/** Small monochrome desert dust puff used at Agile Soldier takeoff and landing. */
+function drawAgileDust(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.28;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY + 7);
+  const seed = (e.data?.seed as number) ?? e.id;
+  const rnd = (i: number) => {
+    const v = Math.sin((seed + i * 17.9) * 12.9898) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = Math.min(0.32, life * 0.55);
+  ctx.fillStyle = "#756255";
+  for (let i = 0; i < 7; i++) {
+    const side = i % 2 === 0 ? -1 : 1;
+    const x = cx + side * (4 + rnd(i) * 24) * t;
+    const y = cy - (2 + rnd(i + 10) * 9) * t;
+    const size = i % 3 === 0 ? 3 : 2;
+    ctx.fillRect(Math.round(x), Math.round(y), size, size);
+  }
+  ctx.restore();
+}
+
+/** Fast diagonal pixel cut at Moses during the Agile Soldier's special pass. */
+function drawAgileSlash(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.24;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const dx = (e.data?.dirX as number) ?? 1;
+  const dy = (e.data?.dirY as number) ?? 0;
+  const angle = Math.atan2(dy, dx) - 0.75;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angle);
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = Math.min(1, life * 1.8);
+  const length = 30 + t * 14;
+  ctx.fillStyle = "#fff0c8";
+  ctx.fillRect(-length / 2, -2, length, 4);
+  ctx.fillStyle = "#c7a56a";
+  ctx.fillRect(-length / 2 + 5, 3, length - 10, 2);
+  ctx.fillRect(-length / 2 - 5, -1, 4, 2);
+  ctx.fillRect(length / 2 + 2, -1, 4, 2);
   ctx.restore();
 }
 

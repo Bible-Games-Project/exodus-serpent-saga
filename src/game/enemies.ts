@@ -363,7 +363,10 @@ export function enemyTick(
       const dashVx = (ds.specialDashVx as number) ?? nx;
       const dashVy = (ds.specialDashVy as number) ?? ny;
       const dashSpeed = 620 * helpers.baseSlow * freezeMul;
-      move(dashVx * dashSpeed, dashVy * dashSpeed);
+      // This committed assassination line passes cleanly through the target;
+      // scenery must not bend it into a chase or make it stop on an obstacle.
+      e.pos.x += dashVx * dashSpeed * dt;
+      e.pos.y += dashVy * dashSpeed * dt;
       ds.specialDashRemaining = ((ds.specialDashRemaining as number) ?? 0) - dashSpeed * dt;
       ds.dashing = 1;
       e.facing = dashVx >= 0 ? 1 : -1;
