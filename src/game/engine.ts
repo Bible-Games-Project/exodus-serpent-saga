@@ -423,7 +423,14 @@ export function update(state: GameState, dt: number) {
         if (hopAt == null) delete e.data!.hopProgress;
         else {
           const pp = (state.now - hopAt) / AGILE_HOP_DUR;
-          if (pp >= 1) { delete e.data!.hopAt; delete e.data!.hopProgress; }
+          if (pp >= 1) {
+            delete e.data!.hopAt;
+            delete e.data!.hopProgress;
+            e.data!.jumpCount = ((e.data!.jumpCount as number) ?? 0) + 1;
+            spawnVisualHazard(state, "agiledust", e.pos, 0.28, {
+              seed: e.id * 131 + Math.floor(state.now * 1000), maxTtl: 0.28,
+            });
+          }
           else e.data!.hopProgress = pp;
         }
       }
@@ -492,17 +499,47 @@ export function update(state: GameState, dt: number) {
           targetPos = { x: e.pos.x + wrapDelta(n.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(n.pos.y, e.pos.y, state.worldH) };
         }
       }
+      const beforeEnemyMove = { x: e.pos.x, y: e.pos.y };
       enemyTick(state, e, targetPos, dt, {
         baseSlow: enemySlow,
         resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
+        spawnFx: (kind, pos, ttl, data) => spawnVisualHazard(state, kind, pos, ttl, data),
       });
       wrapPos(state, e.pos);
+
+      // Agile assassination pass: swept against Moses so the fast movement can
+      // never tunnel through him. Damage is the existing 12-point contact value,
+      // applied once, while the soldier keeps travelling along the locked line.
+      if (!invuln && e.kind === "agilesoldier" && e.data?.specialDash && !e.data.specialDashHit) {
+        const vx = wrapDelta(e.pos.x, beforeEnemyMove.x, state.worldW);
+        const vy = wrapDelta(e.pos.y, beforeEnemyMove.y, state.worldH);
+        const px = beforeEnemyMove.x;
+        const py = beforeEnemyMove.y;
+        const tx = px + wrapDelta(p.pos.x, px, state.worldW);
+        const ty = py + wrapDelta(p.pos.y, py, state.worldH);
+        const pathLen2 = vx * vx + vy * vy;
+        const along = Math.max(0, Math.min(1, ((tx - px) * vx + (ty - py) * vy) / (pathLen2 || 1)));
+        const hitX = px + vx * along;
+        const hitY = py + vy * along;
+        const hitRadius = e.radius + p.radius;
+        if ((tx - hitX) ** 2 + (ty - hitY) ** 2 <= hitRadius * hitRadius) {
+          e.data.specialDashHit = 1;
+          p.hp -= ((e.data.contactDmg as number) ?? 12) * shieldDamageMul(state);
+          state.damageImpactKind = "normal";
+          spawnVisualHazard(state, "agileslash", { x: hitX, y: hitY - 24 }, 0.24, {
+            seed: e.id, maxTtl: 0.24,
+            dirX: (e.data.specialDashVx as number) ?? e.facing,
+            dirY: (e.data.specialDashVy as number) ?? 0,
+          });
+          resolvePlayerDefeat(state);
+        }
+      }
 
       // ---- melee attack: triggered from beside Moses, damage lands mid-anim ----
       const melee = MELEE_ATTACKS[e.kind];
       const dd = Math.sqrt(wrapDist2(state, e.pos, p.pos));
-      if (melee) {
+      if (melee && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
         const reach = e.radius + p.radius + melee.gap;
         const key = melee.key;
         const active = e.data?.[key] != null;
@@ -661,9 +698,13 @@ export function update(state: GameState, dt: number) {
           p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
-          // Small impact + blood exactly where the projectile struck Moses.
-          spawnVisualHazard(state, "hitspark", hitPt, 0.18, { seed: e.id, small: 1 });
-          spawnVisualHazard(state, "bloodhit", hitPt, 0.45, { seed: e.id, maxTtl: 0.45 });
+          // The Sorcerer's light produces a magical smoke burst, never blood.
+          if (e.kind === "magelight") {
+            spawnVisualHazard(state, "mageimpact", hitPt, 0.34, { seed: e.id, maxTtl: 0.34 });
+          } else {
+            spawnVisualHazard(state, "hitspark", hitPt, 0.18, { seed: e.id, small: 1 });
+            spawnVisualHazard(state, "bloodhit", hitPt, 0.45, { seed: e.id, maxTtl: 0.45 });
+          }
           removeProjectile(state, e);
           resolvePlayerDefeat(state);
         }
