@@ -1608,6 +1608,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "mageimpact") { drawMageImpact(ctx, e, camX, camY); continue; }
     if (e.kind === "agiledust") { drawAgileDust(ctx, e, camX, camY); continue; }
     if (e.kind === "agileslash") { drawAgileSlash(ctx, e, camX, camY); continue; }
+    if (e.kind === "heavyslash") { drawHeavySlash(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
 
@@ -2255,7 +2256,9 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   drawMageAura(ctx, x, groundY, s.now, e.id, charge);
   drawMageArt(ctx, {
     ...pose,
-    walkPhase: e.animT * 5,
+    // animT advances at six units/second. This Mage-only factor gives one
+    // deliberate step cycle roughly every 1.3 seconds, matching his slow pace.
+    walkPhase: e.animT * 0.8,
     // Walk cycle only while he is actually travelling; casting plants his feet.
     moving: castP == null && !!e.data?.mageMoving,
     castP,
@@ -2462,11 +2465,11 @@ function drawMageImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.globalAlpha = Math.min(0.9, life * 1.7);
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 14; i++) {
     const a = rnd(i) * Math.PI * 2;
-    const distance = (5 + rnd(i + 20) * 18) * t;
-    const rise = (4 + rnd(i + 40) * 12) * t;
-    const size = i % 4 === 0 ? 4 : 3;
+    const distance = (10 + rnd(i + 20) * 36) * t;
+    const rise = (8 + rnd(i + 40) * 24) * t;
+    const size = i % 4 === 0 ? 8 : 6;
     ctx.fillStyle = colors[i % colors.length];
     ctx.fillRect(
       Math.round(cx + Math.cos(a) * distance - size / 2),
@@ -2476,8 +2479,8 @@ function drawMageImpact(ctx: CanvasRenderingContext2D, e: Entity, camX: number, 
   }
   if (t < 0.3) {
     ctx.fillStyle = "#fff0b8";
-    ctx.fillRect(cx - 4, cy - 2, 8, 4);
-    ctx.fillRect(cx - 2, cy - 4, 4, 8);
+    ctx.fillRect(cx - 8, cy - 4, 16, 8);
+    ctx.fillRect(cx - 4, cy - 8, 8, 16);
   }
   ctx.restore();
 }
@@ -2501,9 +2504,9 @@ function drawAgileDust(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
   ctx.fillStyle = "#756255";
   for (let i = 0; i < 7; i++) {
     const side = i % 2 === 0 ? -1 : 1;
-    const x = cx + side * (4 + rnd(i) * 24) * t;
-    const y = cy - (2 + rnd(i + 10) * 9) * t;
-    const size = i % 3 === 0 ? 3 : 2;
+    const x = cx + side * (8 + rnd(i) * 48) * t;
+    const y = cy - (4 + rnd(i + 10) * 18) * t;
+    const size = i % 3 === 0 ? 6 : 4;
     ctx.fillRect(Math.round(x), Math.round(y), size, size);
   }
   ctx.restore();
@@ -2532,6 +2535,33 @@ function drawAgileSlash(ctx: CanvasRenderingContext2D, e: Entity, camX: number, 
   ctx.fillRect(-length / 2 + 5, 3, length - 10, 2);
   ctx.fillRect(-length / 2 - 5, -1, 4, 2);
   ctx.fillRect(length / 2 + 2, -1, 4, 2);
+  ctx.restore();
+}
+
+/** Large, clean pixel axe cut shown only on a Heavy Soldier's confirmed hit. */
+function drawHeavySlash(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.3;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = Math.round(e.pos.x - camX);
+  const cy = Math.round(e.pos.y - camY);
+  const dx = (e.data?.dirX as number) ?? 1;
+  const dy = (e.data?.dirY as number) ?? 0;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.atan2(dy, dx) - 0.82);
+  ctx.imageSmoothingEnabled = false;
+  ctx.globalAlpha = Math.min(0.95, life * 1.8);
+  const length = 58 + t * 20;
+  ctx.fillStyle = "#591124";
+  ctx.fillRect(-length / 2, -5, length, 10);
+  ctx.fillRect(-length / 2 - 8, -2, 6, 4);
+  ctx.fillRect(length / 2 + 2, -2, 8, 4);
+  ctx.fillStyle = "#a12b2b";
+  ctx.fillRect(-length / 2 + 5, -3, length - 10, 5);
+  ctx.fillStyle = "#e05a48";
+  ctx.fillRect(-length / 2 + 13, -2, length - 26, 2);
   ctx.restore();
 }
 

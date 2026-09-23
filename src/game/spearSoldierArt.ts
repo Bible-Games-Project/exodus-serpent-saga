@@ -6,7 +6,7 @@
 //   legb   — trailing leg + sandal
 //   legf   — leading leg + sandal
 import bodyAsset from "@/assets/spear-v2-body.png.asset.json";
-import releasedAsset from "@/assets/spear-v2-released-fixed.png.asset.json";
+import releasedAsset from "@/assets/spear-v2-released-intact.png";
 import legBAsset from "@/assets/spear-v2-legb.png.asset.json";
 import legFAsset from "@/assets/spear-v2-legf.png.asset.json";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
@@ -48,7 +48,7 @@ export function ensureSpearSoldierArt(): boolean {
   if (!layers) {
     layers = {
       body: load(bodyAsset.url),
-      released: load(releasedAsset.url),
+      released: load(releasedAsset),
       legB: load(legBAsset.url),
       legF: load(legFAsset.url),
       fly: load(flyAsset.url),
@@ -81,7 +81,7 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
   const throwing = t != null && t > 0 && t < 1;
   // Forward/backward stride along the facing direction (never sideways).
   const swing = pose.moving && !throwing ? Math.sin(pose.walkPhase) : 0;
-  const stepF = Math.round(swing * 2.2);
+  const stepF = Math.round(swing * 1.6);
   const stepB = -stepF;
   const liftF = swing !== 0 && stepF > 0 ? -1 : 0;
   const liftB = swing !== 0 && stepB > 0 ? -1 : 0;
@@ -98,8 +98,11 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  stamp(l.legB, stepB * 7, liftB * 8);
-  stamp(l.legF, stepF * 7, liftF * 8);
+  // Keep generous overlap beneath the intact kilt/hips. The supplied leg
+  // layers remain whole, and the shorter stride prevents their natural upper
+  // joint cuts from becoming visible at either extreme of the walk cycle.
+  stamp(l.legB, stepB * 5, liftB * 5 - 3);
+  stamp(l.legF, stepF * 5, liftF * 5 - 3);
   // Wind-up moves the intact supplied pose as one unit; no torso seam is made.
   const windup = throwing && t < SPEAR_RELEASE_AT ? -Math.round((t / SPEAR_RELEASE_AT) * 10) : 0;
   const releasedReady = l.released.complete && l.released.naturalWidth > 0;

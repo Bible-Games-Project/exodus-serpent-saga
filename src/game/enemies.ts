@@ -399,10 +399,26 @@ export function enemyTick(
           const pdx = ((state.player.pos.x - e.pos.x + state.worldW / 2) % state.worldW + state.worldW) % state.worldW - state.worldW / 2;
           const pdy = ((state.player.pos.y - e.pos.y + state.worldH / 2) % state.worldH + state.worldH) % state.worldH - state.worldH / 2;
           const pd = Math.hypot(pdx, pdy) || 1;
+          const dashVx = pdx / pd;
+          const dashVy = pdy / pd;
+          const edgeMargin = e.radius + 8;
+          const edgeX = dashVx > 0
+            ? (state.worldW - edgeMargin - e.pos.x) / dashVx
+            : dashVx < 0
+              ? (edgeMargin - e.pos.x) / dashVx
+              : Infinity;
+          const edgeY = dashVy > 0
+            ? (state.worldH - edgeMargin - e.pos.y) / dashVy
+            : dashVy < 0
+              ? (edgeMargin - e.pos.y) / dashVy
+              : Infinity;
+          const distanceToFarEdge = Math.max(pd + 260, Math.min(edgeX, edgeY));
           ds.specialDash = 1;
-          ds.specialDashVx = pdx / pd;
-          ds.specialDashVy = pdy / pd;
-          ds.specialDashRemaining = pd + 260;
+          ds.specialDashVx = dashVx;
+          ds.specialDashVy = dashVy;
+          // The target locks only the direction. The committed pass continues
+          // on that exact ray until the soldier reaches the far world boundary.
+          ds.specialDashRemaining = distanceToFarEdge;
           ds.specialDashHit = 0;
           ds.dashing = 1;
           e.facing = pdx >= 0 ? 1 : -1;

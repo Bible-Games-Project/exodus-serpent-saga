@@ -565,6 +565,14 @@ export function update(state: GameState, dt: number) {
               const my = p.pos.y - (fdy / fd) * 4 - (dog ? 14 : 24);
               spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
               spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
+              if (e.kind === "heavysoldier") {
+                spawnVisualHazard(state, "heavyslash", { x: mx, y: my }, 0.3, {
+                  seed: e.id,
+                  maxTtl: 0.3,
+                  dirX: fdx / fd,
+                  dirY: fdy / fd,
+                });
+              }
               if (e.kind === "cobra" && p.data) {
                 // Venom: refresh (never stack) a 5-second damage-over-time.
                 p.data.poisonUntil = state.now + 5;
