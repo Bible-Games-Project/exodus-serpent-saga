@@ -47,3 +47,9 @@
 - [x] Add the Agile Soldier randomized 15–20-jump assassination dash and jump dust.
 - [x] Repair Spear Soldier character rendering and preserve its dedicated supplied spear projectile.
 - [x] Validate all three requested enemy changes in the Test Map on desktop and mobile.
+
+- [ ] Slow only the Mage walk cycle and enlarge only its magical impact smoke.
+- [ ] Repair Spear Soldier leg completeness and spear-only throw release composition.
+- [ ] Double Agile landing/takeoff dust scale and extend its locked dash to the far world boundary.
+- [ ] Add a Heavy Soldier-only large pixel axe-slash impact without changing damage or timing.
+- [ ] Validate all requested changes in the Test Map and confirm the preview build.
