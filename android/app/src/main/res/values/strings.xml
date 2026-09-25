@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Exodus Survivors</string>
+    <string name="title_activity_main">Exodus Survivors</string>
+    <string name="package_name">com.biblegamesproject.exodussurvivors</string>
+    <string name="custom_url_scheme">com.biblegamesproject.exodussurvivors</string>
+</resources>
