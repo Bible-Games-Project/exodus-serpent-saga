@@ -53,3 +53,10 @@
 - [x] Double Agile landing/takeoff dust scale and extend its locked dash to the far world boundary.
 - [x] Add a Heavy Soldier-only large pixel axe-slash impact without changing damage or timing.
 - [x] Validate all requested changes in the Test Map and confirm the preview build.
+- [ ] Lock the Agile Soldier special dash through Moses until a safe far endpoint.
+- [ ] Separate the Spear Soldier held spear completely and improve its intact walking animation.
+- [ ] Verify Agile and Spear Soldier behavior directly in the Test Map.
+- [ ] Replace the Home screen visual with the supplied Exodus Survivors cover without duplicating its title.
+- [ ] Recompose Play, Leaderboard, More Games, Settings, and development-only Test Map controls around the cover.
+- [ ] Block Test Map navigation and route access in published builds while preserving development access.
+- [ ] Verify the Home screen and protected Test Map behavior across desktop and mobile.
