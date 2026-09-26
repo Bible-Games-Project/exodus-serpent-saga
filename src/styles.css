@@ -89,6 +89,35 @@
   --nile: oklch(0.55 0.08 200);
   --papyrus: oklch(0.94 0.04 90);
   --gold: oklch(0.82 0.14 88);
+  --cover-night: #103958;
+  --cover-button: #f7d58c;
+  --cover-button-bright: #ffd47a;
+  --cover-ink: #3a1c10;
+  --cover-edge: #592e16;
+}
+
+/* Cover art keeps its native aspect ratio: the title is part of the image. */
+.cover-screen { background: var(--cover-night); }
+.cover-button {
+  border-color: var(--cover-ink);
+  background: var(--cover-button);
+  color: var(--cover-ink);
+  box-shadow: 0 5px 0 var(--cover-edge), inset 0 3px 0 var(--cover-button-bright);
+  white-space: nowrap;
+}
+.cover-button-primary { background: var(--cover-button-bright); min-width: 48%; }
+@media (max-width: 740px) {
+  .cover-menu {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: min(94%, 480px);
+    transform: none;
+    margin: 1rem auto 1.5rem;
+  }
+  .cover-menu .cover-button { font-size: clamp(9px, 2.5vw, 14px); }
+  .cover-menu .cover-button-primary { font-size: 18px; }
+  .cover-gear { width: 40px; height: 40px; }
 }
 
 .dark {
