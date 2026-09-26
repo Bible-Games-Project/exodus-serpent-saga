@@ -943,12 +943,15 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
       dirX: facing,
       maxTtl: 0.4,
     });
-    // knockback
-    const kx = en.pos.x - state.player.pos.x;
-    const ky = en.pos.y - state.player.pos.y;
-    const kd = Math.hypot(kx, ky) || 1;
-    en.pos.x += (kx / kd) * 10;
-    en.pos.y += (ky / kd) * 10;
+    // A committed agile pass cannot be displaced by the staff: contact only
+    // affects health and feedback, never its locked trajectory.
+    if (!(en.kind === "agilesoldier" && en.data?.specialDash)) {
+      const kx = en.pos.x - state.player.pos.x;
+      const ky = en.pos.y - state.player.pos.y;
+      const kd = Math.hypot(kx, ky) || 1;
+      en.pos.x += (kx / kd) * 10;
+      en.pos.y += (ky / kd) * 10;
+    }
     if (en.hp <= 0) killEnemy(state, en);
   }
 }

@@ -1,12 +1,6 @@
-// Egyptian spear soldier — the supplied PNG. The complete torso and clothing
-// stay intact; only the legs are separated for walking. A second body layer is
-// the same supplied art with the exposed spear removed for the release frame.
-//
-//   body   — head, torso, kilt, arms and held spear
-//   legb   — trailing leg + sandal
-//   legf   — leading leg + sandal
-import bodyAsset from "@/assets/spear-v2-body.png.asset.json";
-import releasedAsset from "@/assets/spear-v2-released-intact.png";
+// The character is weapon-free in every frame. The held spear is a separate
+// layer, and the original supplied flying spear remains the projectile.
+import characterAsset from "@/assets/spear-v2-character.png";
 import legBAsset from "@/assets/spear-v2-legb.png.asset.json";
 import legFAsset from "@/assets/spear-v2-legf.png.asset.json";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
@@ -29,8 +23,7 @@ export const SPEAR_RELEASE_AT = 0.6;
 export const SPEAR_FLY_ART = { W: 175, H: 114, PX: 0.32, ANGLE: -0.5216 } as const;
 
 type Layers = {
-  body: HTMLImageElement;
-  released: HTMLImageElement;
+  character: HTMLImageElement;
   legB: HTMLImageElement;
   legF: HTMLImageElement;
   fly: HTMLImageElement;
@@ -47,17 +40,14 @@ export function ensureSpearSoldierArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      released: load(releasedAsset),
+      character: load(characterAsset),
       legB: load(legBAsset.url),
       legF: load(legFAsset.url),
       fly: load(flyAsset.url),
     };
   }
   const l = layers;
-  // Idle and walking only depend on the body and legs. A delayed secondary
-  // frame or projectile image must never make the whole soldier disappear.
-  return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);
+  return [l.character, l.legB, l.legF, l.fly].every((i) => i.complete && i.naturalWidth > 0);
 }
 
 export type SpearSoldierPose = {
@@ -79,13 +69,12 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
 
   const t = pose.throwP;
   const throwing = t != null && t > 0 && t < 1;
-  // Forward/backward stride along the facing direction (never sideways).
-  const swing = pose.moving && !throwing ? Math.sin(pose.walkPhase) : 0;
-  const stepF = Math.round(swing * 1.6);
+  const stride = pose.moving && !throwing ? Math.sin(pose.walkPhase) : 0;
+  const knee = pose.moving && !throwing ? Math.cos(pose.walkPhase) : 0;
+  const stepF = stride * 10;
   const stepB = -stepF;
-  const liftF = swing !== 0 && stepF > 0 ? -1 : 0;
-  const liftB = swing !== 0 && stepB > 0 ? -1 : 0;
-  // the held spear vanishes the instant it is released
+  const liftF = Math.max(0, stride) * 8;
+  const liftB = Math.max(0, -stride) * 8;
   const released = !pose.holdingSpear || (t != null && t >= SPEAR_RELEASE_AT);
 
   ctx.save();
@@ -98,15 +87,25 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  // Keep generous overlap beneath the intact kilt/hips. The supplied leg
-  // layers remain whole, and the shorter stride prevents their natural upper
-  // joint cuts from becoming visible at either extreme of the walk cycle.
-  stamp(l.legB, stepB * 5, liftB * 5 - 3);
-  stamp(l.legF, stepF * 5, liftF * 5 - 3);
-  // Wind-up moves the intact supplied pose as one unit; no torso seam is made.
+  // Each lower-body layer swings around its hip under the complete robe.
+  // Feet lift on the forward half of the step; the opposite foot plants.
+  const leg = (img: HTMLImageElement, angle: number, lift: number, offset: number) => {
+    ctx.save();
+    ctx.translate(365 * PX, 1050 * PX);
+    ctx.rotate(angle);
+    ctx.translate(-365 * PX, -1050 * PX);
+    stamp(img, offset, -lift - 8);
+    ctx.restore();
+  };
+  leg(l.legB, stepB * 0.008, liftB, knee * 2);
+  leg(l.legF, stepF * 0.008, liftF, -knee * 2);
+  // The head, body, and arms remain one intact piece throughout the throw.
   const windup = throwing && t < SPEAR_RELEASE_AT ? -Math.round((t / SPEAR_RELEASE_AT) * 10) : 0;
-  const releasedReady = l.released.complete && l.released.naturalWidth > 0;
-  stamp(released && releasedReady ? l.released : l.body, windup, throwing ? -4 : 0);
+  stamp(l.character, windup, throwing ? -4 : 0);
+  if (!released) {
+    // Independent supplied PNG: the entire held layer disappears at release.
+    ctx.drawImage(l.fly, (windup + 0) * PX, (throwing ? 286 : 290) * PX, 1006 * PX, 204 * PX);
+  }
   ctx.restore();
 }
 
