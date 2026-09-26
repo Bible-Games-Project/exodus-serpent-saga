@@ -86,7 +86,7 @@ function MainMenu() {
     <main className="cover-screen relative min-h-screen overflow-hidden">
       <div className="cover-stage relative mx-auto w-full max-w-[1671px]">
         <img src={cover.url} alt="Exodus Survivors — Moses leads his people through the parted sea" width={1671} height={941} className="block h-auto w-full" />
-        <nav aria-label="Main menu" className="cover-menu absolute left-[66.5%] top-[51%] flex w-[min(35%,480px)] -translate-x-1/2 flex-col items-center gap-3 text-center">
+        <nav aria-label="Main menu" className="cover-menu absolute left-[66.5%] top-[51%] flex w-[min(35%,480px)] flex-col items-center gap-3 text-center">
           <PixelLink to="/play" variant="primary">Play</PixelLink>
           <div className="grid w-full grid-cols-2 gap-3">
             <PixelLink to="/leaderboard">Leaderboard</PixelLink>

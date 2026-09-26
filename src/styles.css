@@ -97,7 +97,8 @@
 }
 
 /* Cover art keeps its native aspect ratio: the title is part of the image. */
-.cover-screen { background: var(--cover-night); }
+.cover-screen { background: var(--cover-night); display: flex; align-items: center; }
+.cover-menu { transform: translateX(-50%); }
 .cover-button {
   border-color: var(--cover-ink);
   background: var(--cover-button);
