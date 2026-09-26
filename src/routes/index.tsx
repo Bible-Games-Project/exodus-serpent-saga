@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SettingsDialog } from "@/components/SettingsDialog";
-import { MosesMenuSprite } from "@/components/MosesMenuSprite";
-import menuDesert from "@/assets/menu-desert.png";
+import { GameSettingsDialog } from "@/components/GameSettingsDialog";
+import { PixelIcon, GEAR_ART } from "@/components/PixelIcon";
+import cover from "@/assets/Portada_Exodus_Survivors.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,31 +26,6 @@ export const Route = createFileRoute("/")({
   component: MainMenu,
 });
 
-const MENU_CREAM = "#FEEFBE";
-
-function PixelButton({
-  children,
-  variant = "primary",
-  ...rest
-}: {
-  children: React.ReactNode;
-  variant?: "primary" | "ghost";
-} & React.ComponentPropsWithoutRef<"button">) {
-  return (
-    <button
-      {...rest}
-      className={[
-        "pixel-btn pixel-btn-press font-display uppercase",
-        variant === "primary"
-          ? "bg-[#e9c168] px-6 py-4 text-lg tracking-[0.18em] text-[#3a2412]"
-          : "bg-[#f6e2ad] px-6 py-3 text-sm tracking-[0.16em] text-[#4a2f16]",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
 function PixelLink({
   to,
   children,
@@ -66,8 +41,8 @@ function PixelLink({
       className={[
         "pixel-btn pixel-btn-press font-display text-center uppercase",
         variant === "primary"
-          ? "bg-[#e9c168] px-6 py-4 text-lg tracking-[0.18em] text-[#3a2412]"
-          : "bg-[#f6e2ad] px-6 py-3 text-sm tracking-[0.16em] text-[#4a2f16]",
+          ? "cover-button cover-button-primary px-8 py-3 text-lg"
+          : "cover-button px-3 py-3 text-xs sm:text-sm",
       ].join(" ")}
     >
       {children}
@@ -108,93 +83,24 @@ function MainMenu() {
   }, []);
 
   return (
-    <main
-      className="relative min-h-screen overflow-hidden"
-      style={{ backgroundColor: MENU_CREAM, touchAction: "pan-y" }}
-    >
-      {/* Layer 1 — pixel-art desert backdrop (pyramids, dunes, palms, rocks). */}
-      <img
-        src={menuDesert}
-        alt=""
-        aria-hidden
-        width={1920}
-        height={1088}
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-        style={{ imageRendering: "pixelated" }}
-      />
-      {/* Warm light wash so the UI reads cleanly over the art. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(120% 80% at 50% 25%, rgba(254,239,190,0.55) 0%, rgba(254,239,190,0.12) 45%, rgba(196,148,88,0.30) 100%)",
-        }}
-      />
-
-      {/* Layer 2 — Moses, purely decorative, on his own absolute layer on the
-          left so he can never overlap, push or re-centre the menu. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute bottom-0 left-0 z-10 hidden items-end md:flex lg:left-[4%] xl:left-[8%]"
-        style={{ animation: "exodus-menu-float 4.5s ease-in-out infinite" }}
-      >
-        <MosesMenuSprite zoom={3} className="drop-shadow-[0_14px_16px_rgba(120,80,40,0.28)]" />
-      </div>
-
-      {/* Layer 3 — centered title + menu, independent of every other layer. */}
-      <section className="relative z-20 mx-auto flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-8 px-6 py-14 text-center">
-        <div className="flex flex-col items-center">
-          <p className="font-pixel mb-3 text-xs uppercase tracking-[0.42em] text-[#8a5a2c]">
-            A tale from the desert
-          </p>
-          <h1
-            className="font-display text-4xl leading-[1.15] uppercase text-[#4a2c10] sm:text-5xl md:text-6xl"
-            style={{ textShadow: `3px 3px 0 ${MENU_CREAM}, 6px 6px 0 rgba(122,80,38,0.35)` }}
-          >
-            Exodus
-            <br />
-            <span className="text-[#b5731f]">Survivors</span>
-          </h1>
-          <p className="font-pixel mt-6 max-w-sm text-base leading-relaxed text-[#6b4520]">
-            Guide Moses across the shifting sands. Unleash the plagues, rally your kin, and see how
-            long you can last.
-          </p>
-
-          <nav className="mt-10 flex w-full max-w-xs flex-col gap-3">
-            <PixelLink to="/play" variant="primary">
-              Play
-            </PixelLink>
+    <main className="cover-screen relative min-h-screen overflow-hidden">
+      <div className="cover-stage relative mx-auto w-full max-w-[1671px]">
+        <img src={cover.url} alt="Exodus Survivors — Moses leads his people through the parted sea" width={1671} height={941} className="block h-auto w-full" />
+        <nav aria-label="Main menu" className="cover-menu absolute left-[66.5%] top-[51%] flex w-[min(35%,480px)] flex-col items-center gap-3 text-center">
+          <PixelLink to="/play" variant="primary">Play</PixelLink>
+          <div className="grid w-full grid-cols-2 gap-3">
             <PixelLink to="/leaderboard">Leaderboard</PixelLink>
             <PixelLink to="/more-games">More Games</PixelLink>
-            <PixelButton variant="ghost" onClick={() => setSettingsOpen(true)}>Settings</PixelButton>
-          </nav>
-        </div>
-
-        {/* Mobile-only Moses: below the menu, still in its own container. */}
-        <div
-          aria-hidden
-          className="pointer-events-none flex justify-center md:hidden"
-          style={{ animation: "exodus-menu-float 4.5s ease-in-out infinite" }}
-        >
-          <MosesMenuSprite zoom={2} className="drop-shadow-[0_10px_12px_rgba(120,80,40,0.28)]" />
-        </div>
-      </section>
-
-      {/* Small secondary entry point to the sandbox arena. */}
-      <Link
-        to="/test-map"
-        className="pixel-btn pixel-btn-press font-display absolute bottom-3 right-3 z-30 bg-[#f6e2ad] px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-[#7a5a30]"
-      >
-        Test Map
-      </Link>
-
-      <footer className="font-pixel absolute bottom-3 left-0 right-0 z-20 text-center text-xs text-[#8a5a2c]">
-        v0.1 — an original desert bullet-heaven
-      </footer>
-
-
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+          </div>
+        </nav>
+      </div>
+      <button aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)} className="cover-gear pixel-btn pixel-btn-press absolute right-4 top-4 z-20 flex h-12 w-12 items-center justify-center bg-secondary p-0 sm:right-6 sm:top-6">
+        <PixelIcon art={GEAR_ART} size={28} />
+      </button>
+      {import.meta.env.DEV && (
+        <Link to="/test-map" className="pixel-btn pixel-btn-press absolute bottom-3 right-3 z-20 bg-secondary px-3 py-2 font-display text-[10px] uppercase text-secondary-foreground">Test Map</Link>
+      )}
+      <GameSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>
   );
 }
