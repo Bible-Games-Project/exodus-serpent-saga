@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GameCanvas } from "@/game/GameCanvas";
 import { PixelIcon, HOME_ART, GEAR_ART } from "@/components/PixelIcon";
@@ -12,28 +12,6 @@ import {
   testEnemyLabel,
 } from "@/game/testMap";
 import type { TestMapConfig } from "@/game/types";
-
-export const Route = createFileRoute("/test-map")({
-  beforeLoad: () => {
-    // The sandbox is intentionally absent from public play, including direct URLs.
-    if (!import.meta.env.DEV) throw notFound();
-  },
-  head: () => ({
-    meta: [
-      { title: "Test Map — Exodus Survivors" },
-      {
-        name: "description",
-        content: "A sandbox arena for Exodus Survivors: choose which plagues, enemies and Pharaoh phase are active.",
-      },
-      { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Test Map — Exodus Survivors" },
-      { property: "og:description", content: "Development-only sandbox for Exodus Survivors." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-  }),
-  component: TestMapPage,
-});
 
 const RAMSES_LEVELS: Array<{ level: 1 | 2 | 3 | 4; label: string }> = [
   { level: 1, label: "1 · Throne" },
@@ -199,7 +177,7 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
   );
 }
 
-function TestMapPage() {
+export default function TestMapPage() {
   const [cfg, setCfg] = useState<TestMapConfig | null>(null);
   const [paused, setPaused] = useState(false);
   const [homeOpen, setHomeOpen] = useState(false);
