@@ -118,7 +118,7 @@
 .cover-menu {
   position: absolute;
   left: var(--cross-x);
-  bottom: max(4vh, 16px);
+  bottom: max(7vh, 60px);
   transform: translateX(-50%);
   width: min(820px, calc((100vw - var(--cross-x)) * 2 - 48px));
   display: flex;
