@@ -910,12 +910,15 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     const dd = Math.hypot(en.pos.x - px, en.pos.y - py);
     let inRange = dd < en.radius + tolerance;
     if (!inRange) {
-      // Cone test, measured from Moses' hand toward his facing direction.
-      const ex = (en.pos.x - cx) * facing; // forward component (always >0 in front)
-      const ey = en.pos.y - cy;
-      const dist = Math.hypot(ex, ey);
-      if (ex > 0 && dist < reach + en.radius) {
-        inRange = Math.abs(Math.atan2(ey, ex)) <= HALF_CONE;
+      // Broad frontal zone measured from Moses' body: forward up to the staff
+      // reach, with generous (but bounded) vertical tolerance above/below.
+      // Enemies behind his body centre are never hit.
+      const ex = (en.pos.x - state.player.pos.x) * facing;
+      const ey = en.pos.y - state.player.pos.y;
+      const forward = reach + en.radius;
+      const vertical = reach * 0.9 + en.radius;
+      if (ex > -en.radius * 0.5 && ex < forward && Math.abs(ey) < vertical) {
+        inRange = Math.hypot(Math.max(0, ex), ey) < reach * 1.15 + en.radius;
       }
     }
     if (inRange) candidates.push({ en, px, py });
