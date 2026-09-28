@@ -83,17 +83,15 @@ function MainMenu() {
   }, []);
 
   return (
-    <main className="cover-screen relative min-h-screen overflow-hidden">
-      <div className="cover-stage relative mx-auto w-full max-w-[1671px]">
-        <img src={cover.url} alt="Exodus Survivors — Moses leads his people through the parted sea" width={1671} height={941} className="block h-auto w-full" />
-        <nav aria-label="Main menu" className="cover-menu absolute left-[66.5%] top-[51%] flex w-[min(35%,480px)] flex-col items-center gap-3 text-center">
-          <PixelLink to="/play" variant="primary">Play</PixelLink>
-          <div className="grid w-full grid-cols-2 gap-3">
-            <PixelLink to="/leaderboard">Leaderboard</PixelLink>
-            <PixelLink to="/more-games">More Games</PixelLink>
-          </div>
-        </nav>
-      </div>
+    <main className="cover-screen fixed inset-0 overflow-hidden">
+      <img src={cover.url} alt="Exodus Survivors — Moses parts the sea" width={1920} height={1080} className="cover-bg" />
+      <nav aria-label="Main menu" className="cover-menu">
+        <div className="cover-play"><PixelLink to="/play" variant="primary">Play</PixelLink></div>
+        <div className="cover-row">
+          <PixelLink to="/leaderboard">Leaderboard</PixelLink>
+          <PixelLink to="/more-games">More Games</PixelLink>
+        </div>
+      </nav>
       <button aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)} className="cover-gear pixel-btn pixel-btn-press absolute right-4 top-4 z-20 flex h-12 w-12 items-center justify-center bg-secondary p-0 sm:right-6 sm:top-6">
         <PixelIcon art={GEAR_ART} size={28} />
       </button>

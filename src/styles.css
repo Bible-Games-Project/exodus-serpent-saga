@@ -96,9 +96,37 @@
   --cover-edge: #592e16;
 }
 
-/* Cover art keeps its native aspect ratio: the title is part of the image. */
-.cover-screen { background: var(--cover-night); display: flex; align-items: center; }
-.cover-menu { transform: translateX(-50%); }
+/* Full-screen cover (1920x1080). The stage covers the viewport; on narrow
+   screens it shifts so the cross under the title (65.4% of image width) stays
+   on screen. Buttons align horizontally with that cross. */
+.cover-screen {
+  background: var(--cover-night);
+  --stage-w: max(100vw, calc(100dvh * 16 / 9));
+  --stage-h: max(100dvh, calc(100vw * 9 / 16));
+  --stage-left: clamp(calc(100vw - var(--stage-w)), calc(50vw - var(--stage-w) * 0.654), 0px);
+  --stage-top: calc((100dvh - var(--stage-h)) / 2);
+  --cross-x: calc(var(--stage-left) + var(--stage-w) * 0.654);
+}
+.cover-bg {
+  position: absolute;
+  left: var(--stage-left);
+  top: var(--stage-top);
+  width: var(--stage-w);
+  height: var(--stage-h);
+  max-width: none;
+}
+.cover-menu {
+  position: absolute;
+  left: var(--cross-x);
+  bottom: max(4vh, 16px);
+  transform: translateX(-50%);
+  width: min(94vw, 70vw, 820px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 5vh, 60px);
+}
+.cover-row { width: 100%; display: flex; justify-content: space-between; gap: 12px; }
 .cover-button {
   border-color: var(--cover-ink);
   background: var(--cover-button);
@@ -106,17 +134,10 @@
   box-shadow: 0 5px 0 var(--cover-edge), inset 0 3px 0 var(--cover-button-bright);
   white-space: nowrap;
 }
-.cover-button-primary { background: var(--cover-button-bright); min-width: 48%; }
+.cover-button-primary { background: var(--cover-button-bright); min-width: 200px; }
 @media (max-width: 740px) {
-  .cover-menu {
-    position: relative;
-    left: auto;
-    top: auto;
-    width: min(94%, 480px);
-    transform: none;
-    margin: 1rem auto 1.5rem;
-  }
-  .cover-menu .cover-button { font-size: clamp(9px, 2.5vw, 14px); }
+  .cover-menu { width: 94vw; left: 50vw; }
+  .cover-menu .cover-button { font-size: clamp(9px, 2.8vw, 14px); }
   .cover-menu .cover-button-primary { font-size: 18px; }
   .cover-gear { width: 40px; height: 40px; }
 }
