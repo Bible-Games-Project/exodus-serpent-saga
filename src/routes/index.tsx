@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GameSettingsDialog } from "@/components/GameSettingsDialog";
 import { PixelIcon, GEAR_ART } from "@/components/PixelIcon";
-import cover from "@/assets/Portada_Exodus_Survivors.png.asset.json";
+import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
