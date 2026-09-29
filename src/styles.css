@@ -161,7 +161,6 @@
 }
 @media (max-width: 740px) {
   .cover-menu { --btn-fs: clamp(9px, 2.6vw, 13px); }
-  .cover-gear { width: 40px; height: 40px; }
 }
 
 .dark {

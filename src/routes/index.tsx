@@ -95,8 +95,8 @@ function MainMenu() {
           <PixelLink to="/more-games">More Games</PixelLink>
         </div>
       </nav>
-      <button aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)} className="cover-gear cover-gear-btn pixel-btn-press absolute right-5 top-5 z-20 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center p-0 sm:right-7 sm:top-7">
-        <PixelIcon art={GEAR_ART} size={44} />
+      <button aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)} className="cover-gear cover-gear-btn pixel-btn-press absolute right-5 top-5 z-20 flex h-10 w-10 shrink-0 items-center justify-center p-0 sm:right-7 sm:top-7">
+        <PixelIcon art={GEAR_ART} size={24} />
       </button>
       {devAccess && (
         <Link to="/test-map" className="pixel-btn pixel-btn-press fixed bottom-3 right-3 z-30 bg-secondary px-3 py-2 font-display text-[10px] uppercase text-secondary-foreground">Test Map</Link>
