@@ -94,6 +94,11 @@
   --cover-button-bright: #ffd47a;
   --cover-ink: #3a1c10;
   --cover-edge: #592e16;
+  --title-ink: #5a2b13;
+  --title-shade: #78411f;
+  --title-mid: #e1a256;
+  --title-sand: #f6c674;
+  --title-light: #fbd98f;
 }
 
 /* Full-screen cover (1920x1080). The stage covers the viewport; on narrow
@@ -118,25 +123,41 @@
 .cover-menu {
   position: absolute;
   left: var(--cross-x);
-  bottom: max(7vh, 60px);
+  top: calc(var(--stage-top) + var(--stage-h) * 0.535);
+  height: calc(var(--stage-h) * 0.17);
   transform: translateX(-50%);
-  width: min(820px, calc((100vw - var(--cross-x)) * 2 - 48px));
+  width: min(520px, calc(var(--stage-w) * 0.27), 92vw);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(12px, 5vh, 60px);
+  justify-content: space-between;
+  gap: 10px;
 }
-.cover-row { width: 100%; display: flex; justify-content: space-between; gap: 12px; }
+.cover-row { width: 100%; display: flex; justify-content: center; gap: clamp(12px, 3vw, 36px); }
+/* Buttons borrow the title's palette: sandstone fill, deep-brown pixel outline. */
 .cover-button {
-  border-color: var(--cover-ink);
-  background: var(--cover-button);
-  color: var(--cover-ink);
-  box-shadow: 0 5px 0 var(--cover-edge), inset 0 3px 0 var(--cover-button-bright);
+  border: 0;
+  background: var(--title-sand);
+  color: var(--title-ink);
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  text-shadow: 2px 2px 0 var(--title-light);
+  box-shadow:
+    0 0 0 3px var(--title-ink),
+    0 6px 0 3px var(--title-shade),
+    inset 0 3px 0 var(--title-light),
+    inset 0 -4px 0 var(--title-mid);
   white-space: nowrap;
+  min-width: 42%;
 }
-.cover-button-primary { background: var(--cover-button-bright); min-width: 200px; }
+.cover-button-primary { background: var(--title-light); min-width: 52%; font-size: clamp(18px, 1.6vw, 28px) !important; padding: 0.6em 1.6em !important; }
+.cover-gear-btn {
+  border: 0;
+  background: var(--title-sand);
+  box-shadow: 0 0 0 3px var(--title-ink), 0 5px 0 3px var(--title-shade), inset 0 3px 0 var(--title-light), inset 0 -3px 0 var(--title-mid);
+}
 @media (max-width: 740px) {
-  .cover-menu { width: 94vw; left: 50vw; }
+  .cover-menu { width: 92vw; }
   .cover-menu .cover-button { font-size: clamp(9px, 2.8vw, 14px); }
   .cover-menu .cover-button-primary { font-size: 18px; }
   .cover-gear { width: 40px; height: 40px; }
