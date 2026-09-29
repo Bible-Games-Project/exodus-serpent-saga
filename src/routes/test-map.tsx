@@ -1,15 +1,14 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { hasDevAccess } from "@/lib/devAccess";
 
 // This module is loaded only in local development. In a public release the
 // route has no test controls and rejects direct visits before rendering.
-const DevTestMap = import.meta.env.DEV
-  ? lazy(() => import("@/components/DevTestMap"))
-  : null;
+const DevTestMap = lazy(() => import("@/components/DevTestMap"));
 
 export const Route = createFileRoute("/test-map")({
   beforeLoad: () => {
-    if (!import.meta.env.DEV) throw notFound();
+    if (typeof window !== "undefined" && !hasDevAccess()) throw notFound();
   },
   head: () => ({
     meta: [
@@ -22,5 +21,10 @@ export const Route = createFileRoute("/test-map")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: () => DevTestMap ? <Suspense fallback={null}><DevTestMap /></Suspense> : null,
+  component: TestMapGate,
 });
+function TestMapGate() {
+  const [ok, setOk] = useState(false);
+  useEffect(() => setOk(hasDevAccess()), []);
+  return ok ? <Suspense fallback={null}><DevTestMap /></Suspense> : null;
+}
