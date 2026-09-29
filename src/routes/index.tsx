@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { hasDevAccess } from "@/lib/devAccess";
 import { GameSettingsDialog } from "@/components/GameSettingsDialog";
 import { PixelIcon, GEAR_ART } from "@/components/PixelIcon";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
@@ -41,8 +42,8 @@ function PixelLink({
       className={[
         "pixel-btn pixel-btn-press font-display text-center uppercase",
         variant === "primary"
-          ? "cover-button cover-button-primary px-8 py-3 text-lg"
-          : "cover-button px-3 py-3 text-xs sm:text-sm",
+          ? "cover-button cover-button-primary"
+          : "cover-button",
       ].join(" ")}
     >
       {children}
@@ -52,6 +53,8 @@ function PixelLink({
 
 function MainMenu() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [devAccess, setDevAccess] = useState(false);
+  useEffect(() => setDevAccess(hasDevAccess()), []);
 
   // Keep the title screen at its intended composition and scale: block
   // ctrl+wheel zoom, pinch-zoom and Safari zoom gestures while mounted.
@@ -92,11 +95,11 @@ function MainMenu() {
           <PixelLink to="/more-games">More Games</PixelLink>
         </div>
       </nav>
-      <button aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)} className="cover-gear cover-gear-btn pixel-btn-press absolute right-5 top-5 z-20 flex h-14 w-14 items-center justify-center p-0 sm:right-7 sm:top-7">
-        <PixelIcon art={GEAR_ART} size={40} />
+      <button aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)} className="cover-gear cover-gear-btn pixel-btn-press absolute right-5 top-5 z-20 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center p-0 sm:right-7 sm:top-7">
+        <PixelIcon art={GEAR_ART} size={44} />
       </button>
-      {import.meta.env.DEV && (
-        <Link to="/test-map" className="pixel-btn pixel-btn-press absolute bottom-3 right-3 z-20 bg-secondary px-3 py-2 font-display text-[10px] uppercase text-secondary-foreground">Test Map</Link>
+      {devAccess && (
+        <Link to="/test-map" className="pixel-btn pixel-btn-press fixed bottom-3 right-3 z-30 bg-secondary px-3 py-2 font-display text-[10px] uppercase text-secondary-foreground">Test Map</Link>
       )}
       <GameSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>

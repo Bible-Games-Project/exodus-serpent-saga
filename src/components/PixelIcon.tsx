@@ -27,8 +27,8 @@ export const HOME_ART: PixelArt = {
 
 // Pixel-art gear — 8 clearly separated teeth, thick bronze ring, open center hole.
 export const GEAR_ART: PixelArt = {
-  palette: { K: "#5a2b13", L: "#fbd98f", S: "#f6c674", M: "#c98a45" },
-  grid: ["................", "......KKKK......", "......KLLK......", "..KK.KKLSKK.KK..", "..KLKKLSSSMKKLK.", "...KLLSSSSSMMK..", ".KKKLSSKKKKSMKKK", ".KLLSSK....KSMMK", ".KLSSK......KSMK", ".KKKSK......KMKK", "...KSSK....KMMK.", "..KLSSSKKKKMMMK.", "..KMKKSMMMMKKMK.", "..KK.KKMMMKK.KK.", "......KMMK......", "......KKKK......"],
+  palette: { K: "#5a2b13", L: "#fbd98f", S: "#e1a256", M: "#96582c" },
+  grid: ["....................", "........KKKK........", "........KLSK........", "...KK..KKLSKK..KK...", "..KLSKKLLSSSMKKSMK..", "..KSSSLSSSSSSMSSMK..", "...KSSSSKKKKSSSMK...", "..KKSSSKK....KKSMKK.", ".KLLSSKK......KKSMMK", ".KLSSSK........KSSMK", ".KSSSSK........KSMMK", ".KSSMMKK......KKMMMK", "..KKSMSKK....KKMMKK.", "...KSMMMKKKKMMMMK...", "..KSMMMMMMMMMMMMMK..", "..KMMKKMMMMMMKKMMK..", "...KK..KKMMMKK..KK..", "........KMMK........", "........KKKK........", "...................."],
 };
 
 
