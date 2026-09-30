@@ -1,38 +1,52 @@
-// Ramses' artwork. The sprite is the user-supplied pixel-art PNG, split once
-// into two layers (body + staff) so the staff can swing from his hand during a
-// melee strike without a second staff ever appearing. Neither layer is redrawn
-// or recoloured: composited at rest they are pixel-identical to the original.
-import bodyAsset from "@/assets/ramses-body.png.asset.json";
-import staffAsset from "@/assets/ramses-staff.png.asset.json";
+// Ramses' artwork. Two user-supplied pixel-art PNGs are used: a frontal
+// idle/standing pose and a profile movement/attack pose. Each is split once into
+// a body layer and a staff layer (the staff is cut out around the fist, never
+// through it), so the staff can swing around the hand during a strike while the
+// fist stays on top of it. Neither layer is redrawn or recoloured.
+import quietBodyAsset from "@/assets/ramses-quiet-body.png.asset.json";
+import quietStaffAsset from "@/assets/ramses-quiet-staff.png.asset.json";
+import moveBodyAsset from "@/assets/ramses-move-body.png.asset.json";
+import moveStaffAsset from "@/assets/ramses-move-staff.png.asset.json";
 
-export const RAMSES_ART = {
-  /** sprite-pixel size of each layer */
-  W: 46,
-  H: 47,
-  /** screen pixels per sprite pixel — matches the game's 3px art grid (x2 scale) */
-  PX: 3,
-  /** x of Ramses' body centre inside the sprite (the staff sits to the left) */
-  CX: 27.5,
+type PoseArt = {
+  W: number;
+  H: number;
+  /** x of the body centre inside the sprite */
+  CX: number;
   /** fist / staff pivot inside the sprite */
-  HAND: { x: 9.5, y: 24.5 },
-  /** first row of the legs (used for the walk cycle) */
-  LEG_TOP: 41,
-} as const;
+  HAND: { x: number; y: number };
+  /** belt row — breathing expands only the torso above it */
+  WAIST: number;
+  /** first row where the two legs separate (walk cycle) */
+  LEG_TOP: number;
+  /** column between the two legs */
+  LEG_SPLIT: number;
+};
 
-let bodyImg: HTMLImageElement | null = null;
-let staffImg: HTMLImageElement | null = null;
+// Sprites are 158 px tall = 2x Moses' on-screen height, drawn 1:1.
+export const RAMSES_ART: { PX: number; H: number; quiet: PoseArt; move: PoseArt } = {
+  PX: 1,
+  H: 158,
+  quiet: { W: 90, H: 158, CX: 36, HAND: { x: 73.6, y: 69.5 }, WAIST: 72, LEG_TOP: 126, LEG_SPLIT: 36 },
+  move: { W: 90, H: 158, CX: 32, HAND: { x: 75.5, y: 70 }, WAIST: 72, LEG_TOP: 128, LEG_SPLIT: 32 },
+};
+
+type Layers = { body: HTMLImageElement; staff: HTMLImageElement };
+let quiet: Layers | null = null;
+let move: Layers | null = null;
 
 function load(url: string): HTMLImageElement {
   const img = new Image();
   img.src = url;
   return img;
 }
+const ready = (i: HTMLImageElement) => i.complete && i.naturalWidth > 0;
 
 export function ensureRamsesArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!bodyImg) bodyImg = load(bodyAsset.url);
-  if (!staffImg) staffImg = load(staffAsset.url);
-  return !!(bodyImg.complete && bodyImg.naturalWidth && staffImg.complete && staffImg.naturalWidth);
+  if (!quiet) quiet = { body: load(quietBodyAsset.url), staff: load(quietStaffAsset.url) };
+  if (!move) move = { body: load(moveBodyAsset.url), staff: load(moveStaffAsset.url) };
+  return ready(quiet.body) && ready(quiet.staff) && ready(move.body) && ready(move.staff);
 }
 
 export type RamsesPose = {
@@ -40,80 +54,82 @@ export type RamsesPose = {
   x: number;
   groundY: number;
   flip: 1 | -1;
-  /** walk cycle driver; pass 0 and moving=false for idle */
+  /** walk cycle driver */
   walkPhase: number;
   moving: boolean;
-  /** extra vertical offset in screen px (bob, leap arc) */
+  /** true while attacking — uses the movement/attack pose */
+  attacking?: boolean;
+  /** game time, drives the slow idle breathing */
+  time?: number;
+  /** extra vertical offset in screen px (leap arc) */
   bob: number;
   /** staff rotation in radians around the hand; 0 keeps the original pose */
   staffAngle: number;
 };
 
-/**
- * Draws Ramses at native pixel density. The walk cycle re-stamps the existing
- * leg pixels with a 1-pixel alternating lift/step and a 1-pixel torso bob — no
- * pixel is redrawn or resampled, so the character stays exactly as supplied.
- */
 export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): void {
-  if (!ensureRamsesArt() || !bodyImg || !staffImg) return;
-  const { W, H, PX, CX, HAND, LEG_TOP } = RAMSES_ART;
-  const step = pose.moving ? (Math.sin(pose.walkPhase) > 0 ? 1 : 0) : -1;
-  const torsoBob = pose.moving ? (step === 1 ? -1 : 0) : 0;
+  if (!ensureRamsesArt() || !quiet || !move) return;
+  const useMove = pose.moving || !!pose.attacking;
+  const L = useMove ? move : quiet;
+  const A = useMove ? RAMSES_ART.move : RAMSES_ART.quiet;
+  const { W, H, CX, HAND, WAIST, LEG_TOP, LEG_SPLIT } = A;
+
+  // Walk: 4-beat cycle — contact, passing (lift), contact, passing.
+  const s = Math.sin(pose.walkPhase);
+  const step = pose.moving ? (s > 0 ? 1 : 0) : -1;
+  const lift = pose.moving ? Math.round(Math.abs(s) * 2) : 0; // 0..2 px foot lift
+  const torsoBob = pose.moving ? (lift >= 2 ? -1 : 0) : 0;
+  // Idle breathing: very slight torso expansion, feet anchored.
+  const breath = !useMove ? Math.sin((pose.time ?? 0) * 1.6) : 0;
+  const sy = 1 + breath * 0.012;
+  const sx = 1 + breath * 0.008;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
-  // Feet on the ground, body centre on the entity, mirrored when facing left.
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY + pose.bob));
   if (pose.flip === -1) ctx.scale(-1, 1);
-  ctx.translate(-CX * PX, -H * PX);
+  ctx.translate(-CX, -H);
 
-  // ---- staff (behind the fist so it reads as held) ----
+  // Upper-body transform (breathing + walk bob), anchored at the belt.
+  const upper = () => {
+    ctx.translate(CX, WAIST);
+    ctx.scale(sx, sy);
+    ctx.translate(-CX, -WAIST + torsoBob);
+  };
+
+  // ---- staff, behind the fist ----
   ctx.save();
-  ctx.translate(HAND.x * PX, HAND.y * PX);
+  upper();
+  ctx.translate(HAND.x, HAND.y);
   if (pose.staffAngle) ctx.rotate(pose.staffAngle);
-  ctx.translate(-HAND.x * PX, -HAND.y * PX);
-  ctx.translate(0, torsoBob * PX);
-  ctx.drawImage(staffImg, 0, 0, W * PX, H * PX);
+  ctx.translate(-HAND.x, -HAND.y);
+  ctx.drawImage(L.staff, 0, 0, W, H);
   ctx.restore();
 
-  // ---- body: legs first, then the intact torso/robe on top ----
-  // Each moving leg carries a small overlap of the robe hem. The torso is then
-  // stamped in full through LEG_TOP, preserving a continuous connection at the
-  // hip and keeping the original stride offsets unchanged.
+  // ---- legs ----
   const legH = H - LEG_TOP;
-  // Preserve the established robe overlap used by the existing leg cycle.
-  const OVER = 6;
+  const OVER = 4;
   const bandTop = LEG_TOP - OVER;
   if (step === -1) {
-    ctx.drawImage(bodyImg, 0, LEG_TOP, W, legH, 0, LEG_TOP * PX, W * PX, legH * PX);
+    ctx.drawImage(L.body, 0, WAIST, W, H - WAIST, 0, WAIST, W, H - WAIST);
   } else {
-    // Front leg lifts and reaches, rear leg trails — mirrored on the next frame.
-    const lift = step === 1 ? 1 : 0;
-    const half = Math.round(CX);
-    const OX = 2;
-    const lW = half + OX;
-    ctx.drawImage(
-      bodyImg, 0, bandTop, lW, legH + OVER,
-      -(1 - lift) * PX, (bandTop - lift) * PX, lW * PX, (legH + OVER) * PX,
-    );
-    const rSX = half - OX;
-    const rW = W - rSX;
-    ctx.drawImage(
-      bodyImg, rSX, bandTop, rW, legH + OVER,
-      (rSX + lift) * PX, (bandTop - (1 - lift)) * PX, rW * PX, (legH + OVER) * PX,
-    );
+    // Hips / kilt between belt and leg split, stable.
+    ctx.drawImage(L.body, 0, WAIST, W, bandTop - WAIST, 0, WAIST + torsoBob, W, bandTop - WAIST);
+    // Front leg reaches and lifts, rear leg trails; roles swap every half cycle.
+    const frontLift = step === 1 ? lift : 0;
+    const rearLift = step === 0 ? lift : 0;
+    const reach = step === 1 ? 2 : -2;
+    ctx.drawImage(L.body, 0, bandTop, LEG_SPLIT, legH + OVER, -reach, bandTop - rearLift, LEG_SPLIT, legH + OVER);
+    ctx.drawImage(L.body, LEG_SPLIT, bandTop, W - LEG_SPLIT, legH + OVER, LEG_SPLIT + reach, bandTop - frontLift, W - LEG_SPLIT, legH + OVER);
+    // Re-stamp the kilt hem so the hip joint never shows a seam.
+    ctx.drawImage(L.body, 0, bandTop - 6, W, 6 + OVER, 0, bandTop - 6 + torsoBob, W, 6 + OVER);
   }
-  // Re-stamp the complete robe/torso above the leg line. This closes any seam
-  // and keeps both arms and hands intact in every walking pose.
-  ctx.drawImage(bodyImg, 0, 0, W, LEG_TOP, 0, torsoBob * PX, W * PX, LEG_TOP * PX);
-  // Re-stamp the supplied arm/hand pixels after the stride slices so the left
-  // hand remains connected without changing the walking offsets or leg rhythm.
-  const ARM_TOP = 18;
-  const ARM_BOTTOM = 31;
-  ctx.drawImage(
-    bodyImg, 0, ARM_TOP, W, ARM_BOTTOM - ARM_TOP,
-    0, (ARM_TOP + torsoBob) * PX, W * PX, (ARM_BOTTOM - ARM_TOP) * PX,
-  );
+
+  // ---- torso / head / arms ----
+  ctx.save();
+  upper();
+  ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
+  ctx.restore();
+
   ctx.restore();
 }
-
