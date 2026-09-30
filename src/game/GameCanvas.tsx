@@ -1184,7 +1184,7 @@ const ICON_PASSIVE: Record<string, string[]> = {
 
 // Companion portraits — 20×20, matching Moses' pixel density. Each has a
 // distinct headwear silhouette + robe palette so silhouettes read quickly.
-const ICON_NPC: Record<NpcId, string[]> = {
+const ICON_NPC: Partial<Record<NpcId, string[]>> = {
   bithiah: [
     "....................",
     "......OYYYYYYO......",

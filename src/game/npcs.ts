@@ -29,7 +29,7 @@ export const NPCS: Record<NpcId, NpcDef> = {
   miriam: {
     id: "miriam",
     name: "Miriam",
-    description: "Prophetess of song who watched over baby Moses.",
+    description: "Moses' sister. Fragile, but her broom strikes hard and often.",
     scripture: "Exodus 15:20 — Miriam the prophetess took a timbrel in her hand; and all the women went out after her.",
   },
   jethro: {
@@ -55,6 +55,12 @@ export const NPCS: Record<NpcId, NpcDef> = {
     name: "Hur",
     description: "Held up Moses' arms during the battle with Amalek.",
     scripture: "Exodus 17:12 — Aaron and Hur stayed up his hands, the one on the one side, and the other on the other side.",
+  },
+  jochebed: {
+    id: "jochebed",
+    name: "Jochebed",
+    description: "Moses' mother, who hid him in an ark of bulrushes.",
+    scripture: "Exodus 2:3 — She took for him an ark of bulrushes... and put the child therein.",
   },
   elder: {
     id: "elder",
