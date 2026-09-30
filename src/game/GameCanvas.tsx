@@ -1393,7 +1393,7 @@ function PixelIcon({ grid, size = 64 }: { grid: string[]; size?: number }) {
 }
 
 function iconGridFor(c: UpgradeChoice): string[] {
-  if (c.npc) return ICON_NPC[c.npc];
+  if (c.npc) return ICON_NPC[c.npc] ?? ICON_NPC.miriam!;
   if (c.plague && ICON_PLAGUE[c.plague]) return ICON_PLAGUE[c.plague]!;
   const m = /^passive-([a-zA-Z]+)-/.exec(c.id);
   if (m && ICON_PASSIVE[m[1]]) return ICON_PASSIVE[m[1]];
