@@ -1184,7 +1184,7 @@ const ICON_PASSIVE: Record<string, string[]> = {
 
 // Companion portraits — 20×20, matching Moses' pixel density. Each has a
 // distinct headwear silhouette + robe palette so silhouettes read quickly.
-const ICON_NPC: Record<NpcId, string[]> = {
+const ICON_NPC: Partial<Record<NpcId, string[]>> = {
   bithiah: [
     "....................",
     "......OYYYYYYO......",
@@ -1393,7 +1393,7 @@ function PixelIcon({ grid, size = 64 }: { grid: string[]; size?: number }) {
 }
 
 function iconGridFor(c: UpgradeChoice): string[] {
-  if (c.npc) return ICON_NPC[c.npc];
+  if (c.npc) return ICON_NPC[c.npc] ?? ICON_NPC.miriam!;
   if (c.plague && ICON_PLAGUE[c.plague]) return ICON_PLAGUE[c.plague]!;
   const m = /^passive-([a-zA-Z]+)-/.exec(c.id);
   if (m && ICON_PASSIVE[m[1]]) return ICON_PASSIVE[m[1]];
@@ -3183,6 +3183,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     flip: flip === -1 ? -1 : 1,
     walkPhase: e.animT * 4.2,
     moving: !seated && atk === "idle" && phase === "idle",
+    attacking: atk !== "idle" || phase !== "idle",
+    time: s.now,
     bob,
     staffAngle: staffAngle * (flip === -1 ? 1 : 1),
   });
@@ -3212,9 +3214,9 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   // HP bar visible when active
   if (d.active) {
     const bw = 80;
-    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 46 * RPX - 1, bw + 2, 6);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw, 4);
-    ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 46 * RPX, bw * Math.max(0, e.hp / e.maxHp), 4);
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 162 - 1, bw + 2, 6);
+    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 162, bw, 4);
+    ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 162, bw * Math.max(0, e.hp / e.maxHp), 4);
   }
 
 }

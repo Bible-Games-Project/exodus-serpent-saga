@@ -1,6 +1,6 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
-import { NPC_ORDER, NPCS } from "./npcs";
+import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
@@ -744,6 +744,15 @@ export function update(state: GameState, dt: number) {
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
+        if (e.data?.boltKind === "allywater") {
+          const R = (e.data.splashR as number) ?? 30;
+          for (const o of [...state.entities.values()]) {
+            if (o.team !== "enemy" || o === en || o.kind === "shieldsoldier") continue;
+            if (wrapDist2(state, o.pos, e.pos) < R * R) { o.hp -= (e.dmg ?? 0) * 0.5; if (o.hp <= 0) killEnemy(state, o); }
+          }
+          spawnVisualHazard(state, "allysplash", e.pos, 0.42, { seed: (e.data.seed as number) ?? 1, radius: R });
+          if (en.hp <= 0) killEnemy(state, en);
+        }
         if (!e.data?.pierce) { removeProjectile(state, e); break; }
         if (en.hp <= 0) killEnemy(state, en);
       }
@@ -1599,171 +1608,173 @@ function tickBonusSpawns(state: GameState, dt: number) {
 }
 
 
-// ---------- companion definitions & AI ----------
-type CompanionCombat = {
-  attackRange: number;
-  cooldown: number;
-  boltSpeed: number;
-  boltDmg: number;
-  boltRadius: number;
-  boltColor: string;
-  boltKind: string;
-};
-const COMPANION_COMBAT: Record<import("./types").NpcId, CompanionCombat> = {
-  bithiah:  { attackRange: 200, cooldown: 1.4, boltSpeed: 260, boltDmg: 10, boltRadius: 5, boltColor: "#f0e8b4", boltKind: "reed" },
-  aaron:    { attackRange: 90,  cooldown: 0.9, boltSpeed: 0,   boltDmg: 22, boltRadius: 6, boltColor: "#c48a3a", boltKind: "aaronstaff" },
-  miriam:   { attackRange: 210, cooldown: 1.3, boltSpeed: 240, boltDmg: 14, boltRadius: 7, boltColor: "#7fc7ff", boltKind: "waterbowl" },
-  jethro:   { attackRange: 170, cooldown: 1.8, boltSpeed: 200, boltDmg: 20, boltRadius: 6, boltColor: "#e8c060", boltKind: "wisdom" },
-  zipporah: { attackRange: 220, cooldown: 1.1, boltSpeed: 300, boltDmg: 14, boltRadius: 4, boltColor: "#b0b0b0", boltKind: "flint" },
-  joshua:   { attackRange: 260, cooldown: 1.0, boltSpeed: 340, boltDmg: 20, boltRadius: 4, boltColor: "#d8d4c0", boltKind: "spear" },
-  hur:      { attackRange: 180, cooldown: 1.6, boltSpeed: 260, boltDmg: 16, boltRadius: 5, boltColor: "#f0a0f0", boltKind: "prayer" },
-  elder:    { attackRange: 200, cooldown: 1.4, boltSpeed: 260, boltDmg: 18, boltRadius: 5, boltColor: "#e0e0ff", boltKind: "prayer" },
-};
+// ---------- allied champions (common system; data in allies.ts) ----------
+function allyTargetValid(state: GameState, id: number | undefined): Entity | undefined {
+  if (id == null) return undefined;
+  const t = state.entities.get(id);
+  if (!t || t.team !== "enemy" || t.hp <= 0) return undefined;
+  if (t.kind === "ramses" && t.data?.seated) return undefined;
+  return t;
+}
 
 function updateCompanion(state: GameState, e: Entity, dt: number) {
   const d = e.data!;
-  // Summon lockout — companion is invulnerable and frozen for ~1s while the
-  // golden summoning light plays around them.
-  if (d.summonUntil && state.now < (d.summonUntil as number)) {
-    return;
-  }
+  const def = allyDef(e.kind);
+  e.vel.x = 0; e.vel.y = 0;
+  if (!def) return;
+  // Invocation lockout — the champion is untouchable while the summon light plays.
+  if (d.summonUntil && state.now < (d.summonUntil as number)) return;
+  // Fallen: a grave stays where they fell until the revival timer expires.
   if (d.downedUntil) {
-    if (state.now >= (d.downedUntil as number)) {
-      d.downedUntil = undefined;
-      d.standupUntil = state.now + 0.6; // brief rise animation
-      e.hp = e.maxHp;
-    } else {
-      return;
-    }
+    if (state.now < (d.downedUntil as number)) return;
+    d.downedUntil = undefined;
+    d.standupUntil = state.now + 0.6;
+    e.hp = e.maxHp;
+    d.targetId = undefined;
   }
-  if (d.standupUntil && state.now < (d.standupUntil as number)) {
-    // Rising — no movement or attack until standup completes.
-    return;
-  } else if (d.standupUntil) {
-    d.standupUntil = undefined;
-  }
-  const p = state.player;
-  const combat = COMPANION_COMBAT[e.kind as import("./types").NpcId] ?? COMPANION_COMBAT.elder;
-  const inView = inViewport(state, e.pos);
+  if (d.standupUntil && state.now < (d.standupUntil as number)) return;
+  if (d.standupUntil) d.standupUntil = undefined;
 
-  if (!inView) {
-    const dx = p.pos.x - e.pos.x;
-    const dy = p.pos.y - e.pos.y;
-    const dd = Math.hypot(dx, dy) || 1;
-    const spd = 160;
-    e.pos.x += (dx / dd) * spd * dt;
-    e.pos.y += (dy / dd) * spd * dt;
-    e.facing = dx > 0 ? 1 : -1;
-    d.wanderT = 0;
-  } else {
-    let wt = ((d.wanderT as number) ?? 0) - dt;
-    let wx = (d.wanderX as number) ?? e.pos.x;
-    let wy = (d.wanderY as number) ?? e.pos.y;
-    if (wt <= 0 || Math.hypot(wx - e.pos.x, wy - e.pos.y) < 6) {
-      const vw = state.viewport?.w ?? 800;
-      const vh = state.viewport?.h ?? 600;
-      const m = 60;
-      wx = state.camera.x + rand(-vw / 2 + m, vw / 2 - m);
-      wy = state.camera.y + rand(-vh / 2 + m, vh / 2 - m);
-      wt = 2 + Math.random() * 2.5;
-      d.wanderX = wx; d.wanderY = wy;
+  // Attack timeline in progress: stand still until it finishes.
+  if (d.attackT != null) {
+    const prevT = d.attackT as number;
+    const t = Math.max(0, prevT - dt);
+    d.attackT = t;
+    const total = def.windup + def.action;
+    const impactAt = total - def.windup;
+    if (!d.attackResolved && t <= impactAt) {
+      resolveAllyAttack(state, e, def);
+      d.attackResolved = true;
     }
-    d.wanderT = wt;
-    const dx = wx - e.pos.x;
-    const dy = wy - e.pos.y;
+    if (t <= 0) delete d.attackT;
+    return;
+  }
+
+  // Off-screen recovery: walk back toward the player's visible area (camera
+  // centre), never teleport. Normal behaviour resumes once visible again.
+  if (!inViewport(state, e.pos, 0)) {
+    const dx = wrapDelta(state.camera.x, e.pos.x, state.worldW);
+    const dy = wrapDelta(state.camera.y, e.pos.y, state.worldH);
     const dd = Math.hypot(dx, dy) || 1;
-    const spd = 70;
-    e.pos.x += (dx / dd) * spd * dt;
-    e.pos.y += (dy / dd) * spd * dt;
-    if (Math.abs(dx) > 2) e.facing = dx > 0 ? 1 : -1;
+    const spd = def.moveSpeed * 1.6;
+    e.vel.x = (dx / dd) * spd; e.vel.y = (dy / dd) * spd;
+    e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
+    e.facing = dx > 0 ? 1 : -1;
+    resolveObstacles(e.pos, e.radius, state);
+    wrapPos(state, e.pos);
+    d.atkCd = Math.max(0, ((d.atkCd as number) ?? 0) - dt);
+    return;
+  }
+
+  // Re-evaluate the nearest enemy every 0.5s.
+  d.retargetT = ((d.retargetT as number) ?? 0) - dt;
+  let target = allyTargetValid(state, d.targetId as number | undefined);
+  if ((d.retargetT as number) <= 0 || !target) {
+    d.retargetT = ALLY_RETARGET_SECONDS;
+    let best: Entity | undefined;
+    let bestD = 900 * 900;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy" || en.hp <= 0) continue;
+      if (en.kind === "ramses" && en.data?.seated) continue;
+      const d2 = wrapDist2(state, en.pos, e.pos);
+      if (d2 < bestD) { bestD = d2; best = en; }
+    }
+    target = best;
+    d.targetId = best?.id;
+  }
+
+  d.atkCd = ((d.atkCd as number) ?? 0) - dt;
+  if (target) {
+    const dx = wrapDelta(target.pos.x, e.pos.x, state.worldW);
+    const dy = wrapDelta(target.pos.y, e.pos.y, state.worldH);
+    const dd = Math.hypot(dx, dy) || 1;
+    e.facing = dx > 0 ? 1 : -1;
+    const reach = def.range + target.radius;
+    if (dd <= reach) {
+      if ((d.atkCd as number) <= 0) {
+        d.attackT = def.windup + def.action;
+        d.attackTMax = def.windup + def.action;
+        d.attackWindup = def.windup;
+        d.attackSwing = def.action;
+        d.attackResolved = false;
+        d.attackDir = { x: dx / dd, y: dy / dd };
+        d.attackTarget = { x: e.pos.x + dx, y: e.pos.y + dy };
+        d.attackNearestId = target.id;
+        d.atkCd = def.cooldown;
+        d.fxSeed = Math.floor(Math.random() * 100000);
+      }
+      // Keep a little distance for ranged champions instead of hugging foes.
+    } else {
+      e.vel.x = (dx / dd) * def.moveSpeed; e.vel.y = (dy / dd) * def.moveSpeed;
+      e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
+    }
   }
   resolveObstacles(e.pos, e.radius, state);
   wrapPos(state, e.pos);
-
-  // attack animation timer (visualized by renderer)
-  if ((d.attackT as number | undefined) != null) {
-    d.attackT = Math.max(0, (d.attackT as number) - dt);
-    if ((d.attackT as number) <= 0) delete d.attackT;
-  }
-
-  const cd = ((d.atkCd as number) ?? 0) - dt;
-  if (cd <= 0) {
-    let nearest: Entity | null = null;
-    let bestD = combat.attackRange * combat.attackRange;
-    for (const en of state.entities.values()) {
-      if (en.team !== "enemy") continue;
-      const d2 = wrapDist2(state, en.pos, e.pos);
-      if (d2 < bestD) { bestD = d2; nearest = en; }
-    }
-    if (nearest) {
-      // Windup pose plays first; the projectile / hit resolves after windup.
-      const windup = 0.18;
-      const swing = 0.22;
-      d.attackT = windup + swing;
-      d.attackTMax = windup + swing;
-      d.attackWindup = windup;
-      d.attackSwing = swing;
-      d.attackTarget = { x: nearest.pos.x, y: nearest.pos.y };
-      d.attackNearestId = nearest.id;
-      d.attackResolved = false;
-      d.atkCd = combat.cooldown;
-    } else {
-      d.atkCd = 0.3;
-    }
-  } else {
-    d.atkCd = cd;
-  }
-
-  // Resolve the attack the moment the swing peaks (mid-arc), so animation and
-  // damage/projectile spawning are synchronised.
-  if ((d.attackT as number | undefined) != null && !d.attackResolved) {
-    const total = (d.attackTMax as number) ?? 0.4;
-    const windup = (d.attackWindup as number) ?? 0.18;
-    if ((d.attackT as number) <= total - windup) {
-      const tid = d.attackNearestId as number | undefined;
-      const tgt = tid != null ? state.entities.get(tid) : undefined;
-      const fallback = tgt && tgt.hp > 0
-        ? tgt
-        : ({ pos: (d.attackTarget as { x: number; y: number }) ?? e.pos, hp: 1 } as unknown as Entity);
-      spawnCompanionAttack(state, e, fallback, combat);
-      d.attackResolved = true;
-    }
-  }
 }
 
-function spawnCompanionAttack(state: GameState, ally: Entity, target: Entity, combat: CompanionCombat) {
-  const dx = target.pos.x - ally.pos.x;
-  const dy = target.pos.y - ally.pos.y;
-  const dd = Math.hypot(dx, dy) || 1;
-  ally.facing = dx > 0 ? 1 : -1;
-  const dmul = damageMultiplier(state) * 3; // companions hit ×3 harder
-  if (combat.boltSpeed === 0) {
-    if (dd < combat.attackRange) {
-      target.hp -= combat.boltDmg * dmul;
-      if (target.hp <= 0) killEnemy(state, target);
+function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
+  en.hp -= dmg;
+  spawnVisualHazard(state, "hitspark", { x: en.pos.x, y: en.pos.y - 14 }, 0.18, { seed: Math.floor(Math.random() * 99999), small: 1 });
+  if (en.hp <= 0) killEnemy(state, en);
+}
+
+function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
+  const d = ally.data!;
+  const dir = (d.attackDir as Vec2) ?? { x: ally.facing, y: 0 };
+  const dmg = def.damage * damageMultiplier(state) * 3;
+  const seed = (d.fxSeed as number) ?? 1;
+  if (def.attack === "broom") {
+    // Dust burst where the broom sweeps: area damage around the contact point.
+    const c = { x: ally.pos.x + dir.x * def.range * 0.75, y: ally.pos.y + dir.y * def.range * 0.75 };
+    for (const en of [...state.entities.values()]) {
+      if (en.team !== "enemy") continue;
+      if (en.kind === "ramses" && en.data?.seated) continue;
+      if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, dmg);
     }
-    spawnVisualHazard(state, "companionmelee", { x: ally.pos.x + (dx / dd) * 20, y: ally.pos.y + (dy / dd) * 20 }, 0.18, { color: combat.boltColor });
-    return;
+    spawnVisualHazard(state, "allydust", c, 0.5, { seed, radius: def.hitRadius });
+  } else if (def.attack === "water") {
+    // Water leaves the basket and travels to the target as a real projectile.
+    const spd = 300;
+    const origin = { x: ally.pos.x + dir.x * 14, y: ally.pos.y - 4 };
+    const w: Entity = {
+      id: state.nextId++,
+      pos: origin,
+      vel: { x: dir.x * spd, y: dir.y * spd },
+      radius: 9,
+      hp: 1, maxHp: 1,
+      team: "projectile", facing: ally.facing,
+      animT: 0, born: state.now,
+      ttl: 1.2, dmg,
+      kind: "bolt",
+      data: { hit: new Set<number>(), boltKind: "allywater", seed, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius },
+    };
+    state.entities.set(w.id, w);
+  } else if (def.attack === "horn") {
+    // Sound waves expand forward from the horn in a cone.
+    const R = def.hitRadius;
+    for (const en of [...state.entities.values()]) {
+      if (en.team !== "enemy") continue;
+      if (en.kind === "ramses" && en.data?.seated) continue;
+      const dx = wrapDelta(en.pos.x, ally.pos.x, state.worldW);
+      const dy = wrapDelta(en.pos.y, ally.pos.y, state.worldH);
+      const dd = Math.hypot(dx, dy);
+      if (dd > R + en.radius) continue;
+      if (dd > 1 && (dx * dir.x + dy * dir.y) / dd < 0.45) continue;
+      allyHitEnemy(state, en, dmg);
+    }
+    spawnVisualHazard(state, "allyhorn", { x: ally.pos.x, y: ally.pos.y }, 0.6, {
+      seed, radius: R, angle: Math.atan2(dir.y, dir.x), allyId: ally.id,
+    });
   }
-  const e: Entity = {
-    id: state.nextId++,
-    pos: { x: ally.pos.x, y: ally.pos.y },
-    vel: { x: (dx / dd) * combat.boltSpeed, y: (dy / dd) * combat.boltSpeed },
-    radius: combat.boltRadius,
-    hp: 1, maxHp: 1,
-    team: "projectile", facing: ally.facing,
-    animT: 0, born: state.now,
-    ttl: 1.4, dmg: combat.boltDmg * dmul,
-    kind: "bolt",
-    data: { hit: new Set<number>(), boltKind: combat.boltKind, boltColor: combat.boltColor, angle: Math.atan2(dy, dx) },
-  };
-  state.entities.set(e.id, e);
 }
 
 function downCompanion(state: GameState, n: Entity) {
+  if (n.data?.downedUntil) return;
   n.hp = 0;
   if (!n.data) n.data = {};
-  n.data.downedUntil = state.now + 15;
+  n.data.downedUntil = state.now + ALLY_REVIVE_SECONDS;
+  delete n.data.attackT;
 }
 
 // ---------- leveling ----------
@@ -1777,6 +1788,8 @@ function levelUp(state: GameState) {
 }
 
 function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
+  const def = allyDef(npcId);
+  if (!def || state.npcs.has(npcId)) return;
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const m = 80;
@@ -1787,17 +1800,25 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
     pos: { x: px, y: py },
     vel: { x: 0, y: 0 },
     radius: 12,
-    hp: 2700, maxHp: 2700, // companions are much sturdier (×15)
+    hp: def.maxHp, maxHp: def.maxHp,
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
-    data: { atkCd: 1.2, wanderT: 0, summonUntil: state.now + 1.0 },
+    data: { atkCd: 1.0, summonUntil: state.now + 1.0 },
   };
   state.entities.set(ally.id, ally);
   state.npcs.set(npcId, ally.id);
-  state.nextNpcIndex = Math.min(NPC_ORDER.length, state.nextNpcIndex + 1);
   state.newNpcs.add(npcId);
-  pushNotification(state, `+ ${NPCS[npcId].name}`, "#ffd070");
+  // One-shot invocation blast: clears ordinary enemies around the arrival point.
+  for (const en of [...state.entities.values()]) {
+    if (en.team !== "enemy" || en.kind === "ramses") continue;
+    if (wrapDist2(state, en.pos, ally.pos) < def.invokeRadius * def.invokeRadius) {
+      en.hp = 0;
+      killEnemy(state, en);
+    }
+  }
+  spawnVisualHazard(state, "allyinvoke", ally.pos, 0.8, { seed: Math.floor(Math.random() * 99999), radius: def.invokeRadius });
+  pushNotification(state, `+ ${def.name}`, "#ffd070");
 }
 
 function offerUpgrades(state: GameState) {
@@ -1850,28 +1871,25 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Companion — only when nextCompanionLevel reached.
-  const gate = state.nextCompanionLevel ?? 5;
-  const companionEligible = state.level >= gate;
+  // Champion — offered on every 5th level, picked at random from the pool of
+  // champions not yet recruited.
   let companion: UpgradeChoice | null = null;
-  if (companionEligible) {
-    const idx = state.nextNpcIndex;
-    const npcId: import("./types").NpcId = idx < NPC_ORDER.length ? NPC_ORDER[idx] : "elder";
-    const npc = NPCS[npcId];
-    const isFirst = !state.npcs.has(npcId);
-    companion = {
-      id: `npc-${npcId}-${state.level}`,
-      npc: npcId,
-      isCompanion: true,
-      isUnlock: isFirst,
-      title: isFirst ? `Companion: ${npc.name}` : `${npc.name} joins again`,
-      description: npc.description,
-      scripture: npc.scripture,
-      apply: (s) => {
-        summonCompanion(s, npcId);
-        s.nextCompanionLevel = s.level + 5 + Math.floor(Math.random() * 3);
-      },
-    };
+  if (state.level % 5 === 0) {
+    const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
+    if (available.length) {
+      const npcId = available[Math.floor(Math.random() * available.length)];
+      const def = allyDef(npcId)!;
+      companion = {
+        id: `npc-${npcId}-${state.level}`,
+        npc: npcId,
+        isCompanion: true,
+        isUnlock: true,
+        title: `Champion: ${def.name}`,
+        description: def.description,
+        scripture: def.scripture,
+        apply: (s) => summonCompanion(s, npcId),
+      };
+    }
   }
 
   // Shuffle non-companion choices; cap to 3 (or 2+companion when eligible).
