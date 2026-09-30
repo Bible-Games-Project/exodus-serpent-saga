@@ -17,7 +17,7 @@ import lion from "@/assets/lion-body.png.asset.json";
 import spearknight from "@/assets/mounted-new-source.png.asset.json";
 import mage from "@/assets/mage-red-source.png.asset.json";
 import chariotarcher from "@/assets/chariot-v2-source.png.asset.json";
-import ramses from "@/assets/ramses-body.png.asset.json";
+import ramses from "@/assets/ramses-quiet-body.png.asset.json";
 
 const SPRITES: Record<string, string> = {
   soldier: soldier.url,
