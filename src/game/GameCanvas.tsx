@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
+import { drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawSpearSoldierArt, ensureSpearSoldierArt, drawFlyingSpear, SPEAR_SOLDIER_ART } from "./spearSoldierArt";
@@ -1566,7 +1567,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
     if (e.kind === "companionmelee") { drawCompanionMelee(ctx, e, camX, camY); continue; }
+    if (e.kind === "bolt" && e.data?.boltKind === "allywater") { drawAllyWater(ctx, e, camX, camY); continue; }
     if (e.kind === "bolt") { drawBolt(ctx, e, camX, camY); continue; }
+    if (e.team === "hazard" && drawAllyFx(ctx, e, camX, camY, s)) continue;
     if (e.kind === "gnatswarm") { drawGnatSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "livestockcloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(60,110,40,0.9)", particle: "#2f4a1a", highlight: "#8ab24a" }); continue; }
     if (e.kind === "boilscloud") { drawBoilsCloud(ctx, e, camX, camY); continue; }
@@ -1617,6 +1620,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (drawProceduralEnemy(ctx, e, camX, camY)) continue;
 
     // Companions (allies) draw with per-npc procedural style + attack animation
+    if (e.team === "ally" && drawAlly(ctx, e, camX, camY, s)) continue;
     if (e.team === "ally" && drawCompanion(ctx, e, camX, camY, s)) continue;
 
     // Fallback: sprite-based rendering
