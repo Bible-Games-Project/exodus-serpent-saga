@@ -98,6 +98,8 @@ export type TestMapConfig = {
   ramses: boolean;
   /** 1 = throne/idle, 2 = walking + staff attack, 3 = jump attack, 4 = chariot */
   ramsesLevel: 1 | 2 | 3 | 4;
+  /** champion id -> recruited at the start of this session */
+  champions?: Record<string, boolean>;
 };
 
 export type GameState = {

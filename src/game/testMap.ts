@@ -4,6 +4,7 @@
 // which Ramses phase is forced. Normal progression is untouched.
 import { ENEMY_DEFS, ENEMY_ORDER, enemyLabel } from "./enemies";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
+import { ALLY_POOL, allyDef } from "./allies";
 import type { PlagueId, TestMapConfig } from "./types";
 
 /**
@@ -31,6 +32,16 @@ export function testEnemyLabel(kind: string): string {
   return enemyLabel(kind);
 }
 
+/** Every registered champion, straight from the ally registry. */
+export function testChampionIds(): string[] {
+  return [...ALLY_POOL];
+}
+
+export function testChampionInfo(id: string): { name: string; url: string } {
+  const d = allyDef(id);
+  return { name: d?.name ?? id, url: d?.sprite.url ?? "" };
+}
+
 export function defaultTestMapConfig(): TestMapConfig {
   const enemies: Record<string, boolean> = {};
   for (const k of testEnemyKinds()) enemies[k] = true;
@@ -39,5 +50,6 @@ export function defaultTestMapConfig(): TestMapConfig {
     enemies,
     ramses: false,
     ramsesLevel: 2,
+    champions: Object.fromEntries(testChampionIds().map((id) => [id, false])),
   };
 }

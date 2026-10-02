@@ -5,11 +5,27 @@ import type { Entity, GameState } from "./types";
 import { allyDef, type AllyDef } from "./allies";
 
 const imgs = new Map<string, HTMLImageElement>();
-function img(def: AllyDef): HTMLImageElement | null {
+function load(url: string): HTMLImageElement | null {
   if (typeof document === "undefined") return null;
-  let i = imgs.get(def.id);
-  if (!i) { i = new Image(); i.src = def.sprite.url; imgs.set(def.id, i); }
+  let i = imgs.get(url);
+  if (!i) { i = new Image(); i.src = url; imgs.set(url, i); }
   return i.complete && i.naturalWidth ? i : null;
+}
+function img(def: AllyDef): HTMLImageElement | null {
+  return load(def.weapon ? def.weapon.bodyUrl : def.sprite.url);
+}
+
+/** Weapon rotation (rad, facing right) for the current attack timeline. */
+export function allyWeaponAngle(def: AllyDef, attackT: number | undefined): number {
+  const w = def.weapon;
+  if (!w || attackT == null) return 0;
+  const el = def.windup + def.action - attackT;
+  if (el < def.windup) return w.windupAngle * Math.sin((el / def.windup) * Math.PI / 2);
+  const k = Math.min(1, (el - def.windup) / def.action);
+  const f = def.impactFrac ?? 0.35;
+  if (k < f) { const q = k / f; return w.windupAngle + (w.swingAngle - w.windupAngle) * q * q; }
+  if (k < f + 0.25) return w.swingAngle;
+  return w.swingAngle * (1 - (k - f - 0.25) / (1 - f - 0.25));
 }
 
 const rnd = (seed: number, i: number) => {
@@ -46,6 +62,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   const x = Math.round(e.pos.x - camX);
   const gy = Math.round(e.pos.y - camY + 10);
   const { W, H, CX, FOOT_TOP, FOOT_X0, FOOT_X1, FOOT_SPLIT } = def.sprite;
+  const sc = def.sprite.scale ?? 1;
 
   if (d.downedUntil != null) {
     drawGrave(ctx, x, gy - 6);
@@ -78,11 +95,13 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
     if (el < def.windup) { const k = el / def.windup; lean = -0.12 * k; push = -2 * k; }
     else { const k = Math.min(1, (el - def.windup) / def.action); const f = Math.sin(Math.min(1, k * 1.6) * Math.PI / 2) * (1 - k * 0.6); lean = 0.2 * f; push = 4 * f; }
     if (def.attack === "horn") { lean *= -0.5; push *= 0.3; } // blowing: chest back
+    if (def.weapon) { lean = 0; push *= 0.25; } // the weapon strikes, not the body
   }
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.translate(x, gy);
+  if (sc !== 1) ctx.scale(sc, sc);
   if (e.facing === -1) ctx.scale(-1, 1);
   ctx.translate(push, 0);
   if (lean) ctx.rotate(lean);
@@ -99,9 +118,22 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   } else {
     ctx.drawImage(im, 0, 0, W, H, 0, 0, W, H);
   }
+  // Held weapon: one complete layer attached to the grip, rotated as a whole.
+  const w = def.weapon;
+  if (w) {
+    const wi = load(w.weaponUrl), hi = load(w.handUrl);
+    if (wi) {
+      ctx.save();
+      ctx.translate(w.pivot.x, w.pivot.y + bodyBob);
+      ctx.rotate(allyWeaponAngle(def, at));
+      ctx.drawImage(wi, -w.pivot.x, -w.pivot.y);
+      ctx.restore();
+    }
+    if (hi) ctx.drawImage(hi, 0, bodyBob);
+  }
   ctx.restore();
   ctx.globalAlpha = 1;
-  bar(ctx, x, gy - H - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
+  bar(ctx, x, gy - Math.round(H * sc) - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
   return true;
 }
 
