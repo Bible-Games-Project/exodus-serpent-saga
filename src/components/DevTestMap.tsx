@@ -10,6 +10,8 @@ import {
   testAttackName,
   testEnemyKinds,
   testEnemyLabel,
+  testChampionIds,
+  testChampionInfo,
 } from "@/game/testMap";
 import type { TestMapConfig } from "@/game/types";
 
@@ -128,6 +130,37 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
                     <span className="font-display block text-[10px] uppercase tracking-[0.16em] text-[#7a5a30]">
                       {on ? "On" : "Off"}
                     </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Champions — listed from the ally registry */}
+        <section className="pixel-panel mb-5 bg-[#f6e2ad] p-5">
+          <h2 className="font-display mb-3 text-sm uppercase tracking-[0.16em] text-[#4a2c10]">Champions</h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {testChampionIds().map((id) => {
+              const info = testChampionInfo(id);
+              const on = cfg.champions?.[id] === true;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setCfg((c) => ({ ...c, champions: { ...c.champions, [id]: !on } }))}
+                  className={[
+                    "pixel-btn pixel-btn-press flex items-center gap-2 px-2 py-2 text-left",
+                    on ? "bg-[#e9c168]" : "bg-[#efdcae] opacity-70",
+                  ].join(" ")}
+                >
+                  <span className="flex h-12 w-9 shrink-0 items-end justify-center">
+                    {info.url ? (
+                      <img src={info.url} alt="" aria-hidden className="max-h-12 w-auto" style={{ imageRendering: "pixelated" }} />
+                    ) : null}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-pixel block truncate text-[11px] uppercase tracking-wider text-[#4a2f16]">{info.name}</span>
+                    <span className="font-display block text-[10px] uppercase tracking-[0.16em] text-[#7a5a30]">{on ? "On" : "Off"}</span>
                   </span>
                 </button>
               );

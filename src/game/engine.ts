@@ -175,6 +175,8 @@ function applyTestMapConfig(state: GameState, test: TestMapConfig) {
     state.plagues.set(id, 1);
     state.plagueCooldown.set(id, 0.5);
   }
+  // Selected champions join through the normal recruitment path.
+  for (const id of ALLY_POOL) if (test.champions?.[id]) summonCompanion(state, id);
 }
 
 
@@ -1641,7 +1643,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     const t = Math.max(0, prevT - dt);
     d.attackT = t;
     const total = def.windup + def.action;
-    const impactAt = total - def.windup;
+    const impactAt = total - def.windup - def.action * (def.impactFrac ?? 0);
     if (!d.attackResolved && t <= impactAt) {
       resolveAllyAttack(state, e, def);
       d.attackResolved = true;
@@ -1713,10 +1715,17 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   wrapPos(state, e.pos);
 }
 
-function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
+function allyHitEnemy(state: GameState, en: Entity, dmg: number, instantKill = false) {
+  // Instant-kill champions still go through the normal damage/death path;
+  // Ramses is a boss and takes the Staff of Moses' strength instead.
+  if (instantKill) dmg = en.kind === "ramses" ? staffStrikeDamage(state) : Math.max(dmg, en.hp + 1);
   en.hp -= dmg;
   spawnVisualHazard(state, "hitspark", { x: en.pos.x, y: en.pos.y - 14 }, 0.18, { seed: Math.floor(Math.random() * 99999), small: 1 });
   if (en.hp <= 0) killEnemy(state, en);
+}
+
+function staffStrikeDamage(state: GameState): number {
+  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state);
 }
 
 function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
@@ -1725,12 +1734,13 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
   const dmg = def.damage * damageMultiplier(state) * 3;
   const seed = (d.fxSeed as number) ?? 1;
   if (def.attack === "broom") {
-    // Dust burst where the broom sweeps: area damage around the contact point.
-    const c = { x: ally.pos.x + dir.x * def.range * 0.75, y: ally.pos.y + dir.y * def.range * 0.75 };
+    // The broom head is the hit: its reach at full swing defines the contact
+    // point, never the champion's own body.
+    const c = { x: ally.pos.x + dir.x * def.range, y: ally.pos.y + dir.y * def.range };
     for (const en of [...state.entities.values()]) {
-      if (en.team !== "enemy") continue;
+      if (en.team !== "enemy" || en.hp <= 0) continue;
       if (en.kind === "ramses" && en.data?.seated) continue;
-      if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, dmg);
+      if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, dmg, def.instantKill);
     }
     spawnVisualHazard(state, "allydust", c, 0.5, { seed, radius: def.hitRadius });
   } else if (def.attack === "water") {

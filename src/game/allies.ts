@@ -3,6 +3,9 @@
 // recruitment) and the shared renderer in allyArt.ts read from it. Adding a new
 // champion = add an entry here (plus its sprite), nothing else.
 import miriamAsset from "@/assets/ally-miriam.png.asset.json";
+import miriamBodyAsset from "@/assets/ally-miriam-body.png.asset.json";
+import miriamBroomAsset from "@/assets/ally-miriam-broom.png.asset.json";
+import miriamHandAsset from "@/assets/ally-miriam-hand.png.asset.json";
 import aaronAsset from "@/assets/ally-aaron.png.asset.json";
 import jochebedAsset from "@/assets/ally-jochebed.png.asset.json";
 import type { NpcId } from "./types";
@@ -28,7 +31,31 @@ export type AllyDef = {
     FOOT_SPLIT: number;
     /** where the attack effect originates (sprite px, facing right) */
     FX: { x: number; y: number };
+    /** uniform visual scale (gameplay stats are unaffected) */
+    scale?: number;
   };
+  /**
+   * Optional held weapon drawn as its own complete layer (never sliced by the
+   * walk). `url` is the full sprite for previews; the renderer uses
+   * `bodyUrl` + `weaponUrl` + `handUrl` (fingers drawn over the grip).
+   */
+  weapon?: {
+    bodyUrl: string;
+    weaponUrl: string;
+    handUrl: string;
+    /** grip the weapon rotates around (sprite px, facing right) */
+    pivot: { x: number; y: number };
+    /** weapon head that delivers the hit (sprite px, facing right) */
+    tip: { x: number; y: number };
+    /** rotation (rad, facing right; negative = raise forward) at full swing */
+    swingAngle: number;
+    /** rotation (rad) at the end of the preparation */
+    windupAngle: number;
+  };
+  /** fraction of the action phase at which the hit lands (default 0) */
+  impactFrac?: number;
+  /** every ordinary enemy struck is killed outright (bosses take staff damage) */
+  instantKill?: boolean;
   maxHp: number;
   /** base damage per hit (scaled by Moses' damage multiplier) */
   damage: number;
@@ -48,7 +75,7 @@ export type AllyDef = {
 };
 
 // Balance profiles:
-//  Miriam   — glass cannon: low HP, high damage, fastest attacks.
+//  Miriam   — glass cannon: low HP, instant-kill broom, fastest attacks.
 //  Jochebed — tank: very high HP, low damage, moderate (not fast) attacks.
 //  Aaron    — high HP and high damage, but a clearly longer cooldown.
 export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
@@ -57,15 +84,27 @@ export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
     name: "Miriam",
     description: "Moses' sister. Fragile, but her broom strikes hard and often.",
     scripture: "Exodus 15:20 — Miriam the prophetess, the sister of Aaron, took a timbrel in her hand.",
-    sprite: { url: miriamAsset.url, W: 44, H: 86, CX: 16, FOOT_TOP: 79, FOOT_X0: 6, FOOT_X1: 28, FOOT_SPLIT: 17, FX: { x: 40, y: 82 } },
-    maxHp: 900,
+    sprite: { url: miriamAsset.url, W: 44, H: 86, CX: 16, FOOT_TOP: 79, FOOT_X0: 6, FOOT_X1: 28, FOOT_SPLIT: 17, FX: { x: 37, y: 78 }, scale: 0.8 },
+    weapon: {
+      bodyUrl: miriamBodyAsset.url,
+      weaponUrl: miriamBroomAsset.url,
+      handUrl: miriamHandAsset.url,
+      pivot: { x: 16, y: 29 },
+      tip: { x: 37, y: 78 },
+      swingAngle: -1.05,
+      windupAngle: 0.35,
+    },
+    impactFrac: 0.35,
+    instantKill: true,
+    maxHp: 160,
     damage: 26,
     cooldown: 0.75,
-    range: 62,
-    hitRadius: 48,
+    // Matches the broom's on-screen reach (pivot -> head at full swing).
+    range: 40,
+    hitRadius: 30,
     moveSpeed: 95,
     windup: 0.22,
-    action: 0.24,
+    action: 0.3,
     attack: "broom",
     invokeRadius: 150,
   },

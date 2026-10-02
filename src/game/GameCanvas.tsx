@@ -1584,7 +1584,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1743,6 +1743,38 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
 // ---------------- Moses ----------------
 
+
+/** Pixel heart + "hp / max" floating above Moses, read live from his HP. */
+function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const cx = Math.round(e.pos.x - camX);
+  const top = Math.round(e.pos.y - camY + 8 - 66 * 1.2 - 14);
+  const text = `${Math.max(0, Math.ceil(e.hp))} / ${Math.round(e.maxHp)}`;
+  ctx.save();
+  ctx.font = "10px Silkscreen, 'Courier New', monospace";
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  const tw = Math.ceil(ctx.measureText(text).width);
+  const heart = BONUS_ART.heart;
+  const hw = 14;
+  const gap = 3;
+  const total = hw + gap + tw;
+  const x0 = cx - Math.round(total / 2);
+  for (let r = 0; r < heart.grid.length; r++) {
+    const row = heart.grid[r];
+    for (let c = 0; c < row.length; c++) {
+      const col = heart.palette[row[c]];
+      if (!col) continue;
+      ctx.fillStyle = col;
+      ctx.fillRect(x0 + c, top - 7 + r, 1, 1);
+    }
+  }
+  const tx = x0 + hw + gap;
+  ctx.fillStyle = "#3a1d0c";
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText(text, tx + dx, top + dy);
+  ctx.fillStyle = "#fbe7b4";
+  ctx.fillText(text, tx, top);
+  ctx.restore();
+}
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
