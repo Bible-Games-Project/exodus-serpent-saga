@@ -65,6 +65,8 @@ export type RamsesPose = {
   bob: number;
   /** staff rotation in radians around the hand; 0 keeps the original pose */
   staffAngle: number;
+  /** vertical raise of fist + staff in sprite px (raise-and-slam attack) */
+  staffLift?: number;
 };
 
 export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): void {
@@ -73,6 +75,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   const L = useMove ? move : quiet;
   const A = useMove ? RAMSES_ART.move : RAMSES_ART.quiet;
   const { W, H, CX, HAND, WAIST, LEG_TOP, LEG_SPLIT } = A;
+  const lift = Math.round(pose.staffLift ?? 0);
 
   // Walk: 4-beat cycle — contact, passing (lift), contact, passing.
   const s = Math.sin(pose.walkPhase);
@@ -103,12 +106,12 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.translate(HAND.x, HAND.y);
   if (pose.staffAngle) ctx.rotate(pose.staffAngle);
   ctx.translate(-HAND.x, -HAND.y);
-  ctx.drawImage(L.staff, 0, 0, W, H);
+  ctx.drawImage(L.staff, 0, -lift, W, H);
   ctx.restore();
 
   // ---- legs ----
   const legH = H - LEG_TOP;
-  const OVER = 4;
+  const OVER = 10;
   const bandTop = LEG_TOP - OVER;
   if (step === -1) {
     ctx.drawImage(L.body, 0, WAIST, W, H - WAIST, 0, WAIST, W, H - WAIST);
@@ -118,7 +121,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
     // Front leg reaches and lifts, rear leg trails; roles swap every half cycle.
     const frontLift = step === 1 ? lift : 0;
     const rearLift = step === 0 ? lift : 0;
-    const reach = step === 1 ? 2 : -2;
+    const reach = step === 1 ? 1 : -1;
     ctx.drawImage(L.body, 0, bandTop, LEG_SPLIT, legH + OVER, -reach, bandTop - rearLift, LEG_SPLIT, legH + OVER);
     ctx.drawImage(L.body, LEG_SPLIT, bandTop, W - LEG_SPLIT, legH + OVER, LEG_SPLIT + reach, bandTop - frontLift, W - LEG_SPLIT, legH + OVER);
     // Re-stamp the kilt hem so the hip joint never shows a seam.
@@ -129,6 +132,14 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.save();
   upper();
   ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
+  if (lift > 0) {
+    // Raised arm: the forearm column above the fist stretches upward so the
+    // fist (and the staff it grips) stays connected while lifted.
+    const ax = Math.round(HAND.x - 7), aw = 14;
+    const top = Math.round(HAND.y - 22), bot = Math.round(HAND.y + 7);
+    ctx.drawImage(L.body, ax, bot - 9, aw, 9, ax, bot - 9 - lift, aw, 9);
+    ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - lift * 0.6, aw, bot - 9 - top - lift * 0.4);
+  }
   ctx.restore();
 
   ctx.restore();

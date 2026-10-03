@@ -3142,19 +3142,17 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   // Ramses uses the supplied pixel-art sprite, split into body + staff layers so
   // the staff he already holds is the one that swings during a melee strike.
   const atk = (d.atkPhase as string) ?? "idle";
-  let staffAngle = 0;
+  // Vertical raise-and-slam: the staff stays upright and travels straight up
+  // overhead with the fist, holds, then drives straight down into the sand.
+  let staffLift = 0;
   if (atk === "windup") {
-    // Raises the staff overhead, holding it high just before the smash.
     const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.55));
-    staffAngle = -1.15 * (t < 0.7 ? t / 0.7 : 1);
+    staffLift = 44 * Math.min(1, t / 0.7);
   } else if (atk === "smash") {
-    // Drives it straight down into the sand.
     const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.12));
-    staffAngle = -1.15 + t * 1.6;
-  } else if (atk === "recover") {
-    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.45));
-    staffAngle = 0.45 * (1 - t);
+    staffLift = 44 * (1 - t * t);
   }
+  const staffAngle = 0;
 
   // ---- pixel-art ground impact: irregular cracks + dust, no smooth rings ----
   const crackT = (d.crackT as number) ?? 0;
@@ -3222,7 +3220,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     attacking: atk !== "idle" || phase !== "idle",
     time: s.now,
     bob,
-    staffAngle: staffAngle * (flip === -1 ? 1 : 1),
+    staffAngle,
+    staffLift,
   });
 
 
