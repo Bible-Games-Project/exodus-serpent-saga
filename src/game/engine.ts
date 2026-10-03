@@ -491,6 +491,7 @@ export function update(state: GameState, dt: number) {
       // pick nearest target (Moses or ally) using wrapped delta
       let targetPos: Vec2 = { x: e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) };
       let bestD = wrapDist2(state, e.pos, p.pos);
+      let targetAlly: Entity | undefined;
       for (const npcId of state.npcs.values()) {
         const n = state.entities.get(npcId);
         if (!n || n.data?.downedUntil) continue;
@@ -498,6 +499,7 @@ export function update(state: GameState, dt: number) {
         const d = wrapDist2(state, e.pos, n.pos);
         if (d < bestD * 0.7) {
           bestD = d;
+          targetAlly = n;
           targetPos = { x: e.pos.x + wrapDelta(n.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(n.pos.y, e.pos.y, state.worldH) };
         }
       }
@@ -541,7 +543,26 @@ export function update(state: GameState, dt: number) {
       // ---- melee attack: triggered from beside Moses, damage lands mid-anim ----
       const melee = MELEE_ATTACKS[e.kind];
       const dd = Math.sqrt(wrapDist2(state, e.pos, p.pos));
-      if (melee && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
+      if (melee && targetAlly && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
+        // Same melee timeline, aimed at the champion this enemy is chasing.
+        const n = targetAlly;
+        const da = Math.sqrt(wrapDist2(state, e.pos, n.pos));
+        const reach = e.radius + n.radius + melee.gap;
+        const key = melee.key;
+        if (e.data?.[key] == null && da < reach && state.now >= ((e.data?.atkGate as number) ?? 0)) {
+          e.data!.atkGate = state.now + melee.dur + 0.3;
+          e.data![key] = state.now;
+          e.data!.atkHitDone = false;
+        }
+        if (e.data?.[key] != null) {
+          const prog = (state.now - (e.data[key] as number)) / melee.dur;
+          if (prog >= melee.from && prog <= melee.to && da < reach + 10) {
+            const first = !e.data.atkHitDone;
+            e.data.atkHitDone = true;
+            damageAlly(state, n, ((e.data?.contactDmg as number) ?? 8) * dt, first ? { x: n.pos.x, y: n.pos.y - 24 } : undefined);
+          }
+        }
+      } else if (melee && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
         const reach = e.radius + p.radius + melee.gap;
         const key = melee.key;
         const active = e.data?.[key] != null;
@@ -617,9 +638,7 @@ export function update(state: GameState, dt: number) {
         if (!n || n.data?.downedUntil) continue;
         if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
         if (wrapDist2(state, e.pos, n.pos) < (e.radius + n.radius) ** 2) {
-          const contactDmg = (e.data?.contactDmg as number) ?? 8;
-          n.hp -= contactDmg * dt;
-          if (n.hp <= 0) downCompanion(state, n);
+          if (!melee) damageAlly(state, n, ((e.data?.contactDmg as number) ?? 8) * dt);
         }
       }
 
@@ -719,6 +738,19 @@ export function update(state: GameState, dt: number) {
           resolvePlayerDefeat(state);
         }
         if (!state.entities.has(e.id)) continue;
+        // Otherwise the shot can strike a champion's visible body.
+        for (const npcId of state.npcs.values()) {
+          const n = state.entities.get(npcId);
+          if (!n || n.data?.downedUntil) continue;
+          if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
+          const bx = n.pos.x + wrapDelta(e.pos.x, n.pos.x, state.worldW) - n.pos.x;
+          const by = e.pos.y - (n.pos.y - 22);
+          if (Math.abs(bx) < n.radius + e.radius && Math.abs(by) < 34 + e.radius) {
+            damageAlly(state, n, e.dmg ?? 5, { x: e.pos.x, y: e.pos.y });
+            removeProjectile(state, e);
+            break;
+          }
+        }
         continue;
       }
 
@@ -1795,6 +1827,14 @@ function levelUp(state: GameState) {
   state.player.maxHp += 5;
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15);
   offerUpgrades(state);
+}
+
+/** Shared champion damage: real HP loss, hit feedback, and the death/grave path. */
+function damageAlly(state: GameState, n: Entity, dmg: number, fxAt?: Vec2) {
+  if (n.data?.downedUntil) return;
+  n.hp -= dmg;
+  if (fxAt) spawnVisualHazard(state, "hitspark", fxAt, 0.18, { seed: n.id, small: 1 });
+  if (n.hp <= 0) downCompanion(state, n);
 }
 
 function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
