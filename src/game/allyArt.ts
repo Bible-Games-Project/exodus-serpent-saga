@@ -33,7 +33,7 @@ const rnd = (seed: number, i: number) => {
   return v - Math.floor(v);
 };
 
-function bar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, fg: string, bg: string) {
+export function bar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, fg: string, bg: string) {
   const bw = 30;
   ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(x - bw / 2 - 1, y - 1, bw + 2, 5);
   ctx.fillStyle = bg; ctx.fillRect(x - bw / 2, y, bw, 3);
