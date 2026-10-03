@@ -85,3 +85,5 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Champions holding a weapon (e.g. Miriam) use `weapon` layers in `allies.ts` (body / whole weapon / grip-hand overlay): the walk only steps the body's feet band and the weapon rotates intact around its grip, so it is never sliced. Test Map champion toggles are generated from `ALLY_POOL` and recruit through `summonCompanion`.
