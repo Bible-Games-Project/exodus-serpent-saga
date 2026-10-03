@@ -75,7 +75,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   const L = useMove ? move : quiet;
   const A = useMove ? RAMSES_ART.move : RAMSES_ART.quiet;
   const { W, H, CX, HAND, WAIST, LEG_TOP, LEG_SPLIT } = A;
-  const lift = Math.round(pose.staffLift ?? 0);
+  const staffUp = Math.round(pose.staffLift ?? 0);
 
   // Walk: 4-beat cycle — contact, passing (lift), contact, passing.
   const s = Math.sin(pose.walkPhase);
@@ -106,7 +106,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.translate(HAND.x, HAND.y);
   if (pose.staffAngle) ctx.rotate(pose.staffAngle);
   ctx.translate(-HAND.x, -HAND.y);
-  ctx.drawImage(L.staff, 0, -lift, W, H);
+  ctx.drawImage(L.staff, 0, -staffUp, W, H);
   ctx.restore();
 
   // ---- legs ----
@@ -132,13 +132,13 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.save();
   upper();
   ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
-  if (lift > 0) {
+  if (staffUp > 0) {
     // Raised arm: the forearm column above the fist stretches upward so the
-    // fist (and the staff it grips) stays connected while lifted.
+    // fist (and the staff it grips) stays connected while staffUped.
     const ax = Math.round(HAND.x - 7), aw = 14;
     const top = Math.round(HAND.y - 22), bot = Math.round(HAND.y + 7);
-    ctx.drawImage(L.body, ax, bot - 9, aw, 9, ax, bot - 9 - lift, aw, 9);
-    ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - lift * 0.6, aw, bot - 9 - top - lift * 0.4);
+    ctx.drawImage(L.body, ax, bot - 9, aw, 9, ax, bot - 9 - staffUp, aw, 9);
+    ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - staffUp * 0.6, aw, bot - 9 - top - staffUp * 0.4);
   }
   ctx.restore();
 
