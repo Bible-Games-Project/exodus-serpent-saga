@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
-import { drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
+import { bar as allyHpBar, drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawSpearSoldierArt, ensureSpearSoldierArt, drawFlyingSpear, SPEAR_SOLDIER_ART } from "./spearSoldierArt";
@@ -1744,36 +1744,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 // ---------------- Moses ----------------
 
 
-/** Pixel heart + "hp / max" floating above Moses, read live from his HP. */
+/** Champion-style green HP bar above Moses, read live from his existing HP. */
 function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const cx = Math.round(e.pos.x - camX);
-  const top = Math.round(e.pos.y - camY + 8 - 66 * 1.2 - 14);
-  const text = `${Math.max(0, Math.ceil(e.hp))} / ${Math.round(e.maxHp)}`;
-  ctx.save();
-  ctx.font = "10px Silkscreen, 'Courier New', monospace";
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "left";
-  const tw = Math.ceil(ctx.measureText(text).width);
-  const heart = BONUS_ART.heart;
-  const hw = 14;
-  const gap = 3;
-  const total = hw + gap + tw;
-  const x0 = cx - Math.round(total / 2);
-  for (let r = 0; r < heart.grid.length; r++) {
-    const row = heart.grid[r];
-    for (let c = 0; c < row.length; c++) {
-      const col = heart.palette[row[c]];
-      if (!col) continue;
-      ctx.fillStyle = col;
-      ctx.fillRect(x0 + c, top - 7 + r, 1, 1);
-    }
-  }
-  const tx = x0 + hw + gap;
-  ctx.fillStyle = "#3a1d0c";
-  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) ctx.fillText(text, tx + dx, top + dy);
-  ctx.fillStyle = "#fbe7b4";
-  ctx.fillText(text, tx, top);
-  ctx.restore();
+  const top = Math.round(e.pos.y - camY + 8 - 66 * 1.2);
+  allyHpBar(ctx, cx, top - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
 }
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
@@ -3142,19 +3117,17 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   // Ramses uses the supplied pixel-art sprite, split into body + staff layers so
   // the staff he already holds is the one that swings during a melee strike.
   const atk = (d.atkPhase as string) ?? "idle";
-  let staffAngle = 0;
+  // Vertical raise-and-slam: the staff stays upright and travels straight up
+  // overhead with the fist, holds, then drives straight down into the sand.
+  let staffLift = 0;
   if (atk === "windup") {
-    // Raises the staff overhead, holding it high just before the smash.
     const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.55));
-    staffAngle = -1.15 * (t < 0.7 ? t / 0.7 : 1);
+    staffLift = 44 * Math.min(1, t / 0.7);
   } else if (atk === "smash") {
-    // Drives it straight down into the sand.
     const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.12));
-    staffAngle = -1.15 + t * 1.6;
-  } else if (atk === "recover") {
-    const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.45));
-    staffAngle = 0.45 * (1 - t);
+    staffLift = 44 * (1 - t * t);
   }
+  const staffAngle = 0;
 
   // ---- pixel-art ground impact: irregular cracks + dust, no smooth rings ----
   const crackT = (d.crackT as number) ?? 0;
@@ -3222,7 +3195,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     attacking: atk !== "idle" || phase !== "idle",
     time: s.now,
     bob,
-    staffAngle: staffAngle * (flip === -1 ? 1 : 1),
+    staffAngle,
+    staffLift,
   });
 
 

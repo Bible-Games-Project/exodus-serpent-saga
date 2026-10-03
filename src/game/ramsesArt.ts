@@ -28,7 +28,7 @@ export const RAMSES_ART: { PX: number; H: number; quiet: PoseArt; move: PoseArt 
   PX: 1,
   H: 158,
   quiet: { W: 90, H: 158, CX: 36, HAND: { x: 73.6, y: 69.5 }, WAIST: 72, LEG_TOP: 126, LEG_SPLIT: 36 },
-  move: { W: 90, H: 158, CX: 32, HAND: { x: 75.5, y: 70 }, WAIST: 72, LEG_TOP: 128, LEG_SPLIT: 32 },
+  move: { W: 90, H: 158, CX: 32, HAND: { x: 75.5, y: 70 }, WAIST: 72, LEG_TOP: 128, LEG_SPLIT: 36 },
 };
 
 type Layers = { body: HTMLImageElement; staff: HTMLImageElement };
@@ -65,6 +65,8 @@ export type RamsesPose = {
   bob: number;
   /** staff rotation in radians around the hand; 0 keeps the original pose */
   staffAngle: number;
+  /** vertical raise of fist + staff in sprite px (raise-and-slam attack) */
+  staffLift?: number;
 };
 
 export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): void {
@@ -73,6 +75,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   const L = useMove ? move : quiet;
   const A = useMove ? RAMSES_ART.move : RAMSES_ART.quiet;
   const { W, H, CX, HAND, WAIST, LEG_TOP, LEG_SPLIT } = A;
+  const staffUp = Math.round(pose.staffLift ?? 0);
 
   // Walk: 4-beat cycle — contact, passing (lift), contact, passing.
   const s = Math.sin(pose.walkPhase);
@@ -103,7 +106,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.translate(HAND.x, HAND.y);
   if (pose.staffAngle) ctx.rotate(pose.staffAngle);
   ctx.translate(-HAND.x, -HAND.y);
-  ctx.drawImage(L.staff, 0, 0, W, H);
+  ctx.drawImage(L.staff, 0, -staffUp, W, H);
   ctx.restore();
 
   // ---- legs ----
@@ -129,6 +132,14 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   ctx.save();
   upper();
   ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
+  if (staffUp > 0) {
+    // Raised arm: the forearm column above the fist stretches upward so the
+    // fist (and the staff it grips) stays connected while staffUped.
+    const ax = Math.round(HAND.x - 7), aw = 14;
+    const top = Math.round(HAND.y - 22), bot = Math.round(HAND.y + 7);
+    ctx.drawImage(L.body, ax, bot - 9, aw, 9, ax, bot - 9 - staffUp, aw, 9);
+    ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - staffUp * 0.6, aw, bot - 9 - top - staffUp * 0.4);
+  }
   ctx.restore();
 
   ctx.restore();

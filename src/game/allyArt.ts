@@ -33,7 +33,7 @@ const rnd = (seed: number, i: number) => {
   return v - Math.floor(v);
 };
 
-function bar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, fg: string, bg: string) {
+export function bar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, fg: string, bg: string) {
   const bw = 30;
   ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(x - bw / 2 - 1, y - 1, bw + 2, 5);
   ctx.fillStyle = bg; ctx.fillRect(x - bw / 2, y, bw, 3);
@@ -213,7 +213,10 @@ export function drawAllyFx(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
 
 /** In-flight water thrown from Jochebed's basket. */
 export function drawAllyWater(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): void {
-  const x = e.pos.x - camX, y = e.pos.y - camY - 14;
+  // Starts at the basket height, settles to body height as it flies.
+  const lift0 = (e.data?.lift0 as number) ?? 14;
+  const k = Math.min(1, (e.animT || 0) / 0.35);
+  const x = e.pos.x - camX, y = e.pos.y - camY - (lift0 + (14 - lift0) * k);
   const seed = (e.data?.seed as number) ?? 1;
   const vx = e.vel.x, vy = e.vel.y;
   const sp = Math.hypot(vx, vy) || 1;
