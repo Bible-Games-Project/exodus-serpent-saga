@@ -28,7 +28,7 @@ export const RAMSES_ART: { PX: number; H: number; quiet: PoseArt; move: PoseArt 
   PX: 1,
   H: 158,
   quiet: { W: 90, H: 158, CX: 36, HAND: { x: 73.6, y: 69.5 }, WAIST: 72, LEG_TOP: 126, LEG_SPLIT: 36 },
-  move: { W: 90, H: 158, CX: 32, HAND: { x: 75.5, y: 70 }, WAIST: 72, LEG_TOP: 128, LEG_SPLIT: 32 },
+  move: { W: 90, H: 158, CX: 32, HAND: { x: 75.5, y: 70 }, WAIST: 72, LEG_TOP: 128, LEG_SPLIT: 36 },
 };
 
 type Layers = { body: HTMLImageElement; staff: HTMLImageElement };
@@ -111,7 +111,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
 
   // ---- legs ----
   const legH = H - LEG_TOP;
-  const OVER = 10;
+  const OVER = 4;
   const bandTop = LEG_TOP - OVER;
   if (step === -1) {
     ctx.drawImage(L.body, 0, WAIST, W, H - WAIST, 0, WAIST, W, H - WAIST);
@@ -121,7 +121,7 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
     // Front leg reaches and lifts, rear leg trails; roles swap every half cycle.
     const frontLift = step === 1 ? lift : 0;
     const rearLift = step === 0 ? lift : 0;
-    const reach = step === 1 ? 1 : -1;
+    const reach = step === 1 ? 2 : -2;
     ctx.drawImage(L.body, 0, bandTop, LEG_SPLIT, legH + OVER, -reach, bandTop - rearLift, LEG_SPLIT, legH + OVER);
     ctx.drawImage(L.body, LEG_SPLIT, bandTop, W - LEG_SPLIT, legH + OVER, LEG_SPLIT + reach, bandTop - frontLift, W - LEG_SPLIT, legH + OVER);
     // Re-stamp the kilt hem so the hip joint never shows a seam.
