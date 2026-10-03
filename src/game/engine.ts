@@ -1778,7 +1778,11 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
   } else if (def.attack === "water") {
     // Water leaves the basket and travels to the target as a real projectile.
     const spd = 300;
-    const origin = { x: ally.pos.x + dir.x * 14, y: ally.pos.y - 4 };
+    // Spawn exactly at the basket in the sprite (scaled, mirrored by facing);
+    // `lift` is the basket's height above the ground point for the renderer.
+    const sc = def.sprite.scale ?? 1;
+    const origin = { x: ally.pos.x + (def.sprite.FX.x - def.sprite.CX) * sc * ally.facing, y: ally.pos.y };
+    const lift0 = (def.sprite.H - def.sprite.FX.y) * sc - 10;
     const w: Entity = {
       id: state.nextId++,
       pos: origin,
@@ -1789,7 +1793,7 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
       animT: 0, born: state.now,
       ttl: 1.2, dmg,
       kind: "bolt",
-      data: { hit: new Set<number>(), boltKind: "allywater", seed, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius },
+      data: { hit: new Set<number>(), boltKind: "allywater", lift0, seed, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius },
     };
     state.entities.set(w.id, w);
   } else if (def.attack === "horn") {
