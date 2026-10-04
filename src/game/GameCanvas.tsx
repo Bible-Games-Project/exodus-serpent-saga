@@ -2014,6 +2014,15 @@ function drawSerpentProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     ctx.fillRect(sx - 2, sy - 1, cell + (i % 4 === 0 ? 2 : 0), 3);
   }
   ctx.restore();
+  // Bite: a quick forward lunge along the travel direction on a damaging hit.
+  const biteAt = e.data?.biteAt as number | undefined;
+  const bk = biteAt == null ? 1 : (performance.now() / 1000 - ((e.data!.biteWall as number) ??= performance.now() / 1000)) / 0.16;
+  if (bk < 1) {
+    const l = Math.sin(bk * Math.PI) * 10;
+    drawSerpentArt(ctx, x + Math.cos(angle) * l, y + Math.sin(angle) * l, angle, facing, phase);
+    return;
+  }
+  if (biteAt != null && e.data) { delete e.data.biteAt; delete e.data.biteWall; }
   drawSerpentArt(ctx, x, y, angle, facing, phase);
 }
 

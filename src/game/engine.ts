@@ -778,6 +778,14 @@ export function update(state: GameState, dt: number) {
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
+        if (e.kind === "serpent" && (e.dmg ?? 0) > 0) {
+          // Bite: the snake lunges (renderer) and blood bursts at the contact
+          // point, only on a real damaging hit.
+          e.data!.biteAt = state.now;
+          const j = () => (Math.random() - 0.5) * 8;
+          const bt = 0.32 + Math.random() * 0.22;
+          spawnVisualHazard(state, "bloodhit", { x: (en.pos.x + e.pos.x) / 2 + j(), y: (en.pos.y + e.pos.y) / 2 - 14 + j() }, bt, { seed: Math.floor(Math.random() * 99999), maxTtl: bt, small: Math.random() < 0.5 ? 1 : 0 });
+        }
         if (e.data?.boltKind === "allywater") {
           const R = (e.data.splashR as number) ?? 30;
           for (const o of [...state.entities.values()]) {
@@ -1747,11 +1755,8 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   wrapPos(state, e.pos);
 }
 
-function allyHitEnemy(state: GameState, en: Entity, dmg: number, instantKill = false) {
-  // Instant-kill champions still go through the normal damage/death path;
-  // Ramses is a boss and takes the Staff of Moses' strength instead.
-  if (instantKill) dmg = en.kind === "ramses" ? staffStrikeDamage(state) : Math.max(dmg, en.hp + 1);
-  en.hp -= dmg;
+function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
+    en.hp -= dmg;
   spawnVisualHazard(state, "hitspark", { x: en.pos.x, y: en.pos.y - 14 }, 0.18, { seed: Math.floor(Math.random() * 99999), small: 1 });
   if (en.hp <= 0) killEnemy(state, en);
 }
@@ -1772,7 +1777,7 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
     for (const en of [...state.entities.values()]) {
       if (en.team !== "enemy" || en.hp <= 0) continue;
       if (en.kind === "ramses" && en.data?.seated) continue;
-      if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, dmg, def.instantKill);
+      if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, def.staffDamage ? staffStrikeDamage(state) : dmg);
     }
     spawnVisualHazard(state, "allydust", c, 0.5, { seed, radius: def.hitRadius });
   } else if (def.attack === "water") {
