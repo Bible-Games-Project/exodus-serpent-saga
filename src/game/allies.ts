@@ -54,8 +54,8 @@ export type AllyDef = {
   };
   /** fraction of the action phase at which the hit lands (default 0) */
   impactFrac?: number;
-  /** every ordinary enemy struck is killed outright (bosses take staff damage) */
-  instantKill?: boolean;
+  /** each hit deals the current Staff of Moses damage (kept in sync with it) */
+  staffDamage?: boolean;
   maxHp: number;
   /** base damage per hit (scaled by Moses' damage multiplier) */
   damage: number;
@@ -75,7 +75,7 @@ export type AllyDef = {
 };
 
 // Balance profiles:
-//  Miriam   — glass cannon: low HP, instant-kill broom, fastest attacks.
+//  Miriam   — glass cannon: low HP, broom hits as hard as the Staff of Moses, fastest attacks.
 //  Jochebed — tank: very high HP, low damage, moderate (not fast) attacks.
 //  Aaron    — high HP and high damage, but a clearly longer cooldown.
 export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
@@ -95,7 +95,7 @@ export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
       windupAngle: 0.35,
     },
     impactFrac: 0.35,
-    instantKill: true,
+    staffDamage: true,
     maxHp: 160,
     damage: 26,
     cooldown: 0.75,
