@@ -215,7 +215,7 @@ export function drawAllyFx(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
 export function drawAllyWater(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): void {
   // Starts at the basket height, settles to body height as it flies.
   const lift0 = (e.data?.lift0 as number) ?? 14;
-  const k = Math.min(1, (e.animT || 0) / 0.35);
+  const k = Math.min(1, Math.max(0, 1.2 - (e.ttl ?? 0)) / 0.35);
   const x = e.pos.x - camX, y = e.pos.y - camY - (lift0 + (14 - lift0) * k);
   const seed = (e.data?.seed as number) ?? 1;
   const vx = e.vel.x, vy = e.vel.y;
