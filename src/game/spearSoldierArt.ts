@@ -76,8 +76,6 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
   const throwing = t != null && t > 0 && t < 1;
   const stride = pose.moving && !throwing ? Math.sin(pose.walkPhase) : 0;
   const knee = pose.moving && !throwing ? Math.cos(pose.walkPhase) : 0;
-  const stepF = stride * 10;
-  const stepB = -stepF;
   const liftF = Math.max(0, stride) * 8;
   const liftB = Math.max(0, -stride) * 8;
   const released = !pose.holdingSpear || (t != null && t >= SPEAR_RELEASE_AT);
