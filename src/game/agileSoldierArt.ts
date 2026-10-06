@@ -6,8 +6,8 @@ export const AGILE_ART = {
   /** sprite-pixel size of the shared layer canvas */
   W: 1024,
   H: 1536,
-  /** Exactly three times the previous 0.024 visual scale. */
-  PX: 0.072,
+  /** 25% smaller than the former 0.072 scale (0.072 * 0.75). */
+  PX: 0.054,
   /** x of his body centre inside the sprite */
   CX: 512,
   /** Transparent source rows below the visible feet. */
