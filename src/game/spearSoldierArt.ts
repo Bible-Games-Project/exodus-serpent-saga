@@ -1,8 +1,11 @@
 // The character is weapon-free in every frame. The held spear is a separate
 // layer, and the original supplied flying spear remains the projectile.
-import characterAsset from "@/assets/spear-v2-character.png";
-import legBAsset from "@/assets/spear-v2-legb.png.asset.json";
-import legFAsset from "@/assets/spear-v2-legf.png.asset.json";
+// Layers derived from the original supplied PNG: spear-free body, the complete
+// held spear (with the gripping fist), and two complete legs.
+import bodyAsset from "@/assets/spear-v3-body.png.asset.json";
+import heldAsset from "@/assets/spear-v3-held.png.asset.json";
+import legBAsset from "@/assets/spear-v3-legb.png.asset.json";
+import legFAsset from "@/assets/spear-v3-legf.png.asset.json";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
 import flyAsset from "@/assets/spear-fly2.png.asset.json";
 
@@ -24,6 +27,7 @@ export const SPEAR_FLY_ART = { W: 175, H: 114, PX: 0.32, ANGLE: -0.5216 } as con
 
 type Layers = {
   character: HTMLImageElement;
+  held: HTMLImageElement;
   legB: HTMLImageElement;
   legF: HTMLImageElement;
   fly: HTMLImageElement;
@@ -40,14 +44,15 @@ export function ensureSpearSoldierArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      character: load(characterAsset),
+      character: load(bodyAsset.url),
+      held: load(heldAsset.url),
       legB: load(legBAsset.url),
       legF: load(legFAsset.url),
       fly: load(flyAsset.url),
     };
   }
   const l = layers;
-  return [l.character, l.legB, l.legF, l.fly].every((i) => i.complete && i.naturalWidth > 0);
+  return [l.character, l.held, l.legB, l.legF, l.fly].every((i) => i.complete && i.naturalWidth > 0);
 }
 
 export type SpearSoldierPose = {
@@ -87,25 +92,25 @@ export function drawSpearSoldierArt(ctx: CanvasRenderingContext2D, pose: SpearSo
     ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   };
 
-  // Each lower-body layer swings around its hip under the complete robe.
-  // Feet lift on the forward half of the step; the opposite foot plants.
-  const leg = (img: HTMLImageElement, angle: number, lift: number, offset: number) => {
+  // Each complete leg swings around its own hip, tucked under the kilt; the
+  // forward foot lifts slightly while the other one plants.
+  const HIP = { x: 380, y: 1150 };
+  const leg = (img: HTMLImageElement, angle: number, lift: number) => {
     ctx.save();
-    ctx.translate(365 * PX, 1050 * PX);
+    ctx.translate(HIP.x * PX, HIP.y * PX);
     ctx.rotate(angle);
-    ctx.translate(-365 * PX, -1050 * PX);
-    stamp(img, offset, -lift - 8);
+    ctx.translate(-HIP.x * PX, -HIP.y * PX);
+    stamp(img, 0, -lift);
     ctx.restore();
   };
-  leg(l.legB, stepB * 0.008, liftB, knee * 2);
-  leg(l.legF, stepF * 0.008, liftF, -knee * 2);
-  // The head, body, and arms remain one intact piece throughout the throw.
+  leg(l.legB, -stride * 0.12, liftB);
+  leg(l.legF, stride * 0.12, liftF);
+  // Body + head + arms stay one intact piece; a gentle bob with the stride.
+  const bob = pose.moving && !throwing ? -Math.abs(knee) * 6 : 0;
   const windup = throwing && t < SPEAR_RELEASE_AT ? -Math.round((t / SPEAR_RELEASE_AT) * 10) : 0;
-  stamp(l.character, windup, throwing ? -4 : 0);
-  if (!released) {
-    // Independent supplied PNG: the entire held layer disappears at release.
-    ctx.drawImage(l.fly, (windup + 0) * PX, (throwing ? 286 : 290) * PX, 1006 * PX, 204 * PX);
-  }
+  stamp(l.character, windup, (throwing ? -4 : 0) + bob);
+  // The complete held spear is its own layer; it vanishes entirely at release.
+  if (!released) stamp(l.held, windup, (throwing ? -4 : 0) + bob);
   ctx.restore();
 }
 
