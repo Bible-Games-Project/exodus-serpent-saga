@@ -113,7 +113,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     // The heavy soldier's opposite: paper-thin, very fast, damage barely above
     // the basic soldier's 10. Radius is exactly 3x its former value so the
     // collision area follows the exactly 3x artwork without changing its stats.
-    radius: 18, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
+    radius: 13.5, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
     minMinute: 0, weight: 4, behavior: "skirmish",
   },
   cobra: {
@@ -412,7 +412,10 @@ export function enemyTick(
             : dashVy < 0
               ? (edgeMargin - e.pos.y) / dashVy
               : Infinity;
-          const distanceToFarEdge = Math.max(pd + 260, Math.min(edgeX, edgeY));
+          void edgeX; void edgeY;
+          // AGILE_DASHING_THROUGH: the run ends roughly as far beyond Moses as
+          // it started before him; the wrapping world never blocks the ray.
+          const distanceToFarEdge = pd * 2 + 140;
           ds.specialDash = 1;
           ds.specialDashVx = dashVx;
           ds.specialDashVy = dashVy;

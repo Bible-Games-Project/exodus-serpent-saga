@@ -510,6 +510,14 @@ export function update(state: GameState, dt: number) {
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
         spawnFx: (kind, pos, ttl, data) => spawnVisualHazard(state, kind, pos, ttl, data),
       });
+      const kU = e.data?.knockUntil as number | undefined;
+      if (kU != null) {
+        if (state.now < kU) {
+          const f = (kU - state.now) / 0.22; // eases out to zero
+          e.pos.x += (e.data!.knockVx as number) * f * dt;
+          e.pos.y += (e.data!.knockVy as number) * f * dt;
+        } else delete e.data!.knockUntil;
+      }
       wrapPos(state, e.pos);
 
       // Agile assassination pass: swept against Moses so the fast movement can
@@ -946,7 +954,6 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
   const reach = Math.hypot(tipX - cx, tipY - cy) + tolerance;
-  const HALF_CONE = 0.85; // ~49 degrees each side of the facing direction
   const candidates: Array<{ en: Entity; px: number; py: number }> = [];
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
@@ -959,19 +966,10 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     t = Math.max(0, Math.min(1, t));
     const px = cx + vx * t, py = cy + vy * t;
     const dd = Math.hypot(en.pos.x - px, en.pos.y - py);
-    let inRange = dd < en.radius + tolerance;
-    if (!inRange) {
-      // Broad frontal zone measured from Moses' body: forward up to the staff
-      // reach, with generous (but bounded) vertical tolerance above/below.
-      // Enemies behind his body centre are never hit.
-      const ex = (en.pos.x - state.player.pos.x) * facing;
-      const ey = en.pos.y - state.player.pos.y;
-      const forward = reach + en.radius;
-      const vertical = reach * 0.9 + en.radius;
-      if (ex > -en.radius * 0.5 && ex < forward && Math.abs(ey) < vertical) {
-        inRange = Math.hypot(Math.max(0, ex), ey) < reach * 1.15 + en.radius;
-      }
-    }
+    // Radial melee zone centred on Moses: any direction within staff reach.
+    const rx = wrapDelta(en.pos.x, state.player.pos.x, state.worldW);
+    const ry = wrapDelta(en.pos.y, state.player.pos.y, state.worldH);
+    const inRange = dd < en.radius + tolerance || Math.hypot(rx, ry) < reach * 1.15 + en.radius;
     if (inRange) candidates.push({ en, px, py });
   }
 
@@ -1044,14 +1042,11 @@ function enemyInStaffCone(state: GameState): boolean {
   const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
   const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
   const reach = Math.hypot(tipX - cx, tipY - cy) + 14;
-  const HALF_CONE = 0.85;
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
-    const ex = (en.pos.x - cx) * facing;
-    const ey = en.pos.y - cy;
-    if (ex <= 0) continue;
-    if (Math.hypot(ex, ey) > reach + en.radius) continue;
-    if (Math.abs(Math.atan2(ey, ex)) <= HALF_CONE) return true;
+    const ex = wrapDelta(en.pos.x, state.player.pos.x, state.worldW);
+    const ey = wrapDelta(en.pos.y, state.player.pos.y, state.worldH);
+    if (Math.hypot(ex, ey) < reach * 1.15 + en.radius) return true;
   }
   return false;
 }
@@ -1813,6 +1808,15 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
       if (dd > R + en.radius) continue;
       if (dd > 1 && (dx * dir.x + dy * dir.y) / dd < 0.45) continue;
       allyHitEnemy(state, en, dmg);
+      // Short, smooth push away from the horn; Ramses and a committed agile
+      // dash are not displaced.
+      if (en.kind !== "ramses" && !(en.kind === "agilesoldier" && en.data?.specialDash)) {
+        en.data ??= {};
+        const k = dd > 1 ? dd : 1;
+        en.data.knockVx = (dd > 1 ? dx / k : dir.x) * 260;
+        en.data.knockVy = (dd > 1 ? dy / k : dir.y) * 260;
+        en.data.knockUntil = state.now + 0.22;
+      }
     }
     spawnVisualHazard(state, "allyhorn", { x: ally.pos.x, y: ally.pos.y }, 0.6, {
       seed, radius: R, angle: Math.atan2(dir.y, dir.x), allyId: ally.id,
