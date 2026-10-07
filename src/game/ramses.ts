@@ -76,6 +76,16 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
   const d = r.data!;
   const p = state.player;
 
+  // Pyramid tomb: Ramses stays down for the revive time, then returns at full HP.
+  if (d.downedUntil != null) {
+    if (state.now < (d.downedUntil as number)) return;
+    d.downedUntil = undefined;
+    d.downedAt = undefined;
+    r.hp = r.maxHp;
+    d.atkCd = 1.5;
+    d.leapCd = 5;
+  }
+
   // Test Map: the chosen phase is forced regardless of Moses' level. The normal
   // game keeps its untouched level-based progression below.
   const tm = state.testMap;
