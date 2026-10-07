@@ -3025,6 +3025,35 @@ function drawRamsesTelegraph(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   ctx.restore();
 }
 
+// Ramses' tomb while he waits to revive: a small stepped pixel pyramid with a
+// gray countdown bar that drains over the revive time.
+function drawRamsesPyramid(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, s: GameState) {
+  const d = e.data!;
+  const P = 3;
+  const rows = 9;
+  const baseY = y + 10;
+  drawPixelShadow(ctx, x, baseY + 2, 64, { px: P, alpha: 0.26, seed: e.id, phase: 0, sway: 0 });
+  for (let r = 0; r < rows; r++) {
+    const half = rows - r; // half-width in pixel cells
+    const ry = baseY - (r + 1) * P;
+    for (let c = -half; c < half; c++) {
+      const lit = c < 0;
+      const step = r % 3 === 2;
+      ctx.fillStyle = step ? (lit ? "#c9a25e" : "#8a6a38") : (lit ? "#e2c27e" : "#a8854a");
+      ctx.fillRect(x + c * P, ry, P, P);
+    }
+  }
+  // Capstone and dark doorway.
+  ctx.fillStyle = "#f2d48a"; ctx.fillRect(x - P, baseY - (rows + 1) * P, 2 * P, P);
+  ctx.fillStyle = "#3a2a16"; ctx.fillRect(x - P, baseY - 3 * P, 2 * P, 3 * P);
+  const total = Math.max(0.001, (d.downedUntil as number) - ((d.downedAt as number) ?? s.now));
+  const frac = Math.max(0, Math.min(1, ((d.downedUntil as number) - s.now) / total));
+  const bw = 40, bx = Math.round(x - bw / 2), by = baseY - (rows + 1) * P - 8;
+  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
+  ctx.fillStyle = "#4a4a4a"; ctx.fillRect(bx, by, bw, 3);
+  ctx.fillStyle = "#b8b8b8"; ctx.fillRect(bx, by, Math.round(bw * frac), 3);
+}
+
 function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState) {
   const d = e.data!;
   const x = Math.round(e.pos.x - camX);
@@ -3032,6 +3061,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   const phase = d.leapPhase as string;
   const seated = !!d.seated;
   const flip = e.facing === -1 ? -1 : 1;
+  if (d.downedUntil != null) { drawRamsesPyramid(ctx, x, y, e, s); return; }
   const idleBob = Math.sin(s.now * 1.2) * 1.5;
   
 
