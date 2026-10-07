@@ -131,14 +131,24 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
   // ---- torso / head / arms ----
   ctx.save();
   upper();
-  ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
   if (staffUp > 0) {
-    // Raised arm: the forearm column above the fist stretches upward so the
-    // fist (and the staff it grips) stays connected while staffUped.
+    // Raised arm: the forearm + fist column is cut out of the torso and drawn
+    // raised, so the fist exists only once (no duplicate hand left behind).
     const ax = Math.round(HAND.x - 7), aw = 14;
     const top = Math.round(HAND.y - 22), bot = Math.round(HAND.y + 7);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, W, WAIST + 1);
+    ctx.rect(ax + aw, top, -aw, bot - top);
+    ctx.clip("evenodd");
+    ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
+    ctx.restore();
+    // Forearm stretched from its elbow end up to the raised fist, then the fist.
+    ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - staffUp, aw, bot - 9 - top);
+    ctx.drawImage(L.body, ax, top, aw, 4, ax, top - staffUp, aw, staffUp + 4);
     ctx.drawImage(L.body, ax, bot - 9, aw, 9, ax, bot - 9 - staffUp, aw, 9);
-    ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - staffUp * 0.6, aw, bot - 9 - top - staffUp * 0.4);
+  } else {
+    ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
   }
   ctx.restore();
 
