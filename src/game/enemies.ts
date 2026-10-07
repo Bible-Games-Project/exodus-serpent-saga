@@ -53,21 +53,21 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // lives outside this table). More types will be added one by one later.
   soldier: {
     kind: "soldier", category: "human",
-    radius: 12, baseHp: 26, hpPerMinute: 24, speed: 55, contactDmg: 10, xp: 3,
+    radius: 12, baseHp: 26, hpPerMinute: 24, speed: 55, contactDmg: 30, xp: 3,
     minMinute: 0, weight: 6, behavior: "chase",
   },
   jackal: {
     kind: "jackal", category: "animal",
-    radius: 10, baseHp: 14, hpPerMinute: 14, speed: 95, contactDmg: 12, xp: 2,
+    radius: 10, baseHp: 14, hpPerMinute: 14, speed: 95, contactDmg: 36, xp: 2,
     minMinute: 1.5, weight: 5, behavior: "chase",
   },
   archer: {
     kind: "archer", category: "human",
     radius: 12, baseHp: 30, hpPerMinute: 22, speed: 50, contactDmg: 8, xp: 4,
-    minMinute: 0, weight: 4, behavior: "ranged",
+    minMinute: 0, weight: 2, behavior: "ranged",
     attack: {
-      cooldown: 2.4, range: 330, projectileSpeed: 270,
-      projectileDmg: 9, projectileKind: "arrow", projectileTtl: 2.4,
+      cooldown: 4.8, range: 330, projectileSpeed: 270,
+      projectileDmg: 4.5, projectileKind: "arrow", projectileTtl: 2.4,
     },
   },
   axesoldier: {
@@ -113,7 +113,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     // The heavy soldier's opposite: paper-thin, very fast, damage barely above
     // the basic soldier's 10. Radius is exactly 3x its former value so the
     // collision area follows the exactly 3x artwork without changing its stats.
-    radius: 13.5, baseHp: 14, hpPerMinute: 9, speed: 165, contactDmg: 12, xp: 5,
+    radius: 13.5, baseHp: 42, hpPerMinute: 27, speed: 165, contactDmg: 12, xp: 5,
     minMinute: 0, weight: 4, behavior: "skirmish",
   },
   cobra: {

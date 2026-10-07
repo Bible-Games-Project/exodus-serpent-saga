@@ -1588,7 +1588,16 @@ function syncOrbitFlies(state: GameState, dt: number) {
 
 function killEnemy(state: GameState, e: Entity) {
   // Ramses cannot die from normal death — clamp.
-  if (e.kind === "ramses") { e.hp = 1; return; }
+  if (e.kind === "ramses") {
+    // Ramses falls into a pyramid tomb and revives after the champion revive time.
+    if (e.data && e.data.downedUntil == null) {
+      e.hp = 0;
+      e.data.downedUntil = state.now + ALLY_REVIVE_SECONDS;
+      e.data.downedAt = state.now;
+      e.data.leapPhase = "idle"; e.data.atkPhase = "idle";
+    }
+    return;
+  }
   if (!state.entities.has(e.id)) return;
   state.entities.delete(e.id);
   state.kills++;
@@ -1650,7 +1659,7 @@ function allyTargetValid(state: GameState, id: number | undefined): Entity | und
   if (id == null) return undefined;
   const t = state.entities.get(id);
   if (!t || t.team !== "enemy" || t.hp <= 0) return undefined;
-  if (t.kind === "ramses" && t.data?.seated) return undefined;
+  if (t.kind === "ramses" && (t.data?.seated || t.data?.downedUntil != null)) return undefined;
   return t;
 }
 
@@ -1712,7 +1721,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     let bestD = 900 * 900;
     for (const en of state.entities.values()) {
       if (en.team !== "enemy" || en.hp <= 0) continue;
-      if (en.kind === "ramses" && en.data?.seated) continue;
+      if (en.kind === "ramses" && (en.data?.seated || en.data?.downedUntil != null)) continue;
       const d2 = wrapDist2(state, en.pos, e.pos);
       if (d2 < bestD) { bestD = d2; best = en; }
     }
@@ -1771,7 +1780,7 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
     const c = { x: ally.pos.x + dir.x * def.range, y: ally.pos.y + dir.y * def.range };
     for (const en of [...state.entities.values()]) {
       if (en.team !== "enemy" || en.hp <= 0) continue;
-      if (en.kind === "ramses" && en.data?.seated) continue;
+      if (en.kind === "ramses" && (en.data?.seated || en.data?.downedUntil != null)) continue;
       if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, def.staffDamage ? staffStrikeDamage(state) : dmg);
     }
     spawnVisualHazard(state, "allydust", c, 0.5, { seed, radius: def.hitRadius });
@@ -1801,7 +1810,7 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
     const R = def.hitRadius;
     for (const en of [...state.entities.values()]) {
       if (en.team !== "enemy") continue;
-      if (en.kind === "ramses" && en.data?.seated) continue;
+      if (en.kind === "ramses" && (en.data?.seated || en.data?.downedUntil != null)) continue;
       const dx = wrapDelta(en.pos.x, ally.pos.x, state.worldW);
       const dy = wrapDelta(en.pos.y, ally.pos.y, state.worldH);
       const dd = Math.hypot(dx, dy);
