@@ -145,7 +145,6 @@ export function drawRamsesArt(ctx: CanvasRenderingContext2D, pose: RamsesPose): 
     ctx.restore();
     // Forearm stretched from its elbow end up to the raised fist, then the fist.
     ctx.drawImage(L.body, ax, top, aw, bot - 9 - top, ax, top - staffUp, aw, bot - 9 - top);
-    ctx.drawImage(L.body, ax, top, aw, 4, ax, top - staffUp, aw, staffUp + 4);
     ctx.drawImage(L.body, ax, bot - 9, aw, 9, ax, bot - 9 - staffUp, aw, 9);
   } else {
     ctx.drawImage(L.body, 0, 0, W, WAIST + 1, 0, 0, W, WAIST + 1);
