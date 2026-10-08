@@ -1612,6 +1612,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "mageimpact") { drawMageImpact(ctx, e, camX, camY); continue; }
     if (e.kind === "agiledust") { drawAgileDust(ctx, e, camX, camY); continue; }
     if (e.kind === "agileslash") { drawAgileSlash(ctx, e, camX, camY); continue; }
+    if (e.kind === "magecast") { drawMageCastBurst(ctx, e, camX, camY); continue; }
     if (e.kind === "heavyslash") { drawHeavySlash(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
@@ -2534,6 +2535,72 @@ function drawAgileDust(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
 }
 
 /** Fast diagonal pixel cut at Moses during the Agile Soldier's special pass. */
+/**
+ * Sorcerer staff launch burst: irregular pixel shards and energy fragments
+ * explode from the staff jewel, strongest along the shot so the burst visually
+ * connects to the magic ball. Staff-jewel palette only.
+ */
+function drawMageCastBurst(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.36;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const dx = (e.data?.dirX as number) ?? 1;
+  const dy = (e.data?.dirY as number) ?? 0;
+  const base = Math.atan2(dy, dx);
+  const seed = (e.data?.seed as number) ?? e.id;
+  const rnd = (n: number) => { const v = Math.sin((seed + n) * 91.7) * 43758.5453; return v - Math.floor(v); };
+  const P = 3;
+  const snap = (v: number) => Math.round(v / P) * P;
+  const colors = [MAGE_LIGHT.core, MAGE_LIGHT.mid, MAGE_LIGHT.outer, MAGE_LIGHT.ember, MAGE_LIGHT.deep];
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  // Bright irregular core flash at the jewel, collapsing quickly.
+  const core = Math.max(0, 1 - t * 2.2);
+  if (core > 0) {
+    ctx.globalAlpha = core;
+    const r = 4 + Math.round((1 - core) * 4);
+    ctx.fillStyle = MAGE_LIGHT.outer;
+    ctx.fillRect(snap(cx - r * P / 2) - P, snap(cy - P), r * P + 2 * P, 3 * P);
+    ctx.fillRect(snap(cx - P), snap(cy - r * P / 2) - P, 3 * P, r * P + 2 * P);
+    ctx.fillStyle = MAGE_LIGHT.mid;
+    ctx.fillRect(snap(cx - 2 * P), snap(cy - 2 * P), 4 * P, 4 * P);
+    ctx.fillStyle = MAGE_LIGHT.core;
+    ctx.fillRect(snap(cx - P), snap(cy - P), 2 * P, 2 * P);
+  }
+  // Radiating energy fragments: half thrown along the shot, half all around.
+  for (let i = 0; i < 26; i++) {
+    const forward = i < 13;
+    const a = forward ? base + (rnd(i) - 0.5) * 1.1 : rnd(i + 30) * Math.PI * 2;
+    const reach = (forward ? 46 : 30) * (0.5 + rnd(i + 60) * 0.7);
+    const ease = 1 - (1 - t) * (1 - t);
+    const x = cx + Math.cos(a) * reach * ease;
+    const y = cy + Math.sin(a) * reach * ease - (forward ? 0 : t * 6);
+    ctx.globalAlpha = Math.min(1, life * 1.6) * (0.65 + rnd(i + 90) * 0.35);
+    ctx.fillStyle = colors[(i + Math.floor(t * 4)) % colors.length];
+    const s = i % 5 === 0 ? 2 * P : P;
+    ctx.fillRect(snap(x), snap(y), s, s);
+    // Short pixel trail behind each forward fragment.
+    if (forward && i % 2 === 0) {
+      ctx.globalAlpha *= 0.6;
+      ctx.fillStyle = MAGE_LIGHT.outer;
+      ctx.fillRect(snap(x - Math.cos(a) * 6), snap(y - Math.sin(a) * 6), P, P);
+      ctx.fillStyle = MAGE_LIGHT.deep;
+      ctx.fillRect(snap(x - Math.cos(a) * 12), snap(y - Math.sin(a) * 12), P, P);
+    }
+  }
+  // Energy streak along the launch line, leading into the ball.
+  ctx.globalAlpha = Math.max(0, 1 - t * 1.6);
+  for (let k = 0; k < 7; k++) {
+    const dist = 6 + k * 6 + t * 18;
+    ctx.fillStyle = k % 2 ? MAGE_LIGHT.mid : MAGE_LIGHT.core;
+    ctx.fillRect(snap(cx + dx * dist), snap(cy + dy * dist), P, P);
+  }
+  ctx.restore();
+}
+
 function drawAgileSlash(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const maxTtl = (e.data?.maxTtl as number) ?? 0.24;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));

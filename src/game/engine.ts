@@ -1148,6 +1148,13 @@ function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: 
     data: { enemyOwned: true, angle: Math.atan2(dir.y, dir.x) },
   };
   state.entities.set(e.id, e);
+  // Sorcerer: magical energy bursts from the staff jewel on the exact frame
+  // the ball is created (visual only).
+  if (owner.kind === "mage") {
+    spawnVisualHazard(state, "magecast", origin, 0.36, {
+      seed: e.id * 53, dirX: dir.x, dirY: dir.y, maxTtl: 0.36,
+    });
+  }
   if (owner.kind === "spearsoldier" && kind === "spear_e") {
     owner.data!.spearInFlight = e.id;
   }
