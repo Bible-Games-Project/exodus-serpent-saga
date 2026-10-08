@@ -9,6 +9,7 @@ import { drawCamelArt, ensureCamelArt, CAMEL_ART } from "./camelArt";
 import { drawAxeSoldierArt, ensureAxeArt, AXE_ART } from "./axeSoldierArt";
 import { drawShieldSoldierArt, ensureShieldArt, SHIELD_ART } from "./shieldSoldierArt";
 import { drawHeavySoldierArt, ensureHeavyArt, HEAVY_ART } from "./heavySoldierArt";
+import { drawRamsesTarget, drawRamsesImpact } from "./ramsesTargetFx";
 import { drawAgileSoldierArt, ensureAgileArt, AGILE_ART } from "./agileSoldierArt";
 import { drawCobraArt, ensureCobraArt, COBRA_ART } from "./cobraArt";
 
@@ -3010,19 +3011,9 @@ function drawRamsesTelegraph(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   const cx = tp.x - camX;
   const cy = tp.y - camY;
   const t = e.born + performance.now() / 1000;
-  const pulse = 0.5 + 0.5 * Math.sin(t * 12);
-  ctx.save();
-  ctx.strokeStyle = `rgba(255,60,60,${0.5 + pulse * 0.4})`;
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
-  ctx.fillStyle = `rgba(255,60,60,${0.15 * pulse})`;
-  ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
-  // crosshair
-  ctx.strokeStyle = `rgba(255,220,60,${0.7})`;
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(cx - 12, cy); ctx.lineTo(cx + 12, cy);
-  ctx.moveTo(cx, cy - 12); ctx.lineTo(cx, cy + 12); ctx.stroke();
-  ctx.restore();
+  // Supplied Ramses target artwork replaces the old generated circle.
+  const lock = phase === "airborne" ? 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.75)) : 0;
+  drawRamsesTarget(ctx, cx, cy, R, t, lock);
 }
 
 // Ramses' tomb while he waits to revive: a small stepped pixel pyramid with a
@@ -3239,25 +3230,10 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   });
 
 
-  // Land shockwave (unchanged)
+  // Land impact: the supplied target artwork flares out with matching shards.
   if (phase === "land") {
     const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.4));
-    const R = (d.landRadius as number) * (0.4 + t * 1.1);
-    ctx.save();
-    ctx.globalAlpha = 1 - t;
-    ctx.strokeStyle = "#f5d488"; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(x, y + 6, R, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = "#c9700a"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(x, y + 6, R * 0.75, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 28; i++) {
-      const a = (i / 28) * Math.PI * 2;
-      const rr = R * (0.7 + Math.random() * 0.3);
-      const dx = Math.round(x + Math.cos(a) * rr);
-      const dy = Math.round(y + 6 + Math.sin(a) * rr * 0.5);
-      ctx.fillStyle = i % 2 ? "#c9a06a" : "#e6c261";
-      ctx.fillRect(dx - 2, dy - 2, 4, 4);
-    }
-    ctx.restore();
+    drawRamsesImpact(ctx, x, y + 6, d.landRadius as number, t, e.id * 17);
   }
 
   // HP bar visible when active
