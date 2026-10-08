@@ -358,13 +358,16 @@ export function enemyTick(
     // remain planted so the existing stab timing and contact stay unchanged.
     const ds = e.data!;
     if (ds.jumpTarget == null) ds.jumpTarget = 15 + Math.floor(Math.random() * 6);
-    const specialDash = !!ds.specialDash;
-    if (specialDash) {
+    // AGILE_ATTACK_DASH: while active, movement is owned exclusively by the
+    // dash. The direction is locked once at trigger time and nothing else in
+    // this tick may run — previously the hop logic below kept running during
+    // the dash and re-triggered it every frame with a fresh direction toward
+    // Moses, which made the soldier home in on him and stick there.
+    if (ds.specialDash) {
       const dashVx = (ds.specialDashVx as number) ?? nx;
       const dashVy = (ds.specialDashVy as number) ?? ny;
-      const dashSpeed = 620 * helpers.baseSlow * freezeMul;
-      // This committed assassination line passes cleanly through the target;
-      // scenery must not bend it into a chase or make it stop on an obstacle.
+      // Freeze/slow effects must never pin a committed dash on top of Moses.
+      const dashSpeed = AGILE_DASH_SPEED;
       e.pos.x += dashVx * dashSpeed * dt;
       e.pos.y += dashVy * dashSpeed * dt;
       ds.specialDashRemaining = ((ds.specialDashRemaining as number) ?? 0) - dashSpeed * dt;
@@ -377,8 +380,14 @@ export function enemyTick(
         ds.jumpTarget = 15 + Math.floor(Math.random() * 6);
         ds.nextHopAt = state.now + 0.12;
         ds.dashing = 0;
+        delete ds.hopAt;
+        delete ds.stabAt;
+        ds.pendingRetreat = 0;
+        ds.forceAwayHop = 0;
       }
-    } else if (ds.stabAt != null) {
+      return;
+    }
+    if (ds.stabAt != null) {
       ds.pendingRetreat = 1;
       ds.dashing = 0;
     } else if (ds.pendingRetreat) {
