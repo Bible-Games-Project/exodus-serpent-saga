@@ -415,27 +415,13 @@ export function enemyTick(
           const pd = Math.hypot(pdx, pdy) || 1;
           const dashVx = pdx / pd;
           const dashVy = pdy / pd;
-          const edgeMargin = e.radius + 8;
-          const edgeX = dashVx > 0
-            ? (state.worldW - edgeMargin - e.pos.x) / dashVx
-            : dashVx < 0
-              ? (edgeMargin - e.pos.x) / dashVx
-              : Infinity;
-          const edgeY = dashVy > 0
-            ? (state.worldH - edgeMargin - e.pos.y) / dashVy
-            : dashVy < 0
-              ? (edgeMargin - e.pos.y) / dashVy
-              : Infinity;
-          void edgeX; void edgeY;
-          // AGILE_DASHING_THROUGH: the run ends roughly as far beyond Moses as
-          // it started before him; the wrapping world never blocks the ray.
-          const distanceToFarEdge = pd + AGILE_DASH_OVERSHOOT;
+          // Enter AGILE_ATTACK_DASH: direction locked once, travel distance is
+          // the gap to Moses plus a clear overshoot beyond him. Moses' position
+          // is never a destination; the wrapping world never blocks the ray.
           ds.specialDash = 1;
           ds.specialDashVx = dashVx;
           ds.specialDashVy = dashVy;
-          // The target locks only the direction. The committed pass continues
-          // on that exact ray until the soldier reaches the far world boundary.
-          ds.specialDashRemaining = distanceToFarEdge;
+          ds.specialDashRemaining = pd + AGILE_DASH_OVERSHOOT;
           ds.specialDashHit = 0;
           ds.dashing = 1;
           e.facing = pdx >= 0 ? 1 : -1;
