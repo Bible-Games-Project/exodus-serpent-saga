@@ -615,7 +615,9 @@ export function update(state: GameState, dt: number) {
             resolvePlayerDefeat(state);
           }
         }
-      } else if (!invuln && dd < e.radius + p.radius) {
+      } else if (!invuln && dd < e.radius + p.radius && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
+        // A committed agile dash damages Moses only through its one-time swept
+        // hit above; overlapping during the pass never adds contact damage.
         // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
