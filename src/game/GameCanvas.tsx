@@ -17,7 +17,7 @@ import { drawBatArt, ensureBatArt, BAT_ART } from "./batArt";
 import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
 import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
 import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
-import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall, drawMageAura } from "./mageArt";
+import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall, drawMageAura, MAGE_LIGHT } from "./mageArt";
 import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
 
 
