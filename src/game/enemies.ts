@@ -267,6 +267,11 @@ export function pickEnemyKind(state: GameState): string {
 }
 
 // ----- behaviour tick helpers (called from engine) -----
+/** AGILE_ATTACK_DASH travel speed (world px/s): one very fast committed pass. */
+const AGILE_DASH_SPEED = 900;
+/** Distance the dash keeps travelling beyond Moses before disengaging. */
+const AGILE_DASH_OVERSHOOT = 300;
+
 const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
 export function enemyTick(
@@ -424,7 +429,7 @@ export function enemyTick(
           void edgeX; void edgeY;
           // AGILE_DASHING_THROUGH: the run ends roughly as far beyond Moses as
           // it started before him; the wrapping world never blocks the ray.
-          const distanceToFarEdge = pd * 2 + 140;
+          const distanceToFarEdge = pd + AGILE_DASH_OVERSHOOT;
           ds.specialDash = 1;
           ds.specialDashVx = dashVx;
           ds.specialDashVy = dashVy;
