@@ -615,7 +615,9 @@ export function update(state: GameState, dt: number) {
             resolvePlayerDefeat(state);
           }
         }
-      } else if (!invuln && dd < e.radius + p.radius) {
+      } else if (!invuln && dd < e.radius + p.radius && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
+        // A committed agile dash damages Moses only through its one-time swept
+        // hit above; overlapping during the pass never adds contact damage.
         // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
         p.hp -= contactDmg * dt * shieldDamageMul(state);
@@ -1146,6 +1148,13 @@ function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: 
     data: { enemyOwned: true, angle: Math.atan2(dir.y, dir.x) },
   };
   state.entities.set(e.id, e);
+  // Sorcerer: magical energy bursts from the staff jewel on the exact frame
+  // the ball is created (visual only).
+  if (owner.kind === "mage") {
+    spawnVisualHazard(state, "magecast", origin, 0.36, {
+      seed: e.id * 53, dirX: dir.x, dirY: dir.y, maxTtl: 0.36,
+    });
+  }
   if (owner.kind === "spearsoldier" && kind === "spear_e") {
     owner.data!.spearInFlight = e.id;
   }

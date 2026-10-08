@@ -267,6 +267,11 @@ export function pickEnemyKind(state: GameState): string {
 }
 
 // ----- behaviour tick helpers (called from engine) -----
+/** AGILE_ATTACK_DASH travel speed (world px/s): one very fast committed pass. */
+const AGILE_DASH_SPEED = 900;
+/** Distance the dash keeps travelling beyond Moses before disengaging. */
+const AGILE_DASH_OVERSHOOT = 300;
+
 const dist2 = (a: Vec2, b: Vec2) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
 export function enemyTick(
@@ -358,13 +363,16 @@ export function enemyTick(
     // remain planted so the existing stab timing and contact stay unchanged.
     const ds = e.data!;
     if (ds.jumpTarget == null) ds.jumpTarget = 15 + Math.floor(Math.random() * 6);
-    const specialDash = !!ds.specialDash;
-    if (specialDash) {
+    // AGILE_ATTACK_DASH: while active, movement is owned exclusively by the
+    // dash. The direction is locked once at trigger time and nothing else in
+    // this tick may run — previously the hop logic below kept running during
+    // the dash and re-triggered it every frame with a fresh direction toward
+    // Moses, which made the soldier home in on him and stick there.
+    if (ds.specialDash) {
       const dashVx = (ds.specialDashVx as number) ?? nx;
       const dashVy = (ds.specialDashVy as number) ?? ny;
-      const dashSpeed = 620 * helpers.baseSlow * freezeMul;
-      // This committed assassination line passes cleanly through the target;
-      // scenery must not bend it into a chase or make it stop on an obstacle.
+      // Freeze/slow effects must never pin a committed dash on top of Moses.
+      const dashSpeed = AGILE_DASH_SPEED;
       e.pos.x += dashVx * dashSpeed * dt;
       e.pos.y += dashVy * dashSpeed * dt;
       ds.specialDashRemaining = ((ds.specialDashRemaining as number) ?? 0) - dashSpeed * dt;
@@ -377,8 +385,14 @@ export function enemyTick(
         ds.jumpTarget = 15 + Math.floor(Math.random() * 6);
         ds.nextHopAt = state.now + 0.12;
         ds.dashing = 0;
+        delete ds.hopAt;
+        delete ds.stabAt;
+        ds.pendingRetreat = 0;
+        ds.forceAwayHop = 0;
       }
-    } else if (ds.stabAt != null) {
+      return;
+    }
+    if (ds.stabAt != null) {
       ds.pendingRetreat = 1;
       ds.dashing = 0;
     } else if (ds.pendingRetreat) {
@@ -401,27 +415,13 @@ export function enemyTick(
           const pd = Math.hypot(pdx, pdy) || 1;
           const dashVx = pdx / pd;
           const dashVy = pdy / pd;
-          const edgeMargin = e.radius + 8;
-          const edgeX = dashVx > 0
-            ? (state.worldW - edgeMargin - e.pos.x) / dashVx
-            : dashVx < 0
-              ? (edgeMargin - e.pos.x) / dashVx
-              : Infinity;
-          const edgeY = dashVy > 0
-            ? (state.worldH - edgeMargin - e.pos.y) / dashVy
-            : dashVy < 0
-              ? (edgeMargin - e.pos.y) / dashVy
-              : Infinity;
-          void edgeX; void edgeY;
-          // AGILE_DASHING_THROUGH: the run ends roughly as far beyond Moses as
-          // it started before him; the wrapping world never blocks the ray.
-          const distanceToFarEdge = pd * 2 + 140;
+          // Enter AGILE_ATTACK_DASH: direction locked once, travel distance is
+          // the gap to Moses plus a clear overshoot beyond him. Moses' position
+          // is never a destination; the wrapping world never blocks the ray.
           ds.specialDash = 1;
           ds.specialDashVx = dashVx;
           ds.specialDashVy = dashVy;
-          // The target locks only the direction. The committed pass continues
-          // on that exact ray until the soldier reaches the far world boundary.
-          ds.specialDashRemaining = distanceToFarEdge;
+          ds.specialDashRemaining = pd + AGILE_DASH_OVERSHOOT;
           ds.specialDashHit = 0;
           ds.dashing = 1;
           e.facing = pdx >= 0 ? 1 : -1;
