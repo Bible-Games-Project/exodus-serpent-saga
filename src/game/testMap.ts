@@ -10,7 +10,7 @@ import type { PlagueId, TestMapConfig } from "./types";
 /**
  * Selectable attack list, numbered from 0. The staff melee is always available
  * (it is Moses' basic attack), so numbering starts with the serpent:
- *   0 = Staff becomes Serpent, 1 = Water into Blood, ... 11 = Parting of the Red Sea.
+ *   0 = Staff becomes Serpent, 1 = White Leprosy, 2 = Water into Blood, ...
  */
 export const TEST_ATTACK_ORDER: PlagueId[] = PLAGUE_ORDER.filter((id) => id !== "staff");
 

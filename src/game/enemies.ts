@@ -295,9 +295,12 @@ export function enemyTick(
   const frozen = state.now < ((e.data?.freezeUntil as number) ?? 0);
   const freezeMul = frozen ? 0.3 : 1;
 
+  // White Leprosy: the afflicted enemy still moves, but dramatically slower.
+  const leprous = e.data?.leprosyUntil != null && state.now < (e.data.leprosyUntil as number);
+  const leprosyMul = leprous ? 0.12 : 1;
   const move = (vx: number, vy: number) => {
-    e.pos.x += vx * dt;
-    e.pos.y += vy * dt;
+    e.pos.x += vx * leprosyMul * dt;
+    e.pos.y += vy * leprosyMul * dt;
     if (!def.ignoresObstacles) helpers.resolveObstacles(e.pos, e.radius);
   };
 
@@ -409,7 +412,7 @@ export function enemyTick(
       const hopDur = 0.42;
       const readyAt = (ds.nextHopAt as number) ?? 0;
       if (hopAt == null && state.now >= readyAt) {
-        if (((ds.jumpCount as number) ?? 0) >= (ds.jumpTarget as number)) {
+        if (!leprous && ((ds.jumpCount as number) ?? 0) >= (ds.jumpTarget as number)) {
           const pdx = ((state.player.pos.x - e.pos.x + state.worldW / 2) % state.worldW + state.worldW) % state.worldW - state.worldW / 2;
           const pdy = ((state.player.pos.y - e.pos.y + state.worldH / 2) % state.worldH + state.worldH) % state.worldH - state.worldH / 2;
           const pd = Math.hypot(pdx, pdy) || 1;

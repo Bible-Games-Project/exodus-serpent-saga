@@ -22,7 +22,7 @@ import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
-import { drawMosesArt, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
+import { drawMosesArt, mosesGrip, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
 import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
@@ -778,6 +778,28 @@ const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
     ".....vGGGGGGGGGv....",
     ".....vGGyGGGGGGGv...",
     "......vvvvvvvvvvv...",
+    "....................",
+  ],
+  leprosy: [
+    "....................",
+    "......k.k.k.........",
+    ".....kWkWkWk........",
+    ".....kWkWkWkk.......",
+    ".....kWkWkWkWk......",
+    ".....kWkWkWkWk......",
+    ".....kWWWWWkWk......",
+    "..kk.kWWWWWWWk......",
+    ".kWWkkWWWWWWWk......",
+    ".kWWWkWWWWWWWk......",
+    "..kWWWWWWWWWck......",
+    "...kWWWWWWWWck......",
+    "....kWWWWWWcck......",
+    ".....kWWWWWcck......",
+    "......kWWWcck.......",
+    "......kcccccck......",
+    "......kCCCCCCk......",
+    "......kCCCCCCk......",
+    ".......kkkkkk.......",
     "....................",
   ],
   blood: [
@@ -1564,7 +1586,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   const depthOf = (e: Entity) => e.pos.y - (e.kind === "throne" ? 1 : 0);
   drawList.sort((a, b) => depthOf(a) - depthOf(b));
 
+  const mainCtx = ctx;
   for (const e of drawList) {
+    // White Leprosy: afflicted enemies are drawn into an offscreen layer and
+    // blanched toward white there, so only their own pixels change colour.
+    const leper = e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
+    const ctx = leper ? beginLeprosyLayer(mainCtx) : mainCtx;
+    try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
     if (e.kind === "companionmelee") { drawCompanionMelee(ctx, e, camX, camY); continue; }
@@ -1613,6 +1641,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "agiledust") { drawAgileDust(ctx, e, camX, camY); continue; }
     if (e.kind === "agileslash") { drawAgileSlash(ctx, e, camX, camY); continue; }
     if (e.kind === "magecast") { drawMageCastBurst(ctx, e, camX, camY); continue; }
+    if (e.kind === "leprosybeam") { drawLeprosyBeam(ctx, e, camX, camY); continue; }
     if (e.kind === "heavyslash") { drawHeavySlash(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
@@ -1627,6 +1656,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
     // Fallback: sprite-based rendering
     drawSpriteEntity(ctx, e, camX, camY, s);
+      } finally {
+      if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
+    }
   }
 
 
@@ -1776,6 +1808,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
+  drawMosesLeprosyHand(ctx, x, groundY, flip, s);
 }
 
 
@@ -2535,6 +2568,137 @@ function drawAgileDust(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
 }
 
 /** Fast diagonal pixel cut at Moses during the Agile Soldier's special pass. */
+// ---------------- White Leprosy visuals ----------------
+let leprosyBuf: HTMLCanvasElement | null = null;
+let leprosyBufCtx: CanvasRenderingContext2D | null = null;
+
+/** Returns an offscreen context matching the main canvas size and transform. */
+function beginLeprosyLayer(main: CanvasRenderingContext2D): CanvasRenderingContext2D {
+  const cw = main.canvas.width, ch = main.canvas.height;
+  if (!leprosyBuf) {
+    leprosyBuf = document.createElement("canvas");
+    leprosyBufCtx = leprosyBuf.getContext("2d");
+  }
+  if (leprosyBuf.width !== cw || leprosyBuf.height !== ch) { leprosyBuf.width = cw; leprosyBuf.height = ch; }
+  const b = leprosyBufCtx!;
+  b.setTransform(1, 0, 0, 1, 0, 0);
+  b.globalAlpha = 1;
+  b.globalCompositeOperation = "source-over";
+  b.clearRect(0, 0, cw, ch);
+  b.setTransform(main.getTransform());
+  b.imageSmoothingEnabled = false;
+  return b;
+}
+
+/** Blanches the buffered enemy toward white, composites it, adds pale motes. */
+function endLeprosyLayer(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState) {
+  const b = leprosyBufCtx!;
+  const start = (e.data?.leprosyStart as number) ?? s.now;
+  // Ramps in quickly so the blanching reads as the moment of the hit.
+  const k = Math.min(1, (s.now - start) / 0.35);
+  b.save();
+  b.setTransform(1, 0, 0, 1, 0, 0);
+  b.globalCompositeOperation = "source-atop";
+  b.globalAlpha = 0.62 * k;
+  b.fillStyle = "#f4f1ea";
+  b.fillRect(0, 0, leprosyBuf!.width, leprosyBuf!.height);
+  b.restore();
+  main.save();
+  main.setTransform(1, 0, 0, 1, 0, 0);
+  main.drawImage(leprosyBuf!, 0, 0);
+  main.restore();
+  // Subtle pale pixel motes drifting up from the afflicted body.
+  const x = e.pos.x - camX;
+  const y = e.pos.y - camY;
+  main.save();
+  for (let i = 0; i < 6; i++) {
+    const cycle = (s.now * 0.8 + i / 6) % 1;
+    const ox = Math.sin(e.id * 7.3 + i * 2.1) * (e.radius + 4);
+    const px = Math.round((x + ox + Math.sin(cycle * 6 + i) * 3) / 2) * 2;
+    const py = Math.round((y - 10 - cycle * 34) / 2) * 2;
+    main.globalAlpha = (1 - cycle) * 0.8 * k;
+    main.fillStyle = i % 2 ? "#ffffff" : "#d9d4c8";
+    main.fillRect(px, py, i % 3 === 0 ? 3 : 2, i % 3 === 0 ? 3 : 2);
+  }
+  main.restore();
+}
+
+/** Short pale streak linking Moses' hand to the stricken enemy. */
+function drawLeprosyBeam(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.45;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const sx = e.pos.x - camX, sy = e.pos.y - camY - 26;
+  const tx = (e.data!.tx as number) - camX, ty = (e.data!.ty as number) - camY - 20;
+  const dist = Math.hypot(tx - sx, ty - sy) || 1;
+  const steps = Math.max(4, Math.floor(dist / 6));
+  const P = 3;
+  ctx.save();
+  // A travelling head followed by a fading trail of pale pixels.
+  const head = Math.min(1, t * 2.6);
+  for (let i = 0; i <= steps; i++) {
+    const f = i / steps;
+    if (f > head) break;
+    const fade = Math.max(0, 1 - (head - f) * 2.2) * life;
+    if (fade <= 0) continue;
+    const wob = Math.sin(f * 18 + (e.data!.seed as number)) * 3;
+    const nx = -(ty - sy) / dist, ny = (tx - sx) / dist;
+    const x = sx + (tx - sx) * f + nx * wob;
+    const y = sy + (ty - sy) * f + ny * wob;
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = i % 3 === 0 ? "#d9d4c8" : "#ffffff";
+    ctx.fillRect(Math.round(x / P) * P, Math.round(y / P) * P, P, P);
+  }
+  // Pale burst on arrival.
+  if (head >= 1) {
+    const k = Math.min(1, (t - 1 / 2.6) / (1 - 1 / 2.6));
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + (e.data!.seed as number);
+      const r = 6 + k * 18;
+      ctx.globalAlpha = (1 - k) * 0.9;
+      ctx.fillStyle = i % 2 ? "#ffffff" : "#e6e1d6";
+      ctx.fillRect(Math.round((tx + Math.cos(a) * r) / P) * P, Math.round((ty + Math.sin(a) * r * 0.7) / P) * P, P, P);
+    }
+  }
+  ctx.restore();
+}
+
+/** Moses' hand glowing white while White Leprosy activates. */
+function drawMosesLeprosyHand(ctx: CanvasRenderingContext2D, x: number, groundY: number, flip: 1 | -1, s: GameState) {
+  const until = s.leprosyGlowUntil ?? 0;
+  if (s.now >= until) return;
+  const start = s.leprosyGlowStart ?? s.now;
+  const k = Math.max(0, Math.min(1, (s.now - start) / Math.max(0.01, until - start)));
+  const g = mosesGrip(x, groundY, flip);
+  const hx = Math.round(g.x), hy = Math.round(g.y);
+  const fade = k < 0.2 ? k / 0.2 : 1 - (k - 0.2) / 0.8;
+  const P = 2;
+  ctx.save();
+  // Soft pixel halo (stepped squares, no smooth gradient).
+  ctx.globalAlpha = 0.35 * fade;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(hx - 5 * P, hy - 3 * P, 10 * P, 6 * P);
+  ctx.fillRect(hx - 3 * P, hy - 5 * P, 6 * P, 10 * P);
+  // Bright white hand.
+  ctx.globalAlpha = 0.95 * fade;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(hx - 2 * P, hy - 2 * P, 4 * P, 4 * P);
+  ctx.fillStyle = "#eae6dc";
+  ctx.fillRect(hx - 2 * P, hy + P, 4 * P, P);
+  // Rising sparkles around the hand.
+  for (let i = 0; i < 7; i++) {
+    const cyc = (k * 1.6 + i / 7) % 1;
+    const a = i * 2.39;
+    const px = hx + Math.cos(a) * (6 + cyc * 8);
+    const py = hy + Math.sin(a) * 5 - cyc * 14;
+    ctx.globalAlpha = (1 - cyc) * fade;
+    ctx.fillStyle = i % 2 ? "#ffffff" : "#f2efe6";
+    ctx.fillRect(Math.round(px / P) * P, Math.round(py / P) * P, P, P);
+  }
+  ctx.restore();
+}
+
 /**
  * Sorcerer staff launch burst: irregular pixel shards and energy fragments
  * explode from the staff jewel, strongest along the shot so the burst visually

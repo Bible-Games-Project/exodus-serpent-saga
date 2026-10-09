@@ -362,7 +362,8 @@ export function update(state: GameState, dt: number) {
       }
       castPlague(state, id, level);
       const def = PLAGUES[id];
-      state.plagueCooldown.set(id, def.scale(level).cooldown);
+      // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
+      state.plagueCooldown.set(id, id === "leprosy" ? 10 + Math.random() * 5 : def.scale(level).cooldown);
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -483,6 +484,8 @@ export function update(state: GameState, dt: number) {
         else e.data.pounceProgress = pp;
       }
 
+      // White Leprosy wastes the afflicted enemy away; it dies normally.
+      if (tickLeprosy(state, e, dt)) continue;
       // Ramses handled separately.
       if (e.kind === "ramses") {
         // still take contact damage handled in tickRamses; skip here.
@@ -1160,6 +1163,56 @@ function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: 
   }
 }
 
+/**
+ * White Leprosy: strike exactly one enemy — the nearest valid one to Moses.
+ * Ramses is never a valid target, and an already-afflicted enemy is skipped so
+ * effects can never stack. The affliction itself runs in tickLeprosy.
+ */
+function castLeprosy(state: GameState, duration: number): void {
+  const p = state.player;
+  const vw = state.viewport?.w ?? 800;
+  const vh = state.viewport?.h ?? 600;
+  // Only foes Moses can actually see may be chosen.
+  const maxD = Math.hypot(vw, vh) / 2;
+  let best: Entity | undefined;
+  let bestD = maxD * maxD;
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy" || en.kind === "ramses" || en.hp <= 0) continue;
+    if (en.data?.leprosyUntil != null) continue;
+    const d = wrapDist2(state, en.pos, p.pos);
+    if (d < bestD) { bestD = d; best = en; }
+  }
+  if (!best) return;
+  best.data ??= {};
+  best.data.leprosyStart = state.now;
+  best.data.leprosyUntil = state.now + duration;
+  // Enough damage per second to waste the target away over the duration.
+  best.data.leprosyDps = Math.max(1, best.hp) / duration;
+  state.leprosyGlowStart = state.now;
+  state.leprosyGlowUntil = state.now + 0.9;
+  const tx = p.pos.x + wrapDelta(best.pos.x, p.pos.x, state.worldW);
+  const ty = p.pos.y + wrapDelta(best.pos.y, p.pos.y, state.worldH);
+  spawnVisualHazard(state, "leprosybeam", { x: p.pos.x, y: p.pos.y }, 0.45, {
+    tx, ty, seed: best.id, maxTtl: 0.45,
+  });
+}
+
+/** Per-frame White Leprosy affliction: slow wasting damage, then normal death. */
+function tickLeprosy(state: GameState, en: Entity, dt: number): boolean {
+  const until = en.data?.leprosyUntil as number | undefined;
+  if (until == null) return false;
+  if (en.kind === "ramses") { delete en.data!.leprosyUntil; return false; }
+  en.hp -= ((en.data!.leprosyDps as number) ?? 0) * dt;
+  if (en.hp <= 0 || state.now >= until) {
+    delete en.data!.leprosyUntil;
+    delete en.data!.leprosyStart;
+    delete en.data!.leprosyDps;
+    killEnemy(state, en);
+    return true;
+  }
+  return false;
+}
+
 function removeProjectile(state: GameState, projectile: Entity): void {
   state.entities.delete(projectile.id);
   if (projectile.ownerId == null) return;
@@ -1174,6 +1227,11 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   const stats = def.scale(level);
   const dmul = damageMultiplier(state);
   const p = state.player.pos;
+
+  if (id === "leprosy") {
+    castLeprosy(state, stats.ttl);
+    return;
+  }
 
   if (id === "staff") {
     // Damage handled per-frame in applyStaffSwingHits — spawn hazard only.

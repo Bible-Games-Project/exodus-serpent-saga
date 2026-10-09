@@ -46,6 +46,18 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     }),
 
   },
+  leprosy: {
+    id: "leprosy",
+    name: "White Leprosy",
+    description: "Moses' hand turns white as snow. The nearest foe is struck with leprosy: it blanches, crawls, and slowly wastes away.",
+    scripture:
+      "Exodus 4:6 — 'Put now thine hand into thy bosom.' And when he took it out, behold, his hand was leprous as snow. A sign of God's power given to Moses.",
+    unlockLevel: 4,
+    // Cooldown is rolled fresh between 10 and 15 seconds on every cast (engine);
+    // `ttl` is how long the affliction takes to waste the target away.
+    base: { level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 },
+    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, {}),
+  },
   blood: {
     id: "blood",
     name: "Water into Blood",
@@ -221,6 +233,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
 export const PLAGUE_ORDER: PlagueId[] = [
   "staff",
   "serpent",
+  "leprosy",
   "blood",
   "frogs",
   "gnats",
