@@ -87,3 +87,5 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 <!-- LOVABLE:END -->
 
 - Champions holding a weapon (e.g. Miriam) use `weapon` layers in `allies.ts` (body / whole weapon / grip-hand overlay): the walk only steps the body's feet band and the weapon rotates intact around its grip, so it is never sliced. Test Map champion toggles are generated from `ALLY_POOL` and recruit through `summonCompanion`.
+- The Agile Soldier special dash is a committed state in `enemyTick` that returns early (direction locked at start, fixed travel distance past Moses); hitting Moses only applies damage/FX. Any branch that falls through to the hop logic while dashing re-aims at Moses and makes him look stuck.
+- Engine logic can be exercised headless with `bun /tmp/<script>.ts` importing `createInitialState`/`update` from `src/game/engine` with a Test Map config — much faster than Playwright for gameplay-state checks.
