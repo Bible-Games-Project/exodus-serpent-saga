@@ -92,7 +92,7 @@ export type NpcDef = {
  * player launched the separate test map; the normal game leaves it undefined.
  */
 export type TestMapConfig = {
-  /** Highest selectable attack index (0 = serpent ... 11 = Parting of the Red Sea); -1 = staff only. */
+  /** Highest selectable attack index (0 = serpent, 1 = leprosy, ... last = final miracle); -1 = staff only. */
   maxAttackIndex: number;
   /** enemy kind -> active in this session */
   enemies: Record<string, boolean>;
