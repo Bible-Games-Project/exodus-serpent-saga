@@ -22,6 +22,7 @@ export type Entity = {
 export type PlagueId =
   | "staff"
   | "serpent"
+  | "leprosy"
   | "blood"
   | "frogs"
   | "gnats"
@@ -168,6 +169,10 @@ export type GameState = {
 
   // Random world-spawn bonus timer (bonuses.ts).
   bonusSpawnCd?: number;
+
+  // White Leprosy: Moses' hand glows white until this time (visual only).
+  leprosyGlowUntil?: number;
+  leprosyGlowStart?: number;
 
   // Screen effects (camera shake amplitude, flash 0-1).
   screenShake?: number;
