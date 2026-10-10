@@ -1,7 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
-import { BONUSES, rollBonusKind, damagePlayer, pushNotification, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
@@ -98,6 +98,8 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
     running: true,
     paused: false,
     levelUpPending: null,
+    shield: SHIELD_CONFIG.initialMax,
+    maxShield: SHIELD_CONFIG.initialMax,
     gameOver: false,
     camera: { x: player.pos.x, y: player.pos.y },
     entities: new Map(),
@@ -363,7 +365,7 @@ export function update(state: GameState, dt: number) {
       castPlague(state, id, level);
       const def = PLAGUES[id];
       // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
-      state.plagueCooldown.set(id, id === "leprosy" ? 10 + Math.random() * 5 : def.scale(level).cooldown);
+      state.plagueCooldown.set(id, id === "leprosy" ? 5 + Math.random() * 2.5 : def.scale(level).cooldown);
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -1915,6 +1917,7 @@ function levelUp(state: GameState) {
   state.xpToNext = Math.floor(5 + state.level * 3 + state.level ** 1.35);
   state.player.maxHp += 5;
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15);
+  restoreShield(state, SHIELD_CONFIG.levelUpRestore);
   offerUpgrades(state);
 }
 

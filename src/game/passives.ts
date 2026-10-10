@@ -1,3 +1,4 @@
+import { SHIELD_CONFIG } from "./bonuses";
 // Passive upgrade pool — offered as blessing cards between plague and
 // companion picks. Data-driven and easy to extend.
 import type { GameState } from "./types";
@@ -58,11 +59,13 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
   shield: {
     id: "shield",
     title: "Shield of Faith",
-    description: "+5% permanent damage reduction.",
+    description: `+${SHIELD_CONFIG.blessingMaxIncrease} maximum shield.`,
     maxRank: 8,
     apply: (s) => {
       const p = (s.passives ??= {});
       p.shield = (p.shield ?? 0) + 1;
+      // Raises capacity only; current shield is not refilled.
+      s.maxShield = (s.maxShield ?? SHIELD_CONFIG.initialMax) + SHIELD_CONFIG.blessingMaxIncrease;
     },
   },
 };
