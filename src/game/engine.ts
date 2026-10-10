@@ -493,21 +493,31 @@ export function update(state: GameState, dt: number) {
         // still take contact damage handled in tickRamses; skip here.
         continue;
       }
-      // pick nearest target (Moses or ally) using wrapped delta
-      let targetPos: Vec2 = { x: e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) };
-      let bestD = wrapDist2(state, e.pos, p.pos);
+      // Target selection is refreshed every ~0.3-0.5s (staggered per enemy)
+      // instead of every frame; the chosen target's live position is still
+      // followed each frame so movement stays smooth.
+      const ed = (e.data ??= {});
       let targetAlly: Entity | undefined;
-      for (const npcId of state.npcs.values()) {
-        const n = state.entities.get(npcId);
-        if (!n || n.data?.downedUntil) continue;
-        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
-        const d = wrapDist2(state, e.pos, n.pos);
-        if (d < bestD * 0.7) {
-          bestD = d;
-          targetAlly = n;
-          targetPos = { x: e.pos.x + wrapDelta(n.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(n.pos.y, e.pos.y, state.worldH) };
+      const cachedId = ed.tgtId as number | undefined;
+      const cached = cachedId != null && cachedId !== p.id ? state.entities.get(cachedId) : undefined;
+      const cachedValid = cachedId === p.id || (!!cached && !cached.data?.downedUntil &&
+        !(cached.data?.summonUntil && state.now < (cached.data.summonUntil as number)));
+      if (!cachedValid || state.now >= ((ed.tgtAt as number) ?? 0)) {
+        let bestD = wrapDist2(state, e.pos, p.pos);
+        for (const npcId of state.npcs.values()) {
+          const n = state.entities.get(npcId);
+          if (!n || n.data?.downedUntil) continue;
+          if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
+          const d = wrapDist2(state, e.pos, n.pos);
+          if (d < bestD * 0.7) { bestD = d; targetAlly = n; }
         }
+        ed.tgtId = targetAlly ? targetAlly.id : p.id;
+        ed.tgtAt = state.now + 0.3 + Math.random() * 0.2;
+      } else if (cached) {
+        targetAlly = cached;
       }
+      const tgt = targetAlly ?? p;
+      const targetPos: Vec2 = { x: e.pos.x + wrapDelta(tgt.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(tgt.pos.y, e.pos.y, state.worldH) };
       const beforeEnemyMove = { x: e.pos.x, y: e.pos.y };
       enemyTick(state, e, targetPos, dt, {
         baseSlow: enemySlow,
