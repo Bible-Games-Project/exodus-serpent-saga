@@ -166,6 +166,9 @@ export type GameState = {
   invulnUntil?: number;
   speedBoostUntil?: number;
   shieldUntil?: number;
+  /** Moses' shield resource: current and maximum, kept separate from HP. */
+  shield?: number;
+  maxShield?: number;
 
   // Random world-spawn bonus timer (bonuses.ts).
   bonusSpawnCd?: number;

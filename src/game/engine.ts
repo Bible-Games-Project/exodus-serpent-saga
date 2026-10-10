@@ -1,7 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
-import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
@@ -98,6 +98,8 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
     running: true,
     paused: false,
     levelUpPending: null,
+    shield: SHIELD_CONFIG.initialMax,
+    maxShield: SHIELD_CONFIG.initialMax,
     gameOver: false,
     camera: { x: player.pos.x, y: player.pos.y },
     entities: new Map(),
@@ -285,7 +287,7 @@ export function update(state: GameState, dt: number) {
     const until = (pd.poisonUntil as number) ?? 0;
     if (state.now < until) {
       const dps = (pd.poisonDps as number) ?? 0;
-      state.player.hp -= dps * dt * shieldDamageMul(state);
+      damagePlayer(state, dps * dt);
       resolvePlayerDefeat(state);
     } else if (pd.poisonUntil != null) {
       delete pd.poisonUntil;
@@ -363,7 +365,7 @@ export function update(state: GameState, dt: number) {
       castPlague(state, id, level);
       const def = PLAGUES[id];
       // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
-      state.plagueCooldown.set(id, id === "leprosy" ? 10 + Math.random() * 5 : def.scale(level).cooldown);
+      state.plagueCooldown.set(id, id === "leprosy" ? 5 + Math.random() * 2.5 : def.scale(level).cooldown);
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -491,21 +493,31 @@ export function update(state: GameState, dt: number) {
         // still take contact damage handled in tickRamses; skip here.
         continue;
       }
-      // pick nearest target (Moses or ally) using wrapped delta
-      let targetPos: Vec2 = { x: e.pos.x + wrapDelta(p.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(p.pos.y, e.pos.y, state.worldH) };
-      let bestD = wrapDist2(state, e.pos, p.pos);
+      // Target selection is refreshed every ~0.3-0.5s (staggered per enemy)
+      // instead of every frame; the chosen target's live position is still
+      // followed each frame so movement stays smooth.
+      const ed = (e.data ??= {});
       let targetAlly: Entity | undefined;
-      for (const npcId of state.npcs.values()) {
-        const n = state.entities.get(npcId);
-        if (!n || n.data?.downedUntil) continue;
-        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
-        const d = wrapDist2(state, e.pos, n.pos);
-        if (d < bestD * 0.7) {
-          bestD = d;
-          targetAlly = n;
-          targetPos = { x: e.pos.x + wrapDelta(n.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(n.pos.y, e.pos.y, state.worldH) };
+      const cachedId = ed.tgtId as number | undefined;
+      const cached = cachedId != null && cachedId !== p.id ? state.entities.get(cachedId) : undefined;
+      const cachedValid = cachedId === p.id || (!!cached && !cached.data?.downedUntil &&
+        !(cached.data?.summonUntil && state.now < (cached.data.summonUntil as number)));
+      if (!cachedValid || state.now >= ((ed.tgtAt as number) ?? 0)) {
+        let bestD = wrapDist2(state, e.pos, p.pos);
+        for (const npcId of state.npcs.values()) {
+          const n = state.entities.get(npcId);
+          if (!n || n.data?.downedUntil) continue;
+          if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
+          const d = wrapDist2(state, e.pos, n.pos);
+          if (d < bestD * 0.7) { bestD = d; targetAlly = n; }
         }
+        ed.tgtId = targetAlly ? targetAlly.id : p.id;
+        ed.tgtAt = state.now + 0.3 + Math.random() * 0.2;
+      } else if (cached) {
+        targetAlly = cached;
       }
+      const tgt = targetAlly ?? p;
+      const targetPos: Vec2 = { x: e.pos.x + wrapDelta(tgt.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(tgt.pos.y, e.pos.y, state.worldH) };
       const beforeEnemyMove = { x: e.pos.x, y: e.pos.y };
       enemyTick(state, e, targetPos, dt, {
         baseSlow: enemySlow,
@@ -540,7 +552,7 @@ export function update(state: GameState, dt: number) {
         const hitRadius = e.radius + p.radius;
         if ((tx - hitX) ** 2 + (ty - hitY) ** 2 <= hitRadius * hitRadius) {
           e.data.specialDashHit = 1;
-          p.hp -= ((e.data.contactDmg as number) ?? 12) * shieldDamageMul(state);
+          damagePlayer(state, ((e.data.contactDmg as number) ?? 12));
           state.damageImpactKind = "normal";
           spawnVisualHazard(state, "agileslash", { x: hitX, y: hitY - 24 }, 0.24, {
             seed: e.id, maxTtl: 0.24,
@@ -586,7 +598,7 @@ export function update(state: GameState, dt: number) {
           const prog = (state.now - (e.data[key] as number)) / melee.dur;
           if (prog >= melee.from && prog <= melee.to && dd < reach + 10) {
             const contactDmg = (e.data?.contactDmg as number) ?? 8;
-            p.hp -= contactDmg * dt * shieldDamageMul(state);
+            damagePlayer(state, contactDmg * dt);
             state.damageImpactKind = "normal";
             if (!e.data.atkHitDone) {
               e.data.atkHitDone = true;
@@ -623,7 +635,7 @@ export function update(state: GameState, dt: number) {
         // hit above; overlapping during the pass never adds contact damage.
         // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
-        p.hp -= contactDmg * dt * shieldDamageMul(state);
+        damagePlayer(state, contactDmg * dt);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         resolvePlayerDefeat(state);
       }
@@ -633,7 +645,7 @@ export function update(state: GameState, dt: number) {
         const lanceReach = e.radius + p.radius + 22;
         if (dd < lanceReach) {
           e.data.lanceHit = 1;
-          p.hp -= KNIGHT_LANCE_DMG * shieldDamageMul(state);
+          damagePlayer(state, KNIGHT_LANCE_DMG);
           state.damageImpactKind = "normal";
           const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
           const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
@@ -737,7 +749,7 @@ export function update(state: GameState, dt: number) {
       if (e.data?.enemyOwned) {
         const hitPt = playerBodyHit(state, e, dt);
         if (!invuln && hitPt) {
-          p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
+          damagePlayer(state, (e.dmg ?? 5));
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           // The Sorcerer's light produces a magical smoke burst, never blood.
@@ -792,9 +804,8 @@ export function update(state: GameState, dt: number) {
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
         if (e.kind === "serpent" && (e.dmg ?? 0) > 0) {
-          // Bite: the snake lunges (renderer) and blood bursts at the contact
-          // point, only on a real damaging hit.
-          e.data!.biteAt = state.now;
+          // Blood bursts at the contact point; the snake keeps moving.
+          // Only on a real damaging hit.
           const j = () => (Math.random() - 0.5) * 8;
           const bt = 0.32 + Math.random() * 0.22;
           spawnVisualHazard(state, "bloodhit", { x: (en.pos.x + e.pos.x) / 2 + j(), y: (en.pos.y + e.pos.y) / 2 - 14 + j() }, bt, { seed: Math.floor(Math.random() * 99999), maxTtl: bt, small: Math.random() < 0.5 ? 1 : 0 });
@@ -1915,6 +1926,7 @@ function levelUp(state: GameState) {
   state.xpToNext = Math.floor(5 + state.level * 3 + state.level ** 1.35);
   state.player.maxHp += 5;
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15);
+  restoreShield(state, SHIELD_CONFIG.levelUpRestore);
   offerUpgrades(state);
 }
 

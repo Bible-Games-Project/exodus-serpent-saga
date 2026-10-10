@@ -1,3 +1,4 @@
+import { useLandscapeOnly, RotateDeviceOverlay } from "@/components/LandscapeGuard";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GameCanvas } from "@/game/GameCanvas";
@@ -213,6 +214,7 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
 export default function TestMapPage() {
   const [cfg, setCfg] = useState<TestMapConfig | null>(null);
   const [paused, setPaused] = useState(false);
+  const portrait = useLandscapeOnly();
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [gameOver, setGameOver] = useState<null | { level: number; survivalSeconds: number; kills: number }>(null);
@@ -237,9 +239,10 @@ export default function TestMapPage() {
   return (
     <main className="fixed inset-0 flex flex-col bg-background" style={{ touchAction: "none" }}>
       <div className="relative flex-1">
+        {portrait && <RotateDeviceOverlay />}
         <GameCanvas
           testConfig={cfg}
-          paused={paused || homeOpen || settingsOpen}
+          paused={paused || homeOpen || settingsOpen || portrait}
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />

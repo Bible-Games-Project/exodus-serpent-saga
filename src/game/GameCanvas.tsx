@@ -30,7 +30,7 @@ import { drawPixelShadow } from "./shadow";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
-import { BONUSES, shieldDamageMul, type BonusKind } from "./bonuses";
+import { BONUSES, type BonusKind } from "./bonuses";
 import { damageMultiplier, magnetMultiplier, meleeMultiplier, speedMultiplier } from "./passives";
 import { drawShepherdStaff } from "./staff";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
@@ -508,14 +508,14 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
   const secs = Math.floor(state.survivalSeconds % 60);
   const magnetActive = state.now < (state.magnetBoostUntil ?? 0);
   const speedActive = state.now < (state.speedBoostUntil ?? 0);
-  const shieldActive = state.now < (state.shieldUntil ?? 0);
+  const shieldActive = (state.shield ?? 0) > 0;
   const starActive = state.now < (state.invulnUntil ?? 0);
 
   const pickupRadius = Math.round((60 + state.level * 3) * magnetMultiplier(state));
   const moveSpeed = Math.round(100 * speedMultiplier(state));
   const dmgMul = damageMultiplier(state);
   const meleeMul = meleeMultiplier(state, state.plagues.get("staff") ?? 1);
-  const shieldPct = Math.round((1 - shieldDamageMul(state)) * 100);
+  const shieldVal = `${Math.ceil(state.shield ?? 0)}/${state.maxShield ?? 0}`;
 
   const notifs = state.notifications ?? [];
   const k = useHudScale();
@@ -551,11 +551,10 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 
             <StatCell
               art={BONUS_ART.shield}
-              label="Shield (damage reduction)"
-              value={`${shieldPct}`}
+              label="Shield"
+              value={shieldVal}
               active={shieldActive}
               color={BONUSES.shield.color}
-              remaining={shieldActive ? (state.shieldUntil ?? 0) - state.now : undefined}
             />
             <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`${Math.round(meleeMul * 100)}`} />
             <StatCell art={SWORD_ART} label="Plague damage" value={`${Math.round(dmgMul * 100)}`} />
@@ -1613,7 +1612,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, camX, camY); continue; }
+    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1779,10 +1778,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
 
 /** Champion-style green HP bar above Moses, read live from his existing HP. */
-function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   const cx = Math.round(e.pos.x - camX);
   const top = Math.round(e.pos.y - camY + 8 - 66 * 1.2);
   allyHpBar(ctx, cx, top - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
+  // Shield bar sits directly above the HP bar; hidden when empty.
+  const sh = s.shield ?? 0, mx = s.maxShield ?? 0;
+  if (sh > 0 && mx > 0) allyHpBar(ctx, cx, top - 14, sh / mx, "#5fb4ff", "#1c3f66");
 }
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
@@ -2049,15 +2051,7 @@ function drawSerpentProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     ctx.fillRect(sx - 2, sy - 1, cell + (i % 4 === 0 ? 2 : 0), 3);
   }
   ctx.restore();
-  // Bite: a quick forward lunge along the travel direction on a damaging hit.
-  const biteAt = e.data?.biteAt as number | undefined;
-  const bk = biteAt == null ? 1 : (performance.now() / 1000 - ((e.data!.biteWall as number) ??= performance.now() / 1000)) / 0.16;
-  if (bk < 1) {
-    const l = Math.sin(bk * Math.PI) * 10;
-    drawSerpentArt(ctx, x + Math.cos(angle) * l, y + Math.sin(angle) * l, angle, facing, phase);
-    return;
-  }
-  if (biteAt != null && e.data) { delete e.data.biteAt; delete e.data.biteWall; }
+  // Snakes never pause or lunge on impact; the blood burst is the only feedback.
   drawSerpentArt(ctx, x, y, angle, facing, phase);
 }
 
