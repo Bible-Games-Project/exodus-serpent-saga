@@ -796,7 +796,6 @@ export function update(state: GameState, dt: number) {
         if (e.kind === "serpent" && (e.dmg ?? 0) > 0) {
           // Bite: the snake lunges (renderer) and blood bursts at the contact
           // point, only on a real damaging hit.
-          e.data!.biteAt = state.now;
           const j = () => (Math.random() - 0.5) * 8;
           const bt = 0.32 + Math.random() * 0.22;
           spawnVisualHazard(state, "bloodhit", { x: (en.pos.x + e.pos.x) / 2 + j(), y: (en.pos.y + e.pos.y) / 2 - 14 + j() }, bt, { seed: Math.floor(Math.random() * 99999), maxTtl: bt, small: Math.random() < 0.5 ? 1 : 0 });

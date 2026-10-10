@@ -2052,8 +2052,6 @@ function drawSerpentProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   }
   ctx.restore();
   // Snakes never pause or lunge on impact; the blood burst is the only feedback.
-  const biteAt = e.data?.biteAt as number | undefined;
-  if (biteAt != null && e.data) { delete e.data.biteAt; delete e.data.biteWall; }
   drawSerpentArt(ctx, x, y, angle, facing, phase);
 }
 
