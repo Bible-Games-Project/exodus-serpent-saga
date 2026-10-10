@@ -1,3 +1,4 @@
+import { useLandscapeOnly, RotateDeviceOverlay } from "@/components/LandscapeGuard";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GameCanvas } from "@/game/GameCanvas";
@@ -49,6 +50,7 @@ function PlayPage() {
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const navigate = useNavigate();
+  const portrait = useLandscapeOnly();
 
 
   // The intro fade runs from the first painted frame; this clears the overlay
@@ -84,8 +86,9 @@ function PlayPage() {
   return (
     <main className="fixed inset-0 flex flex-col bg-background" style={{ touchAction: "none" }}>
       <div className="relative flex-1">
+        {portrait && <RotateDeviceOverlay />}
         <GameCanvas
-          paused={paused || homeOpen || settingsOpen}
+          paused={paused || homeOpen || settingsOpen || portrait}
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
