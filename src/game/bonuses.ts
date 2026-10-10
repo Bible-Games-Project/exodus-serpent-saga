@@ -76,10 +76,10 @@ export const BONUSES: Record<BonusKind, BonusDef> = {
     name: "Shield",
     emoji: "🛡",
     color: "#8ec8ff",
-    duration: 18,
+    duration: 0,
     weight: 2,
     apply: (s) => {
-      s.shieldUntil = Math.max(s.shieldUntil ?? 0, s.now + 18);
+      restoreShield(s, SHIELD_CONFIG.pickupRestore);
       pushNotification(s, "+ Shield", "#8ec8ff");
     },
   },
@@ -98,9 +98,27 @@ export function rollBonusKind(): BonusKind {
   return "heart";
 }
 
-// Damage taken multiplier: permanent Shield of Faith blessing + temporary shield bonus.
-export function shieldDamageMul(state: GameState): number {
-  const passive = Math.min(0.5, 0.05 * (state.passives?.shield ?? 0));
-  const temp = state.now < (state.shieldUntil ?? 0) ? 0.6 : 0;
-  return 1 - Math.min(0.85, passive + temp);
+// Central shield configuration. Current shield and max shield are separate
+// values on GameState; nothing here regenerates passively.
+export const SHIELD_CONFIG = {
+  initialMax: 50,
+  levelUpRestore: 10,
+  blessingMaxIncrease: 25,
+  pickupRestore: 25,
+} as const;
+
+export function restoreShield(s: GameState, amount: number) {
+  const max = s.maxShield ?? SHIELD_CONFIG.initialMax;
+  s.shield = Math.min(max, Math.max(0, (s.shield ?? 0) + amount));
+}
+
+/** The single entry point for all damage dealt to Moses: shield absorbs first,
+ * only the excess reaches HP. Neither value can go negative from here. */
+export function damagePlayer(s: GameState, amount: number) {
+  if (!(amount > 0)) return;
+  const sh = Math.max(0, s.shield ?? 0);
+  const absorbed = Math.min(sh, amount);
+  s.shield = sh - absorbed;
+  const rest = amount - absorbed;
+  if (rest > 0) s.player.hp = Math.max(0, s.player.hp - rest);
 }

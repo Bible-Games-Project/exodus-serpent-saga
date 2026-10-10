@@ -2,7 +2,7 @@
 // level 10, then activates and pursues Moses. Leap attack only unlocks after
 // the player learns the Death of the Firstborn plague.
 import type { Entity, GameState, Vec2 } from "./types";
-import { shieldDamageMul } from "./bonuses";
+import { damagePlayer } from "./bonuses";
 import { resolvePlayerDefeat } from "./playerDefeat";
 import { offscreenEnemySpawn } from "./enemySpawn";
 
@@ -156,7 +156,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
         d.crackT = 0.55;
         d.crackSeed = 1 + Math.random() * 999;
         if (dist2(r.pos, p.pos) < SMASH_R * SMASH_R && !isInvuln(state)) {
-          p.hp -= 38 * shieldDamageMul(state);
+          damagePlayer(state, 38);
           state.damageImpactKind = "ramses";
           resolvePlayerDefeat(state);
         }
@@ -197,7 +197,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
 
     // Contact damage
     if (dist2(r.pos, p.pos) < (r.radius + p.radius) ** 2 && !isInvuln(state)) {
-      p.hp -= (chariot ? 45 : 30) * dt * shieldDamageMul(state);
+      damagePlayer(state, (chariot ? 45 : 30) * dt);
       state.damageImpactKind = "ramses";
       resolvePlayerDefeat(state);
     }
@@ -251,7 +251,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
       r.pos.x = to.x; r.pos.y = to.y;
       const R = d.landRadius as number;
       if (dist2(r.pos, p.pos) < R * R && !isInvuln(state)) {
-        p.hp -= (d.landDmg as number) * shieldDamageMul(state);
+        damagePlayer(state, (d.landDmg as number));
         state.damageImpactKind = "ramses";
         resolvePlayerDefeat(state);
       }

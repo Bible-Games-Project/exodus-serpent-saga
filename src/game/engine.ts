@@ -1,7 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
-import { BONUSES, rollBonusKind, shieldDamageMul, pushNotification, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, damagePlayer, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
@@ -285,7 +285,7 @@ export function update(state: GameState, dt: number) {
     const until = (pd.poisonUntil as number) ?? 0;
     if (state.now < until) {
       const dps = (pd.poisonDps as number) ?? 0;
-      state.player.hp -= dps * dt * shieldDamageMul(state);
+      damagePlayer(state, dps * dt);
       resolvePlayerDefeat(state);
     } else if (pd.poisonUntil != null) {
       delete pd.poisonUntil;
@@ -540,7 +540,7 @@ export function update(state: GameState, dt: number) {
         const hitRadius = e.radius + p.radius;
         if ((tx - hitX) ** 2 + (ty - hitY) ** 2 <= hitRadius * hitRadius) {
           e.data.specialDashHit = 1;
-          p.hp -= ((e.data.contactDmg as number) ?? 12) * shieldDamageMul(state);
+          damagePlayer(state, ((e.data.contactDmg as number) ?? 12));
           state.damageImpactKind = "normal";
           spawnVisualHazard(state, "agileslash", { x: hitX, y: hitY - 24 }, 0.24, {
             seed: e.id, maxTtl: 0.24,
@@ -586,7 +586,7 @@ export function update(state: GameState, dt: number) {
           const prog = (state.now - (e.data[key] as number)) / melee.dur;
           if (prog >= melee.from && prog <= melee.to && dd < reach + 10) {
             const contactDmg = (e.data?.contactDmg as number) ?? 8;
-            p.hp -= contactDmg * dt * shieldDamageMul(state);
+            damagePlayer(state, contactDmg * dt);
             state.damageImpactKind = "normal";
             if (!e.data.atkHitDone) {
               e.data.atkHitDone = true;
@@ -623,7 +623,7 @@ export function update(state: GameState, dt: number) {
         // hit above; overlapping during the pass never adds contact damage.
         // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
-        p.hp -= contactDmg * dt * shieldDamageMul(state);
+        damagePlayer(state, contactDmg * dt);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         resolvePlayerDefeat(state);
       }
@@ -633,7 +633,7 @@ export function update(state: GameState, dt: number) {
         const lanceReach = e.radius + p.radius + 22;
         if (dd < lanceReach) {
           e.data.lanceHit = 1;
-          p.hp -= KNIGHT_LANCE_DMG * shieldDamageMul(state);
+          damagePlayer(state, KNIGHT_LANCE_DMG);
           state.damageImpactKind = "normal";
           const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
           const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
@@ -737,7 +737,7 @@ export function update(state: GameState, dt: number) {
       if (e.data?.enemyOwned) {
         const hitPt = playerBodyHit(state, e, dt);
         if (!invuln && hitPt) {
-          p.hp -= (e.dmg ?? 5) * shieldDamageMul(state);
+          damagePlayer(state, (e.dmg ?? 5));
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           // The Sorcerer's light produces a magical smoke burst, never blood.
