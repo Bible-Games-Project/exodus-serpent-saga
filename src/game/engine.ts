@@ -796,7 +796,8 @@ export function update(state: GameState, dt: number) {
       }
       contacts.sort((a, b) => a.t - b.t);
       for (const { en } of contacts) {
-        if (en.kind === "shieldsoldier") {
+        // Shields only stop Moses' snakes; every other projectile damages normally.
+        if (en.kind === "shieldsoldier" && e.kind === "serpent") {
           triggerShieldBlock(state, en, e.pos);
           removeProjectile(state, e);
           break;
@@ -813,7 +814,7 @@ export function update(state: GameState, dt: number) {
         if (e.data?.boltKind === "allywater") {
           const R = (e.data.splashR as number) ?? 30;
           for (const o of [...state.entities.values()]) {
-            if (o.team !== "enemy" || o === en || o.kind === "shieldsoldier") continue;
+            if (o.team !== "enemy" || o === en) continue;
             if (wrapDist2(state, o.pos, e.pos) < R * R) { o.hp -= (e.dmg ?? 0) * 0.5; if (o.hp <= 0) killEnemy(state, o); }
           }
           spawnVisualHazard(state, "allysplash", e.pos, 0.42, { seed: (e.data.seed as number) ?? 1, radius: R });
@@ -991,12 +992,6 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
 
   // A shield soldier in the swing's path stops it dead: metallic clang, sparks,
   // zero damage anywhere.
-  const shielded = candidates.find((c) => c.en.kind === "shieldsoldier");
-  if (shielded) {
-    d.blocked = true;
-    triggerShieldBlock(state, shielded.en, state.player.pos);
-    return;
-  }
 
   for (const { en, px, py } of candidates) {
     en.hp -= dmg;
@@ -1826,8 +1821,12 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
         d.attackNearestId = target.id;
         d.atkCd = def.cooldown;
         d.fxSeed = Math.floor(Math.random() * 100000);
+      } else {
+        allyWander(e, def, dt);
       }
-      // Keep a little distance for ranged champions instead of hugging foes.
+    } else if ((d.atkCd as number) > 0) {
+      // Between attacks: roam naturally instead of standing idle.
+      allyWander(e, def, dt);
     } else {
       e.vel.x = (dx / dd) * def.moveSpeed; e.vel.y = (dy / dd) * def.moveSpeed;
       e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
@@ -1835,6 +1834,26 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   }
   resolveObstacles(e.pos, e.radius, state);
   wrapPos(state, e.pos);
+}
+
+/** Randomized, smoothly-turning roam used while an attack is on cooldown. */
+function allyWander(e: Entity, def: AllyDef, dt: number) {
+  const d = e.data!;
+  d.wanderT = ((d.wanderT as number) ?? 0) - dt;
+  if ((d.wanderT as number) <= 0) {
+    d.wanderGoal = Math.random() * Math.PI * 2;
+    d.wanderT = 0.6 + Math.random() * 1.4;
+    d.wanderPause = Math.random() < 0.2;
+  }
+  let a = (d.wanderAng as number) ?? (d.wanderGoal as number);
+  let diff = (d.wanderGoal as number) - a;
+  diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  a += Math.sign(diff) * Math.min(Math.abs(diff), 3 * dt);
+  d.wanderAng = a;
+  if (d.wanderPause) return;
+  const spd = def.moveSpeed * 0.6;
+  e.vel.x = Math.cos(a) * spd; e.vel.y = Math.sin(a) * spd;
+  e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
 }
 
 function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
