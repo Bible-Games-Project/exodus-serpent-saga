@@ -8,6 +8,24 @@ import bodyAsset from "@/assets/moses4-body.png.asset.json";
 import footLAsset from "@/assets/moses4-foot-l.png.asset.json";
 import footRAsset from "@/assets/moses4-foot-r.png.asset.json";
 import staffAsset from "@/assets/moses-staff3.png.asset.json";
+import v2BodyAsset from "@/assets/moses-v2-body.png.asset.json";
+import v2FootLAsset from "@/assets/moses-v2-foot-l.png.asset.json";
+import v2FootRAsset from "@/assets/moses-v2-foot-r.png.asset.json";
+import v2HandAsset from "@/assets/moses-v2-hand.png.asset.json";
+import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
+
+/**
+ * Single switch for Moses' look. "original" = previous sprite/staff/animations
+ * (kept intact), "new" = the supplied new sprite + staff. Visual only: gameplay
+ * (hit detection, timing, speed, hitbox) reads MOSES_ART / MOSES_ATTACK, which
+ * do not depend on this value.
+ */
+export type MosesVisualVersion = "original" | "new";
+export let MOSES_VISUAL_VERSION: MosesVisualVersion = "new";
+export function setMosesVisualVersion(v: MosesVisualVersion) { MOSES_VISUAL_VERSION = v; }
+
+/** New-version layer geometry (sprite px of the 42x84 layer canvas). */
+const V2 = { W: 42, H: 84, PX: 0.95, CX: 17, HAND: { x: 39, y: 37 }, STAFF: { W: 10, H: 80, GRIP: { x: 4.5, y: 44 }, TOP: { x: 6, y: 0 } } } as const;
 
 export const MOSES_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -40,6 +58,14 @@ export const MOSES_ATTACK = {
   WINDUP: 0.2,
   DUR: 0.5,
 } as const;
+
+type V2Layers = { body: HTMLImageElement; footL: HTMLImageElement; footR: HTMLImageElement; hand: HTMLImageElement; staff: HTMLImageElement };
+let v2: V2Layers | null = null;
+function ensureV2(): boolean {
+  if (typeof document === "undefined") return false;
+  if (!v2) v2 = { body: load(v2BodyAsset.url), footL: load(v2FootLAsset.url), footR: load(v2FootRAsset.url), hand: load(v2HandAsset.url), staff: load(v2StaffAsset.url) };
+  return Object.values(v2).every((i) => i.complete && i.naturalWidth > 0);
+}
 
 type Layers = {
   body: HTMLImageElement;
@@ -97,6 +123,9 @@ export function mosesSwingAngle(progress: number): number {
 
 /** Screen position of Moses' grip (staff pivot). */
 export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
+  if (MOSES_VISUAL_VERSION === "new") {
+    return { x: x + (V2.HAND.x - V2.CX) * V2.PX * flip, y: groundY - (V2.H - V2.HAND.y) * V2.PX };
+  }
   const { PX, CX, H, HAND } = MOSES_ART;
   return {
     x: x + (HAND.x - CX) * PX * flip,
@@ -106,6 +135,12 @@ export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
 
 /** Screen position of the staff's crook for a given pose — used by the wind slash. */
 export function mosesStaffTip(x: number, groundY: number, flip: 1 | -1, angle: number) {
+  if (MOSES_VISUAL_VERSION === "new") {
+    const g = mosesGrip(x, groundY, flip);
+    const tx = (V2.STAFF.TOP.x - V2.STAFF.GRIP.x) * V2.PX, ty = (V2.STAFF.TOP.y - V2.STAFF.GRIP.y) * V2.PX;
+    const c = Math.cos(angle), s2 = Math.sin(angle);
+    return { x: g.x + (tx * c - ty * s2) * flip, y: g.y + (tx * s2 + ty * c) };
+  }
   const { PX, TIP } = MOSES_ART;
   const grip = mosesGrip(x, groundY, flip);
   const c = Math.cos(angle), s = Math.sin(angle);
@@ -119,6 +154,60 @@ export const MOSES_STAFF_LEN = Math.hypot(MOSES_ART.TIP.x, MOSES_ART.TIP.y) * MO
 
 /** Draws gameplay Moses at native pixel density from his whole-piece layers. */
 export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
+  if (MOSES_VISUAL_VERSION === "new" && ensureV2()) return drawMosesNew(ctx, pose);
+  drawMosesOriginal(ctx, pose);
+}
+
+/** New look: intact body, sandals step, staff rotates whole around the fist. */
+function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
+  const L = v2!;
+  const { W, H, PX, CX, HAND, STAFF: S } = V2;
+  const TAU = Math.PI * 2;
+  const step = (phase: number) => {
+    const u = (((phase % TAU) + TAU) / TAU) % 1;
+    if (u < 0.45) { const t = u / 0.45; return { dx: Math.round(-2 + 5 * t), dy: -Math.round(Math.sin(Math.PI * t) * 2) }; }
+    const t = (u - 0.45) / 0.55; return { dx: Math.round(3 - 5 * t), dy: 0 };
+  };
+  const z = { dx: 0, dy: 0 };
+  const fR = pose.moving ? step(pose.walkPhase) : z;
+  const fL = pose.moving ? step(pose.walkPhase + Math.PI) : z;
+  const breathT = pose.walkPhase / 4.2;
+  // breathing: only the upper body rises one pixel; feet stay planted
+  const breath = pose.moving ? 0 : Math.sin(breathT * 1.6) > 0.55 ? -1 : 0;
+  const bodyDY = pose.moving ? (Math.sin(pose.walkPhase * 2) > 0.4 ? -1 : 0) : breath;
+  const sway = pose.moving ? Math.sin(pose.walkPhase) * 0.05 : Math.sin(breathT * 1.6) * 0.015;
+  const rot = pose.staffAngle || sway;
+  let hx = 0, hy = 0;
+  if (pose.staffAngle) {
+    hy = Math.max(-4, Math.min(2, Math.round(pose.staffAngle * 2.4)));
+    hx = Math.max(-1, Math.min(2, Math.round(pose.staffAngle * 1.2)));
+  } else if (pose.moving) hx = Math.round(Math.sin(pose.walkPhase) * 1.2);
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(Math.round(pose.x), Math.round(pose.groundY + pose.bob));
+  if (pose.flip === -1) ctx.scale(-1, 1);
+  ctx.translate(-CX * PX, -H * PX);
+  const stamp = (img: HTMLImageElement, dx: number, dy: number) => ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
+  const paint = () => {
+    stamp(L.footL, fL.dx, fL.dy);
+    stamp(L.footR, fR.dx, fR.dy);
+    stamp(L.body, 0, bodyDY);
+    ctx.save();
+    ctx.translate((HAND.x + hx) * PX, (HAND.y + bodyDY + hy) * PX);
+    if (rot) ctx.rotate(rot);
+    ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+    ctx.restore();
+    // fist drawn over the staff so it reads as gripped
+    stamp(L.hand, hx, bodyDY + hy);
+  };
+  paint();
+  if (pose.flash && pose.flash > 0) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = pose.flash; paint(); }
+  ctx.restore();
+}
+
+/** Original look — unchanged, restorable via MOSES_VISUAL_VERSION = "original". */
+function drawMosesOriginal(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   if (!ensureMosesArt() || !layers) return;
   const { W, IMG_H, H, PX, CX, HAND } = MOSES_ART;
   const L = layers;
