@@ -179,8 +179,9 @@ export function drawAllyFx(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
     const ally = d.allyId != null ? s.entities.get(d.allyId as number) : undefined;
     const def = ally ? allyDef(ally.kind) : undefined;
     if (ally && def) {
-      x = ally.pos.x - camX + (def.sprite.FX.x - def.sprite.CX) * ally.facing;
-      y = ally.pos.y - camY + 10 - def.sprite.H + def.sprite.FX.y;
+      const sc = def.sprite.scale ?? 1;
+      x = ally.pos.x - camX + (def.sprite.FX.x - def.sprite.CX) * sc * ally.facing;
+      y = ally.pos.y - camY + 10 - (def.sprite.H - def.sprite.FX.y) * sc;
     }
     const ang = (d.angle as number) ?? 0;
     for (let w = 0; w < 3; w++) {

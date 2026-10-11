@@ -130,7 +130,7 @@ export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
     name: "Aaron",
     description: "Moses' brother. Sturdy and powerful; his horn blast needs time to recover.",
     scripture: "Exodus 4:14 — Is not Aaron the Levite thy brother? I know that he can speak well.",
-    sprite: { url: aaronAsset.url, W: 47, H: 88, CX: 16, FOOT_TOP: 80, FOOT_X0: 3, FOOT_X1: 30, FOOT_SPLIT: 15, FX: { x: 45, y: 6 }, scale: 0.8 },
+    sprite: { url: aaronAsset.url, W: 47, H: 88, CX: 16, FOOT_TOP: 80, FOOT_X0: 3, FOOT_X1: 30, FOOT_SPLIT: 15, FX: { x: 45, y: 6 }, scale: 1.0 },
     maxHp: 3400,
     damage: 40,
     cooldown: 2.8,
