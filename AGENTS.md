@@ -92,3 +92,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - All damage to Moses must go through `damagePlayer` in `bonuses.ts` (shield absorbs first, then HP); shield tuning lives in `SHIELD_CONFIG`. Never write `player.hp -=` directly.
 - Enemy target choice (Moses vs ally) is cached per enemy in `data.tgtId`/`data.tgtAt` and refreshed every 0.3–0.5s; the live position of the cached target is still followed every frame.
 - Play and Test Map pause via `useLandscapeOnly` (`components/LandscapeGuard.tsx`) when the viewport is taller than wide.
+- Moses has two visual versions switched by `MOSES_VISUAL_VERSION` in `game/mosesGameArt.ts` ("original" keeps the old sprite/staff/animation; "new" uses the `moses-v2-*` layers). Gameplay reads only `MOSES_ART`/`MOSES_ATTACK`, so switching never affects combat.
