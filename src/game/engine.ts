@@ -2089,7 +2089,7 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Champion — offered on every 5th level, picked at random from the pool of
+  // Champion — offered at isChampionLevel milestones (10, 30, 60, 90...), picked at random from the pool of
   // champions not yet recruited.
   let companion: UpgradeChoice | null = null;
   if (isChampionLevel(state.level)) {

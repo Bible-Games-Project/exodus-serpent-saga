@@ -93,3 +93,6 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Enemy target choice (Moses vs ally) is cached per enemy in `data.tgtId`/`data.tgtAt` and refreshed every 0.3–0.5s; the live position of the cached target is still followed every frame.
 - Play and Test Map pause via `useLandscapeOnly` (`components/LandscapeGuard.tsx`) when the viewport is taller than wide.
 - Moses has two visual versions switched by `MOSES_VISUAL_VERSION` in `game/mosesGameArt.ts` ("original" keeps the old sprite/staff/animation; "new" uses the `moses-v2-*` layers). Gameplay reads only `MOSES_ART`/`MOSES_ATTACK`, so switching never affects combat.
+- Progression milestones are centralized: enemy unlocks use `ENEMY_UNLOCK_INTERVAL` × index in `ENEMY_ORDER` (`enemies.ts`); champion offers use `isChampionLevel` (`allies.ts`). Keep them independent.
+- Champions retreat between attacks via `allyRetreatDir` (inverse-distance threat vector, obstacle-probed headings) recomputed with the target every `ALLY_RETARGET_SECONDS`.
+- Moses v2 free-arm swing splits the body PNG at runtime (`freeArmLayers` in `mosesGameArt.ts`); adjust the `ARM` rect if the body art changes.
