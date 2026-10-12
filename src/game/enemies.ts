@@ -233,13 +233,16 @@ export function enemyLabel(kind: string): string {
 
 
 
+/** Levels between each newly introduced enemy type. */
+export const ENEMY_UNLOCK_INTERVAL = 5;
+
 /** Player level at which an enemy type is first allowed to spawn. */
 export function enemyUnlockLevel(kind: string): number {
   const i = ENEMY_ORDER.indexOf(kind);
-  return i < 0 ? 0 : i * 3;
+  return i < 0 ? 0 : i * ENEMY_UNLOCK_INTERVAL;
 }
 
-// Weighted random selection filtered by player level (one new type / 3 levels).
+// Weighted random selection filtered by player level (one new type every ENEMY_UNLOCK_INTERVAL levels).
 function camelAllowed(state: GameState): boolean {
   const st = state as unknown as { __camelLevel?: number };
   if (st.__camelLevel === state.level) return false;

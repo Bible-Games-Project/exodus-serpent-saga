@@ -192,7 +192,16 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   const paint = () => {
     stamp(L.footL, fL.dx, fL.dy);
     stamp(L.footR, fR.dx, fR.dy);
-    stamp(L.body, 0, bodyDY);
+    const arm = freeArmLayers(L.body);
+    if (arm && pose.moving && !pose.staffAngle) {
+      // Free (non-staff) arm swings gently around the shoulder, opposite to the legs.
+      ctx.drawImage(arm.body, 0, bodyDY * PX, W * PX, H * PX);
+      ctx.save();
+      ctx.translate(ARM.PIVOT.x * PX, (ARM.PIVOT.y + bodyDY) * PX);
+      ctx.rotate(-Math.sin(pose.walkPhase) * 0.08);
+      ctx.drawImage(arm.arm, -ARM.PIVOT.x * PX, -ARM.PIVOT.y * PX, W * PX, H * PX);
+      ctx.restore();
+    } else stamp(L.body, 0, bodyDY);
     ctx.save();
     ctx.translate((HAND.x + hx) * PX, (HAND.y + bodyDY + hy) * PX);
     if (rot) ctx.rotate(rot);
@@ -204,6 +213,37 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   paint();
   if (pose.flash && pose.flash > 0) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = pose.flash; paint(); }
   ctx.restore();
+}
+
+/** Free-arm region of the v2 body (sprite px) and its shoulder pivot. */
+const ARM = { X1: 10, Y0: 28, Y1: 50, PIVOT: { x: 7, y: 28 } } as const;
+let armCache: { body: HTMLCanvasElement; arm: HTMLCanvasElement } | null = null;
+/** Splits the body into body-without-free-arm (filled with robe behind) and the arm alone. */
+function freeArmLayers(body: HTMLImageElement): typeof armCache {
+  if (armCache) return armCache;
+  if (typeof document === "undefined" || !body.complete || !body.naturalWidth) return null;
+  const { W, H } = V2;
+  const mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
+  const b = mk(), a = mk();
+  const bc = b.getContext("2d")!, ac = a.getContext("2d")!;
+  bc.drawImage(body, 0, 0, W, H);
+  const src = bc.getImageData(0, 0, W, H);
+  const bd = bc.createImageData(W, H); bd.data.set(src.data);
+  const ad = ac.createImageData(W, H);
+  for (let y = ARM.Y0; y < ARM.Y1; y++) {
+    const fill = (y * W + ARM.X1) * 4;
+    for (let x = 0; x < ARM.X1; x++) {
+      const i = (y * W + x) * 4;
+      if (src.data[i + 3] < 10) continue;
+      for (let k = 0; k < 4; k++) ad.data[i + k] = src.data[i + k];
+      // behind the arm: robe colour from the adjacent column, edge kept clear
+      if (x < 3) bd.data[i + 3] = 0;
+      else for (let k = 0; k < 4; k++) bd.data[i + k] = src.data[fill + k];
+    }
+  }
+  bc.putImageData(bd, 0, 0); ac.putImageData(ad, 0, 0);
+  armCache = { body: b, arm: a };
+  return armCache;
 }
 
 /** Original look — unchanged, restorable via MOSES_VISUAL_VERSION = "original". */

@@ -1,6 +1,6 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
-import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
+import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
@@ -1785,8 +1785,8 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     return;
   }
 
-  // Re-evaluate the nearest enemy every 0.5s.
-  d.retargetT = ((d.retargetT as number) ?? 0) - dt;
+  // Re-evaluate target and path every ALLY_RETARGET_SECONDS (staggered per champion).
+  d.retargetT = ((d.retargetT as number) ?? Math.random() * ALLY_RETARGET_SECONDS) - dt;
   let target = allyTargetValid(state, d.targetId as number | undefined);
   if ((d.retargetT as number) <= 0 || !target) {
     d.retargetT = ALLY_RETARGET_SECONDS;
@@ -1800,6 +1800,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     }
     target = best;
     d.targetId = best?.id;
+    d.retreatDir = allyRetreatDir(state, e);
   }
 
   d.atkCd = ((d.atkCd as number) ?? 0) - dt;
@@ -1822,11 +1823,11 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
         d.atkCd = def.cooldown;
         d.fxSeed = Math.floor(Math.random() * 100000);
       } else {
-        allyWander(e, def, dt);
+        allyRetreat(e, def, dt);
       }
     } else if ((d.atkCd as number) > 0) {
-      // Between attacks: roam naturally instead of standing idle.
-      allyWander(e, def, dt);
+      // Between attacks: back away from nearby threats instead of standing idle.
+      allyRetreat(e, def, dt);
     } else {
       e.vel.x = (dx / dd) * def.moveSpeed; e.vel.y = (dy / dd) * def.moveSpeed;
       e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
@@ -1834,6 +1835,53 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   }
   resolveObstacles(e.pos, e.radius, state);
   wrapPos(state, e.pos);
+}
+
+/**
+ * Retreat heading away from nearby enemies (closer ones weigh more). Picks the
+ * best of 12 headings that is not blocked by an obstacle. Undefined = no threat.
+ */
+function allyRetreatDir(state: GameState, e: Entity): Vec2 | undefined {
+  let fx = 0, fy = 0;
+  const R2 = ALLY_THREAT_RADIUS * ALLY_THREAT_RADIUS;
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy" || en.hp <= 0) continue;
+    const dx = wrapDelta(e.pos.x, en.pos.x, state.worldW);
+    const dy = wrapDelta(e.pos.y, en.pos.y, state.worldH);
+    const d2 = dx * dx + dy * dy;
+    if (d2 > R2 || d2 < 1) continue;
+    const w = 1 / d2;
+    fx += dx * w; fy += dy * w;
+  }
+  const fl = Math.hypot(fx, fy);
+  if (fl < 1e-9) return undefined;
+  fx /= fl; fy /= fl;
+  const obs = state.obstacles ?? [];
+  let best: Vec2 | undefined, bestScore = -Infinity;
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const cx = Math.cos(a), cy = Math.sin(a);
+    const probe = { x: e.pos.x + cx * 40, y: e.pos.y + cy * 40 };
+    const blocked = obs.some((o) => wrapDist2(state, o.pos, probe) < (o.r + e.radius) ** 2);
+    const score = cx * fx + cy * fy - (blocked ? 3 : 0);
+    if (score > bestScore) { bestScore = score; best = { x: cx, y: cy }; }
+  }
+  return best;
+}
+
+/** Between attacks: move away from threats; roam when nothing is close. */
+function allyRetreat(e: Entity, def: AllyDef, dt: number) {
+  const d = e.data!;
+  const r = d.retreatDir as Vec2 | undefined;
+  if (!r) return allyWander(e, def, dt);
+  // smooth turning toward the latest retreat heading
+  const goal = Math.atan2(r.y, r.x);
+  let a = (d.wanderAng as number) ?? goal;
+  let diff = Math.atan2(Math.sin(goal - a), Math.cos(goal - a));
+  a += Math.sign(diff) * Math.min(Math.abs(diff), 6 * dt);
+  d.wanderAng = a;
+  e.vel.x = Math.cos(a) * def.moveSpeed; e.vel.y = Math.sin(a) * def.moveSpeed;
+  e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
 }
 
 /** Randomized, smoothly-turning roam used while an attack is on cooldown. */
@@ -2044,7 +2092,7 @@ function offerUpgrades(state: GameState) {
   // Champion — offered on every 5th level, picked at random from the pool of
   // champions not yet recruited.
   let companion: UpgradeChoice | null = null;
-  if (state.level % 5 === 0) {
+  if (isChampionLevel(state.level)) {
     const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
     if (available.length) {
       const npcId = available[Math.floor(Math.random() * available.length)];

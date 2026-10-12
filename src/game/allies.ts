@@ -96,7 +96,7 @@ export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
     },
     impactFrac: 0.35,
     staffDamage: true,
-    maxHp: 160,
+    maxHp: 3400, // same as Aaron
     damage: 26,
     cooldown: 0.75,
     // Matches the broom's on-screen reach (pivot -> head at full swing).
@@ -153,4 +153,11 @@ export function allyDef(id: string): AllyDef | undefined {
 /** Seconds a fallen champion stays down before reviving. */
 export const ALLY_REVIVE_SECONDS = 30;
 /** How often a champion re-evaluates its nearest enemy. */
-export const ALLY_RETARGET_SECONDS = 0.5;
+export const ALLY_RETARGET_SECONDS = 0.2;
+/** Enemies inside this distance count as threats a champion retreats from. */
+export const ALLY_THREAT_RADIUS = 240;
+
+/** Champion recruitment milestones: 10, 30, then every 30 levels (60, 90, ...). */
+export function isChampionLevel(level: number): boolean {
+  return level === 10 || (level >= 30 && level % 30 === 0);
+}
