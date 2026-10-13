@@ -1,21 +1,46 @@
 import type { PlagueDef, PlagueId, PlagueLevel } from "./types";
 
-// Every plague evolves from level 1 (original) to PLAGUE_MAX_EVOLUTION; each
-// rank bumps damage, count, cooldown or area, independently per plague.
+// Every plague evolves indefinitely from level 1; each rank bumps damage,
+// count, cooldown or area, independently per plague. Multi-attack milestones
+// live in ATTACK_MULTI_MILESTONES.
 // Scripture strings are shown on unlock so players learn the biblical story.
-export const PLAGUE_MAX_EVOLUTION = 5;
-const FINAL_EVOLUTION_DMG_MUL = 1.5;
+/** Level after which stat growth slows down (gradual levels 1-5, gentler after). */
+export const PLAGUE_GRADUAL_LEVELS = 5;
+/** Evolution level -> number of repeated attacks per cast. Extend freely. */
+export const ATTACK_MULTI_MILESTONES: Array<{ level: number; casts: number }> = [
+  { level: 7, casts: 2 },
+  { level: 15, casts: 3 },
+  { level: 21, casts: 4 },
+  { level: 30, casts: 5 },
+  { level: 40, casts: 6 },
+];
+/** Delay in seconds between repeated attacks of one cast. */
+export const MULTI_ATTACK_STAGGER = 0.18;
+/** Attacks whose behavior does not fit repeating (persistent/global effects). */
+export const NO_MULTI_ATTACK: PlagueId[] = ["darkness", "pillar", "flies"];
+export function attackCasts(id: PlagueId, level: number): number {
+  if (NO_MULTI_ATTACK.includes(id)) return 1;
+  let n = 1;
+  for (const m of ATTACK_MULTI_MILESTONES) if (level >= m.level) n = m.casts;
+  return n;
+}
+/** Effective growth ranks: full rate up to level 5, half rate after. */
+export function growthRanks(level: number): number {
+  const l = Math.max(1, level) - 1;
+  const g = PLAGUE_GRADUAL_LEVELS - 1;
+  return l <= g ? l : g + (l - g) * 0.5;
+}
 
 function scale(base: PlagueLevel, bumps: Partial<Record<keyof PlagueLevel, number>>) {
   return (level: number): PlagueLevel => ({
     ...base,
     level,
-    cooldown: Math.max(0.15, base.cooldown - (bumps.cooldown ?? 0) * (level - 1)),
-    // Final evolution adds a decisive damage spike on top of the per-rank bumps.
-    dmg: (base.dmg + (bumps.dmg ?? 0) * (level - 1)) * (level >= PLAGUE_MAX_EVOLUTION ? FINAL_EVOLUTION_DMG_MUL : 1),
-    count: base.count + Math.floor((bumps.count ?? 0) * (level - 1)),
-    speed: base.speed + (bumps.speed ?? 0) * (level - 1),
-    ttl: base.ttl + (bumps.ttl ?? 0) * (level - 1),
+    // Cooldown never drops below 60% of base so repeated attacks stay readable.
+    cooldown: Math.max(0.15, base.cooldown * 0.6, base.cooldown - (bumps.cooldown ?? 0) * Math.min(level - 1, 8)),
+    dmg: base.dmg + (bumps.dmg ?? 0) * growthRanks(level),
+    count: base.count + Math.floor((bumps.count ?? 0) * Math.min(level - 1, 8)),
+    speed: base.speed + (bumps.speed ?? 0) * Math.min(level - 1, 8),
+    ttl: Math.max(base.ttl * 0.5, base.ttl + (bumps.ttl ?? 0) * Math.min(level - 1, 8)),
   });
 }
 
@@ -283,6 +308,16 @@ export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, 
 
 /** Radius multiplier from a plague's evolution level (1 at level 1). */
 export function plagueAreaMul(id: PlagueId, level: number): number {
-  const lv = Math.min(PLAGUE_MAX_EVOLUTION, Math.max(1, level));
-  return 1 + PLAGUE_EVOLUTION[id].area * (lv - 1);
+  // Area grows normally to level 5, then slowly (capped at +3 extra ranks).
+  const lv = Math.max(1, level);
+  return 1 + PLAGUE_EVOLUTION[id].area * (Math.min(lv - 1, 4) + Math.min(3, Math.max(0, lv - 5) * 0.25));
+}
+
+/** Card text for evolving to `next` level. */
+export function evolutionNote(id: PlagueId, next: number): string {
+  const casts = attackCasts(id, next);
+  if (casts > attackCasts(id, next - 1)) return `Multi-attack: now strikes ${casts}× per cast.`;
+  const n = PLAGUE_EVOLUTION[id].notes[next - 2];
+  if (n && !n.startsWith("Final")) return n;
+  return "Stronger and more effective.";
 }

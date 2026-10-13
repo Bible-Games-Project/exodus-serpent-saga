@@ -159,6 +159,10 @@ export type GameState = {
 
   // Player-progression modular systems.
   passives?: { maxHp?: number; speed?: number; damage?: number; magnet?: number; shield?: number };
+  /** Champion milestone reached but no champion recruited yet. */
+  championOfferPending?: boolean;
+  /** Extra repeats from multi-attack milestones. */
+  queuedCasts?: Array<{ id: PlagueId; level: number; at: number }>;
   nextCompanionLevel?: number; // gate for offering a companion pick
 
   // Bonus-drop timed effects (bonuses.ts).

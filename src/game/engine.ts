@@ -1,5 +1,5 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
-import { PLAGUES, PLAGUE_ORDER, PLAGUE_MAX_EVOLUTION, PLAGUE_EVOLUTION, plagueAreaMul } from "./plagues";
+import { PLAGUES, PLAGUE_ORDER, attackCasts, MULTI_ATTACK_STAGGER, evolutionNote, plagueAreaMul } from "./plagues";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
@@ -352,6 +352,15 @@ export function update(state: GameState, dt: number) {
   syncOrbitFlies(state, dt);
 
   // Cast plagues
+  if (state.queuedCasts?.length) {
+    const rest: NonNullable<GameState["queuedCasts"]> = [];
+    for (const q of state.queuedCasts) {
+      // Staff repeats wait for the current swing to finish (one swing at a time).
+      if (q.at > state.now || (q.id === "staff" && staffSwingActive(state))) rest.push(q);
+      else if (state.plagues.has(q.id)) castPlague(state, q.id, q.level);
+    }
+    state.queuedCasts = rest;
+  }
   for (const [id, level] of state.plagues) {
     const cd = (state.plagueCooldown.get(id) ?? 0) - dt;
     if (cd <= 0) {
@@ -363,9 +372,12 @@ export function update(state: GameState, dt: number) {
         continue;
       }
       castPlague(state, id, level);
+      // Multi-attack milestones: queue extra repeats of this cast.
+      const casts = attackCasts(id, level);
+      for (let k = 1; k < casts; k++) (state.queuedCasts ??= []).push({ id, level, at: state.now + k * MULTI_ATTACK_STAGGER });
       const def = PLAGUES[id];
       // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
-      state.plagueCooldown.set(id, id === "leprosy" ? (5 + Math.random() * 2.5) * (1 - 0.08 * (Math.min(PLAGUE_MAX_EVOLUTION, level) - 1)) : def.scale(level).cooldown);
+      state.plagueCooldown.set(id, id === "leprosy" ? (5 + Math.random() * 2.5) * (1 - 0.08 * Math.min(4, level - 1)) : def.scale(level).cooldown);
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -1235,16 +1247,14 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   const p = state.player.pos;
 
   if (id === "leprosy") {
-    // Final evolution afflicts two foes per cast.
-    const targets = level >= PLAGUE_MAX_EVOLUTION ? 2 : 1;
-    for (let i = 0; i < targets; i++) castLeprosy(state, stats.ttl);
+    castLeprosy(state, stats.ttl);
     return;
   }
 
   if (id === "staff") {
     // Damage handled per-frame in applyStaffSwingHits — spawn hazard only.
     const facing = state.player.facing;
-    const range = (def.base.extra?.range ?? 70) + level * 4;
+    const range = (def.base.extra?.range ?? 70) + Math.min(level, 10) * 4;
     const halfArc = (def.base.extra?.arc ?? 1.05);
     const sw: Entity = {
       id: state.nextId++,
@@ -1440,8 +1450,8 @@ function castRedSea(state: GameState, stats: { dmg: number; speed: number; ttl: 
   setTimeout(() => {
     if (!state.running || state.paused) return;
     const lv = state.plagues.get("redsea") ?? 1;
-    const finalMul = lv >= PLAGUE_MAX_EVOLUTION ? 2 : 1;
-    const centerDmg = ((PLAGUES.redsea.base.extra?.centerDmg ?? 220)) * (1 + 0.25 * (lv - 1)) * finalMul * dmul;
+    const finalMul = 1;
+    const centerDmg = ((PLAGUES.redsea.base.extra?.centerDmg ?? 220)) * (1 + 0.25 * (Math.min(lv, 5) - 1) + 0.1 * Math.max(0, lv - 5)) * finalMul * dmul;
     const R = 180 * plagueAreaMul("redsea", lv);
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
@@ -2048,16 +2058,15 @@ function offerUpgrades(state: GameState) {
   const active = state.plagues;
 
   // Plague level-ups.
-  // Each plague evolves independently and never past PLAGUE_MAX_EVOLUTION.
+  // Each plague evolves independently with no cap.
   for (const [id, lvl] of active) {
-    if (lvl >= PLAGUE_MAX_EVOLUTION) continue;
     const def = PLAGUES[id];
     choices.push({
       id: `${id}-up-${lvl + 1}`,
       plague: id,
-      title: `${def.name} — Evolution ${lvl + 1}/${PLAGUE_MAX_EVOLUTION}`,
-      description: PLAGUE_EVOLUTION[id].notes[lvl - 1] ?? def.description,
-      apply: (s) => s.plagues.set(id, Math.min(PLAGUE_MAX_EVOLUTION, (s.plagues.get(id) ?? 1) + 1)),
+      title: `${def.name} — Evolution ${lvl + 1}`,
+      description: evolutionNote(id, lvl + 1),
+      apply: (s) => s.plagues.set(id, (s.plagues.get(id) ?? 1) + 1),
     });
   }
 
@@ -2098,7 +2107,9 @@ function offerUpgrades(state: GameState) {
   // Champion — offered at isChampionLevel milestones (10, 30, 60, 90...), picked at random from the pool of
   // champions not yet recruited.
   let companion: UpgradeChoice | null = null;
-  if (isChampionLevel(state.level)) {
+  // A milestone opens a pending offer that persists until a champion is recruited.
+  if (isChampionLevel(state.level)) state.championOfferPending = true;
+  if (state.championOfferPending) {
     const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
     if (available.length) {
       const npcId = available[Math.floor(Math.random() * available.length)];
@@ -2111,7 +2122,7 @@ function offerUpgrades(state: GameState) {
         title: `Champion: ${def.name}`,
         description: def.description,
         scripture: def.scripture,
-        apply: (s) => summonCompanion(s, npcId),
+        apply: (s) => { s.championOfferPending = false; summonCompanion(s, npcId); },
       };
     }
   }
