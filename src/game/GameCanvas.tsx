@@ -1,3 +1,4 @@
+import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
