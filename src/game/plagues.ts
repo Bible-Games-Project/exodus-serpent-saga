@@ -59,9 +59,10 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
       "Exodus 4:6 — 'Put now thine hand into thy bosom.' And when he took it out, behold, his hand was leprous as snow. A sign of God's power given to Moses.",
     unlockLevel: 4,
     // Cooldown is rolled fresh between 10 and 15 seconds on every cast (engine);
-    // `ttl` is how long the affliction takes to waste the target away.
+    // `ttl` is how long the affliction takes to waste the target away; it shortens
+    // with evolution via a negative-cooldown-style bump handled below.
     base: { level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 },
-    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, {}),
+    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, { ttl: 0.3 }),
   },
   blood: {
     id: "blood",
@@ -268,7 +269,7 @@ export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, 
   leprosy: { area: 0, notes: ["Leprosy strikes more often.", "Leprosy strikes more often and wastes faster.", "Leprosy strikes more often.", "Final: strikes two foes at once."] },
   blood: { area: 0, notes: ["Pools burn harder and last longer.", "Pools widen and appear more often.", "Pools burn harder and last longer.", "Final: a vast pool with crushing damage."] },
   frogs: { area: 0, notes: ["More frogs, harder landings.", "Harder landings, faster leaps.", "More frogs, harder landings.", "Final: a flood of frogs that strike hard."] },
-  gnats: { area: 0, notes: ["Fiercer bites, wider swarm.", "An extra swarm drifts out.", "Fiercer bites, wider swarm.", "Final: a dense swarm with savage bites."] },
+  gnats: { area: 0, notes: ["Fiercer bites, wider swarm.", "Fiercer bites, faster swarms.", "An extra swarm drifts out.", "Final: a dense swarm with savage bites."] },
   flies: { area: 0, notes: ["Another fly joins the orbit.", "Another fly joins, stings harder.", "Another fly joins the orbit.", "Final: a full swarm with vicious stings."] },
   livestock: { area: 0.12, notes: ["Wider, more poisonous cloud.", "Wider cloud that lingers longer.", "Wider, more poisonous cloud.", "Final: a huge, deadly murrain."] },
   boils: { area: 0.12, notes: ["Wider cloud, more painful boils.", "Wider cloud that lingers longer.", "Wider cloud, more painful boils.", "Final: a huge cloud of festering boils."] },

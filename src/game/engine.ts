@@ -365,7 +365,7 @@ export function update(state: GameState, dt: number) {
       castPlague(state, id, level);
       const def = PLAGUES[id];
       // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
-      state.plagueCooldown.set(id, id === "leprosy" ? 5 + Math.random() * 2.5 : def.scale(level).cooldown);
+      state.plagueCooldown.set(id, id === "leprosy" ? (5 + Math.random() * 2.5) * (1 - 0.08 * (Math.min(PLAGUE_MAX_EVOLUTION, level) - 1)) : def.scale(level).cooldown);
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -1235,7 +1235,9 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   const p = state.player.pos;
 
   if (id === "leprosy") {
-    castLeprosy(state, stats.ttl);
+    // Final evolution afflicts two foes per cast.
+    const targets = level >= PLAGUE_MAX_EVOLUTION ? 2 : 1;
+    for (let i = 0; i < targets; i++) castLeprosy(state, stats.ttl);
     return;
   }
 
