@@ -1,3 +1,4 @@
+import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt } from "./ramsesArt";
@@ -1367,6 +1368,59 @@ function iconGridFor(c: UpgradeChoice): string[] {
   return ICON_PASSIVE.damage;
 }
 
+const FLAG_ART = {
+  palette: { K: "#2b1d14", w: "#8a5a34", r: "#a12b2b", R: "#e05a48", o: "#e6c261" },
+  grid: [
+    ".o..........",
+    "KwKKKKKKKK..",
+    "KwRRRRRRRRK.",
+    "KwRRoRRRRRRK",
+    "KwRooRRRRRK.",
+    "KwRRoRRRRK..",
+    "KwrrrrrrrrK.",
+    "KwKKKKKKKKK.",
+    "Kw..........",
+    "Kw..........",
+    "Kw..........",
+    "KwK.........",
+  ],
+};
+const BURNING_BUSH_ART = {
+  palette: { K: "#2b1d14", y: "#ffe3a0", o: "#f2c970", R: "#e05a48", r: "#a12b2b", g: "#7fa96b", G: "#4d7a3e", w: "#8a5a34" },
+  grid: [
+    ".....y......",
+    "...y.oy..y..",
+    "..yo.Ro.yo..",
+    "..oRoRRooR..",
+    ".oRRrRrRRro.",
+    ".RrgRrGRrgR.",
+    "KGggGgGgGggK",
+    "KGgGGgggGGgK",
+    ".KGgGgGgGgK.",
+    "..KKGwwGKK..",
+    "....Kww K...".replace(" ", "K"),
+    "...KKKKKK...",
+  ],
+};
+let frogImg: HTMLImageElement | null = null;
+function getFrogImage(): HTMLImageElement {
+  if (!frogImg) { frogImg = new Image(); frogImg.src = frogPlagueAsset.url; }
+  return frogImg;
+}
+const frogScaledCache = new Map<number, HTMLCanvasElement>();
+function getFrogScaled(img: HTMLImageElement, w: number): HTMLCanvasElement {
+  let c = frogScaledCache.get(w);
+  if (c) return c;
+  c = document.createElement("canvas");
+  c.width = w;
+  c.height = Math.max(1, Math.round((w * img.naturalHeight) / img.naturalWidth));
+  const x = c.getContext("2d")!;
+  x.imageSmoothingEnabled = false;
+  x.drawImage(img, 0, 0, c.width, c.height);
+  frogScaledCache.set(w, c);
+  return c;
+}
+
 /** Compact upgrade-level summary shown between the level-up title and cards. */
 function LevelUpStats({ state }: { state: GameState }) {
   const items: Array<{ key: string; label: string; value: number; art?: { grid: string[]; palette: Record<string, string> }; grid?: string[] }> = [
@@ -1376,8 +1430,8 @@ function LevelUpStats({ state }: { state: GameState }) {
     { key: "dmg", label: "Plague damage level", value: passiveRank(state, "damage"), art: SWORD_ART },
     { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning },
     { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet },
-    { key: "champ", label: "Champions recruited", value: state.npcs.size, grid: ICON_NPC.miriam },
-    { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, grid: ICON_PLAGUE.blood },
+    { key: "champ", label: "Champions recruited", value: state.npcs.size, art: FLAG_ART },
+    { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, art: BURNING_BUSH_ART },
   ];
   return (
     <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-[3px] border-[#3a2412] bg-[#f6e2ad] px-2 py-1 sm:mb-3">
@@ -1809,7 +1863,15 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     else if (phase > 0.85) { scaleY = 0.75; scaleX = 1.15; frogFrame = 2; }
     else { scaleY = 1.1; scaleX = 0.92; frogFrame = 1; }
   }
-  const img = renderSprite(sprite, e.kind === "frog" ? frogFrame : frameIdx, SCALE, flip);
+  let img: HTMLCanvasElement | HTMLImageElement = renderSprite(sprite, e.kind === "frog" ? frogFrame : frameIdx, SCALE, flip);
+  if (e.kind === "frog") {
+    // Supplied frog PNG replaces the grid sprite; sized to the old sprite's width.
+    const fi = getFrogImage();
+    if (fi.complete && fi.naturalWidth) {
+      const scaled = getFrogScaled(fi, img.width);
+      img = scaled;
+    }
+  }
   const drawW = img.width * scaleX;
   const drawH = img.height * scaleY;
   const sx = Math.round(e.pos.x - camX - drawW / 2);
