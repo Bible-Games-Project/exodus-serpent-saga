@@ -42,11 +42,23 @@ export function testChampionInfo(id: string): { name: string; url: string } {
   return { name: d?.name ?? id, url: d?.sprite.url ?? "" };
 }
 
+/** The ten biblical plagues in order, then the additional abilities. */
+export const TEST_PLAGUE_IDS: PlagueId[] = ["blood", "frogs", "gnats", "flies", "livestock", "boils", "hail", "locusts", "darkness", "firstborn"];
+export const TEST_EXTRA_IDS: PlagueId[] = ["redsea", "pillar", "fire", "leprosy", "serpent"];
+
+/** Abilities enabled by a cumulative "up to index" preset. */
+export function abilitiesUpTo(index: number): Partial<Record<PlagueId, boolean>> {
+  const out: Partial<Record<PlagueId, boolean>> = {};
+  TEST_ATTACK_ORDER.forEach((id, i) => (out[id] = i <= index));
+  return out;
+}
+
 export function defaultTestMapConfig(): TestMapConfig {
   const enemies: Record<string, boolean> = {};
   for (const k of testEnemyKinds()) enemies[k] = true;
   return {
     maxAttackIndex: 0,
+    abilities: abilitiesUpTo(0),
     enemies,
     ramses: false,
     ramsesLevel: 2,
