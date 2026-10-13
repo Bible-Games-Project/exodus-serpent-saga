@@ -96,3 +96,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Progression milestones are centralized: enemy unlocks use `ENEMY_UNLOCK_INTERVAL` × index in `ENEMY_ORDER` (`enemies.ts`); champion offers use `isChampionLevel` (`allies.ts`). Keep them independent.
 - Champions retreat between attacks via `allyRetreatDir` (inverse-distance threat vector, obstacle-probed headings) recomputed with the target every `ALLY_RETARGET_SECONDS`.
 - Moses v2 free-arm swing splits the body PNG at runtime (`freeArmLayers` in `mosesGameArt.ts`); adjust the `ARM` rect if the body art changes.
+- Plague unlocks follow `unlockLevel` in `plagues.ts` (10 plagues at 10..100, Red Sea 110, then miracles); evolutions are capped at `PLAGUE_MAX_EVOLUTION` per plague with radius gains via `plagueAreaMul` and texts in `PLAGUE_EVOLUTION`. Champion blessings all use `ICON_CHAMPION_FIST`.
