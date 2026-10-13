@@ -197,6 +197,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
     let last = performance.now();
     let raf = 0;
     let uiCounter = 0;
+    let lastSig = "";
     let gameOverFired = false;
 
     const loop = (t: number) => {
@@ -235,7 +236,18 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
         onGameOver({ level: s.level, survivalSeconds: Math.floor(s.survivalSeconds), kills: s.kills });
       }
       uiCounter++;
-      if (uiCounter % 4 === 0) setUiTick((v) => v + 1);
+      // Re-render the HUD only when something it shows changes (with a slow
+      // safety refresh so nothing can go stale).
+      if (uiCounter % 4 === 0) {
+        let pl = 0;
+        for (const v of s.plagues.values()) pl += v;
+        const tl = (u?: number) => (u && u > s.now ? Math.ceil(u - s.now) : 0);
+        const sig = [Math.ceil(s.player.hp), s.player.maxHp, Math.ceil(s.shield ?? 0), s.maxShield ?? 0, s.level, Math.floor(s.xp), s.kills,
+          Math.floor(s.survivalSeconds), s.plagues.size, pl, s.npcs.size, s.newPlagues.size, s.newNpcs.size, s.levelUpPending ? 1 : 0,
+          s.gameOver ? 1 : 0, s.notifications?.length ?? 0, tl(s.magnetBoostUntil), tl(s.invulnUntil), tl(s.speedBoostUntil), tl(s.shieldUntil),
+          s.player.hp / s.player.maxHp < 0.35 ? Math.floor(t / 250) : 0].join(",");
+        if (sig !== lastSig || uiCounter % 32 === 0) { lastSig = sig; setUiTick((v) => v + 1); }
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
