@@ -59,10 +59,9 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
       "Exodus 4:6 — 'Put now thine hand into thy bosom.' And when he took it out, behold, his hand was leprous as snow. A sign of God's power given to Moses.",
     unlockLevel: 4,
     // Cooldown is rolled fresh between 10 and 15 seconds on every cast (engine);
-    // `ttl` is how long the affliction takes to waste the target away; it shortens
-    // with evolution via a negative-cooldown-style bump handled below.
+    // `ttl` is how long the affliction takes to waste the target away; it shortens by 0.3s per evolution rank.
     base: { level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 },
-    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, { ttl: 0.3 }),
+    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, { ttl: -0.3 }),
   },
   blood: {
     id: "blood",
