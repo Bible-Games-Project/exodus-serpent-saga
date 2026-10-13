@@ -31,7 +31,7 @@ import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, upda
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
-import { damageMultiplier, magnetMultiplier, meleeMultiplier, speedMultiplier } from "./passives";
+import { passiveRank } from "./passives";
 import { drawShepherdStaff } from "./staff";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
 import desertTileAsset from "@/assets/tile-desert.png.asset.json";
