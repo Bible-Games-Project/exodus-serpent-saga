@@ -321,3 +321,12 @@ export function evolutionNote(id: PlagueId, next: number): string {
   if (n && !n.startsWith("Final")) return n;
   return "Stronger and more effective.";
 }
+
+// Multi-attack plagues multiply their ORIGINAL attack count via attackCasts;
+// their per-cast count therefore stays at the base value (no double scaling).
+for (const id of Object.keys(PLAGUES) as PlagueId[]) {
+  if (NO_MULTI_ATTACK.includes(id)) continue;
+  const def = PLAGUES[id];
+  const inner = def.scale;
+  def.scale = (level: number) => ({ ...inner(level), count: def.base.count });
+}
