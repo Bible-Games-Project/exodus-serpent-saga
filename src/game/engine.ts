@@ -171,9 +171,11 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
  */
 function applyTestMapConfig(state: GameState, test: TestMapConfig) {
   const upTo = Math.max(-1, Math.min(TEST_ATTACK_ORDER.length - 1, Math.floor(test.maxAttackIndex)));
-  for (let i = 0; i <= upTo; i++) {
+  for (let i = 0; i < TEST_ATTACK_ORDER.length; i++) {
     const id = TEST_ATTACK_ORDER[i];
-    if (!id || state.plagues.has(id)) continue;
+    // Individual ability selection, when present, is the exact unlocked set.
+    const on = test.abilities ? test.abilities[id] === true : i <= upTo;
+    if (!id || !on || state.plagues.has(id)) continue;
     state.plagues.set(id, 1);
     state.plagueCooldown.set(id, 0.5);
   }
@@ -816,7 +818,7 @@ export function update(state: GameState, dt: number) {
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
-        if (e.kind === "serpent" && (e.dmg ?? 0) > 0) {
+        if ((e.kind === "serpent" || e.kind === "frog") && (e.dmg ?? 0) > 0) {
           // Blood bursts at the contact point; the snake keeps moving.
           // Only on a real damaging hit.
           const j = () => (Math.random() - 0.5) * 8;
@@ -2070,8 +2072,9 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Plague unlock (only next in biblical order).
-  for (const id of PLAGUE_ORDER) {
+  // Plague unlock (only next in biblical order). Test Map runs with an
+  // explicit ability selection never unlock anything beyond it.
+  if (!state.testMap?.abilities) for (const id of PLAGUE_ORDER) {
     if (active.has(id)) continue;
     const def = PLAGUES[id];
     if (state.level < def.unlockLevel) break;

@@ -13,7 +13,12 @@ import {
   testEnemyLabel,
   testChampionIds,
   testChampionInfo,
+  TEST_PLAGUE_IDS,
+  TEST_EXTRA_IDS,
+  abilitiesUpTo,
 } from "@/game/testMap";
+import { PLAGUES } from "@/game/plagues";
+import type { PlagueId } from "@/game/types";
 import type { TestMapConfig } from "@/game/types";
 
 const RAMSES_LEVELS: Array<{ level: 1 | 2 | 3 | 4; label: string }> = [
@@ -75,11 +80,11 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
             Maximum Plague Attack
           </h2>
           <div className="mb-3 flex flex-wrap gap-2">
-            <Chip active={cfg.maxAttackIndex < 0} onClick={() => setCfg((c) => ({ ...c, maxAttackIndex: -1 }))}>
+            <Chip active={cfg.maxAttackIndex < 0} onClick={() => setCfg((c) => ({ ...c, maxAttackIndex: -1, abilities: abilitiesUpTo(-1) }))}>
               Staff only
             </Chip>
             {TEST_ATTACK_ORDER.map((_, i) => (
-              <Chip key={i} active={cfg.maxAttackIndex === i} onClick={() => setCfg((c) => ({ ...c, maxAttackIndex: i }))}>
+              <Chip key={i} active={cfg.maxAttackIndex === i} onClick={() => setCfg((c) => ({ ...c, maxAttackIndex: i, abilities: abilitiesUpTo(i) }))}>
                 {i}
               </Chip>
             ))}
@@ -87,7 +92,48 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
           <p className="font-pixel text-[11px] leading-relaxed text-[#7a5a30]">
             {cfg.maxAttackIndex < 0
               ? "Only Moses' staff strike."
-              : `Everything up to ${cfg.maxAttackIndex} — ${testAttackName(cfg.maxAttackIndex)}.`}
+              : `Preset: everything up to ${cfg.maxAttackIndex} — ${testAttackName(cfg.maxAttackIndex)}.`}{" "}
+            This only pre-fills the list below; the ticked abilities are what the run uses.
+          </p>
+        </section>
+
+        {/* Individual abilities */}
+        <section className="pixel-panel mb-5 bg-[#f6e2ad] p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-display text-sm uppercase tracking-[0.16em] text-[#4a2c10]">Unlocked abilities</h2>
+            <div className="flex gap-2">
+              <Chip active={false} onClick={() => setCfg((c) => ({ ...c, abilities: abilitiesUpTo(99) }))}>All on</Chip>
+              <Chip active={false} onClick={() => setCfg((c) => ({ ...c, abilities: abilitiesUpTo(-1) }))}>All off</Chip>
+            </div>
+          </div>
+          {([["The Ten Plagues", TEST_PLAGUE_IDS, true], ["Additional abilities", TEST_EXTRA_IDS, false]] as Array<[string, PlagueId[], boolean]>).map(([title, ids, numbered]) => (
+            <div key={title} className="mb-3">
+              <h3 className="font-pixel mb-2 text-[11px] uppercase tracking-[0.18em] text-[#8a5a2c]">{title}</h3>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {ids.map((id, i) => {
+                  const on = cfg.abilities?.[id] === true;
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setCfg((c) => ({ ...c, abilities: { ...c.abilities, [id]: !on } }))}
+                      className={[
+                        "pixel-btn pixel-btn-press flex items-center gap-2 px-2 py-2 text-left",
+                        on ? "bg-[#e9c168]" : "bg-[#efdcae] opacity-60",
+                      ].join(" ")}
+                    >
+                      <span className="font-display w-5 shrink-0 text-center text-sm text-[#3a2412]">{on ? "✔" : "·"}</span>
+                      <span className="font-pixel min-w-0 flex-1 truncate text-[11px] uppercase tracking-wider text-[#4a2f16]">
+                        {numbered ? `${i + 1}. ` : ""}{PLAGUES[id].name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          <p className="font-pixel text-[11px] leading-relaxed text-[#7a5a30]">
+            Only ticked abilities are unlocked; no others are offered on level up. Pillar of Cloud and Pillar of Fire are a single ability in the game.
+            Moses' staff strike is always active.
           </p>
         </section>
 

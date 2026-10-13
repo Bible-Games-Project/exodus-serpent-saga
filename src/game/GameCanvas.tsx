@@ -1407,6 +1407,8 @@ function getFrogImage(): HTMLImageElement {
   if (!frogImg) { frogImg = new Image(); frogImg.src = frogPlagueAsset.url; }
   return frogImg;
 }
+// Preload so the supplied frog is ready before the first frog ever spawns.
+if (typeof window !== "undefined") getFrogImage();
 const frogScaledCache = new Map<number, HTMLCanvasElement>();
 function getFrogScaled(img: HTMLImageElement, w: number): HTMLCanvasElement {
   let c = frogScaledCache.get(w);
@@ -1867,10 +1869,9 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   if (e.kind === "frog") {
     // Supplied frog PNG replaces the grid sprite; sized to the old sprite's width.
     const fi = getFrogImage();
-    if (fi.complete && fi.naturalWidth) {
-      const scaled = getFrogScaled(fi, img.width);
-      img = scaled;
-    }
+    // Never fall back to the old grid frog: skip drawing until the PNG is ready.
+    if (!(fi.complete && fi.naturalWidth)) return;
+    img = getFrogScaled(fi, img.width);
   }
   const drawW = img.width * scaleX;
   const drawH = img.height * scaleY;
