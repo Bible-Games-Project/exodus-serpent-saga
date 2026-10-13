@@ -31,7 +31,7 @@ import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, upda
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
-import { damageMultiplier, magnetMultiplier, meleeMultiplier, speedMultiplier } from "./passives";
+import { passiveRank } from "./passives";
 import { drawShepherdStaff } from "./staff";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
 import desertTileAsset from "@/assets/tile-desert.png.asset.json";
@@ -292,6 +292,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
           />
           {pending && (
             <LevelUpOverlay
+              state={s}
               choices={pending}
               onPick={(c) => { applyUpgrade(s, c); setUiTick((v) => v + 1); }}
             />
@@ -518,16 +519,6 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 
   const mins = Math.floor(state.survivalSeconds / 60);
   const secs = Math.floor(state.survivalSeconds % 60);
-  const magnetActive = state.now < (state.magnetBoostUntil ?? 0);
-  const speedActive = state.now < (state.speedBoostUntil ?? 0);
-  const shieldActive = (state.shield ?? 0) > 0;
-  const starActive = state.now < (state.invulnUntil ?? 0);
-
-  const pickupRadius = Math.round((60 + state.level * 3) * magnetMultiplier(state));
-  const moveSpeed = Math.round(100 * speedMultiplier(state));
-  const dmgMul = damageMultiplier(state);
-  const meleeMul = meleeMultiplier(state, state.plagues.get("staff") ?? 1);
-  const shieldVal = `${Math.ceil(state.shield ?? 0)}/${state.maxShield ?? 0}`;
 
   const notifs = state.notifications ?? [];
   const k = useHudScale();
@@ -548,55 +539,6 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             <StatCell art={MEDAL_ART} label="Level" value={`${state.level}`} />
             <StatCell art={CLOCK_ART} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
             <StatCell art={SKULL_ART} label="Kills" value={`${state.kills}`} />
-          </div>
-
-          <div className="mb-2 h-14 w-[3px] bg-white/25" />
-
-          <div className="flex items-end gap-4">
-            <StatCell
-              art={BONUS_ART.heart}
-              label="Health"
-              value={`${Math.max(0, Math.ceil(p.hp))}/${p.maxHp}`}
-              active={hpFlash > 0.35}
-              color="#ff6a52"
-            />
-
-            <StatCell
-              art={BONUS_ART.shield}
-              label="Shield"
-              value={shieldVal}
-              active={shieldActive}
-              color={BONUSES.shield.color}
-            />
-            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`${Math.round(meleeMul * 100)}`} />
-            <StatCell art={SWORD_ART} label="Plague damage" value={`${Math.round(dmgMul * 100)}`} />
-
-            <StatCell
-              art={BONUS_ART.lightning}
-              label="Movement speed"
-              value={`${moveSpeed}`}
-              active={speedActive}
-              color={BONUSES.lightning.color}
-              remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
-            />
-            <StatCell
-              art={BONUS_ART.magnet}
-              label="Pickup radius"
-              value={`${pickupRadius}`}
-              active={magnetActive}
-              color={BONUSES.magnet.color}
-              remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
-            />
-            {starActive && (
-              <StatCell
-                art={BONUS_ART.star}
-                label="Invincible"
-                value="INV"
-                active
-                color={BONUSES.star.color}
-                remaining={(state.invulnUntil ?? 0) - state.now}
-              />
-            )}
           </div>
         </div>
       </div>
@@ -1425,7 +1367,31 @@ function iconGridFor(c: UpgradeChoice): string[] {
   return ICON_PASSIVE.damage;
 }
 
-function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
+/** Compact upgrade-level summary shown between the level-up title and cards. */
+function LevelUpStats({ state }: { state: GameState }) {
+  const items: Array<{ key: string; label: string; value: number; art?: { grid: string[]; palette: Record<string, string> }; grid?: string[] }> = [
+    { key: "hp", label: "Health level", value: passiveRank(state, "maxHp"), art: BONUS_ART.heart },
+    { key: "shield", label: "Shield level", value: passiveRank(state, "shield"), art: BONUS_ART.shield },
+    { key: "staff", label: "Staff level", value: state.plagues.get("staff") ?? 1, art: STAFF_ART },
+    { key: "dmg", label: "Plague damage level", value: passiveRank(state, "damage"), art: SWORD_ART },
+    { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning },
+    { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet },
+    { key: "champ", label: "Champions recruited", value: state.npcs.size, grid: ICON_NPC.miriam },
+    { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, grid: ICON_PLAGUE.blood },
+  ];
+  return (
+    <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-[3px] border-[#3a2412] bg-[#f6e2ad] px-2 py-1 sm:mb-3">
+      {items.map((it) => (
+        <div key={it.key} className="flex items-center gap-1" title={it.label}>
+          {it.art ? <StatPixelIcon art={it.art} size={18} /> : <PixelIcon grid={it.grid!} size={20} />}
+          <span className="font-stat text-sm leading-none tabular-nums text-[#4a2c10]">{it.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
   // Pixel-art panel language: stepped corners, hard borders, no radii.
   // Three compact, vertically centred cards — one row on desktop, one column
   // on mobile — always fully visible without scrolling.
@@ -1445,6 +1411,7 @@ function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick:
         <p className="font-pixel mb-2 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] uppercase tracking-[0.22em] text-[#8a5a2c] sm:mb-4">
           Choose your blessing
         </p>
+        <LevelUpStats state={state} />
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-stretch sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
