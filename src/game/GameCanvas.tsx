@@ -292,6 +292,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
           />
           {pending && (
             <LevelUpOverlay
+              state={s}
               choices={pending}
               onPick={(c) => { applyUpgrade(s, c); setUiTick((v) => v + 1); }}
             />
@@ -1410,6 +1411,7 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
         <p className="font-pixel mb-2 text-center text-[clamp(0.65rem,1.8vh,0.85rem)] uppercase tracking-[0.22em] text-[#8a5a2c] sm:mb-4">
           Choose your blessing
         </p>
+        <LevelUpStats state={state} />
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-stretch sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
