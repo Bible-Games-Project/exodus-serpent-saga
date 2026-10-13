@@ -518,16 +518,6 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
 
   const mins = Math.floor(state.survivalSeconds / 60);
   const secs = Math.floor(state.survivalSeconds % 60);
-  const magnetActive = state.now < (state.magnetBoostUntil ?? 0);
-  const speedActive = state.now < (state.speedBoostUntil ?? 0);
-  const shieldActive = (state.shield ?? 0) > 0;
-  const starActive = state.now < (state.invulnUntil ?? 0);
-
-  const pickupRadius = Math.round((60 + state.level * 3) * magnetMultiplier(state));
-  const moveSpeed = Math.round(100 * speedMultiplier(state));
-  const dmgMul = damageMultiplier(state);
-  const meleeMul = meleeMultiplier(state, state.plagues.get("staff") ?? 1);
-  const shieldVal = `${Math.ceil(state.shield ?? 0)}/${state.maxShield ?? 0}`;
 
   const notifs = state.notifications ?? [];
   const k = useHudScale();
@@ -1376,7 +1366,31 @@ function iconGridFor(c: UpgradeChoice): string[] {
   return ICON_PASSIVE.damage;
 }
 
-function LevelUpOverlay({ choices, onPick }: { choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
+/** Compact upgrade-level summary shown between the level-up title and cards. */
+function LevelUpStats({ state }: { state: GameState }) {
+  const items: Array<{ key: string; label: string; value: number; art?: { grid: string[]; palette: Record<string, string> }; grid?: string[] }> = [
+    { key: "hp", label: "Health level", value: passiveRank(state, "maxHp"), art: BONUS_ART.heart },
+    { key: "shield", label: "Shield level", value: passiveRank(state, "shield"), art: BONUS_ART.shield },
+    { key: "staff", label: "Staff level", value: state.plagues.get("staff") ?? 1, art: STAFF_ART },
+    { key: "dmg", label: "Plague damage level", value: passiveRank(state, "damage"), art: SWORD_ART },
+    { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning },
+    { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet },
+    { key: "champ", label: "Champions recruited", value: state.npcs.size, grid: ICON_NPC.miriam },
+    { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, grid: ICON_PLAGUE.blood },
+  ];
+  return (
+    <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-[3px] border-[#3a2412] bg-[#f6e2ad] px-2 py-1 sm:mb-3">
+      {items.map((it) => (
+        <div key={it.key} className="flex items-center gap-1" title={it.label}>
+          {it.art ? <StatPixelIcon art={it.art} size={18} /> : <PixelIcon grid={it.grid!} size={20} />}
+          <span className="font-stat text-sm leading-none tabular-nums text-[#4a2c10]">{it.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices: UpgradeChoice[]; onPick: (c: UpgradeChoice) => void }) {
   // Pixel-art panel language: stepped corners, hard borders, no radii.
   // Three compact, vertically centred cards — one row on desktop, one column
   // on mobile — always fully visible without scrolling.
