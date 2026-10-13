@@ -549,55 +549,6 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
             <StatCell art={CLOCK_ART} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
             <StatCell art={SKULL_ART} label="Kills" value={`${state.kills}`} />
           </div>
-
-          <div className="mb-2 h-14 w-[3px] bg-white/25" />
-
-          <div className="flex items-end gap-4">
-            <StatCell
-              art={BONUS_ART.heart}
-              label="Health"
-              value={`${Math.max(0, Math.ceil(p.hp))}/${p.maxHp}`}
-              active={hpFlash > 0.35}
-              color="#ff6a52"
-            />
-
-            <StatCell
-              art={BONUS_ART.shield}
-              label="Shield"
-              value={shieldVal}
-              active={shieldActive}
-              color={BONUSES.shield.color}
-            />
-            <StatCell art={STAFF_ART} label="Staff of Moses (melee strike)" value={`${Math.round(meleeMul * 100)}`} />
-            <StatCell art={SWORD_ART} label="Plague damage" value={`${Math.round(dmgMul * 100)}`} />
-
-            <StatCell
-              art={BONUS_ART.lightning}
-              label="Movement speed"
-              value={`${moveSpeed}`}
-              active={speedActive}
-              color={BONUSES.lightning.color}
-              remaining={speedActive ? (state.speedBoostUntil ?? 0) - state.now : undefined}
-            />
-            <StatCell
-              art={BONUS_ART.magnet}
-              label="Pickup radius"
-              value={`${pickupRadius}`}
-              active={magnetActive}
-              color={BONUSES.magnet.color}
-              remaining={magnetActive ? (state.magnetBoostUntil ?? 0) - state.now : undefined}
-            />
-            {starActive && (
-              <StatCell
-                art={BONUS_ART.star}
-                label="Invincible"
-                value="INV"
-                active
-                color={BONUSES.star.color}
-                remaining={(state.invulnUntil ?? 0) - state.now}
-              />
-            )}
-          </div>
         </div>
       </div>
 
