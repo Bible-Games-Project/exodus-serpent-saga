@@ -1,5 +1,5 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
-import { PLAGUES, PLAGUE_ORDER } from "./plagues";
+import { PLAGUES, PLAGUE_ORDER, PLAGUE_MAX_EVOLUTION, PLAGUE_EVOLUTION, plagueAreaMul } from "./plagues";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
@@ -365,7 +365,7 @@ export function update(state: GameState, dt: number) {
       castPlague(state, id, level);
       const def = PLAGUES[id];
       // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
-      state.plagueCooldown.set(id, id === "leprosy" ? 5 + Math.random() * 2.5 : def.scale(level).cooldown);
+      state.plagueCooldown.set(id, id === "leprosy" ? (5 + Math.random() * 2.5) * (1 - 0.08 * (Math.min(PLAGUE_MAX_EVOLUTION, level) - 1)) : def.scale(level).cooldown);
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -1235,7 +1235,9 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   const p = state.player.pos;
 
   if (id === "leprosy") {
-    castLeprosy(state, stats.ttl);
+    // Final evolution afflicts two foes per cast.
+    const targets = level >= PLAGUE_MAX_EVOLUTION ? 2 : 1;
+    for (let i = 0; i < targets; i++) castLeprosy(state, stats.ttl);
     return;
   }
 
@@ -1372,20 +1374,20 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     };
     state.entities.set(e.id, e);
   } else if (id === "livestock") {
-    spawnDriftingCloud(state, { kind: "livestockcloud", radius: (def.base.extra?.radius ?? 90), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "animal" });
+    spawnDriftingCloud(state, { kind: "livestockcloud", radius: (def.base.extra?.radius ?? 90) * plagueAreaMul(id, level), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "animal" });
   } else if (id === "boils") {
-    spawnDriftingCloud(state, { kind: "boilscloud", radius: (def.base.extra?.radius ?? 85), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "human" });
+    spawnDriftingCloud(state, { kind: "boilscloud", radius: (def.base.extra?.radius ?? 85) * plagueAreaMul(id, level), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "human" });
   } else if (id === "hail") {
     const stones = Math.max(1, stats.count);
-    const R = (def.base.extra?.radius ?? 70);
+    const R = (def.base.extra?.radius ?? 70) * plagueAreaMul(id, level);
     const freeze = (def.base.extra?.freeze ?? 2.5);
     for (let i = 0; i < stones; i++) spawnHailstone(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, R, freeze);
   } else if (id === "fire") {
-    spawnFireball(state, { dmg: stats.dmg * dmul, speed: stats.speed }, def.base.extra?.radius ?? 90);
+    spawnFireball(state, { dmg: stats.dmg * dmul, speed: stats.speed }, (def.base.extra?.radius ?? 90) * plagueAreaMul(id, level));
   } else if (id === "locusts") {
-    spawnLocustSwarm(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, def.base.extra?.radius ?? 130);
+    spawnLocustSwarm(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, (def.base.extra?.radius ?? 130) * plagueAreaMul(id, level));
   } else if (id === "firstborn") {
-    spawnDriftingCloud(state, { kind: "firstborncloud", radius: (def.base.extra?.radius ?? 95), dps: 0, ttl: stats.ttl, speed: stats.speed, chance: def.base.extra?.chance ?? 0.5 });
+    spawnDriftingCloud(state, { kind: "firstborncloud", radius: (def.base.extra?.radius ?? 95) * plagueAreaMul(id, level), dps: 0, ttl: stats.ttl, speed: stats.speed, chance: def.base.extra?.chance ?? 0.5 });
   } else if (id === "darkness") {
     state.darknessStart = state.now;
     state.darknessUntil = state.now + stats.ttl;
@@ -1437,8 +1439,10 @@ function castRedSea(state: GameState, stats: { dmg: number; speed: number; ttl: 
   // Schedule central collision burst.
   setTimeout(() => {
     if (!state.running || state.paused) return;
-    const centerDmg = ((PLAGUES.redsea.base.extra?.centerDmg ?? 220)) * dmul;
-    const R = 180;
+    const lv = state.plagues.get("redsea") ?? 1;
+    const finalMul = lv >= PLAGUE_MAX_EVOLUTION ? 2 : 1;
+    const centerDmg = ((PLAGUES.redsea.base.extra?.centerDmg ?? 220)) * (1 + 0.25 * (lv - 1)) * finalMul * dmul;
+    const R = 180 * plagueAreaMul("redsea", lv);
     for (const en of state.entities.values()) {
       if (en.team !== "enemy") continue;
       if (dist2(en.pos, { x: cx, y: cy }) < R * R) {
@@ -2044,14 +2048,16 @@ function offerUpgrades(state: GameState) {
   const active = state.plagues;
 
   // Plague level-ups.
+  // Each plague evolves independently and never past PLAGUE_MAX_EVOLUTION.
   for (const [id, lvl] of active) {
+    if (lvl >= PLAGUE_MAX_EVOLUTION) continue;
     const def = PLAGUES[id];
     choices.push({
       id: `${id}-up-${lvl + 1}`,
       plague: id,
-      title: `${def.name} — Rank ${lvl + 1}`,
-      description: def.description,
-      apply: (s) => s.plagues.set(id, (s.plagues.get(id) ?? 1) + 1),
+      title: `${def.name} — Evolution ${lvl + 1}/${PLAGUE_MAX_EVOLUTION}`,
+      description: PLAGUE_EVOLUTION[id].notes[lvl - 1] ?? def.description,
+      apply: (s) => s.plagues.set(id, Math.min(PLAGUE_MAX_EVOLUTION, (s.plagues.get(id) ?? 1) + 1)),
     });
   }
 

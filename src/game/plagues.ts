@@ -1,13 +1,18 @@
 import type { PlagueDef, PlagueId, PlagueLevel } from "./types";
 
-// Every plague evolves infinitely: each level bumps damage, count, or utility.
+// Every plague evolves from level 1 (original) to PLAGUE_MAX_EVOLUTION; each
+// rank bumps damage, count, cooldown or area, independently per plague.
 // Scripture strings are shown on unlock so players learn the biblical story.
+export const PLAGUE_MAX_EVOLUTION = 5;
+const FINAL_EVOLUTION_DMG_MUL = 1.5;
+
 function scale(base: PlagueLevel, bumps: Partial<Record<keyof PlagueLevel, number>>) {
   return (level: number): PlagueLevel => ({
     ...base,
     level,
     cooldown: Math.max(0.15, base.cooldown - (bumps.cooldown ?? 0) * (level - 1)),
-    dmg: base.dmg + (bumps.dmg ?? 0) * (level - 1),
+    // Final evolution adds a decisive damage spike on top of the per-rank bumps.
+    dmg: (base.dmg + (bumps.dmg ?? 0) * (level - 1)) * (level >= PLAGUE_MAX_EVOLUTION ? FINAL_EVOLUTION_DMG_MUL : 1),
     count: base.count + Math.floor((bumps.count ?? 0) * (level - 1)),
     speed: base.speed + (bumps.speed ?? 0) * (level - 1),
     ttl: base.ttl + (bumps.ttl ?? 0) * (level - 1),
@@ -54,9 +59,9 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
       "Exodus 4:6 — 'Put now thine hand into thy bosom.' And when he took it out, behold, his hand was leprous as snow. A sign of God's power given to Moses.",
     unlockLevel: 4,
     // Cooldown is rolled fresh between 10 and 15 seconds on every cast (engine);
-    // `ttl` is how long the affliction takes to waste the target away.
+    // `ttl` is how long the affliction takes to waste the target away; it shortens by 0.3s per evolution rank.
     base: { level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 },
-    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, {}),
+    scale: scale({ level: 1, cooldown: 12.5, dmg: 0, count: 1, speed: 0, ttl: 3.5 }, { ttl: -0.3 }),
   },
   blood: {
     id: "blood",
@@ -64,7 +69,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A pool of blood appears on the ground, harming every enemy that steps in it.",
     scripture:
       "Exodus 7:20-21 — Moses lifted the rod and smote the waters of the river, and all the waters were turned to blood. The fish died and the Egyptians could not drink.",
-    unlockLevel: 4,
+    unlockLevel: 10,
     base: { level: 1, cooldown: 5, dmg: 60, count: 1, speed: 0, ttl: 3.5, extra: { radius: 65 } },
     scale: scale({ level: 1, cooldown: 5, dmg: 60, count: 1, speed: 0, ttl: 3.5 }, {
       cooldown: 0.2,
@@ -78,7 +83,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Hopping frogs bounce across the field, striking any enemy they land on.",
     scripture:
       "Exodus 8:6 — Aaron stretched out his hand over the waters of Egypt, and the frogs came up and covered the land.",
-    unlockLevel: 6,
+    unlockLevel: 20,
     base: { level: 1, cooldown: 2.2, dmg: 14, count: 3, speed: 160, ttl: 4 },
     scale: scale({ level: 1, cooldown: 2.2, dmg: 14, count: 3, speed: 160, ttl: 4 }, {
       cooldown: 0.1,
@@ -92,7 +97,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A dark swarm of gnats drifts across the battlefield, biting anything in its path.",
     scripture:
       "Exodus 8:16-17 — Aaron smote the dust of the earth, and it became lice throughout all the land of Egypt.",
-    unlockLevel: 8,
+    unlockLevel: 30,
     base: { level: 1, cooldown: 3.5, dmg: 10, count: 1, speed: 70, ttl: 5, extra: { radius: 55 } },
     scale: scale({ level: 1, cooldown: 3.5, dmg: 10, count: 1, speed: 70, ttl: 5 }, {
       cooldown: 0.15,
@@ -106,7 +111,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A swarm of flies orbits Moses, striking any enemy they touch. Each rank adds another fly.",
     scripture:
       "Exodus 8:24 — There came a grievous swarm of flies into the house of Pharaoh, and into all the land of Egypt.",
-    unlockLevel: 10,
+    unlockLevel: 40,
     base: { level: 1, cooldown: 999, dmg: 8, count: 1, speed: 0, ttl: 999 },
     scale: scale({ level: 1, cooldown: 999, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
       dmg: 3,
@@ -118,7 +123,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A green poisonous cloud drifts across the field, sickening only animals.",
     scripture:
       "Exodus 9:3-6 — The hand of the LORD is upon thy cattle... a very grievous murrain. All the cattle of Egypt died. This plague strikes only animal-kind.",
-    unlockLevel: 12,
+    unlockLevel: 50,
     base: { level: 1, cooldown: 6, dmg: 10, count: 1, speed: 45, ttl: 6, extra: { radius: 90 } },
     scale: scale({ level: 1, cooldown: 6, dmg: 10, count: 1, speed: 45, ttl: 6 }, {
       dmg: 3,
@@ -131,7 +136,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A purple, sickly cloud that erupts painful boils on humans only.",
     scripture:
       "Exodus 9:10 — Moses sprinkled ashes toward heaven, and it became a boil breaking forth with sores upon man. This plague strikes only human-kind.",
-    unlockLevel: 14,
+    unlockLevel: 60,
     base: { level: 1, cooldown: 6, dmg: 14, count: 1, speed: 45, ttl: 6, extra: { radius: 85 } },
     scale: scale({ level: 1, cooldown: 6, dmg: 14, count: 1, speed: 45, ttl: 6 }, {
       dmg: 4,
@@ -144,7 +149,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A volley of massive hailstones crashes down — each explodes on impact and freezes nearby foes.",
     scripture:
       "Exodus 9:23-24 — The LORD sent thunder and hail, very grievous. Ice pelts anything caught beneath the sky.",
-    unlockLevel: 16,
+    unlockLevel: 70,
     base: { level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9, extra: { radius: 70, freeze: 1.5 } },
     scale: scale({ level: 1, cooldown: 4, dmg: 28, count: 6, speed: 520, ttl: 0.9 }, {
       cooldown: 0.15,
@@ -158,7 +163,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Fireballs fall from the sky. Every foe caught in the blast dies instantly — even Pharaoh's chariots.",
     scripture:
       "Exodus 9:24 — There was hail, and fire mingled with the hail, very grievous. The LORD's fire ran along the ground.",
-    unlockLevel: 26,
+    unlockLevel: 120,
     base: { level: 1, cooldown: 3.5, dmg: 60, count: 1, speed: 560, ttl: 0.9, extra: { radius: 110 } },
     scale: scale({ level: 1, cooldown: 3.5, dmg: 60, count: 1, speed: 560, ttl: 0.9 }, {
       cooldown: 0.15,
@@ -171,7 +176,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A massive swarm sweeps down the screen from top to bottom, devouring everything it touches.",
     scripture:
       "Exodus 10:13-15 — The east wind brought the locusts... they covered the face of the whole earth, so that the land was darkened.",
-    unlockLevel: 18,
+    unlockLevel: 80,
     base: { level: 1, cooldown: 12, dmg: 10, count: 1, speed: 210, ttl: 6, extra: { radius: 130 } },
     scale: scale({ level: 1, cooldown: 12, dmg: 10, count: 1, speed: 210, ttl: 6 }, {
       cooldown: 0.4,
@@ -184,7 +189,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Every 30 seconds a supernatural darkness falls — only Moses' lamp remains lit. Enemies slow.",
     scripture:
       "Exodus 10:22 — Moses stretched forth his hand toward heaven, and there was a thick darkness in all the land of Egypt three days.",
-    unlockLevel: 20,
+    unlockLevel: 90,
     base: { level: 1, cooldown: 30, dmg: 0, count: 1, speed: 0, ttl: 5 },
     scale: scale({ level: 1, cooldown: 30, dmg: 0, count: 1, speed: 0, ttl: 5 }, {
       ttl: 0.3,
@@ -196,7 +201,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A dark cloud drifts across the field. Any enemy it touches has a 50% chance to die instantly.",
     scripture:
       "Exodus 12:29 — At midnight the LORD smote all the firstborn in the land of Egypt. A shadow passed over.",
-    unlockLevel: 22,
+    unlockLevel: 100,
     base: { level: 1, cooldown: 13, dmg: 99999, count: 1, speed: 55, ttl: 7, extra: { radius: 95, chance: 0.5 } },
     scale: scale({ level: 1, cooldown: 13, dmg: 99999, count: 1, speed: 55, ttl: 7 }, {
       cooldown: 0.4,
@@ -208,7 +213,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "A guardian pillar follows Moses, scorching foes that draw near.",
     scripture:
       "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, and by night in a pillar of fire, to give them light.",
-    unlockLevel: 28,
+    unlockLevel: 130,
     base: { level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999, extra: { radius: 70 } },
     scale: scale({ level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
       dmg: 2,
@@ -220,7 +225,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Walls of water rush in from both sides and collide at Moses, sweeping the field.",
     scripture:
       "Exodus 14:21-28 — Moses stretched out his hand over the sea; the waters returned and covered the chariots of Pharaoh.",
-    unlockLevel: 24,
+    unlockLevel: 110,
     base: { level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6, extra: { centerDmg: 220 } },
     scale: scale({ level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6 }, {
       dmg: 20,
@@ -250,3 +255,34 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "pillar",
 ];
 
+
+/**
+ * Per-plague evolution tuning. `area` is the radius gain per rank (fraction of
+ * the base radius) for plagues whose area does not already grow; `notes[i]`
+ * describes what evolving to level i+2 adds. Damage/count/cooldown bumps live
+ * in each plague's `scale` above.
+ */
+export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, string, string, string] }> = {
+  staff: { area: 0, notes: ["Harder strike, faster swings, longer reach.", "Harder strike, faster swings, longer reach.", "Harder strike, faster swings, longer reach.", "Final: a devastating staff blow (+50% damage)."] },
+  serpent: { area: 0, notes: ["Stronger bite and quicker throws.", "Stronger bite, quicker throws, faster serpent.", "Stronger bite and quicker throws.", "Final: an extra serpent and a lethal bite."] },
+  leprosy: { area: 0, notes: ["Leprosy strikes more often.", "Leprosy strikes more often and wastes faster.", "Leprosy strikes more often.", "Final: strikes two foes at once."] },
+  blood: { area: 0, notes: ["Pools burn harder and last longer.", "Pools widen and appear more often.", "Pools burn harder and last longer.", "Final: a vast pool with crushing damage."] },
+  frogs: { area: 0, notes: ["More frogs, harder landings.", "Harder landings, faster leaps.", "More frogs, harder landings.", "Final: a flood of frogs that strike hard."] },
+  gnats: { area: 0, notes: ["Fiercer bites, wider swarm.", "Fiercer bites, faster swarms.", "An extra swarm drifts out.", "Final: a dense swarm with savage bites."] },
+  flies: { area: 0, notes: ["Another fly joins the orbit.", "Another fly joins, stings harder.", "Another fly joins the orbit.", "Final: a full swarm with vicious stings."] },
+  livestock: { area: 0.12, notes: ["Wider, more poisonous cloud.", "Wider cloud that lingers longer.", "Wider, more poisonous cloud.", "Final: a huge, deadly murrain."] },
+  boils: { area: 0.12, notes: ["Wider cloud, more painful boils.", "Wider cloud that lingers longer.", "Wider cloud, more painful boils.", "Final: a huge cloud of festering boils."] },
+  hail: { area: 0.1, notes: ["Wider impacts, faster volleys.", "More hailstones per volley.", "Wider impacts, faster volleys.", "Final: a crushing storm of hail."] },
+  locusts: { area: 0.1, notes: ["Wider swarm, sharper bites.", "Swarm returns more often.", "Wider swarm, sharper bites.", "Final: a swarm that darkens the land."] },
+  darkness: { area: 0, notes: ["Darkness lasts longer.", "Darkness lasts longer.", "Darkness lasts longer.", "Final: a long, crushing darkness."] },
+  firstborn: { area: 0.12, notes: ["A wider shadow, more often.", "A wider shadow, more often.", "A wider shadow, more often.", "Final: a vast shadow of death."] },
+  fire: { area: 0.12, notes: ["Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Final: an enormous fire from heaven."] },
+  pillar: { area: 0, notes: ["Hotter flames, wider guard.", "Hotter flames, wider guard.", "Hotter flames, wider guard.", "Final: a blazing pillar."] },
+  redsea: { area: 0.1, notes: ["Stronger waves, faster return.", "Stronger waves, wider meeting point.", "Stronger waves, faster return.", "Final: the waters meet with overwhelming force."] },
+};
+
+/** Radius multiplier from a plague's evolution level (1 at level 1). */
+export function plagueAreaMul(id: PlagueId, level: number): number {
+  const lv = Math.min(PLAGUE_MAX_EVOLUTION, Math.max(1, level));
+  return 1 + PLAGUE_EVOLUTION[id].area * (lv - 1);
+}

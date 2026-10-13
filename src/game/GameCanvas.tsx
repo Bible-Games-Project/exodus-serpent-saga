@@ -589,19 +589,9 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
         </div>
       </div>
 
-      {/* Life & experience bars — full width, pixel-art, at the very bottom. */}
+      {/* Experience bar — full width, pixel-art, at the very bottom. Health
+          is shown only by the overhead bar above Moses. */}
       <div className="absolute inset-x-0 bottom-0">
-        <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
-          <div
-            className="h-full transition-[width] duration-100"
-            style={{
-              width: `${hpPct * 100}%`,
-              background: hpColor,
-              boxShadow: hpFlash > 0 ? `0 0 ${8 + hpFlash * 12}px rgba(255,90,68,${0.35 + hpFlash * 0.5})` : "none",
-              filter: hpFlash > 0 ? `brightness(${1 + hpFlash * 0.55})` : "none",
-            }}
-          />
-        </div>
         <div className="h-3 w-full border-t-[3px] border-[#2b1d14] bg-[rgba(43,29,20,0.65)]">
           <div className="h-full bg-[#e6c261] transition-[width] duration-100" style={{ width: `${xpPct * 100}%` }} />
         </div>
@@ -1777,11 +1767,18 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 // ---------------- Moses ----------------
 
 
+/** Below this HP fraction the overhead bar blinks to signal critical health. */
+const MOSES_HP_BLINK_BELOW = 0.2;
+/** Blink frequency (Hz) — square wave on game time, so it never flickers per frame. */
+const MOSES_HP_BLINK_HZ = 2.5;
+
 /** Champion-style green HP bar above Moses, read live from his existing HP. */
 function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   const cx = Math.round(e.pos.x - camX);
   const top = Math.round(e.pos.y - camY + 8 - 66 * 1.2);
-  allyHpBar(ctx, cx, top - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
+  const ratio = e.hp / e.maxHp;
+  const blinkOff = ratio > 0 && ratio < MOSES_HP_BLINK_BELOW && Math.floor(s.now * MOSES_HP_BLINK_HZ * 2) % 2 === 1;
+  if (!blinkOff) allyHpBar(ctx, cx, top - 8, ratio, "#4ec24e", "#1e5a1e");
   // Shield bar sits directly above the HP bar; hidden when empty.
   const sh = s.shield ?? 0, mx = s.maxShield ?? 0;
   if (sh > 0 && mx > 0) allyHpBar(ctx, cx, top - 14, sh / mx, "#5fb4ff", "#1c3f66");
