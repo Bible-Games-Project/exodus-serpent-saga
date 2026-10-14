@@ -1,5 +1,4 @@
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
-import { RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
@@ -30,7 +29,7 @@ import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
-import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
+import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
