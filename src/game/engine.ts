@@ -859,6 +859,37 @@ export function update(state: GameState, dt: number) {
       if (e.kind === "redseaburst") {
         continue;
       }
+      if (e.kind === "boilstrail") {
+        const pp = state.player.pos;
+        const dx = wrapDelta(d.lastX as number, pp.x, state.worldW);
+        const dy = wrapDelta(d.lastY as number, pp.y, state.worldH);
+        const moved = Math.hypot(dx, dy);
+        if (moved >= BOILS_BUBBLE_SPACING) {
+          const nx = -dy / moved, ny = dx / moved, off = (d.lane as number) * 7;
+          const b: Entity = {
+            id: state.nextId++, pos: { x: pp.x + nx * off, y: pp.y + 6 + ny * off }, vel: { x: 0, y: 0 }, radius: 9,
+            hp: 1, maxHp: 1, team: "hazard", facing: 1, animT: Math.random() * 6, born: state.now,
+            ttl: d.bubbleTtl as number, kind: "boilbubble",
+            data: { dps: 0, dmg: d.dmg, maxTtl: d.bubbleTtl },
+          };
+          state.entities.set(b.id, b);
+          d.lastX = pp.x; d.lastY = pp.y;
+        }
+        continue;
+      }
+      if (e.kind === "boilbubble") {
+        for (const en of state.entities.values()) {
+          if (en.team !== "enemy" || en.hp <= 0) continue;
+          if (wrapDist2(state, en.pos, e.pos) < (en.radius + e.radius) ** 2) {
+            en.hp -= (d.dmg as number) ?? 0;
+            spawnVisualHazard(state, "boilpop", e.pos, 0.3, { seed: e.id });
+            state.entities.delete(e.id);
+            if (en.hp <= 0) killEnemy(state, en);
+            break;
+          }
+        }
+        continue;
+      }
       // Ramses landing shockwave hazard is purely visual (damage already applied).
       if (e.kind === "firstborncloud") {
         const r = (d.radius as number) ?? 95;
@@ -891,6 +922,7 @@ export function update(state: GameState, dt: number) {
             if (en.team !== "enemy") continue;
             const cat = (en.data?.category as string | undefined) ?? "human";
             if (target === "animal" && cat !== "animal") continue;
+            if (target === "livestock" && !LIVESTOCK_TARGET_KINDS.has(en.kind)) continue;
             if (target === "human" && cat !== "human") continue;
             let hit = false;
             if (isBand) {
@@ -900,6 +932,13 @@ export function update(state: GameState, dt: number) {
             }
             if (hit) {
               en.hp -= dps * tick;
+              if (d.bleedOnce) {
+                const bled = (d.bled ??= new Set<number>()) as Set<number>;
+                if (!bled.has(en.id)) {
+                  bled.add(en.id);
+                  spawnVisualHazard(state, "bloodhit", { x: en.pos.x, y: en.pos.y - 14 }, 0.45, { seed: en.id, maxTtl: 0.45 });
+                }
+              }
               if (en.hp <= 0) killEnemy(state, en);
             }
           }
@@ -1354,24 +1393,17 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         animT: Math.random() * 10, born: state.now,
         ttl: stats.ttl,
         kind: "gnatswarm",
-        data: { radius, dps: stats.dmg * dmul, tickAcc: 0, particles, lobes, maxTtl: stats.ttl },
+        data: { radius, dps: stats.dmg * dmul, tickAcc: 0, particles, lobes, maxTtl: stats.ttl, bleedOnce: true },
       };
       state.entities.set(e.id, e);
     }
   } else if (id === "blood") {
     const radius = Math.round(((def.base.extra?.radius ?? 65) + level * 4) * 0.5);
     const canvas = makeBloodPoolCanvas(radius);
-    const vw = state.viewport?.w ?? 800;
-    const vh = state.viewport?.h ?? 600;
-    const margin = radius + 12;
-    const artHalf = canvas.width / 2;
-    const screenMargin = artHalf + 4;
-    const halfW = Math.max(0, vw / 2 - screenMargin);
-    const halfH = Math.max(0, vh / 2 - screenMargin);
-    let px = state.camera.x + rand(-halfW, halfW);
-    let py = state.camera.y + rand(-halfH, halfH);
-    px = clamp(px, margin, state.worldW - margin);
-    py = clamp(py, margin, state.worldH - margin);
+    // Spawn on a random eligible enemy; never on empty ground.
+    const target = pickRandomEnemy(state);
+    if (!target) return;
+    const px = target.pos.x, py = target.pos.y;
     const e: Entity = {
       id: state.nextId++,
       pos: { x: px, y: py },
@@ -1382,13 +1414,21 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       animT: 0, born: state.now,
       ttl: stats.ttl,
       kind: "bloodpool",
-      data: { radius, dps: stats.dmg * dmul, tickAcc: 0, canvas, maxTtl: stats.ttl },
+      data: { radius, dps: stats.dmg * dmul, tickAcc: 0, canvas, maxTtl: stats.ttl, bleedOnce: true },
     };
     state.entities.set(e.id, e);
   } else if (id === "livestock") {
-    spawnDriftingCloud(state, { kind: "livestockcloud", radius: (def.base.extra?.radius ?? 90) * plagueAreaMul(id, level), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "animal" });
+    spawnDriftingCloud(state, { kind: "livestockcloud", radius: (def.base.extra?.radius ?? 90) * 2 * plagueAreaMul(id, level), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "livestock" });
   } else if (id === "boils") {
-    spawnDriftingCloud(state, { kind: "boilscloud", radius: (def.base.extra?.radius ?? 85) * plagueAreaMul(id, level), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "human" });
+    // Invisible emitter that follows Moses and drops red bubbles along his path.
+    const lane = (state.entities.size % 3) - 1;
+    const em: Entity = {
+      id: state.nextId++, pos: { x: p.x, y: p.y }, vel: { x: 0, y: 0 }, radius: 1,
+      hp: 1, maxHp: 1, team: "hazard", facing: 1, animT: 0, born: state.now,
+      ttl: BOILS_TRAIL_SECONDS, kind: "boilstrail",
+      data: { dps: 0, lastX: p.x, lastY: p.y, lane, dmg: stats.dmg * 2 * dmul, bubbleTtl: stats.ttl },
+    };
+    state.entities.set(em.id, em);
   } else if (id === "hail") {
     const stones = Math.max(1, stats.count);
     const R = (def.base.extra?.radius ?? 70) * plagueAreaMul(id, level);
@@ -1620,6 +1660,12 @@ function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number;
 }
 
 // ---------- orbiting flies ----------
+/** Enemy kinds the Plague on Livestock can harm (dogs, wolves, lions, camels, horse knights, chariots). */
+const LIVESTOCK_TARGET_KINDS = new Set(["jackal", "wolf", "lion", "camel", "spearknight", "chariotarcher"]);
+const FLY_INTERCEPT_RADIUS = 14;
+const BOILS_TRAIL_SECONDS = 4;
+const BOILS_BUBBLE_SPACING = 30;
+
 function syncOrbitFlies(state: GameState, dt: number) {
   const targetCount = state.plagues.get("flies") ?? 0;
   const ids = (state.orbitFlyIds ??= []);
@@ -1645,8 +1691,6 @@ function syncOrbitFlies(state: GameState, dt: number) {
   }
   const count = ids.length;
   if (count === 0) return;
-  const def = PLAGUES.flies;
-  const dmg = def.scale(targetCount).dmg * damageMultiplier(state);
   const orbitSpeed = 2.4;
   const radius = 58;
   const t = state.now;
@@ -1658,21 +1702,33 @@ function syncOrbitFlies(state: GameState, dt: number) {
     e.pos.y = state.player.pos.y + Math.sin(a) * radius;
     e.facing = Math.cos(a) > 0 ? 1 : -1;
     e.animT = t * 14;
-    const hitCd = e.data!.hitCd as Map<number, number>;
-    for (const [k, v] of hitCd) {
-      const nv = v - dt;
-      if (nv <= 0) hitCd.delete(k); else hitCd.set(k, nv);
-    }
-    for (const en of state.entities.values()) {
-      if (en.team !== "enemy") continue;
-      if (hitCd.has(en.id)) continue;
-      if (dist2(en.pos, e.pos) < (en.radius + e.radius) ** 2) {
-        en.hp -= dmg;
-        hitCd.set(en.id, 0.4);
-        if (en.hp <= 0) killEnemy(state, en);
+  }
+  // Flies are a shield: they destroy enemy projectiles they touch and never die.
+  for (const pr of state.entities.values()) {
+    if (pr.team !== "projectile" || !pr.data?.enemyOwned) continue;
+    for (let i = 0; i < count; i++) {
+      const f = state.entities.get(ids[i]);
+      if (!f) continue;
+      if (wrapDist2(state, pr.pos, f.pos) < (pr.radius + FLY_INTERCEPT_RADIUS) ** 2) {
+        spawnVisualHazard(state, "deathpuff", pr.pos, 0.36, { variant: Math.floor(Math.random() * 6), seed: pr.id, scale: 0.55 });
+        removeProjectile(state, pr);
+        break;
       }
     }
   }
+}
+
+/** Random living enemy, preferring ones on screen; Ramses on his throne excluded. */
+function pickRandomEnemy(state: GameState): Entity | undefined {
+  const vw = (state.viewport?.w ?? 800) / 2, vh = (state.viewport?.h ?? 600) / 2;
+  const onScreen: Entity[] = [], all: Entity[] = [];
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy" || en.hp <= 0 || en.data?.seated) continue;
+    all.push(en);
+    if (Math.abs(wrapDelta(state.camera.x, en.pos.x, state.worldW)) < vw && Math.abs(wrapDelta(state.camera.y, en.pos.y, state.worldH)) < vh) onScreen.push(en);
+  }
+  const pool = onScreen.length ? onScreen : all;
+  return pool.length ? pool[Math.floor(Math.random() * pool.length)] : undefined;
 }
 
 function killEnemy(state: GameState, e: Entity) {

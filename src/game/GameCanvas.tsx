@@ -1624,8 +1624,12 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "bolt") { drawBolt(ctx, e, camX, camY); continue; }
     if (e.team === "hazard" && drawAllyFx(ctx, e, camX, camY, s)) continue;
     if (e.kind === "gnatswarm") { drawGnatSwarm(ctx, e, camX, camY); continue; }
-    if (e.kind === "livestockcloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(60,110,40,0.9)", particle: "#2f4a1a", highlight: "#8ab24a" }); continue; }
+    // Livestock cloud uses the frog sprite's olive/brown palette.
+    if (e.kind === "livestockcloud") { drawParticleCloud(ctx, e, camX, camY, { backing: "rgba(72,60,36,0.9)", particle: "#3c3018", highlight: "#c09c78" }); continue; }
     if (e.kind === "boilscloud") { drawBoilsCloud(ctx, e, camX, camY); continue; }
+    if (e.kind === "boilstrail") continue;
+    if (e.kind === "boilbubble") { drawBoilBubble(ctx, e, camX, camY); continue; }
+    if (e.kind === "boilpop") { drawBoilPop(ctx, e, camX, camY); continue; }
     if (e.kind === "firstborncloud") { drawFirstbornCloud(ctx, e, camX, camY); continue; }
     if (e.kind === "locustswarm") { drawLocustSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "hailstone") { drawHailstone(ctx, e, camX, camY); continue; }
@@ -3766,6 +3770,39 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     ctx.fillStyle = "#ffb040"; ctx.fillRect(13, -2, 3, 4);
     ctx.fillStyle = "#fff2b0"; ctx.fillRect(14, -1, 2, 2);
   }
+  ctx.restore();
+}
+
+// Plague of Boils trail bubble — reds sampled from Moses' robe.
+function drawBoilBubble(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 6;
+  const age = maxTtl - (e.ttl ?? 0);
+  const fade = Math.max(0, Math.min(1, age / 0.15, (e.ttl ?? 0) / 0.5));
+  const bs = Math.round(8 + Math.sin(e.animT + age * 3) * 1.5);
+  const x = Math.round(e.pos.x - camX - bs / 2), y = Math.round(e.pos.y - camY - bs / 2);
+  ctx.save();
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = "#3a0c06"; ctx.fillRect(x - 1, y, bs + 2, bs); ctx.fillRect(x, y - 1, bs, bs + 2);
+  ctx.fillStyle = "#901818"; ctx.fillRect(x, y, bs, bs);
+  ctx.fillStyle = "#b42424"; ctx.fillRect(x + 1, y + 1, bs - 2, bs - 3);
+  ctx.fillStyle = "#e06048"; ctx.fillRect(x + 2, y + 2, 2, 1); ctx.fillRect(x + 2, y + 3, 1, 1);
+  ctx.restore();
+}
+
+// Small pixel burst when a boil bubble pops on an enemy.
+function drawBoilPop(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.3;
+  const k = 1 - Math.max(0, (e.ttl ?? 0) / maxTtl);
+  const cx = Math.round(e.pos.x - camX), cy = Math.round(e.pos.y - camY);
+  const r = 4 + k * 14;
+  ctx.save();
+  ctx.globalAlpha = 1 - k;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.fillStyle = i % 2 ? "#b42424" : "#e06048";
+    ctx.fillRect(Math.round(cx + Math.cos(a) * r) - 1, Math.round(cy + Math.sin(a) * r) - 1, 3, 3);
+  }
+  if (k < 0.4) { ctx.fillStyle = "#ffd0a0"; ctx.fillRect(cx - 3, cy - 3, 6, 6); }
   ctx.restore();
 }
 

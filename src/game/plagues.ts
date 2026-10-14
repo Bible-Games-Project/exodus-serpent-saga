@@ -92,14 +92,14 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   blood: {
     id: "blood",
     name: "Water into Blood",
-    description: "A pool of blood appears on the ground, harming every enemy that steps in it.",
+    description: "A pool of blood erupts beneath a random enemy, harming every foe standing in it.",
     scripture:
       "Exodus 7:20-21 — Moses lifted the rod and smote the waters of the river, and all the waters were turned to blood. The fish died and the Egyptians could not drink.",
     unlockLevel: 10,
-    base: { level: 1, cooldown: 5, dmg: 60, count: 1, speed: 0, ttl: 3.5, extra: { radius: 65 } },
-    scale: scale({ level: 1, cooldown: 5, dmg: 60, count: 1, speed: 0, ttl: 3.5 }, {
+    base: { level: 1, cooldown: 5, dmg: 120, count: 1, speed: 0, ttl: 3.5, extra: { radius: 65 } },
+    scale: scale({ level: 1, cooldown: 5, dmg: 120, count: 1, speed: 0, ttl: 3.5 }, {
       cooldown: 0.2,
-      dmg: 30,
+      dmg: 60,
       ttl: 0.25,
     }),
   },
@@ -135,7 +135,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   flies: {
     id: "flies",
     name: "Plague of Flies",
-    description: "A swarm of flies orbits Moses, striking any enemy they touch. Each rank adds another fly.",
+    description: "A swarm of flies circles Moses as a shield, catching and destroying incoming arrows, spears and spells. Each rank adds another fly.",
     scripture:
       "Exodus 8:24 — There came a grievous swarm of flies into the house of Pharaoh, and into all the land of Egypt.",
     unlockLevel: 40,
@@ -147,12 +147,12 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   livestock: {
     id: "livestock",
     name: "Plague on Livestock",
-    description: "A green poisonous cloud drifts across the field, sickening only animals.",
+    description: "A huge poisonous cloud drifts across the field, sickening only beasts: dogs, wolves, lions, camels, horsemen and chariots.",
     scripture:
       "Exodus 9:3-6 — The hand of the LORD is upon thy cattle... a very grievous murrain. All the cattle of Egypt died. This plague strikes only animal-kind.",
     unlockLevel: 50,
-    base: { level: 1, cooldown: 6, dmg: 10, count: 1, speed: 45, ttl: 6, extra: { radius: 90 } },
-    scale: scale({ level: 1, cooldown: 6, dmg: 10, count: 1, speed: 45, ttl: 6 }, {
+    base: { level: 1, cooldown: 12, dmg: 10, count: 1, speed: 45, ttl: 6, extra: { radius: 90 } },
+    scale: scale({ level: 1, cooldown: 12, dmg: 10, count: 1, speed: 45, ttl: 6 }, {
       dmg: 3,
       ttl: 0.4,
     }),
@@ -160,12 +160,12 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   boils: {
     id: "boils",
     name: "Plague of Boils",
-    description: "A purple, sickly cloud that erupts painful boils on humans only.",
+    description: "Every 15 seconds Moses leaves a trail of red bubbles as he walks. Each bubble bursts on the first enemy that touches it.",
     scripture:
       "Exodus 9:10 — Moses sprinkled ashes toward heaven, and it became a boil breaking forth with sores upon man. This plague strikes only human-kind.",
     unlockLevel: 60,
-    base: { level: 1, cooldown: 6, dmg: 14, count: 1, speed: 45, ttl: 6, extra: { radius: 85 } },
-    scale: scale({ level: 1, cooldown: 6, dmg: 14, count: 1, speed: 45, ttl: 6 }, {
+    base: { level: 1, cooldown: 15, dmg: 14, count: 1, speed: 45, ttl: 6, extra: { radius: 85 } },
+    scale: scale({ level: 1, cooldown: 15, dmg: 14, count: 1, speed: 45, ttl: 6 }, {
       dmg: 4,
       ttl: 0.4,
     }),
@@ -296,9 +296,9 @@ export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, 
   blood: { area: 0, notes: ["Pools burn harder and last longer.", "Pools widen and appear more often.", "Pools burn harder and last longer.", "Final: a vast pool with crushing damage."] },
   frogs: { area: 0, notes: ["More frogs, harder landings.", "Harder landings, faster leaps.", "More frogs, harder landings.", "Final: a flood of frogs that strike hard."] },
   gnats: { area: 0, notes: ["Fiercer bites, wider swarm.", "Fiercer bites, faster swarms.", "An extra swarm drifts out.", "Final: a dense swarm with savage bites."] },
-  flies: { area: 0, notes: ["Another fly joins the orbit.", "Another fly joins, stings harder.", "Another fly joins the orbit.", "Final: a full swarm with vicious stings."] },
+  flies: { area: 0, notes: ["Another fly joins the shield.", "Another fly joins the shield.", "Another fly joins the shield.", "Final: a full shield of flies."] },
   livestock: { area: 0.12, notes: ["Wider, more poisonous cloud.", "Wider cloud that lingers longer.", "Wider, more poisonous cloud.", "Final: a huge, deadly murrain."] },
-  boils: { area: 0.12, notes: ["Wider cloud, more painful boils.", "Wider cloud that lingers longer.", "Wider cloud, more painful boils.", "Final: a huge cloud of festering boils."] },
+  boils: { area: 0.12, notes: ["Stronger bubble bursts.", "Bubbles burst harder and last longer.", "Stronger bubble bursts.", "Final: searing bubble bursts."] },
   hail: { area: 0.1, notes: ["Wider impacts, faster volleys.", "More hailstones per volley.", "Wider impacts, faster volleys.", "Final: a crushing storm of hail."] },
   locusts: { area: 0.1, notes: ["Wider swarm, sharper bites.", "Swarm returns more often.", "Wider swarm, sharper bites.", "Final: a swarm that darkens the land."] },
   darkness: { area: 0, notes: ["Darkness lasts longer.", "Darkness lasts longer.", "Darkness lasts longer.", "Final: a long, crushing darkness."] },
