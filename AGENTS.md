@@ -97,3 +97,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Moses v2 free arm is split at runtime (`freeArmLayers`); adjust `ARM` if body art changes.
 - Plague unlocks use `unlockLevel` (`plagues.ts`); evolution is uncapped (growth halves after level 5 via `growthRanks`), area via `plagueAreaMul`. Champion cards share `ICON_CHAMPION_FIST`.
 - Multi-attack milestones: `ATTACK_MULTI_MILESTONES` (plagues.ts). Missed champion milestones persist via `championOfferPending`.
+- Flies are a projectile shield (`syncOrbitFlies` removes `enemyOwned` projectiles, no damage). Boils = `boilstrail` emitter dropping one-shot `boilbubble`s; Livestock targets `LIVESTOCK_TARGET_KINDS`; hazards with `bleedOnce` show blood once per enemy.
