@@ -232,7 +232,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     // Fixed 25 s interval at every level; `speed` is the branch growth speed,
     // `ttl` the branch lifetime and `extra.ramsesDmg` the hit on Ramses.
     base: { level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5, extra: { ramsesDmg: 600 } },
-    scale: scale({ level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5 }, {}),
+    scale: scale({ level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5 }, { ttl: 0.25 }),
   },
   pillar: {
     id: "pillar",
@@ -301,11 +301,11 @@ export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, 
   livestock: { area: 0.12, notes: ["Wider, more poisonous cloud.", "Wider cloud that lingers longer.", "Wider, more poisonous cloud.", "Final: a huge, deadly murrain."] },
   boils: { area: 0.12, notes: ["Stronger bubble bursts.", "Bubbles burst harder and last longer.", "Stronger bubble bursts.", "Final: searing bubble bursts."] },
   hail: { area: 0.1, notes: ["Wider impacts, faster volleys.", "More hailstones per volley.", "Wider impacts, faster volleys.", "Final: a crushing storm of hail."] },
-  locusts: { area: 0.1, notes: ["Wider swarm, sharper bites.", "Swarm returns more often.", "Wider swarm, sharper bites.", "Final: a swarm that darkens the land."] },
+  locusts: { area: 0, notes: ["Sharper bites, swarms return sooner.", "Sharper bites, swarms return sooner.", "Sharper bites, swarms return sooner.", "Final: a swarm that darkens the land."] },
   darkness: { area: 0, notes: ["Darkness lasts longer.", "Darkness lasts longer.", "Darkness lasts longer.", "Final: a long, crushing darkness."] },
-  firstborn: { area: 0.12, notes: ["A wider shadow, more often.", "A wider shadow, more often.", "A wider shadow, more often.", "Final: a vast shadow of death."] },
+  firstborn: { area: 0, notes: ["Discharges reach farther before fading.", "Discharges reach farther before fading.", "Discharges reach farther before fading.", "Final: a vast storm of white discharges."] },
   fire: { area: 0.12, notes: ["Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Final: an enormous fire from heaven."] },
-  pillar: { area: 0, notes: ["Hotter flames, wider guard.", "Hotter flames, wider guard.", "Hotter flames, wider guard.", "Final: a blazing pillar."] },
+  pillar: { area: 0.1, notes: ["Wider circles, hotter flames.", "Wider circles, hotter flames.", "Wider circles, hotter flames.", "Final: blazing pillars."] },
   redsea: { area: 0.1, notes: ["Stronger waves, faster return.", "Stronger waves, wider meeting point.", "Stronger waves, faster return.", "Final: the waters meet with overwhelming force."] },
 };
 
