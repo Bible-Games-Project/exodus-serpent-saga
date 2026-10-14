@@ -437,15 +437,15 @@ export function drawRedSeaWall(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   // lighter toward the crest.
   const bands: Array<[number, string]> = [[999, "#0b2550"], [150, "#123a7a"], [90, "#1a5aa8"], [48, "#2a7cc8"], [22, "#4aa0e0"]];
   const step = 6;
-  for (const [depth, col] of bands) {
-    ctx.fillStyle = col;
-    for (let yy = 0; yy < height; yy += step) {
-      // Ragged per-row edge: the front is never a straight line.
-      const wob = Math.sin((yy + now * 120) * 0.045) * 7 + Math.sin(yy * 0.13 + now * 6) * 4 + (hn(Math.floor(yy / step) + Math.floor(now * 10)) - 0.5) * 4;
-      const edge = x + sign * wob - sign * Math.min(depth, 999);
-      const inner = sign > 0 ? edge - far : edge;
-      const w = depth >= 999 ? far : Math.min(depth, 999) + (depth === 22 ? 0 : 22);
-      ctx.fillRect(Math.round(sign > 0 ? (depth >= 999 ? inner : edge) : (depth >= 999 ? x - sign * wob + depth : edge - w + w)), Math.round(top + yy), Math.round(depth >= 999 ? far : w), step);
+  for (let yy = 0; yy < height; yy += step) {
+    // Ragged per-row front edge: the wall is never a straight line.
+    const wob = Math.sin((yy + now * 120) * 0.045) * 7 + Math.sin(yy * 0.13 + now * 6) * 4 + (hn(Math.floor(yy / step) + Math.floor(now * 10)) - 0.5) * 4;
+    const fx = x + sign * wob;
+    for (const [depth, col] of bands) {
+      const dpt = Math.min(depth, far);
+      ctx.fillStyle = col;
+      const x0 = sign > 0 ? fx - dpt : fx;
+      ctx.fillRect(Math.round(x0), Math.round(top + yy), Math.round(dpt), step);
     }
   }
   // Rolling streaks travelling with the current.
