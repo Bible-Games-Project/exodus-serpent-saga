@@ -44,7 +44,7 @@ export function testChampionInfo(id: string): { name: string; url: string } {
 
 /** The ten biblical plagues in order, then the additional abilities. */
 export const TEST_PLAGUE_IDS: PlagueId[] = ["blood", "frogs", "gnats", "flies", "livestock", "boils", "hail", "locusts", "darkness", "firstborn"];
-export const TEST_EXTRA_IDS: PlagueId[] = ["redsea", "pillar", "fire", "leprosy", "serpent"];
+export const TEST_EXTRA_IDS: PlagueId[] = ["redsea", "pillar", "leprosy", "serpent"];
 
 /** Abilities enabled by a cumulative "up to index" preset. */
 export function abilitiesUpTo(index: number): Partial<Record<PlagueId, boolean>> {
