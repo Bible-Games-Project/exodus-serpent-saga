@@ -6,3 +6,6 @@
 - Champions retreat between attacks via `allyRetreatDir` (inverse-distance threat vector, obstacle-probed headings) recomputed with the target every `ALLY_RETARGET_SECONDS`.
 - Moses v2 free arm is split at runtime (`freeArmLayers`); adjust `ARM` if body art changes.
 - Flies are a projectile shield (`syncOrbitFlies` removes `enemyOwned` projectiles, no damage). Boils = `boilstrail` emitter dropping one-shot `boilbubble`s; Livestock targets `LIVESTOCK_TARGET_KINDS`; hazards with `bleedOnce` show blood once per enemy.
+- Hail alternates ice/fire via `state.hailFirePhase` (toggled only on the main cast; multi-attack repeats reuse it); "fire" stays in `PLAGUES` but is not in `PLAGUE_ORDER`. Reworked plague visuals live in `plagueFx.ts`.
+- Red Sea casts through `state.redSeaCast` (raise → strike → walls); staff attacks wait via `redSeaCasting`. Its center burst runs on a `redseatimer` hazard (game time), never `setTimeout`.
+- Pillar of Cloud cages via enemy `data.cage*` clamped after all movement; Pillar of Fire burns via `burnUntil`/`burnZone` (single damage source per zone).

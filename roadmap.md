@@ -60,3 +60,5 @@
 - [x] Recompose Play, Leaderboard, More Games, Settings, and development-only Test Map controls around the cover.
 - [x] Block Test Map navigation and route access in published builds while preserving development access.
 - [x] Verify the Home screen and protected Test Map behavior across desktop and mobile.
+
+- [x] Rework Locusts, Darkness, Firstborn, Hail+Fire, Pillars and Red Sea per spec.
