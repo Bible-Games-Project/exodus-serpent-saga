@@ -173,7 +173,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   hail: {
     id: "hail",
     name: "Plague of Hail",
-    description: "A volley of massive hailstones crashes down — each explodes on impact and freezes nearby foes.",
+    description: "Alternates between two judgments from heaven: a volley of icy hailstones that damage and freeze foes, then a rain of fire that instantly destroys every foe it lands on.",
     scripture:
       "Exodus 9:23-24 — The LORD sent thunder and hail, very grievous. Ice pelts anything caught beneath the sky.",
     unlockLevel: 70,
@@ -200,7 +200,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   locusts: {
     id: "locusts",
     name: "Plague of Locusts",
-    description: "A massive swarm sweeps down the screen from top to bottom, devouring everything it touches.",
+    description: "Flying swarms close in from both directions — three locusts from above and three from below — following winding flight paths and biting every enemy they touch.",
     scripture:
       "Exodus 10:13-15 — The east wind brought the locusts... they covered the face of the whole earth, so that the land was darkened.",
     unlockLevel: 80,
@@ -213,7 +213,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   darkness: {
     id: "darkness",
     name: "Plague of Darkness",
-    description: "Every 30 seconds a supernatural darkness falls — only Moses' lamp remains lit. Enemies slow.",
+    description: "Every 30 seconds a supernatural darkness falls. Only Moses' lamp and the flames on his champions' weapons stay lit, and every enemy in the dark moves at half speed.",
     scripture:
       "Exodus 10:22 — Moses stretched forth his hand toward heaven, and there was a thick darkness in all the land of Egypt three days.",
     unlockLevel: 90,
@@ -225,43 +225,45 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   firstborn: {
     id: "firstborn",
     name: "Death of the Firstborn",
-    description: "A dark cloud drifts across the field. Any enemy it touches has a 50% chance to die instantly.",
+    description: "Every 25 seconds Moses releases five slow, branching white discharges from his staff. Each one instantly defeats the ordinary enemy it reaches, and heavily wounds Ramses.",
     scripture:
       "Exodus 12:29 — At midnight the LORD smote all the firstborn in the land of Egypt. A shadow passed over.",
     unlockLevel: 100,
-    base: { level: 1, cooldown: 13, dmg: 99999, count: 1, speed: 55, ttl: 7, extra: { radius: 95, chance: 0.5 } },
-    scale: scale({ level: 1, cooldown: 13, dmg: 99999, count: 1, speed: 55, ttl: 7 }, {
-      cooldown: 0.4,
-    }),
+    // Fixed 25 s interval at every level; `speed` is the branch growth speed,
+    // `ttl` the branch lifetime and `extra.ramsesDmg` the hit on Ramses.
+    base: { level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5, extra: { ramsesDmg: 600 } },
+    scale: scale({ level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5 }, { ttl: 0.25 }),
   },
   pillar: {
     id: "pillar",
     name: "Pillar of Cloud & Fire",
-    description: "A guardian pillar follows Moses, scorching foes that draw near.",
+    description: "Raises two circles around the enemy ranks: a Pillar of Cloud that traps foes inside for 5 seconds, and a Pillar of Fire that burns foes inside — those who flee keep burning until the fire dies.",
     scripture:
       "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, and by night in a pillar of fire, to give them light.",
     unlockLevel: 130,
-    base: { level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999, extra: { radius: 70 } },
-    scale: scale({ level: 1, cooldown: 0.5, dmg: 8, count: 1, speed: 0, ttl: 999 }, {
-      dmg: 2,
+    // Each cast raises both zones for `ttl` seconds; `dmg` is burn damage per second.
+    base: { level: 1, cooldown: 9, dmg: 16, count: 1, speed: 0, ttl: 5, extra: { radius: 80 } },
+    scale: scale({ level: 1, cooldown: 9, dmg: 16, count: 1, speed: 0, ttl: 5 }, {
+      dmg: 4,
     }),
   },
   redsea: {
     id: "redsea",
     name: "Parting of the Red Sea",
-    description: "Walls of water rush in from both sides and collide at Moses, sweeping the field.",
+    description: "Moses raises his staff and strikes the ground: walls of water rush in from both sides and crash together, sweeping the field.",
     scripture:
       "Exodus 14:21-28 — Moses stretched out his hand over the sea; the waters returned and covered the chariots of Pharaoh.",
     unlockLevel: 110,
-    base: { level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6, extra: { centerDmg: 220 } },
-    scale: scale({ level: 1, cooldown: 22, dmg: 60, count: 1, speed: 900, ttl: 1.6 }, {
-      dmg: 20,
+    base: { level: 1, cooldown: 22, dmg: 120, count: 1, speed: 900, ttl: 1.6, extra: { centerDmg: 440 } },
+    scale: scale({ level: 1, cooldown: 22, dmg: 120, count: 1, speed: 900, ttl: 1.6 }, {
+      dmg: 40,
       cooldown: 0.8,
     }),
   },
 };
 
 // Biblical order. Only after Death of the Firstborn do the miracles appear.
+// Fire from Heaven is not unlocked on its own: it is the fire phase of Hail.
 export const PLAGUE_ORDER: PlagueId[] = [
   "staff",
   "serpent",
@@ -278,7 +280,6 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "firstborn",
   // Miracles (post-plagues):
   "redsea",
-  "fire",
   "pillar",
 ];
 
@@ -300,11 +301,11 @@ export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, 
   livestock: { area: 0.12, notes: ["Wider, more poisonous cloud.", "Wider cloud that lingers longer.", "Wider, more poisonous cloud.", "Final: a huge, deadly murrain."] },
   boils: { area: 0.12, notes: ["Stronger bubble bursts.", "Bubbles burst harder and last longer.", "Stronger bubble bursts.", "Final: searing bubble bursts."] },
   hail: { area: 0.1, notes: ["Wider impacts, faster volleys.", "More hailstones per volley.", "Wider impacts, faster volleys.", "Final: a crushing storm of hail."] },
-  locusts: { area: 0.1, notes: ["Wider swarm, sharper bites.", "Swarm returns more often.", "Wider swarm, sharper bites.", "Final: a swarm that darkens the land."] },
+  locusts: { area: 0, notes: ["Sharper bites, swarms return sooner.", "Sharper bites, swarms return sooner.", "Sharper bites, swarms return sooner.", "Final: a swarm that darkens the land."] },
   darkness: { area: 0, notes: ["Darkness lasts longer.", "Darkness lasts longer.", "Darkness lasts longer.", "Final: a long, crushing darkness."] },
-  firstborn: { area: 0.12, notes: ["A wider shadow, more often.", "A wider shadow, more often.", "A wider shadow, more often.", "Final: a vast shadow of death."] },
+  firstborn: { area: 0, notes: ["Discharges reach farther before fading.", "Discharges reach farther before fading.", "Discharges reach farther before fading.", "Final: a vast storm of white discharges."] },
   fire: { area: 0.12, notes: ["Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Final: an enormous fire from heaven."] },
-  pillar: { area: 0, notes: ["Hotter flames, wider guard.", "Hotter flames, wider guard.", "Hotter flames, wider guard.", "Final: a blazing pillar."] },
+  pillar: { area: 0.1, notes: ["Wider circles, hotter flames.", "Wider circles, hotter flames.", "Wider circles, hotter flames.", "Final: blazing pillars."] },
   redsea: { area: 0.1, notes: ["Stronger waves, faster return.", "Stronger waves, wider meeting point.", "Stronger waves, faster return.", "Final: the waters meet with overwhelming force."] },
 };
 

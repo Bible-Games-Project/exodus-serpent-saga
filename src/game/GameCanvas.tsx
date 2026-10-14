@@ -1,3 +1,4 @@
+import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
 import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
@@ -28,7 +29,7 @@ import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
-import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update } from "./engine";
+import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
@@ -1591,6 +1592,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       ctx.globalAlpha = 1;
     }
     if (e.kind === "ramses") drawRamsesTelegraph(ctx, e, camX, camY);
+    if (e.kind === "pillarcloud") drawPillarCloud(ctx, e, camX, camY, s.now);
+    if (e.kind === "pillarfire") drawPillarFire(ctx, e, camX, camY, s.now);
+    if (e.kind === "corpseflame") drawCorpseFlame(ctx, e, camX, camY, s.now);
   }
 
   // 2) Depth-sorted pass
@@ -1598,7 +1602,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   let swingProgress: number | null = null;
   let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
-    if (e.kind === "bloodpool") continue;
+    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer") continue;
     if (e.kind === "staffswing") {
       const dur = (e.data?.dur as number) ?? MOSES_ATTACK.DUR;
       attackProgress = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / dur));
@@ -1632,12 +1636,15 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "boilpop") { drawBoilPop(ctx, e, camX, camY); continue; }
     if (e.kind === "firstborncloud") { drawFirstbornCloud(ctx, e, camX, camY); continue; }
     if (e.kind === "locustswarm") { drawLocustSwarm(ctx, e, camX, camY); continue; }
+    if (e.kind === "locust") { drawLocust(ctx, e, camX, camY); continue; }
+    if (e.kind === "firstbornbolt") { drawFirstbornBolt(ctx, e, camX, camY); continue; }
+    if (e.kind === "firstbornhit") { drawFirstbornHit(ctx, e, camX, camY); continue; }
     if (e.kind === "hailstone") { drawHailstone(ctx, e, camX, camY); continue; }
     if (e.kind === "hailimpact") { drawHailImpact(ctx, e, camX, camY); continue; }
-    if (e.kind === "fireball") { drawFireball(ctx, e, camX, camY); continue; }
-    if (e.kind === "fireexplosion") { drawFireExplosion(ctx, e, camX, camY); continue; }
-    if (e.kind === "redseawall") { drawRedSeaWall(ctx, e, camX, camY); continue; }
-    if (e.kind === "redseaburst") { drawRedSeaBurst(ctx, e, camX, camY); continue; }
+    if (e.kind === "fireball") { drawFireballFx(ctx, e, camX, camY); continue; }
+    if (e.kind === "fireexplosion") { drawFireExplosionFx(ctx, e, camX, camY, s.now); continue; }
+    if (e.kind === "redseawall") { drawRedSeaWallFx(ctx, e, camX, camY, s.now); continue; }
+    if (e.kind === "redseaburst") { drawRedSeaBurstFx(ctx, e, camX, camY); continue; }
     if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
@@ -1702,24 +1709,10 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (elapsed < fade) k = elapsed / fade;
     else if (remaining < fade) k = remaining / fade;
     k = Math.max(0, Math.min(1, k));
-    const alpha = 0.88 * k;
-    const px = s.player.pos.x - camX;
-    const py = s.player.pos.y - camY;
-    const holeR = 70;
-    const outerR = Math.hypot(viewW, viewH);
-    const g = ctx.createRadialGradient(px, py, holeR * 0.35, px, py, outerR);
-    g.addColorStop(0, "rgba(0,0,0,0)");
-    g.addColorStop(holeR / outerR, `rgba(0,0,0,${alpha * 0.5})`);
-    g.addColorStop(Math.min(0.5, (holeR * 2) / outerR), `rgba(0,0,0,${alpha})`);
-    g.addColorStop(1, `rgba(0,0,0,${alpha})`);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, viewW, viewH);
-    const lamp = ctx.createRadialGradient(px, py, 0, px, py, holeR);
-    lamp.addColorStop(0, `rgba(255,200,120,${0.25 * k})`);
-    lamp.addColorStop(1, "rgba(255,200,120,0)");
-    ctx.fillStyle = lamp;
-    ctx.fillRect(0, 0, viewW, viewH);
+    drawDarkness(ctx, s, camX, camY, viewW, viewH, k);
+    drawChampionFlames(ctx, s, camX, camY, k);
   }
+  drawBurningOverlay(ctx, s, camX, camY);
 
   // 4) Screen flash overlay
   const flash = s.screenFlash ?? 0;
@@ -1840,7 +1833,8 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     moving: walking,
     bob,
     // The staff he already holds is the one that swings.
-    staffAngle: swingProgress === null ? 0 : mosesSwingAngle(swingProgress),
+    // Red Sea casting pose overrides the normal swing (normal attacks are paused).
+    staffAngle: redSeaStaffAngle(s, RED_SEA_RAISE, RED_SEA_STRIKE) ?? (swingProgress === null ? 0 : mosesSwingAngle(swingProgress)),
     // Frames 1-5 of the swing, paced to the existing attack cadence.
     attackProgress,
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.

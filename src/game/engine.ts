@@ -5,7 +5,7 @@ import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pus
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
-import { MOSES_ART, MOSES_ATTACK, mosesSwingAngle } from "./mosesGameArt";
+import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
 import { DOG_POUNCE_DUR } from "./dogArt";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
@@ -358,7 +358,7 @@ export function update(state: GameState, dt: number) {
     const rest: NonNullable<GameState["queuedCasts"]> = [];
     for (const q of state.queuedCasts) {
       // Staff repeats wait for the current swing to finish (one swing at a time).
-      if (q.at > state.now || (q.id === "staff" && staffSwingActive(state))) rest.push(q);
+      if (q.at > state.now || (q.id === "staff" && (staffSwingActive(state) || redSeaCasting(state)))) rest.push(q);
       else if (state.plagues.has(q.id)) castPlague(state, q.id, q.level);
     }
     state.queuedCasts = rest;
@@ -369,10 +369,13 @@ export function update(state: GameState, dt: number) {
       // Moses only swings the staff when a foe is actually inside his frontal
       // cone. A swing that HAS started is never cancelled: the hazard entity
       // owns the whole animation, and we simply wait for it to expire.
-      if (id === "staff" && (staffSwingActive(state) || !enemyInStaffCone(state))) {
+      if (id === "staff" && (staffSwingActive(state) || redSeaCasting(state) || !enemyInStaffCone(state))) {
         state.plagueCooldown.set(id, 0);
         continue;
       }
+      // Hail alternates ice / fire on each new cast; its multi-attack repeats
+      // reuse the phase of the cast they belong to.
+      if (id === "hail") state.hailFirePhase = !(state.hailFirePhase ?? true);
       castPlague(state, id, level);
       // Multi-attack milestones: queue extra repeats of this cast.
       const casts = attackCasts(id, level);
@@ -385,8 +388,11 @@ export function update(state: GameState, dt: number) {
     }
   }
 
+  tickRedSeaCast(state);
+
   const invuln = state.now < (state.invulnUntil ?? 0);
-  const enemySlow = (state.darknessUntil ?? 0) > state.now ? 0.9 : 1;
+  // Plague of Darkness: enemies move at half speed. Champions never use this.
+  const enemySlow = (state.darknessUntil ?? 0) > state.now ? DARKNESS_ENEMY_SLOW : 1;
 
   // Move entities
   for (const e of state.entities.values()) {
@@ -547,6 +553,18 @@ export function update(state: GameState, dt: number) {
           e.pos.y += (e.data!.knockVy as number) * f * dt;
         } else delete e.data!.knockUntil;
       }
+      // Pillar of Cloud containment: clamp after every movement source
+      // (walking, dashes, knockback) so nothing can cross the boundary.
+      const cg = e.data;
+      if (cg?.cageUntil != null) {
+        if (state.now >= (cg.cageUntil as number)) { delete cg.cageUntil; delete cg.cageX; delete cg.cageY; delete cg.cageR; }
+        else {
+          const cx = cg.cageX as number, cy = cg.cageY as number, cr = cg.cageR as number;
+          const dx = wrapDelta(e.pos.x, cx, state.worldW), dy = wrapDelta(e.pos.y, cy, state.worldH);
+          const dd = Math.hypot(dx, dy);
+          if (dd > cr) { e.pos.x = cx + (dx / dd) * cr; e.pos.y = cy + (dy / dd) * cr; }
+        }
+      }
       wrapPos(state, e.pos);
 
       // Agile assassination pass: swept against Moses so the fast movement can
@@ -699,6 +717,7 @@ export function update(state: GameState, dt: number) {
                 en.hp -= fireDmg;
               } else {
                 en.hp = 0;
+                spawnVisualHazard(state, "corpseflame", en.pos, CORPSE_FLAME_SECONDS, { seed: en.id });
               }
               if (en.hp <= 0) killEnemy(state, en);
             }
@@ -738,6 +757,14 @@ export function update(state: GameState, dt: number) {
         const norm = phase / dur;
         const airborne = norm > 0.18 && norm < 0.85;
         if (airborne) { e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt; }
+      } else if (e.kind === "locust") {
+        // Gentle S-shaped flight: steady travel plus a slow lateral sine.
+        const d = e.data!;
+        const age = state.now - e.born;
+        e.pos.y += e.vel.y * dt;
+        const prevX = e.pos.x;
+        e.pos.x = (d.baseX as number) + Math.sin(age * (d.freq as number) + (d.phase as number)) * (d.amp as number);
+        e.vel.x = (e.pos.x - prevX) / Math.max(dt, 1e-4);
       } else {
         e.pos.x += e.vel.x * dt;
         e.pos.y += e.vel.y * dt;
@@ -818,7 +845,7 @@ export function update(state: GameState, dt: number) {
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
-        if ((e.kind === "serpent" || e.kind === "frog") && (e.dmg ?? 0) > 0) {
+        if ((e.kind === "serpent" || e.kind === "frog" || e.kind === "locust") && (e.dmg ?? 0) > 0) {
           // Blood bursts at the contact point; the snake keeps moving.
           // Only on a real damaging hit.
           const j = () => (Math.random() - 0.5) * 8;
@@ -839,7 +866,13 @@ export function update(state: GameState, dt: number) {
       }
     } else if (e.team === "hazard") {
       e.ttl = (e.ttl ?? 0) - dt;
-      if (e.ttl <= 0) { removeProjectile(state, e); continue; }
+      if (e.ttl <= 0) {
+        if (e.kind === "redseatimer") redSeaBurst(state, e);
+        removeProjectile(state, e);
+        continue;
+      }
+      if (e.kind === "firstbornbolt") { tickFirstbornBolt(state, e, dt); continue; }
+      if (e.kind === "pillarcloud" || e.kind === "pillarfire") { tickPillarZone(state, e, dt); continue; }
       e.pos.x += e.vel.x * dt;
       e.pos.y += e.vel.y * dt;
       const d = e.data!;
@@ -1433,28 +1466,28 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     const stones = Math.max(1, stats.count);
     const R = (def.base.extra?.radius ?? 70) * plagueAreaMul(id, level);
     const freeze = (def.base.extra?.freeze ?? 2.5);
-    for (let i = 0; i < stones; i++) spawnHailstone(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, R, freeze);
+    if (state.hailFirePhase) {
+      // Fire phase: the former Fire from Heaven, scaled by Hail's own level.
+      const fs = PLAGUES.fire.scale(level);
+      for (let i = 0; i < Math.max(1, fs.count); i++) spawnFireball(state, { dmg: fs.dmg * dmul, speed: fs.speed }, (PLAGUES.fire.base.extra?.radius ?? 110) * plagueAreaMul("hail", level));
+    } else {
+      for (let i = 0; i < stones; i++) spawnHailstone(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, R, freeze);
+    }
   } else if (id === "fire") {
     spawnFireball(state, { dmg: stats.dmg * dmul, speed: stats.speed }, (def.base.extra?.radius ?? 90) * plagueAreaMul(id, level));
   } else if (id === "locusts") {
-    spawnLocustSwarm(state, { dmg: stats.dmg * dmul, speed: stats.speed, ttl: stats.ttl }, (def.base.extra?.radius ?? 130) * plagueAreaMul(id, level));
+    spawnLocustFlight(state, { dmg: stats.dmg * dmul, speed: stats.speed });
   } else if (id === "firstborn") {
-    spawnDriftingCloud(state, { kind: "firstborncloud", radius: (def.base.extra?.radius ?? 95) * plagueAreaMul(id, level), dps: 0, ttl: stats.ttl, speed: stats.speed, chance: def.base.extra?.chance ?? 0.5 });
+    castFirstborn(state, stats, (def.base.extra?.ramsesDmg ?? 600) * dmul);
   } else if (id === "darkness") {
     state.darknessStart = state.now;
     state.darknessUntil = state.now + stats.ttl;
     state.darknessDur = stats.ttl;
   } else if (id === "redsea") {
-    castRedSea(state, stats, dmul);
+    // Moses first raises and strikes his staff; the walls start at the strike.
+    state.redSeaCast = { start: state.now, slamAt: state.now + RED_SEA_RAISE + RED_SEA_STRIKE, end: state.now + RED_SEA_RAISE + RED_SEA_STRIKE + RED_SEA_HOLD, stats, dmul };
   } else if (id === "pillar") {
-    const radius = (def.base.extra?.radius ?? 70) + level * 4;
-    for (const en of state.entities.values()) {
-      if (en.team !== "enemy") continue;
-      if (dist2(en.pos, p) < radius * radius) {
-        en.hp -= stats.dmg * dmul;
-        if (en.hp <= 0) killEnemy(state, en);
-      }
-    }
+    castPillars(state, stats, (def.base.extra?.radius ?? 80) * plagueAreaMul(id, level), dmul);
   }
 }
 
@@ -1488,33 +1521,26 @@ function castRedSea(state: GameState, stats: { dmg: number; speed: number; ttl: 
   };
   mkWall(leftFrom, +1);
   mkWall(rightFrom, -1);
-  // Schedule central collision burst.
-  setTimeout(() => {
-    if (!state.running || state.paused) return;
-    const lv = state.plagues.get("redsea") ?? 1;
-    const finalMul = 1;
-    const centerDmg = ((PLAGUES.redsea.base.extra?.centerDmg ?? 220)) * (1 + 0.25 * (Math.min(lv, 5) - 1) + 0.1 * Math.max(0, lv - 5)) * finalMul * dmul;
-    const R = 180 * plagueAreaMul("redsea", lv);
-    for (const en of state.entities.values()) {
-      if (en.team !== "enemy") continue;
-      if (dist2(en.pos, { x: cx, y: cy }) < R * R) {
-        en.hp -= centerDmg;
-        if (en.hp <= 0) killEnemy(state, en);
-      }
-    }
-    // AoE across screen for the collision damage baseline too.
-    const wideDmg = stats.dmg * dmul;
-    for (const en of state.entities.values()) {
-      if (en.team !== "enemy") continue;
-      if (Math.abs(en.pos.y - cy) < height / 2) {
-        en.hp -= wideDmg * 0.5;
-        if (en.hp <= 0) killEnemy(state, en);
-      }
-    }
-    spawnVisualHazard(state, "redseaburst", { x: cx, y: cy }, 0.55, { radius: 220, maxTtl: 0.55 });
-    state.screenShake = Math.max(state.screenShake ?? 0, 22);
-    state.screenFlash = Math.max(state.screenFlash ?? 0, 0.55);
-  }, dur * 1000);
+  // Central collision burst runs on game time (pause-safe) via a timer hazard.
+  spawnVisualHazard(state, "redseatimer", { x: cx, y: cy }, dur, { height, wideDmg: stats.dmg * dmul, dmul });
+}
+
+function redSeaBurst(state: GameState, timer: Entity) {
+  const d = timer.data!;
+  const cx = timer.pos.x, cy = timer.pos.y;
+  const height = d.height as number;
+  const lv = state.plagues.get("redsea") ?? 1;
+  const centerDmg = (PLAGUES.redsea.base.extra?.centerDmg ?? 440) * (1 + 0.25 * (Math.min(lv, 5) - 1) + 0.1 * Math.max(0, lv - 5)) * (d.dmul as number);
+  const R = 180 * plagueAreaMul("redsea", lv);
+  for (const en of [...state.entities.values()]) {
+    if (en.team !== "enemy") continue;
+    if (dist2(en.pos, { x: cx, y: cy }) < R * R) en.hp -= centerDmg;
+    if (Math.abs(en.pos.y - cy) < height / 2) en.hp -= (d.wideDmg as number) * 0.5;
+    if (en.hp <= 0) killEnemy(state, en);
+  }
+  spawnVisualHazard(state, "redseaburst", { x: cx, y: cy }, 0.7, { radius: 220, height, maxTtl: 0.7 });
+  state.screenShake = Math.max(state.screenShake ?? 0, 22);
+  state.screenFlash = Math.max(state.screenFlash ?? 0, 0.4);
 }
 
 // ---------- shared: pixel-particle cloud ----------
@@ -1622,41 +1648,215 @@ function spawnVisualHazard(state: GameState, kind: string, pos: Vec2, ttl: numbe
   state.entities.set(e.id, e);
 }
 
-function spawnLocustSwarm(state: GameState, stats: { dmg: number; speed: number; ttl: number }, _radius: number) {
+/** Plague of Darkness movement multiplier for enemies (champions unaffected). */
+export const DARKNESS_ENEMY_SLOW = 0.5;
+/** Lifetime of the cosmetic flame left where a fire-killed enemy fell. */
+const CORPSE_FLAME_SECONDS = 2;
+/** Red Sea casting pose timings (seconds): raise, strike down, hold on the ground. */
+export const RED_SEA_RAISE = 0.55;
+export const RED_SEA_STRIKE = 0.14;
+export const RED_SEA_HOLD = 0.35;
+/** Locusts per side (top and bottom) in one attack. */
+const LOCUSTS_PER_SIDE = 3;
+
+export function redSeaCasting(state: GameState): boolean {
+  return !!state.redSeaCast && state.now < state.redSeaCast.end;
+}
+
+function tickRedSeaCast(state: GameState) {
+  const rc = state.redSeaCast;
+  if (!rc) return;
+  if (!rc.spawned && state.now >= rc.slamAt) {
+    rc.spawned = true;
+    castRedSea(state, rc.stats, rc.dmul);
+    state.screenShake = Math.max(state.screenShake ?? 0, 8);
+    const p = state.player;
+    spawnVisualHazard(state, "agiledust", { x: p.pos.x + p.facing * 22, y: p.pos.y + 6 }, 0.4, { seed: p.id, scale: 1.4 });
+  }
+  if (state.now >= rc.end) delete state.redSeaCast;
+}
+
+/** Three locusts dive from the top edge and three climb from the bottom. */
+function spawnLocustFlight(state: GameState, stats: { dmg: number; speed: number }) {
   const vw = state.viewport?.w ?? 800;
   const vh = state.viewport?.h ?? 600;
   const cam = state.camera;
-  // Horizontal band the width of the visible field, travelling top → bottom.
-  const bandW = vw + 120;
-  const bandH = 140;
-  const sx = cam.x;
-  const sy = cam.y - vh / 2 - bandH;
-  const ty = cam.y + vh / 2 + bandH;
-  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; wing: number; hopPhase: number }> = [];
-  const nP = 220 + Math.floor(Math.random() * 80);
-  for (let i = 0; i < nP; i++) {
-    particles.push({
-      ox: (Math.random() - 0.5) * bandW,
-      oy: (Math.random() - 0.5) * bandH,
-      phase: Math.random() * Math.PI * 2,
-      amp: 1.5 + Math.random() * 3,
-      wing: Math.random() * Math.PI * 2,
-      hopPhase: Math.random() * Math.PI * 2,
-    });
+  const ttl = (vh + 180) / stats.speed;
+  for (const dir of [1, -1] as const) {
+    for (let i = 0; i < LOCUSTS_PER_SIDE; i++) {
+      const lane = (i + 0.5) / LOCUSTS_PER_SIDE - 0.5;
+      const baseX = cam.x + lane * vw * 0.8 + rand(-40, 40);
+      const e: Entity = {
+        id: state.nextId++,
+        pos: { x: baseX, y: cam.y - dir * (vh / 2 + 70) + rand(-20, 20) },
+        vel: { x: 0, y: dir * stats.speed * rand(0.9, 1.1) },
+        radius: 16,
+        hp: 1, maxHp: 1,
+        team: "projectile", facing: dir === 1 ? 1 : -1,
+        animT: Math.random() * 10, born: state.now,
+        ttl, dmg: stats.dmg,
+        kind: "locust",
+        // dir 1 = flying down (front-facing art), -1 = flying up (back art).
+        data: { dir, baseX, amp: rand(28, 52), freq: rand(1.3, 2.1), phase: Math.random() * Math.PI * 2, hit: new Set<number>(), pierce: true },
+      };
+      state.entities.set(e.id, e);
+    }
   }
-  const e: Entity = {
-    id: state.nextId++,
-    pos: { x: sx, y: sy },
-    vel: { x: 0, y: (ty - sy) / stats.ttl },
-    radius: Math.max(bandW, bandH) / 2,
-    hp: 1, maxHp: 1,
-    team: "hazard", facing: 1,
-    animT: 0, born: state.now,
-    ttl: stats.ttl,
-    kind: "locustswarm",
-    data: { bandW, bandH, dps: stats.dmg, tickAcc: 0, particles, maxTtl: stats.ttl },
+}
+
+// ---------- Death of the Firstborn: branching white discharges ----------
+function castFirstborn(state: GameState, stats: { count: number; speed: number; ttl: number }, ramsesDmg: number) {
+  const p = state.player;
+  const tip = mosesStaffTip(p.pos.x, p.pos.y + 8, p.facing, 0);
+  const claimed = firstbornClaims(state);
+  const targets: Entity[] = [];
+  const pool: Array<{ en: Entity; d: number }> = [];
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy" || en.hp <= 0 || en.data?.seated || en.data?.downedUntil != null || claimed.has(en.id)) continue;
+    pool.push({ en, d: wrapDist2(state, en.pos, p.pos) });
+  }
+  pool.sort((a, b) => a.d - b.d);
+  for (const { en } of pool) { if (targets.length >= stats.count) break; targets.push(en); }
+  for (let i = 0; i < stats.count; i++) {
+    const tgt = targets[i];
+    const ang = -Math.PI / 2 + (i - (stats.count - 1) / 2) * 0.55;
+    const e: Entity = {
+      id: state.nextId++,
+      pos: { x: tip.x, y: tip.y },
+      vel: { x: 0, y: 0 },
+      radius: 6, hp: 1, maxHp: 1,
+      team: "hazard", facing: 1,
+      animT: 0, born: state.now,
+      ttl: stats.ttl,
+      kind: "firstbornbolt",
+      data: {
+        dps: 0, maxTtl: stats.ttl, targetId: tgt?.id, speed: stats.speed, ramsesDmg,
+        heading: ang, seed: Math.floor(Math.random() * 1e6),
+        path: [{ x: tip.x, y: tip.y }], walk: 0,
+      },
+    };
+    state.entities.set(e.id, e);
+  }
+}
+
+function firstbornClaims(state: GameState): Set<number> {
+  const set = new Set<number>();
+  for (const b of state.entities.values()) {
+    if (b.kind === "firstbornbolt" && !b.data?.done && b.data?.targetId != null) set.add(b.data.targetId as number);
+  }
+  return set;
+}
+
+function tickFirstbornBolt(state: GameState, e: Entity, dt: number) {
+  const d = e.data!;
+  if (d.done) return;
+  let tgt = d.targetId != null ? state.entities.get(d.targetId as number) : undefined;
+  if (!tgt || tgt.team !== "enemy" || tgt.hp <= 0 || tgt.data?.downedUntil != null) {
+    // Target gone: pick the nearest unclaimed enemy, if any is in reach.
+    d.targetId = undefined;
+    const claimed = firstbornClaims(state);
+    let best: Entity | undefined, bd = 420 * 420;
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy" || en.hp <= 0 || en.data?.seated || en.data?.downedUntil != null || claimed.has(en.id)) continue;
+      const dd = wrapDist2(state, en.pos, e.pos);
+      if (dd < bd) { bd = dd; best = en; }
+    }
+    tgt = best;
+    if (tgt) d.targetId = tgt.id;
+  }
+  // Steer gently toward the target's body with a slow crackling wander.
+  let heading = d.heading as number;
+  if (tgt) {
+    const dx = wrapDelta(tgt.pos.x, e.pos.x, state.worldW);
+    const dy = wrapDelta(tgt.pos.y - 14, e.pos.y, state.worldH);
+    const want = Math.atan2(dy, dx);
+    let diff = want - heading;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    heading += Math.max(-4 * dt, Math.min(4 * dt, diff));
+  }
+  const wander = Math.sin(state.now * 9 + (d.seed as number)) * 0.9;
+  const dir = heading + wander * 0.35;
+  const sp = d.speed as number;
+  e.pos.x += Math.cos(dir) * sp * dt;
+  e.pos.y += Math.sin(dir) * sp * dt;
+  d.heading = heading;
+  const path = d.path as Vec2[];
+  const last = path[path.length - 1];
+  if (Math.hypot(e.pos.x - last.x, e.pos.y - last.y) >= 9) {
+    path.push({ x: e.pos.x, y: e.pos.y });
+    if (path.length > 70) path.shift();
+  }
+  if (!tgt) return;
+  const hx = wrapDelta(tgt.pos.x, e.pos.x, state.worldW);
+  const hy = wrapDelta(tgt.pos.y - 14, e.pos.y, state.worldH);
+  if (hx * hx + hy * hy < (tgt.radius + 10) ** 2) {
+    // One strike per branch, one branch per target: the branch is done now.
+    d.done = true;
+    path.push({ x: tgt.pos.x, y: tgt.pos.y - 14 });
+    e.ttl = Math.min(e.ttl ?? 0, 0.3);
+    d.fadeFrom = e.ttl;
+    spawnVisualHazard(state, "firstbornhit", { x: tgt.pos.x, y: tgt.pos.y - 14 }, 0.35, { seed: tgt.id });
+    if (tgt.kind === "ramses") {
+      tgt.hp -= d.ramsesDmg as number;
+      if (tgt.hp <= 0) killEnemy(state, tgt);
+    } else {
+      killEnemy(state, tgt);
+    }
+  }
+}
+
+// ---------- Pillar of Cloud (containment) & Pillar of Fire (burning) ----------
+function castPillars(state: GameState, stats: { dmg: number; ttl: number }, radius: number, dmul: number) {
+  const p = state.player.pos;
+  const a = pickRandomEnemy(state);
+  let b = pickRandomEnemy(state);
+  for (let k = 0; k < 4 && b && a && b.id === a.id; k++) b = pickRandomEnemy(state);
+  const place = (en: Entity | undefined, side: number): Vec2 =>
+    en ? { x: en.pos.x, y: en.pos.y } : { x: p.x + side * 150, y: p.y + rand(-40, 40) };
+  const mk = (kind: string, pos: Vec2, extra: Record<string, unknown>) => {
+    const z: Entity = {
+      id: state.nextId++, pos, vel: { x: 0, y: 0 }, radius,
+      hp: 1, maxHp: 1, team: "hazard", facing: 1, animT: Math.random() * 10, born: state.now,
+      ttl: stats.ttl, kind,
+      data: { radius, maxTtl: stats.ttl, endAt: state.now + stats.ttl, seed: Math.floor(Math.random() * 1e6), dps: 0, ...extra },
+    };
+    state.entities.set(z.id, z);
   };
-  state.entities.set(e.id, e);
+  mk("pillarcloud", place(a, -1), {});
+  mk("pillarfire", place(b && b !== a ? b : undefined, 1), { burnDps: stats.dmg * dmul, tickAcc: 0 });
+}
+
+function tickPillarZone(state: GameState, z: Entity, dt: number) {
+  const d = z.data!;
+  const r = d.radius as number;
+  const endAt = d.endAt as number;
+  if (z.kind === "pillarcloud") {
+    // Anyone inside the cloud is trapped until the cloud lifts.
+    for (const en of state.entities.values()) {
+      if (en.team !== "enemy" || en.kind === "ramses" || en.data?.cageUntil != null) continue;
+      if (wrapDist2(state, en.pos, z.pos) < r * r) {
+        const ed = (en.data ??= {});
+        ed.cageUntil = endAt; ed.cageX = z.pos.x; ed.cageY = z.pos.y; ed.cageR = Math.max(4, r - en.radius * 0.5);
+      }
+    }
+    return;
+  }
+  // Fire: entering marks an enemy as burning until the fire dies; burning
+  // enemies take the zone's damage once per tick, inside or outside.
+  const tick = 0.35;
+  d.tickAcc = ((d.tickAcc as number) ?? 0) + dt;
+  const doTick = (d.tickAcc as number) >= tick;
+  if (doTick) d.tickAcc = (d.tickAcc as number) - tick;
+  for (const en of [...state.entities.values()]) {
+    if (en.team !== "enemy") continue;
+    const ed = (en.data ??= {});
+    if (wrapDist2(state, en.pos, z.pos) < r * r) { ed.burnUntil = endAt; ed.burnZone = z.id; }
+    if (doTick && ed.burnZone === z.id && state.now < (ed.burnUntil as number)) {
+      en.hp -= (d.burnDps as number) * tick;
+      if (en.hp <= 0) killEnemy(state, en);
+    }
+  }
 }
 
 // ---------- orbiting flies ----------

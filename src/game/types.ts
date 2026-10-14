@@ -155,6 +155,11 @@ export type GameState = {
   darknessStart?: number;
   darknessDur?: number;
 
+  /** Plague of Hail alternates ice and fire; true = the current cast is fire. */
+  hailFirePhase?: boolean;
+  /** Red Sea casting pose: Moses raises then strikes his staff (normal attacks paused). */
+  redSeaCast?: { start: number; slamAt: number; end: number; stats: { dmg: number; speed: number; ttl: number }; dmul: number; spawned?: boolean };
+
   // Modular obstacle collision system — static decor with collision radius.
   // Populated once at world init; movement code resolves against this list.
   obstacles?: Array<{ pos: Vec2; r: number }>;
