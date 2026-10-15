@@ -2145,6 +2145,9 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
       e.vel.x = (dx / dd) * def.moveSpeed; e.vel.y = (dy / dd) * def.moveSpeed;
       e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
     }
+  } else {
+    // No valid target until the next permitted refresh: keep moving.
+    allyRetreat(e, def, dt);
   }
   resolveObstacles(e.pos, e.radius, state);
   wrapPos(state, e.pos);
