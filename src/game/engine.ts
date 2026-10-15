@@ -1,5 +1,7 @@
 import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER, attackCasts, MULTI_ATTACK_STAGGER, evolutionNote, plagueAreaMul } from "./plagues";
+import { angelSwordOffset, ANGEL_FADE } from "./angelArt";
+import { canRefreshRoute, markRouteRefresh, ROUTE_MIN_INTERVAL } from "./routing";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
@@ -522,7 +524,9 @@ export function update(state: GameState, dt: number) {
       const cached = cachedId != null && cachedId !== p.id ? state.entities.get(cachedId) : undefined;
       const cachedValid = cachedId === p.id || (!!cached && !cached.data?.downedUntil &&
         !(cached.data?.summonUntil && state.now < (cached.data.summonUntil as number)));
-      if (!cachedValid || state.now >= ((ed.tgtAt as number) ?? 0)) {
+      // Full route refreshes are gated by the shared 400 ms scheduler; an
+      // invalid cached target just falls back to Moses until the next refresh.
+      if (canRefreshRoute(ed, state.now) && (!cachedValid || state.now >= ((ed.tgtAt as number) ?? 0))) {
         let bestD = wrapDist2(state, e.pos, p.pos);
         for (const npcId of state.npcs.values()) {
           const n = state.entities.get(npcId);
@@ -532,8 +536,9 @@ export function update(state: GameState, dt: number) {
           if (d < bestD * 0.7) { bestD = d; targetAlly = n; }
         }
         ed.tgtId = targetAlly ? targetAlly.id : p.id;
-        ed.tgtAt = state.now + 0.3 + Math.random() * 0.2;
-      } else if (cached) {
+        ed.tgtAt = state.now + ROUTE_MIN_INTERVAL + Math.random() * 0.2;
+        markRouteRefresh(ed, state.now);
+      } else if (cached && cachedValid) {
         targetAlly = cached;
       }
       const tgt = targetAlly ?? p;
@@ -875,6 +880,7 @@ export function update(state: GameState, dt: number) {
       if (e.kind === "pillarcloud" || e.kind === "pillarfire") { tickPillarZone(state, e, dt); continue; }
       e.pos.x += e.vel.x * dt;
       e.pos.y += e.vel.y * dt;
+      if (e.kind === "livestockwave") e.pos.x = state.camera.x;
       const d = e.data!;
 
       // Staff swing — the hitbox follows the animated staff tip in real time
@@ -948,7 +954,7 @@ export function update(state: GameState, dt: number) {
           const r = (d.radius as number) ?? 90;
           const target = d.targetKind as string | undefined;
           // Locust swarm is a horizontal band, not a circle.
-          const isBand = e.kind === "locustswarm";
+          const isBand = e.kind === "locustswarm" || e.kind === "livestockwave";
           const bw = (d.bandW as number) ?? 0;
           const bh = (d.bandH as number) ?? 0;
           for (const en of state.entities.values()) {
@@ -959,7 +965,7 @@ export function update(state: GameState, dt: number) {
             if (target === "human" && cat !== "human") continue;
             let hit = false;
             if (isBand) {
-              hit = Math.abs(en.pos.x - e.pos.x) < bw / 2 && Math.abs(en.pos.y - e.pos.y) < bh / 2;
+              hit = Math.abs(wrapDelta(en.pos.x, e.pos.x, state.worldW)) < bw / 2 && Math.abs(wrapDelta(en.pos.y, e.pos.y, state.worldH)) < bh / 2;
             } else {
               hit = dist2(en.pos, e.pos) < r * r;
             }
@@ -1451,7 +1457,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     };
     state.entities.set(e.id, e);
   } else if (id === "livestock") {
-    spawnDriftingCloud(state, { kind: "livestockcloud", radius: (def.base.extra?.radius ?? 90) * 2 * plagueAreaMul(id, level), dps: stats.dmg * dmul, ttl: stats.ttl, speed: stats.speed, targetKind: "livestock" });
+    spawnLivestockWave(state, { dps: stats.dmg * dmul, ttl: stats.ttl, bandH: 140 * plagueAreaMul(id, level) });
   } else if (id === "boils") {
     // Invisible emitter that follows Moses and drops red bubbles along his path.
     const lane = (state.entities.size % 3) - 1;
@@ -1563,6 +1569,35 @@ function buildCloudParticles(radius: number) {
   return particles;
 }
 
+// Plague on Livestock: a full-screen-width band of particles sweeping from
+// the top of the view to the bottom. It follows the camera horizontally so it
+// always spans the whole screen; damage uses the shared 0.35 s band tick.
+function spawnLivestockWave(state: GameState, opts: { dps: number; ttl: number; bandH: number }) {
+  const vw = state.viewport?.w ?? 1280;
+  const vh = state.viewport?.h ?? 720;
+  const bandW = vw + 240;
+  const bandH = opts.bandH;
+  const travel = vh + bandH + 80;
+  const particles: Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> = [];
+  const nP = Math.round((bandW * bandH) / 240);
+  for (let i = 0; i < nP; i++) {
+    // Denser in the middle rows, thinning toward the leading/trailing edges.
+    const v = (Math.random() + Math.random() + Math.random()) / 3 - 0.5;
+    particles.push({ ox: (Math.random() - 0.5) * bandW, oy: v * bandH, phase: Math.random() * Math.PI * 2, amp: 1.5 + Math.random() * 3.5, size: Math.random() < 0.35 ? 3 : 2 });
+  }
+  const e: Entity = {
+    id: state.nextId++,
+    pos: { x: state.camera.x, y: state.camera.y - vh / 2 - bandH / 2 - 40 },
+    vel: { x: 0, y: travel / opts.ttl },
+    radius: 1, hp: 1, maxHp: 1,
+    team: "hazard", facing: 1, animT: 0, born: state.now,
+    ttl: opts.ttl,
+    kind: "livestockwave",
+    data: { dps: opts.dps, tickAcc: 0, particles, maxTtl: opts.ttl, targetKind: "livestock", bandW, bandH },
+  };
+  state.entities.set(e.id, e);
+}
+
 function spawnDriftingCloud(state: GameState, opts: { kind: string; radius: number; dps: number; ttl: number; speed: number; targetKind?: string; chance?: number }) {
   const p = state.player.pos;
   const ang = Math.random() * Math.PI * 2;
@@ -1649,7 +1684,7 @@ function spawnVisualHazard(state: GameState, kind: string, pos: Vec2, ttl: numbe
 }
 
 /** Plague of Darkness movement multiplier for enemies (champions unaffected). */
-export const DARKNESS_ENEMY_SLOW = 0.5;
+export const DARKNESS_ENEMY_SLOW = 0.25;
 /** Lifetime of the cosmetic flame left where a fire-killed enemy fell. */
 const CORPSE_FLAME_SECONDS = 2;
 /** Red Sea casting pose timings (seconds): raise, strike down, hold on the ground. */
@@ -1707,7 +1742,12 @@ function spawnLocustFlight(state: GameState, stats: { dmg: number; speed: number
 // ---------- Death of the Firstborn: branching white discharges ----------
 function castFirstborn(state: GameState, stats: { count: number; speed: number; ttl: number }, ramsesDmg: number) {
   const p = state.player;
-  const tip = mosesStaffTip(p.pos.x, p.pos.y + 8, p.facing, 0);
+  // The Angel of Light appears beside Moses, stays anchored there, and every
+  // branch grows from the tip of its sword.
+  const angelPos = { x: p.pos.x - p.facing * 64, y: p.pos.y - 6 };
+  spawnVisualHazard(state, "firstbornangel", angelPos, stats.ttl + ANGEL_FADE, {});
+  const so = angelSwordOffset();
+  const tip = { x: angelPos.x + so.x, y: angelPos.y + so.y };
   const claimed = firstbornClaims(state);
   const targets: Entity[] = [];
   const pool: Array<{ en: Entity; d: number }> = [];
@@ -2058,10 +2098,11 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   }
 
   // Re-evaluate target and path every ALLY_RETARGET_SECONDS (staggered per champion).
-  d.retargetT = ((d.retargetT as number) ?? Math.random() * ALLY_RETARGET_SECONDS) - dt;
+  if (d.routeAt == null) d.routeAt = state.now - ROUTE_MIN_INTERVAL + Math.random() * ALLY_RETARGET_SECONDS;
   let target = allyTargetValid(state, d.targetId as number | undefined);
-  if ((d.retargetT as number) <= 0 || !target) {
-    d.retargetT = ALLY_RETARGET_SECONDS;
+  // Lost targets wait for the next permitted refresh (never every frame).
+  if (canRefreshRoute(d, state.now)) {
+    markRouteRefresh(d, state.now, Math.random() * 0.1);
     let best: Entity | undefined;
     let bestD = 900 * 900;
     for (const en of state.entities.values()) {

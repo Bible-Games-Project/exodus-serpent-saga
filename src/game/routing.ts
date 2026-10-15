@@ -16,12 +16,13 @@ export function canRefreshRoute(d: RouteData, now: number): boolean {
 
 /** Records a refresh; `jitter` staggers the next one so characters don't sync. */
 export function markRouteRefresh(d: RouteData, now: number, jitter = 0): void {
-  const last = d.routeAt as number | undefined;
+  const last = d.routeRealAt as number | undefined;
   if (last != null) {
     routeStats.refreshes++;
     const iv = now - last;
     if (iv < routeStats.minInterval) routeStats.minInterval = iv;
   }
   // Storing a later timestamp pushes the next allowed refresh past 400 ms.
+  d.routeRealAt = now;
   d.routeAt = now + jitter;
 }

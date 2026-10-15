@@ -147,7 +147,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   livestock: {
     id: "livestock",
     name: "Plague on Livestock",
-    description: "A huge poisonous cloud drifts across the field, sickening only beasts: dogs, wolves, lions, camels, horsemen and chariots.",
+    description: "A wide wave of plague sweeps down across the whole field, sickening only beasts: dogs, wolves, lions, camels, horsemen and chariots.",
     scripture:
       "Exodus 9:3-6 — The hand of the LORD is upon thy cattle... a very grievous murrain. All the cattle of Egypt died. This plague strikes only animal-kind.",
     unlockLevel: 50,
@@ -225,14 +225,14 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
   firstborn: {
     id: "firstborn",
     name: "Death of the Firstborn",
-    description: "Every 25 seconds Moses releases five slow, branching white discharges from his staff. Each one instantly defeats the ordinary enemy it reaches, and heavily wounds Ramses.",
+    description: "Every 12.5 seconds an Angel of Light appears beside Moses and releases five slow, branching white discharges from the tip of its sword. Each one instantly defeats the ordinary enemy it reaches, and heavily wounds Ramses.",
     scripture:
       "Exodus 12:29 — At midnight the LORD smote all the firstborn in the land of Egypt. A shadow passed over.",
     unlockLevel: 100,
-    // Fixed 25 s interval at every level; `speed` is the branch growth speed,
+    // Fixed 12.5 s interval at every level; `speed` is the branch growth speed,
     // `ttl` the branch lifetime and `extra.ramsesDmg` the hit on Ramses.
-    base: { level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5, extra: { ramsesDmg: 600 } },
-    scale: scale({ level: 1, cooldown: 25, dmg: 99999, count: 5, speed: 120, ttl: 4.5 }, { ttl: 0.25 }),
+    base: { level: 1, cooldown: 12.5, dmg: 99999, count: 5, speed: 120, ttl: 4.5, extra: { ramsesDmg: 600 } },
+    scale: scale({ level: 1, cooldown: 12.5, dmg: 99999, count: 5, speed: 120, ttl: 4.5 }, { ttl: 0.25 }),
   },
   pillar: {
     id: "pillar",
