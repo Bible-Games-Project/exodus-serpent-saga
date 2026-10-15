@@ -393,7 +393,7 @@ export function update(state: GameState, dt: number) {
   tickRedSeaCast(state);
 
   const invuln = state.now < (state.invulnUntil ?? 0);
-  // Plague of Darkness: enemies move at half speed. Champions never use this.
+  // Plague of Darkness: enemies move at 25% speed. Champions never use this.
   const enemySlow = (state.darknessUntil ?? 0) > state.now ? DARKNESS_ENEMY_SLOW : 1;
 
   // Move entities
