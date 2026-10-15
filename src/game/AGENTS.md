@@ -9,3 +9,6 @@
 - Hail alternates ice/fire via `state.hailFirePhase` (toggled only on the main cast; multi-attack repeats reuse it); "fire" stays in `PLAGUES` but is not in `PLAGUE_ORDER`. Reworked plague visuals live in `plagueFx.ts`.
 - Red Sea casts through `state.redSeaCast` (raise → strike → walls); staff attacks wait via `redSeaCasting`. Its center burst runs on a `redseatimer` hazard (game time), never `setTimeout`.
 - Pillar of Cloud cages via enemy `data.cage*` clamped after all movement; Pillar of Fire burns via `burnUntil`/`burnZone` (single damage source per zone).
+- Ramses art switches: `RAMSES_VISUAL_VERSION` (ramsesArt.ts: v2 walk + seated-with-throne; procedural throne hidden while he sits) and `RAMSES_CHARIOT_VERSION` (ramsesChariotArt.ts). Old assets stay for rollback; never delete them.
+- Route refreshes (enemy target choice, champion target + retreat heading, wolf pack centre) go through `routing.ts` (`ROUTE_MIN_INTERVAL` 0.4 s per character); per-frame steering toward the cached target is not a refresh.
+- Firstborn branches start at the Angel of Light's sword (`angelArt.ts`, `firstbornangel` visual hazard anchored at cast). Livestock is a camera-following `livestockwave` band.

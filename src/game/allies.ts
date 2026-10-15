@@ -153,7 +153,7 @@ export function allyDef(id: string): AllyDef | undefined {
 /** Seconds a fallen champion stays down before reviving. */
 export const ALLY_REVIVE_SECONDS = 30;
 /** How often a champion re-evaluates its nearest enemy. */
-export const ALLY_RETARGET_SECONDS = 0.2;
+export const ALLY_RETARGET_SECONDS = 0.4;
 /** Enemies inside this distance count as threats a champion retreats from. */
 export const ALLY_THREAT_RADIUS = 240;
 
