@@ -2,7 +2,9 @@ import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFi
 import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
-import { drawRamsesArt } from "./ramsesArt";
+import { drawRamsesArt, drawRamsesSeatedArt, RAMSES_VISUAL_VERSION } from "./ramsesArt";
+import { drawRamsesChariot, ensureRamsesChariotArt } from "./ramsesChariotArt";
+import { drawAngel } from "./angelArt";
 import { bar as allyHpBar, drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
@@ -1638,6 +1640,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "locustswarm") { drawLocustSwarm(ctx, e, camX, camY); continue; }
     if (e.kind === "locust") { drawLocust(ctx, e, camX, camY); continue; }
     if (e.kind === "firstbornbolt") { drawFirstbornBolt(ctx, e, camX, camY); continue; }
+    if (e.kind === "firstbornangel") { drawAngel(ctx, e.pos.x - camX, e.pos.y - camY, s.now - e.born, e.ttl ?? 0); continue; }
+    if (e.kind === "livestockwave") { drawLivestockWave(ctx, e, camX, camY); continue; }
     if (e.kind === "firstbornhit") { drawFirstbornHit(ctx, e, camX, camY); continue; }
     if (e.kind === "hailstone") { drawHailstone(ctx, e, camX, camY); continue; }
     if (e.kind === "hailimpact") { drawHailImpact(ctx, e, camX, camY); continue; }
@@ -1645,7 +1649,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "fireexplosion") { drawFireExplosionFx(ctx, e, camX, camY, s.now); continue; }
     if (e.kind === "redseawall") { drawRedSeaWallFx(ctx, e, camX, camY, s.now); continue; }
     if (e.kind === "redseaburst") { drawRedSeaBurstFx(ctx, e, camX, camY); continue; }
-    if (e.kind === "throne") { drawThrone(ctx, e, camX, camY); continue; }
+    if (e.kind === "throne") {
+      // The v2 seated sprite already contains the throne; the empty procedural
+      // throne only shows once Ramses has left it.
+      const rm = s.ramsesId != null ? s.entities.get(s.ramsesId) : undefined;
+      if (!(RAMSES_VISUAL_VERSION === "new" && rm?.data?.seated && rm.data.downedUntil == null)) drawThrone(ctx, e, camX, camY);
+      continue;
+    }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
     if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
@@ -1895,6 +1905,12 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     ctx.textAlign = "center";
     const remain = Math.max(0, Math.ceil((e.data!.downedUntil as number) - s.now));
     ctx.fillText(`${remain}s`, sx + drawW / 2, sy - 2);
+  } else if (e.kind === "frog") {
+    // Fade out over the last moments of the frog's existing lifetime.
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, (e.ttl ?? 0) / FROG_FADE_SECONDS));
+    ctx.drawImage(img, sx, sy, drawW, drawH);
+    ctx.restore();
   } else {
     ctx.drawImage(img, sx, sy, drawW, drawH);
   }
@@ -3333,7 +3349,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.75));
     bob = -Math.sin(t * Math.PI) * 130;
   } else if (phase === "telegraph") {
-    bob = -8 - Math.sin(s.now * 20) * 4;
+    const tt = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.9));
+    bob = tt < 0.75 ? 4 * Math.min(1, tt / 0.3) : 4 - (tt - 0.75) / 0.25 * 12;
   } else if (seated) {
     bob = idleBob * 0.35;
   } else {
@@ -3346,7 +3363,10 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   // -------- Egyptian war chariot (level 50+) --------
   // Drawn beneath Ramses so his torso rises above the cart. Simple pixel-art
   // silhouette in Ramses' palette: gold-edged cart, spoked wheels, twin horses.
-  if (chariot) {
+  const newChariot = chariot && ensureRamsesChariotArt();
+  if (newChariot) {
+    drawRamsesChariot(ctx, x, y + 12 + bob, flip === -1 ? -1 : 1, e.animT * 1.6, s.now * 4);
+  } else if (chariot) {
     const wheelR = 22;
     const cartY = y + 8;
     const spin = s.now * 8 * flip;
@@ -3419,6 +3439,17 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     const t = 1 - Math.max(0, Math.min(1, (d.atkT as number) / 0.12));
     staffLift = 44 * (1 - t * t);
   }
+  // Leap: crouch and raise the staff (telegraph), hold it overhead in the air,
+  // slam it down on landing, then recover — all on the existing leap timers.
+  if (phase === "telegraph") {
+    const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.9));
+    staffLift = 40 * Math.min(1, t / 0.6);
+  } else if (phase === "airborne") {
+    staffLift = 44;
+  } else if (phase === "land") {
+    const t = 1 - Math.max(0, Math.min(1, (d.leapT as number) / 0.4));
+    staffLift = t < 0.3 ? 44 * (1 - (t / 0.3) ** 2) : 0;
+  }
   const staffAngle = 0;
 
   // ---- pixel-art ground impact: irregular cracks + dust, no smooth rings ----
@@ -3478,7 +3509,8 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     ctx.restore();
   }
 
-  drawRamsesArt(ctx, {
+  const seatedDrawn = seated && drawRamsesSeatedArt(ctx, x, y + 14 + bob, flip === -1 ? -1 : 1, s.now);
+  if (!seatedDrawn && !newChariot) drawRamsesArt(ctx, {
     x,
     groundY: y + 10,
     flip: flip === -1 ? -1 : 1,
@@ -4088,6 +4120,29 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
 
 
 // ---------------- shared hazard renderers ----------------
+const FROG_FADE_SECONDS = 0.35;
+
+// Plague on Livestock: full-width band of particles, no backing cloud/shadow.
+function drawLivestockWave(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> | undefined;
+  if (!particles) return;
+  const maxTtl = (e.data?.maxTtl as number) ?? 5;
+  const age = maxTtl - (e.ttl ?? 0);
+  const fade = Math.max(0, Math.min(1, age / 0.3, (e.ttl ?? 0) / 0.3));
+  const cx = e.pos.x - camX;
+  const cy = e.pos.y - camY;
+  const t = e.animT;
+  for (let i = 0; i < particles.length; i++) {
+    const p = particles[i];
+    const jx = Math.cos(t * 3 + p.phase) * p.amp;
+    const jy = Math.sin(t * 3.7 + p.phase * 1.3) * p.amp;
+    ctx.globalAlpha = fade * (0.7 + 0.3 * Math.sin(t * 4 + p.phase));
+    ctx.fillStyle = (i * 7 + Math.floor(t * 6)) % 11 < 2 ? "#c09c78" : "#3c3018";
+    ctx.fillRect(Math.round(cx + p.ox + jx), Math.round(cy + p.oy + jy), p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawParticleCloud(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, tint: { backing: string; particle: string; highlight?: string }) {
   const particles = e.data?.particles as Array<{ ox: number; oy: number; phase: number; amp: number; size: number }> | undefined;
   if (!particles) return;
