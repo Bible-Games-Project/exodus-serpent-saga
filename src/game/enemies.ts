@@ -1,3 +1,4 @@
+import { ROUTE_MIN_INTERVAL } from "./routing";
 // Modular enemy registry. Each entry defines stats + behaviour hook.
 // New enemies can be added purely as data; engine dispatches by `behavior`.
 import type { Entity, GameState, Vec2 } from "./types";
@@ -314,15 +315,22 @@ export function enemyTick(
   if (def.behavior === "chase" || def.behavior === "pack") {
     let mvx = nx, mvy = ny;
     if (def.behavior === "pack") {
-      // slight cohesion toward other wolves
-      let cx = 0, cy = 0, n = 0;
-      for (const other of state.entities.values()) {
-        if (other === e || other.kind !== e.kind) continue;
-        const d2 = dist2(other.pos, e.pos);
-        if (d2 < 40000) { cx += other.pos.x; cy += other.pos.y; n++; }
+      // slight cohesion toward other wolves — the pack centre is part of the
+      // route and is recomputed at most every ROUTE_MIN_INTERVAL seconds.
+      const pd = (e.data ??= {});
+      if (pd.packAt == null || state.now - (pd.packAt as number) >= ROUTE_MIN_INTERVAL) {
+        pd.packAt = state.now;
+        let sx = 0, sy = 0, cnt = 0;
+        for (const other of state.entities.values()) {
+          if (other === e || other.kind !== e.kind) continue;
+          const d2 = dist2(other.pos, e.pos);
+          if (d2 < 40000) { sx += other.pos.x; sy += other.pos.y; cnt++; }
+        }
+        pd.packN = cnt; pd.packCx = cnt ? sx / cnt : 0; pd.packCy = cnt ? sy / cnt : 0;
       }
+      const n = (pd.packN as number) ?? 0;
+      const cx = (pd.packCx as number) ?? 0, cy = (pd.packCy as number) ?? 0;
       if (n > 0) {
-        cx /= n; cy /= n;
         const bx = cx - e.pos.x, by = cy - e.pos.y;
         const bd = Math.hypot(bx, by) || 1;
         mvx = nx * 0.7 + (bx / bd) * 0.3;
