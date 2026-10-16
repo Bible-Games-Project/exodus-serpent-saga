@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLeaderboard } from "@/lib/leaderboard";
+import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
     meta: [
       { title: "Leaderboard — Exodus Survivors" },
       { name: "description", content: "Top 100 survivors of the desert. See who has outlasted the plagues." },
+      { property: "og:title", content: "Leaderboard — Exodus Survivors" },
+      { property: "og:description", content: "Top 100 survivors of the desert. See who has outlasted the plagues." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: LeaderboardPage,
@@ -19,28 +24,27 @@ function LeaderboardPage() {
   });
 
   return (
-    <main className="min-h-screen bg-desert-gradient px-4 py-10">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-6 flex items-center justify-between">
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">← Menu</Link>
-          <Link to="/play" className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90">
-            Play
-          </Link>
+    <main className="sub-screen px-4 py-8">
+      <img src={cover.url} alt="" aria-hidden className="sub-bg" />
+      <div className="relative mx-auto max-w-3xl">
+        <div className="flex items-center justify-between">
+          <Link to="/" className="cover-button pixel-btn-press font-display uppercase">← Menu</Link>
+          <Link to="/play" className="cover-button cover-button-primary pixel-btn-press font-display uppercase" style={{ fontSize: 15 }}>Play</Link>
         </div>
-        <h1 className="font-display text-4xl text-primary text-glow-gold">Leaderboard</h1>
-        <p className="mb-6 mt-1 text-sm text-muted-foreground">The 100 greatest survivors of the plagues.</p>
+        <h1 className="sub-title mt-6 text-center font-display text-4xl uppercase sm:text-5xl">Leaderboard</h1>
+        <p className="sub-sub mt-3 text-center text-sm">The 100 greatest survivors of the plagues.</p>
 
-        <div className="overflow-hidden rounded-2xl border border-border bg-card/80 shadow-sm backdrop-blur">
-          {isLoading && <div className="p-6 text-center text-sm text-muted-foreground">Loading scores…</div>}
-          {error && <div className="p-6 text-center text-sm text-destructive">Couldn't load the leaderboard.</div>}
+        <div className="sub-panel mt-8 overflow-hidden">
+          {isLoading && <div className="p-6 text-center text-sm">Loading scores…</div>}
+          {error && <div className="p-6 text-center text-sm">Couldn't load the leaderboard.</div>}
           {data && data.length === 0 && (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              No survivors yet. Be the first — <Link to="/play" className="underline text-primary">play now</Link>.
+            <div className="p-8 text-center text-sm">
+              No survivors yet. Be the first — <Link to="/play" className="underline">play now</Link>.
             </div>
           )}
           {data && data.length > 0 && (
             <table className="w-full text-sm">
-              <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
+              <thead className="sub-head font-display text-xs uppercase">
                 <tr>
                   <th className="px-4 py-3 text-left">#</th>
                   <th className="px-4 py-3 text-left">Name</th>
@@ -51,14 +55,12 @@ function LeaderboardPage() {
               </thead>
               <tbody>
                 {data.map((row, i) => (
-                  <tr key={row.id} className="border-t border-border/60 hover:bg-secondary/40">
-                    <td className="px-4 py-2 font-mono text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-2 font-semibold">{row.player_name}</td>
+                  <tr key={row.id} className="sub-row">
+                    <td className="px-4 py-2 font-display">{i + 1}</td>
+                    <td className="px-4 py-2 font-bold">{row.player_name}</td>
                     <td className="px-4 py-2 text-right">{row.level}</td>
                     <td className="px-4 py-2 text-right">{formatTime(row.survival_seconds)}</td>
-                    <td className="px-4 py-2 text-right text-xs text-muted-foreground">
-                      {new Date(row.created_at).toLocaleDateString()}
-                    </td>
+                    <td className="px-4 py-2 text-right text-xs">{new Date(row.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>

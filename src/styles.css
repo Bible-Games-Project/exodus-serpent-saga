@@ -299,3 +299,18 @@
   from { opacity: 1; }
   to { opacity: 0; }
 }
+
+/* Secondary screens (Leaderboard, More Games) share the cover's look:
+   dimmed cover art behind sandstone pixel panels with deep-brown outlines. */
+.sub-screen { position: fixed; inset: 0; overflow-y: auto; background: var(--cover-night); color: var(--title-ink); }
+.sub-bg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(2px) brightness(0.55); transform: scale(1.03); pointer-events: none; }
+.sub-panel {
+  background: var(--title-sand);
+  box-shadow: 0 0 0 4px var(--title-ink), 0 8px 0 4px var(--title-shade), inset 0 4px 0 var(--title-light), inset 0 -5px 0 var(--title-mid);
+}
+.sub-title { color: var(--title-light); text-shadow: 3px 3px 0 var(--title-ink), -2px -2px 0 var(--title-ink), 2px -2px 0 var(--title-ink), -2px 2px 0 var(--title-ink), 0 6px 0 var(--title-shade); }
+.sub-sub { color: var(--title-light); text-shadow: 2px 2px 0 var(--title-ink); }
+.sub-row { border-top: 3px solid color-mix(in oklab, var(--title-ink) 25%, transparent); }
+.sub-head { background: var(--title-mid); color: var(--title-ink); }
+.sub-slot { background: color-mix(in oklab, var(--title-light) 60%, transparent); outline: 3px dashed var(--title-shade); outline-offset: -6px; }
+.sub-screen .cover-button { --btn-fs: 13px; min-width: 0; }
