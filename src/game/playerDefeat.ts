@@ -7,6 +7,13 @@ export function resolvePlayerDefeat(state: GameState): void {
     state.player.hp = state.player.maxHp;
     return;
   }
+  // Fruit of the Tree of Life: one resurrection per run, half health, no shield.
+  if (state.loadout?.food.resurrect && !state.resurrectUsed) {
+    state.resurrectUsed = true;
+    state.player.hp = Math.round(state.player.maxHp / 2);
+    state.shield = 0;
+    return;
+  }
   state.gameOver = true;
   state.running = false;
 }

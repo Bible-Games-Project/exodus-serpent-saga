@@ -157,7 +157,7 @@ export const ALLY_RETARGET_SECONDS = 0.4;
 /** Enemies inside this distance count as threats a champion retreats from. */
 export const ALLY_THREAT_RADIUS = 240;
 
-/** Champion recruitment milestones: 10, 30, then every 30 levels (60, 90, ...). */
+/** Champion summoning opportunities: every 15 levels (15, 30, 45, ...). */
 export function isChampionLevel(level: number): boolean {
-  return level === 10 || (level >= 30 && level % 30 === 0);
+  return level % 15 === 0;
 }

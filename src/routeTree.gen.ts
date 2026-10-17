@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeaderboardRouteImport } from './routes/leaderboard'
 import { Route as MoreGamesRouteImport } from './routes/more-games'
 import { Route as PlayRouteImport } from './routes/play'
+import { Route as ShopRouteImport } from './routes/shop'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TestMapRouteImport } from './routes/test-map'
 import { Route as ApiPublicLeaderboardSubmitRouteImport } from './routes/api/public/leaderboard/submit'
@@ -37,6 +38,11 @@ const PlayRoute = PlayRouteImport.update({
   path: '/play',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof LeaderboardRoute
   '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
+  '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/test-map': typeof TestMapRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof LeaderboardRoute
   '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
+  '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/test-map': typeof TestMapRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/leaderboard': typeof LeaderboardRoute
   '/more-games': typeof MoreGamesRoute
   '/play': typeof PlayRoute
+  '/shop': typeof ShopRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/test-map': typeof TestMapRoute
   '/api/public/leaderboard/submit': typeof ApiPublicLeaderboardSubmitRoute
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/more-games'
     | '/play'
+    | '/shop'
     | '/sitemap.xml'
     | '/test-map'
     | '/api/public/leaderboard/submit'
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/more-games'
     | '/play'
+    | '/shop'
     | '/sitemap.xml'
     | '/test-map'
     | '/api/public/leaderboard/submit'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/more-games'
     | '/play'
+    | '/shop'
     | '/sitemap.xml'
     | '/test-map'
     | '/api/public/leaderboard/submit'
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   LeaderboardRoute: typeof LeaderboardRoute
   MoreGamesRoute: typeof MoreGamesRoute
   PlayRoute: typeof PlayRoute
+  ShopRoute: typeof ShopRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TestMapRoute: typeof TestMapRoute
   ApiPublicLeaderboardSubmitRoute: typeof ApiPublicLeaderboardSubmitRoute
@@ -152,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeaderboardRoute: LeaderboardRoute,
   MoreGamesRoute: MoreGamesRoute,
   PlayRoute: PlayRoute,
+  ShopRoute: ShopRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TestMapRoute: TestMapRoute,
   ApiPublicLeaderboardSubmitRoute: ApiPublicLeaderboardSubmitRoute,

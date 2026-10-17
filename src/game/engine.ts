@@ -5,6 +5,8 @@ import { canRefreshRoute, markRouteRefresh, ROUTE_MIN_INTERVAL } from "./routing
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
+import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
+import { updateWeaponEntities, weaponDot, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit } from "./weapons";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
@@ -164,6 +166,7 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
   state.obstacles = obstacles;
   state.ramsesPending = withRamses;
   if (test) applyTestMapConfig(state, test);
+  else applyLoadout(state);
   return state;
 }
 
@@ -302,7 +305,7 @@ export function update(state: GameState, dt: number) {
   // Passive health regeneration — always on, deliberately very slow
   // (0.35 HP/second, ~1 HP every 3 seconds). Stops at full health.
   if (state.player.hp > 0 && state.player.hp < state.player.maxHp) {
-    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 0.35 * dt);
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + (0.35 + foodRegen(state)) * dt);
   }
 
 
@@ -354,6 +357,25 @@ export function update(state: GameState, dt: number) {
 
   // Orbiting flies
   syncOrbitFlies(state, dt);
+
+  // Shop weapons: projectiles, hazards and damage-over-time.
+  updateWeaponEntities(state, dt, {
+    wrapDelta,
+    killEnemy: (en) => killEnemy(state, en),
+    spawn: (kind, pos, ttl, data, team) => {
+      const e: Entity = {
+        id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+        radius: 6, hp: 1, maxHp: 1, team: team ?? "hazard", facing: 1,
+        animT: 0, born: state.now, ttl, kind, data,
+      };
+      state.entities.set(e.id, e);
+      return e;
+    },
+  });
+  for (const en of state.entities.values()) {
+    if (en.team === "enemy") weaponDot(state, en, dt);
+  }
+
 
   // Cast plagues
   if (state.queuedCasts?.length) {
@@ -545,7 +567,7 @@ export function update(state: GameState, dt: number) {
       const targetPos: Vec2 = { x: e.pos.x + wrapDelta(tgt.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(tgt.pos.y, e.pos.y, state.worldH) };
       const beforeEnemyMove = { x: e.pos.x, y: e.pos.y };
       enemyTick(state, e, targetPos, dt, {
-        baseSlow: enemySlow,
+        baseSlow: enemySlow * ((e.data?.slowUntil as number) > state.now ? 0.5 : 1),
         resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
         spawnFx: (kind, pos, ttl, data) => spawnVisualHazard(state, kind, pos, ttl, data),
@@ -1058,7 +1080,8 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // damage from it, not even the ones standing behind him.
   if (d.blocked) return;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
-  const dmg = stats.dmg * damageMultiplier(state);
+  // Physical attack: scaled by the equipped weapon, not by the staff's magic.
+  const dmg = stats.dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5);
   const tolerance = 14; // segment thickness
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
@@ -1088,6 +1111,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   for (const { en, px, py } of candidates) {
     en.hp -= dmg;
     hit.add(en.id);
+    weaponOnMeleeHit(state, en);
     // Small pixel-art blood burst on the enemy, at the staff contact point.
     // One of five variations is picked at random so hits never look identical.
     const bx = en.pos.x + (px - en.pos.x) * 0.5;
@@ -1158,7 +1182,7 @@ function enemyInStaffCone(state: GameState): boolean {
 function applyRedSeaWallHits(state: GameState, wall: Entity) {
   const d = wall.data!;
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
-  const dmg = (d.dmg as number) * damageMultiplier(state);
+  const dmg = (d.dmg as number) * damageMultiplier(state) * magicMultiplier(state);
   const wallW = 60;
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
@@ -1323,7 +1347,7 @@ function removeProjectile(state: GameState, projectile: Entity): void {
 function castPlague(state: GameState, id: PlagueId, level: number) {
   const def = PLAGUES[id];
   const stats = def.scale(level);
-  const dmul = damageMultiplier(state);
+  const dmul = damageMultiplier(state) * magicMultiplier(state);
   const p = state.player.pos;
 
   if (id === "leprosy") {
@@ -1355,6 +1379,16 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       },
     };
     state.entities.set(sw.id, sw);
+    // The equipped shop weapon adds its own projectiles / hazards / shockwaves.
+    weaponOnCast(state, (kind, pos, ttl, data, team) => {
+      const e: Entity = {
+        id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+        radius: 6, hp: 1, maxHp: 1, team: team ?? "projectile", facing: state.player.facing,
+        animT: 0, born: state.now, ttl, kind, data,
+      };
+      state.entities.set(e.id, e);
+      return e;
+    });
   } else if (id === "serpent") {
     let nearest: Entity | null = null;
     let bestD = Infinity;
@@ -1984,6 +2018,15 @@ function killEnemy(state: GameState, e: Entity) {
     return;
   }
   if (!state.entities.has(e.id)) return;
+  weaponOnEnemyDeath(state, e, (kind, pos, ttl, data, team) => {
+    const x: Entity = {
+      id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+      radius: 6, hp: 1, maxHp: 1, team: team ?? "hazard", facing: 1,
+      animT: 0, born: state.now, ttl, kind, data,
+    };
+    state.entities.set(x.id, x);
+    return x;
+  }, (a, b) => wrapDist2(state, a, b));
   state.entities.delete(e.id);
   state.kills++;
   spawnVisualHazard(state, "deathpuff", e.pos, 0.48, {
@@ -2227,7 +2270,9 @@ function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
 }
 
 function staffStrikeDamage(state: GameState): number {
-  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state);
+  // Weapon damage is relative to the free starter (Branch of the Tree of Life,
+  // 0.5), so the default loadout leaves the classic staff strike unchanged.
+  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5);
 }
 
 function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
@@ -2407,36 +2452,56 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Champion — offered at isChampionLevel milestones (10, 30, 60, 90...), picked at random from the pool of
-  // champions not yet recruited.
-  let companion: UpgradeChoice | null = null;
-  // A milestone opens a pending offer that persists until a champion is recruited.
+  // Champion — a summoning opportunity opens every 15 levels (isChampionLevel)
+  // and persists until a champion is recruited. In a normal run the player
+  // chooses manually among the champions they own in the shop; owning none
+  // leaves the opportunity untouched. The Test Map keeps the random pick.
+  let companion: UpgradeChoice[] = [];
   if (isChampionLevel(state.level)) state.championOfferPending = true;
   if (state.championOfferPending) {
-    const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
-    if (available.length) {
-      const npcId = available[Math.floor(Math.random() * available.length)];
-      const def = allyDef(npcId)!;
-      companion = {
-        id: `npc-${npcId}-${state.level}`,
-        npc: npcId,
-        isCompanion: true,
-        isUnlock: true,
-        title: `Champion: ${def.name}`,
-        description: def.description,
-        scripture: def.scripture,
-        apply: (s) => { s.championOfferPending = false; summonCompanion(s, npcId); },
-      };
+    if (state.testMap) {
+      const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
+      if (available.length) {
+        const npcId = available[Math.floor(Math.random() * available.length)];
+        const def = allyDef(npcId)!;
+        companion = [{
+          id: `npc-${npcId}-${state.level}`,
+          npc: npcId,
+          isCompanion: true,
+          isUnlock: true,
+          title: `Champion: ${def.name}`,
+          description: def.description,
+          scripture: def.scripture,
+          apply: (s) => { s.championOfferPending = false; summonCompanion(s, npcId); },
+        }];
+      }
+    } else {
+      const owned = summonableChampions()
+        .map((c) => c.id as import("./types").NpcId)
+        .filter((id) => ALLY_POOL.includes(id) && !state.npcs.has(id));
+      companion = owned.slice(0, 3).map((npcId) => {
+        const def = allyDef(npcId)!;
+        return {
+          id: `npc-${npcId}-${state.level}`,
+          npc: npcId,
+          isCompanion: true,
+          isUnlock: true,
+          title: `Champion: ${def.name}`,
+          description: def.description,
+          scripture: def.scripture,
+          apply: (s: GameState) => { s.championOfferPending = false; summonCompanion(s, npcId); },
+        };
+      });
     }
   }
 
-  // Shuffle non-companion choices; cap to 3 (or 2+companion when eligible).
+  // Shuffle non-companion choices; cap to 3 (or fewer when champions are offered).
   for (let i = choices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [choices[i], choices[j]] = [choices[j], choices[i]];
   }
-  const picks = choices.slice(0, companion ? 2 : 3);
-  if (companion) picks.push(companion);
+  const picks = choices.slice(0, Math.max(0, 3 - companion.length));
+  picks.push(...companion);
   if (picks.length === 0) return;
   state.levelUpPending = picks;
 }

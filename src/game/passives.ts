@@ -77,7 +77,8 @@ export function passiveRank(state: GameState, id: PassiveId): number {
 }
 
 export function speedMultiplier(state: GameState): number {
-  return 1 + 0.08 * passiveRank(state, "speed") + (state.now < (state.speedBoostUntil ?? 0) ? 0.5 : 0);
+  const footwear = 1 + (state.loadout?.footwear.speedPct ?? 0) / 100;
+  return (1 + 0.08 * passiveRank(state, "speed") + (state.now < (state.speedBoostUntil ?? 0) ? 0.5 : 0)) * footwear;
 }
 export function damageMultiplier(state: GameState): number {
   return 1 + 0.1 * passiveRank(state, "damage");

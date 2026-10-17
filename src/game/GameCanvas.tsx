@@ -1690,6 +1690,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "heavyslash") { drawHeavySlash(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
+    if (drawWeaponEntity(ctx, e, s, camX, camY)) continue;
 
 
     // Programmatic enemy renderers
@@ -4950,3 +4951,100 @@ function drawCompanion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
 }
 
 
+
+// ---------- shop weapon visuals (temporary pixel shapes until final PNGs) ----------
+function drawWeaponEntity(
+  ctx: CanvasRenderingContext2D,
+  e: Entity,
+  s: GameState,
+  camX: number,
+  camY: number,
+): boolean {
+  const k = e.kind;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud"].includes(k)) return false;
+  const x = e.pos.x - camX, y = e.pos.y - camY;
+  const d = e.data ?? {};
+  ctx.save();
+  if (k === "wpnproj") {
+    const ang = Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1);
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    if (d.art === "harpoon") {
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-14, -1.5, 24, 3);
+      ctx.fillStyle = "#b8862f"; ctx.fillRect(10, -2.5, 6, 5);
+    } else {
+      ctx.fillStyle = "#8a5a34"; ctx.fillRect(-14, -1, 24, 2);
+      ctx.fillStyle = "#cfd6dd"; ctx.fillRect(10, -2, 6, 4);
+    }
+    if (d.trail) {
+      ctx.globalAlpha = 0.4; ctx.fillStyle = "#ffe9a8";
+      ctx.fillRect(-40, -1, 24, 2); ctx.globalAlpha = 1;
+    }
+  } else if (k === "wpboom") {
+    ctx.translate(x, y);
+    ctx.rotate(s.now * 12);
+    ctx.strokeStyle = "#c76a4a"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0, 0, 7, 0.3, Math.PI - 0.3); ctx.stroke();
+    if (d.flash) { ctx.globalAlpha = 0.5; ctx.fillStyle = "#fff3c4"; ctx.fillRect(-2, -2, 4, 4); ctx.globalAlpha = 1; }
+  } else if (k === "wpring") {
+    ctx.translate(x, y);
+    ctx.strokeStyle = d.electric ? "#ffe9a8" : "#e6c261"; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.stroke();
+    if (d.electric) {
+      ctx.globalAlpha = 0.6; ctx.strokeStyle = "#fffbe0";
+      ctx.beginPath(); ctx.arc(0, 0, 9 + Math.sin(s.now * 20) * 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  } else if (k === "axeline") {
+    const len = (d.len as number) ?? 150, wid = (d.wid as number) ?? 22;
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.45));
+    ctx.translate(x, y);
+    ctx.rotate((d.angle as number) ?? 0);
+    ctx.globalAlpha = 0.25 + 0.5 * life;
+    ctx.fillStyle = "#5a3a22";
+    ctx.fillRect(-len / 2, -wid / 2, len, wid);
+    ctx.fillStyle = "#2b1d14";
+    for (let i = 0; i < 6; i++) {
+      const cx0 = -len / 2 + (i + 0.5) * (len / 6);
+      ctx.fillRect(cx0, -wid / 4 + ((i * 7) % 3) * 4, 8, 2);
+    }
+    ctx.globalAlpha = 1;
+  } else if (k === "maceimpact") {
+    const r = (d.r as number) ?? 48;
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.4));
+    ctx.globalAlpha = 0.3 + 0.4 * life;
+    ctx.fillStyle = "#6b4a2e";
+    ctx.beginPath(); ctx.arc(x, y, r * (1.1 - 0.3 * life), 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 2;
+    for (let i = 0; i < 7; i++) {
+      const a = (i / 7) * Math.PI * 2 + 0.3;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(a) * r * 0.9, y + Math.sin(a) * r * 0.9); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if (k === "shockwave") {
+    const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.35));
+    ctx.globalAlpha = 0.5 * (1 - life);
+    ctx.strokeStyle = "#f4e2c1"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, 20 + life * ((d.r as number) ?? 90), 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  } else if (k === "whirlpool") {
+    const r = (d.r as number) ?? 60;
+    ctx.translate(x, y);
+    ctx.rotate(s.now * 3);
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = "#4a8fbf"; ctx.lineWidth = 3;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.arc(0, 0, r * (0.35 + i * 0.3), i, i + Math.PI * 1.3); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if (k === "toxiccloud") {
+    const r = (d.r as number) ?? 60;
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#5a7a2a";
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  return true;
+}

@@ -91,6 +91,7 @@ function MainMenu() {
       <nav aria-label="Main menu" className="cover-menu">
         <div className="cover-play"><PixelLink to="/play" variant="primary">Play</PixelLink></div>
         <div className="cover-row">
+          <PixelLink to="/shop">Shop</PixelLink>
           <PixelLink to="/leaderboard">Leaderboard</PixelLink>
           <PixelLink to="/more-games">More Games</PixelLink>
         </div>
