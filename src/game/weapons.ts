@@ -184,7 +184,8 @@ export function updateWeaponEntities(
     const d = e.data;
     if (!d) continue;
 
-    if (e.kind === "wpnproj" || e.kind === "wpboom" || e.kind === "wpring") {
+    if (e.kind === "wpnproj" || e.kind === "wpboom" || e.kind === "wpring" || e.kind === "staffflame") {
+      if (e.kind === "staffflame" && d.pierce == null) d.pierce = 1;
       // Boomerang: outbound then return to Moses.
       if (e.kind === "wpboom") {
         const elapsed = (e as Entity & { maxTtl?: number }).ttl ?? 0;
@@ -230,9 +231,10 @@ export function updateWeaponEntities(
             dps: dmg * 0.5, r: 60 * (d.whirlpool as number), slow: (d.whirlpool as number) >= 1.6 ? 1 : 0,
           }, "hazard");
         }
+        if (d.burn) { en.data ??= {}; en.data.burnUntil = state.now + 2; }
         if (en.hp <= 0) ctx.killEnemy(en);
         // Pierce / rebound bookkeeping.
-        if (e.kind === "wpnproj") {
+        if (e.kind === "wpnproj" || e.kind === "staffflame") {
           d.pierce = (d.pierce as number) - 1;
           if ((d.pierce as number) <= 0) { e.ttl = 0; break; }
         } else if (e.kind === "wpring" && !d.returning) {
@@ -263,9 +265,10 @@ export function updateWeaponEntities(
     }
 
     // Damaging ground hazards: axeline, maceimpact, shockwave, whirlpool, toxiccloud.
-    if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud"].includes(e.kind)) {
+    if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "windtrail", "slowprint"].includes(e.kind)) {
       const hitArr = (d.hit ??= []) as number[];
-      const isDot = e.kind === "whirlpool" || e.kind === "toxiccloud";
+      const isDot = e.kind === "whirlpool" || e.kind === "toxiccloud" || e.kind === "windtrail" || e.kind === "slowprint";
+      if (e.kind === "firering" && d.burn) d.burnHit = 1;
       for (const en of state.entities.values()) {
         if (en.team !== "enemy") continue;
         let inside = false;
@@ -292,6 +295,7 @@ export function updateWeaponEntities(
           hitArr.push(en.id);
           en.hp -= d.dmg as number;
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + (d.slow as number); }
+          if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + 3; }
           // Mace hit reaction: a brief rise, not a knockback launch.
           if (e.kind === "maceimpact") { en.data ??= {}; en.data.liftUntil = state.now + 0.25; }
         }
