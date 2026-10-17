@@ -183,7 +183,7 @@ function PlayPage() {
               <p className="font-pixel text-sm uppercase tracking-wider text-[#7a3d16]">Score submitted!</p>
             )}
             <div className="mt-4 flex gap-3">
-              <PixelActionButton onClick={() => window.location.reload()}>Retry</PixelActionButton>
+              <PixelActionButton onClick={() => navigate({ to: "/shop" })}>Retry</PixelActionButton>
               <PixelActionButton onClick={() => navigate({ to: "/leaderboard" })}>Scores</PixelActionButton>
             </div>
             <div className="mt-3">
