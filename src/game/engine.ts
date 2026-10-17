@@ -7,6 +7,7 @@ import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pus
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { updateWeaponEntities, weaponDot, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit } from "./weapons";
+import { staffOnPlagueCast, updateEquipment } from "./equipment";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
@@ -401,6 +402,7 @@ export function update(state: GameState, dt: number) {
       // reuse the phase of the cast they belong to.
       if (id === "hail") state.hailFirePhase = !(state.hailFirePhase ?? true);
       castPlague(state, id, level);
+      staffOnPlagueCast(state);
       // Multi-attack milestones: queue extra repeats of this cast.
       const casts = attackCasts(id, level);
       for (let k = 1; k < casts; k++) (state.queuedCasts ??= []).push({ id, level, at: state.now + k * MULTI_ATTACK_STAGGER });
@@ -567,7 +569,9 @@ export function update(state: GameState, dt: number) {
       const targetPos: Vec2 = { x: e.pos.x + wrapDelta(tgt.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(tgt.pos.y, e.pos.y, state.worldH) };
       const beforeEnemyMove = { x: e.pos.x, y: e.pos.y };
       enemyTick(state, e, targetPos, dt, {
-        baseSlow: enemySlow * ((e.data?.slowUntil as number) > state.now ? 0.5 : 1),
+        baseSlow: enemySlow
+          * ((e.data?.slowUntil as number) > state.now ? 0.5 : 1)
+          * ((e.data?.blindUntil as number) > state.now ? 0.3 : 1),
         resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
         spawnFx: (kind, pos, ttl, data) => spawnVisualHazard(state, kind, pos, ttl, data),
@@ -817,7 +821,7 @@ export function update(state: GameState, dt: number) {
       if (e.data?.enemyOwned) {
         const hitPt = playerBodyHit(state, e, dt);
         if (!invuln && hitPt) {
-          damagePlayer(state, (e.dmg ?? 5));
+          damagePlayer(state, (e.dmg ?? 5), true);
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           // The Sorcerer's light produces a magical smoke burst, never blood.
