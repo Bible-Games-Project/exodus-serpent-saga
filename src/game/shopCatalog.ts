@@ -13,6 +13,14 @@ export type Evolution = {
   stat: string;
   /** special ability description, empty when none */
   ability: string;
+  /** numeric stats used by gameplay integration */
+  dmg?: number;
+  magicPct?: number;
+  hpPct?: number;
+  regen?: number;
+  resurrect?: boolean;
+  capPct?: number;
+  speedPct?: number;
 };
 
 export type EquipItem = {
@@ -26,8 +34,11 @@ export type EquipItem = {
   evolutions: Evolution[];
 };
 
-function ev(level: number, name: string, price: number, stat: string, ability = ""): Evolution {
-  return { level, name, price, stat, ability };
+function ev(
+  level: number, name: string, price: number, stat: string, ability = "",
+  nums: Partial<Pick<Evolution, "dmg" | "magicPct" | "hpPct" | "regen" | "resurrect" | "capPct" | "speedPct">> = {},
+): Evolution {
+  return { level, name, price, stat, ability, ...nums };
 }
 
 function item(
@@ -43,103 +54,103 @@ function item(
 // ---------------------------------------------------------------- weapons
 export const WEAPONS: EquipItem[] = [
   item("branch", "weapon", "Tree of Life Branch", "A living branch, Moses' first weapon.", [
-    ev(1, "Branch of the Tree of Life", 0, "Damage 0.5", "Short frontal cone attack with slight knockback."),
-    ev(2, "Branch of the Tree of Knowledge", 150_000, "Damage 0.65", "Wider frontal attack with greater reach and knockback."),
-    ev(3, "Branch of the Eternal Tree", 1_000_000, "Damage 0.8", "Wide frontal attack that creates a small shockwave."),
+    ev(1, "Branch of the Tree of Life", 0, "Damage 0.5", "Short frontal cone attack with slight knockback.", { dmg: 0.5 }),
+    ev(2, "Branch of the Tree of Knowledge", 150_000, "Damage 0.65", "Wider frontal attack with greater reach and knockback.", { dmg: 0.65 }),
+    ev(3, "Branch of the Eternal Tree", 1_000_000, "Damage 0.8", "Wide frontal attack that creates a small shockwave.", { dmg: 0.8 }),
   ]),
   item("dagger", "weapon", "Dagger", "A quick blade that poisons what it cuts.", [
-    ev(1, "Fang of Eden", 100, "Damage 0.65", "Fast frontal slash that poisons enemies for 5 seconds."),
-    ev(2, "Fang of the Serpent", 220_000, "Damage 0.8", "Wider slash; poison lasts 8 seconds and spreads when a poisoned enemy dies."),
-    ev(3, "Fang of the Ancient Serpent", 1_500_000, "Damage 0.95", "Wide slash affecting several nearby enemies; poisoned enemies create a toxic cloud when they die."),
+    ev(1, "Fang of Eden", 100, "Damage 0.65", "Fast frontal slash that poisons enemies for 5 seconds.", { dmg: 0.65 }),
+    ev(2, "Fang of the Serpent", 220_000, "Damage 0.8", "Wider slash; poison lasts 8 seconds and spreads when a poisoned enemy dies.", { dmg: 0.8 }),
+    ev(3, "Fang of the Ancient Serpent", 1_500_000, "Damage 0.95", "Wide slash affecting several nearby enemies; poisoned enemies create a toxic cloud when they die.", { dmg: 0.95 }),
   ]),
   item("spear", "weapon", "Spear", "A straight thrust that becomes a thrown projectile.", [
-    ev(1, "Spear of Nod", 1_000, "Damage 0.75", "Straight projectile that pushes enemies."),
-    ev(2, "Spear of the Patriarchs", 320_000, "Damage 0.9", "Pierces multiple enemies with greater range and knockback."),
-    ev(3, "Spear of the Promise", 1_800_000, "Damage 1.05", "Long piercing projectile with a luminous damaging trail."),
+    ev(1, "Spear of Nod", 1_000, "Damage 0.75", "Straight projectile that pushes enemies.", { dmg: 0.75 }),
+    ev(2, "Spear of the Patriarchs", 320_000, "Damage 0.9", "Pierces multiple enemies with greater range and knockback.", { dmg: 0.9 }),
+    ev(3, "Spear of the Promise", 1_800_000, "Damage 1.05", "Long piercing projectile with a luminous damaging trail.", { dmg: 1.05 }),
   ]),
   item("sword", "weapon", "Sword", "A blade that grows sharper with every strike.", [
-    ev(1, "Serpent Sword", 3_000, "Damage 0.9", "Frontal slash; every 10 attacks deal a critical hit."),
-    ev(2, "Sword of the Cherubim", 450_000, "Damage 1.05", "Frontal slash followed by an air wave; critical hit every 8 attacks."),
-    ev(3, "Eden's Flaming Sword", 2_500_000, "Damage 1.2", "Wider slash followed by a second wave that can briefly burn enemies."),
+    ev(1, "Serpent Sword", 3_000, "Damage 0.9", "Frontal slash; every 10 attacks deal a critical hit.", { dmg: 0.9 }),
+    ev(2, "Sword of the Cherubim", 450_000, "Damage 1.05", "Frontal slash followed by an air wave; critical hit every 8 attacks.", { dmg: 1.05 }),
+    ev(3, "Eden's Flaming Sword", 2_500_000, "Damage 1.2", "Wider slash followed by a second wave that can briefly burn enemies.", { dmg: 1.2 }),
   ]),
   item("harpoon", "weapon", "Harpoon", "An ancient wooden shaft with a bronze fishing point.", [
-    ev(1, "Harpoon of the Abyss", 9_000, "Damage 0.9", "Straight projectile with moderate knockback."),
-    ev(2, "Harpoon of Primordial Waters", 650_000, "Damage 1.05", "Pierces enemies and creates a damaging water whirlpool for 2 seconds."),
-    ev(3, "Harpoon of the Depths", 3_500_000, "Damage 1.2", "Longer piercing projectile that creates a larger whirlpool which damages and slows enemies."),
+    ev(1, "Harpoon of the Abyss", 9_000, "Damage 0.9", "Straight projectile with moderate knockback.", { dmg: 0.9 }),
+    ev(2, "Harpoon of Primordial Waters", 650_000, "Damage 1.05", "Pierces enemies and creates a damaging water whirlpool for 2 seconds.", { dmg: 1.05 }),
+    ev(3, "Harpoon of the Depths", 3_500_000, "Damage 1.2", "Longer piercing projectile that creates a larger whirlpool which damages and slows enemies.", { dmg: 1.2 }),
   ]),
   item("axe", "weapon", "Axe", "Cuts a long ground-level line in the direction Moses moves.", [
-    ev(1, "Axe of Cain", 15_000, "Damage 1.1", "Long, narrow cutting line that damages every enemy it intersects."),
-    ev(2, "Axe of Tubal-Cain", 900_000, "Damage 1.25", "Longer and wider line that slows enemies for 2 seconds."),
-    ev(3, "Axe of the Flood", 4_500_000, "Damage 1.4", "Very long, wide cut that leaves damaging cracks."),
+    ev(1, "Axe of Cain", 15_000, "Damage 1.1", "Long, narrow cutting line that damages every enemy it intersects.", { dmg: 1.1 }),
+    ev(2, "Axe of Tubal-Cain", 900_000, "Damage 1.25", "Longer and wider line that slows enemies for 2 seconds.", { dmg: 1.25 }),
+    ev(3, "Axe of the Flood", 4_500_000, "Damage 1.4", "Very long, wide cut that leaves damaging cracks.", { dmg: 1.4 }),
   ]),
   item("boomerang", "weapon", "Boomerang", "A returning projectile; each evolution adds another.", [
-    ev(1, "Rainbow Boomerang", 25_000, "Damage 0.9 per hit", "One returning boomerang that can hit multiple times."),
-    ev(2, "Boomerang of the Promise", 1_300_000, "Damage 0.8 per hit", "Two boomerangs with different trajectories."),
-    ev(3, "Boomerang of the Eternal Covenant", 5_500_000, "Damage 0.75 per hit", "Three boomerangs with rebounds and damaging flashes."),
+    ev(1, "Rainbow Boomerang", 25_000, "Damage 0.9 per hit", "One returning boomerang that can hit multiple times.", { dmg: 0.9 }),
+    ev(2, "Boomerang of the Promise", 1_300_000, "Damage 0.8 per hit", "Two boomerangs with different trajectories.", { dmg: 0.8 }),
+    ev(3, "Boomerang of the Eternal Covenant", 5_500_000, "Damage 0.75 per hit", "Three boomerangs with rebounds and damaging flashes.", { dmg: 0.75 }),
   ]),
   item("mace", "weapon", "Mace", "Its damage area is centered on the impact point, not on Moses.", [
-    ev(1, "Mace of the Giants", 50_000, "Damage 1.3", "Small cracked-ground impact circle."),
-    ev(2, "Mace of the Flood", 1_900_000, "Damage 1.45", "Larger impact radius, more visible cracks and greater damage."),
-    ev(3, "Mace of Judgment", 7_000_000, "Damage 1.6", "Wide cracked-ground impact that causes a second damage event."),
+    ev(1, "Mace of the Giants", 50_000, "Damage 1.3", "Small cracked-ground impact circle.", { dmg: 1.3 }),
+    ev(2, "Mace of the Flood", 1_900_000, "Damage 1.45", "Larger impact radius, more visible cracks and greater damage.", { dmg: 1.45 }),
+    ev(3, "Mace of Judgment", 7_000_000, "Damage 1.6", "Wide cracked-ground impact that causes a second damage event.", { dmg: 1.6 }),
   ]),
   item("ring", "weapon", "Ring", "Thrown, rebounds between enemies and returns to Moses.", [
-    ev(1, "Ring of the Cherubim", 100_000, "Damage 1.0", "The ring is thrown, rebounds between enemies and returns to Moses."),
-    ev(2, "Ring of the Firmament", 2_800_000, "Damage 1.1", "Wider path with small rings along its trail that cause additional damage."),
-    ev(3, "Celestial Ring", 9_000_000, "Damage 1.2", "Returns at lightning speed and deals double damage on its return, with electrical effects."),
+    ev(1, "Ring of the Cherubim", 100_000, "Damage 1.0", "The ring is thrown, rebounds between enemies and returns to Moses.", { dmg: 1.0 }),
+    ev(2, "Ring of the Firmament", 2_800_000, "Damage 1.1", "Wider path with small rings along its trail that cause additional damage.", { dmg: 1.1 }),
+    ev(3, "Celestial Ring", 9_000_000, "Damage 1.2", "Returns at lightning speed and deals double damage on its return, with electrical effects.", { dmg: 1.2 }),
   ]),
 ];
 
 // ---------------------------------------------------------------- staffs
 export const STAFFS: EquipItem[] = [
   item("moses", "staff", "Staff of Moses", "The staff that turned into a serpent before Pharaoh.", [
-    ev(1, "Staff of Moses I", 0, "+0% magical damage"),
-    ev(2, "Staff of Moses II", 100_000, "+10% magical damage"),
-    ev(3, "Staff of Moses III", 1_000_000, "+20% magical damage"),
+    ev(1, "Staff of Moses I", 0, "+0% magical damage", { magicPct: 0 }),
+    ev(2, "Staff of Moses II", 100_000, "+10% magical damage", { magicPct: 10 }),
+    ev(3, "Staff of Moses III", 1_000_000, "+20% magical damage", { magicPct: 20 }),
   ]),
   item("iron", "staff", "Iron Staff", "A heavy staff that weighs enemies down.", [
-    ev(1, "Iron Staff I", 500, "+10% magical damage"),
-    ev(2, "Iron Staff II", 150_000, "+25% magical damage", "Plagues slightly slow enemies."),
-    ev(3, "Iron Staff III", 1_500_000, "+40% magical damage", "Plagues slow enemies for longer."),
+    ev(1, "Iron Staff I", 500, "+10% magical damage", { magicPct: 10 }),
+    ev(2, "Iron Staff II", 150_000, "+25% magical damage", "Plagues slightly slow enemies.", { magicPct: 25 }),
+    ev(3, "Iron Staff III", 1_500_000, "+40% magical damage", "Plagues slow enemies for longer.", { magicPct: 40 }),
   ]),
   item("crystal", "staff", "Crystal Staff", "Its light blinds the enemies of Israel.", [
-    ev(1, "Crystal Staff I", 5_000, "+20% magical damage"),
-    ev(2, "Crystal Staff II", 250_000, "+35% magical damage", "Blinds one enemy for 3 seconds every 15 seconds."),
-    ev(3, "Crystal Staff III", 2_500_000, "+50% magical damage", "Blinds three enemies for 4 seconds every 15 seconds."),
+    ev(1, "Crystal Staff I", 5_000, "+20% magical damage", { magicPct: 20 }),
+    ev(2, "Crystal Staff II", 250_000, "+35% magical damage", "Blinds one enemy for 3 seconds every 15 seconds.", { magicPct: 35 }),
+    ev(3, "Crystal Staff III", 2_500_000, "+50% magical damage", "Blinds three enemies for 4 seconds every 15 seconds.", { magicPct: 50 }),
   ]),
   item("diamond", "staff", "Diamond Staff", "A harder light, a deeper blindness.", [
-    ev(1, "Diamond Staff I", 50_000, "+35% magical damage"),
-    ev(2, "Diamond Staff II", 500_000, "+50% magical damage", "Blinds three enemies for 3 seconds every 15 seconds."),
-    ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "Blinds five enemies for 4 seconds every 15 seconds."),
+    ev(1, "Diamond Staff I", 50_000, "+35% magical damage", { magicPct: 35 }),
+    ev(2, "Diamond Staff II", 500_000, "+50% magical damage", "Blinds three enemies for 3 seconds every 15 seconds.", { magicPct: 50 }),
+    ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "Blinds five enemies for 4 seconds every 15 seconds.", { magicPct: 70 }),
   ]),
   item("bronze", "staff", "Burning Bronze Staff", "Bronze that remembers the furnace.", [
-    ev(1, "Burning Bronze Staff I", 250_000, "+50% magical damage"),
-    ev(2, "Burning Bronze Staff II", 1_000_000, "+70% magical damage", "Creates a ring of fire every 25 seconds."),
-    ev(3, "Burning Bronze Staff III", 10_000_000, "+90% magical damage", "Creates a larger ring of fire every 20 seconds that burns enemies."),
+    ev(1, "Burning Bronze Staff I", 250_000, "+50% magical damage", { magicPct: 50 }),
+    ev(2, "Burning Bronze Staff II", 1_000_000, "+70% magical damage", "Creates a ring of fire every 25 seconds.", { magicPct: 70 }),
+    ev(3, "Burning Bronze Staff III", 10_000_000, "+90% magical damage", "Creates a larger ring of fire every 20 seconds that burns enemies.", { magicPct: 90 }),
   ]),
   item("fire", "staff", "Fire Staff", "Fire that walks with Moses.", [
-    ev(1, "Fire Staff I", 1_000_000, "+70% magical damage"),
-    ev(2, "Fire Staff II", 2_500_000, "+90% magical damage", "Burns last longer."),
-    ev(3, "Fire Staff III", 20_000_000, "+110% magical damage", "Fire spreads to nearby enemies."),
+    ev(1, "Fire Staff I", 1_000_000, "+70% magical damage", { magicPct: 70 }),
+    ev(2, "Fire Staff II", 2_500_000, "+90% magical damage", "Burns last longer.", { magicPct: 90 }),
+    ev(3, "Fire Staff III", 20_000_000, "+110% magical damage", "Fire spreads to nearby enemies.", { magicPct: 110 }),
   ]),
   item("bush", "staff", "Burning Bush Staff", "The bush that burned and was not consumed.", [
-    ev(1, "Burning Bush Staff I", 5_000_000, "+90% magical damage"),
-    ev(2, "Burning Bush Staff II", 10_000_000, "+115% magical damage", "Launches flames at three enemies every 20 seconds."),
-    ev(3, "Burning Bush Staff III", 35_000_000, "+140% magical damage", "Launches flames at five enemies every 18 seconds."),
+    ev(1, "Burning Bush Staff I", 5_000_000, "+90% magical damage", { magicPct: 90 }),
+    ev(2, "Burning Bush Staff II", 10_000_000, "+115% magical damage", "Launches flames at three enemies every 20 seconds.", { magicPct: 115 }),
+    ev(3, "Burning Bush Staff III", 35_000_000, "+140% magical damage", "Launches flames at five enemies every 18 seconds.", { magicPct: 140 }),
   ]),
   item("waters", "staff", "Staff of Primordial Waters", "The waters that were before the firmament.", [
-    ev(1, "Staff of Primordial Waters I", 20_000_000, "+120% magical damage"),
-    ev(2, "Staff of Primordial Waters II", 35_000_000, "+145% magical damage", "Creates a slowing wave every 25 seconds."),
-    ev(3, "Staff of Primordial Waters III", 60_000_000, "+170% magical damage", "Creates a larger, more damaging wave every 20 seconds."),
+    ev(1, "Staff of Primordial Waters I", 20_000_000, "+120% magical damage", { magicPct: 120 }),
+    ev(2, "Staff of Primordial Waters II", 35_000_000, "+145% magical damage", "Creates a slowing wave every 25 seconds.", { magicPct: 145 }),
+    ev(3, "Staff of Primordial Waters III", 60_000_000, "+170% magical damage", "Creates a larger, more damaging wave every 20 seconds.", { magicPct: 170 }),
   ]),
   item("light", "staff", "Staff of Divine Light", "Lightning answerable to prayer.", [
-    ev(1, "Staff of Divine Light I", 75_000_000, "+160% magical damage"),
-    ev(2, "Staff of Divine Light II", 100_000_000, "+180% magical damage", "A lightning strike hits three enemies every 25 seconds."),
-    ev(3, "Staff of Divine Light III", 150_000_000, "+200% magical damage", "A lightning strike hits five enemies every 20 seconds."),
+    ev(1, "Staff of Divine Light I", 75_000_000, "+160% magical damage", { magicPct: 160 }),
+    ev(2, "Staff of Divine Light II", 100_000_000, "+180% magical damage", "A lightning strike hits three enemies every 25 seconds.", { magicPct: 180 }),
+    ev(3, "Staff of Divine Light III", 150_000_000, "+200% magical damage", "A lightning strike hits five enemies every 20 seconds.", { magicPct: 200 }),
   ]),
   item("power", "staff", "Staff of God's Power", "The might of the LORD, measured out in mercy.", [
-    ev(1, "Staff of God's Power I", 200_000_000, "+200% magical damage"),
-    ev(2, "Staff of God's Power II", 300_000_000, "+250% magical damage", "A powerful lightning strike hits three enemies every 25 seconds."),
-    ev(3, "Staff of God's Power III", 500_000_000, "+300% magical damage", "A massive lightning strike hits five enemies every 20 seconds. It wounds Ramses gravely but never kills him with one hit."),
+    ev(1, "Staff of God's Power I", 200_000_000, "+200% magical damage", { magicPct: 200 }),
+    ev(2, "Staff of God's Power II", 300_000_000, "+250% magical damage", "A powerful lightning strike hits three enemies every 25 seconds.", { magicPct: 250 }),
+    ev(3, "Staff of God's Power III", 500_000_000, "+300% magical damage", "A massive lightning strike hits five enemies every 20 seconds. It wounds Ramses gravely but never kills him with one hit.", { magicPct: 300 }),
   ]),
 ];
 
@@ -160,54 +171,54 @@ export const FOODS: EquipItem[] = [
 // ---------------------------------------------------------------- shields
 export const SHIELDS: EquipItem[] = [
   item("abel", "shield", "Shield of Abel", "The accepted offering, a blue guard.", [
-    ev(1, "Shield of Abel I", 0, "+1% shield capacity"),
-    ev(2, "Shield of Abel II", 500_000, "+50% shield capacity"),
-    ev(3, "Shield of Abel III", 5_000_000, "+100% shield capacity"),
+    ev(1, "Shield of Abel I", 0, "+1% shield capacity", { capPct: 1 }),
+    ev(2, "Shield of Abel II", 500_000, "+50% shield capacity", { capPct: 50 }),
+    ev(3, "Shield of Abel III", 5_000_000, "+100% shield capacity", { capPct: 100 }),
   ]),
   item("noah", "shield", "Protection of Noah", "Covering like the ark's pitch.", [
-    ev(1, "Protection of Noah I", 100_000, "+45% shield capacity"),
-    ev(2, "Protection of Noah II", 1_000_000, "+75% shield capacity", "Reduces projectile damage."),
-    ev(3, "Protection of Noah III", 10_000_000, "+120% shield capacity", "Reduces projectile damage further."),
+    ev(1, "Protection of Noah I", 100_000, "+45% shield capacity", { capPct: 45 }),
+    ev(2, "Protection of Noah II", 1_000_000, "+75% shield capacity", "Reduces projectile damage.", { capPct: 75 }),
+    ev(3, "Protection of Noah III", 10_000_000, "+120% shield capacity", "Reduces projectile damage further.", { capPct: 120 }),
   ]),
   item("abraham", "shield", "Shield of Abraham", "Fear not: I am thy shield.", [
-    ev(1, "Shield of Abraham I", 250_000, "+55% shield capacity"),
-    ev(2, "Shield of Abraham II", 2_000_000, "+90% shield capacity", "A sphere absorbs one hit and recharges in 15 seconds."),
-    ev(3, "Shield of Abraham III", 20_000_000, "+140% shield capacity", "The sphere recharges in 10 seconds."),
+    ev(1, "Shield of Abraham I", 250_000, "+55% shield capacity", { capPct: 55 }),
+    ev(2, "Shield of Abraham II", 2_000_000, "+90% shield capacity", "A sphere absorbs one hit and recharges in 15 seconds.", { capPct: 90 }),
+    ev(3, "Shield of Abraham III", 20_000_000, "+140% shield capacity", "The sphere recharges in 10 seconds.", { capPct: 140 }),
   ]),
   item("jacobm", "shield", "Mantle of Jacob", "A covering on the stony road.", [
-    ev(1, "Mantle of Jacob I", 400_000, "+60% shield capacity"),
-    ev(2, "Mantle of Jacob II", 3_000_000, "+100% shield capacity", "A cloud blocks projectiles from behind."),
-    ev(3, "Mantle of Jacob III", 30_000_000, "+150% shield capacity", "A larger cloud blocks more projectiles."),
+    ev(1, "Mantle of Jacob I", 400_000, "+60% shield capacity", { capPct: 60 }),
+    ev(2, "Mantle of Jacob II", 3_000_000, "+100% shield capacity", "A cloud blocks projectiles from behind.", { capPct: 100 }),
+    ev(3, "Mantle of Jacob III", 30_000_000, "+150% shield capacity", "A larger cloud blocks more projectiles.", { capPct: 150 }),
   ]),
   item("joseph", "shield", "Shield of Joseph", "The coat of many colours, turned to armor.", [
-    ev(1, "Shield of Joseph I", 600_000, "+65% shield capacity"),
-    ev(2, "Shield of Joseph II", 5_000_000, "+110% shield capacity", "Taking damage increases movement speed for 2 seconds."),
-    ev(3, "Shield of Joseph III", 40_000_000, "+160% shield capacity", "A stronger speed increase for 3 seconds."),
+    ev(1, "Shield of Joseph I", 600_000, "+65% shield capacity", { capPct: 65 }),
+    ev(2, "Shield of Joseph II", 5_000_000, "+110% shield capacity", "Taking damage increases movement speed for 2 seconds.", { capPct: 110 }),
+    ev(3, "Shield of Joseph III", 40_000_000, "+160% shield capacity", "A stronger speed increase for 3 seconds.", { capPct: 160 }),
   ]),
   item("bushp", "shield", "Burning Bush Protection", "Fire that guards instead of consuming.", [
-    ev(1, "Burning Bush Protection I", 1_000_000, "+70% shield capacity"),
-    ev(2, "Burning Bush Protection II", 8_000_000, "+120% shield capacity", "A fire aura damages nearby enemies."),
-    ev(3, "Burning Bush Protection III", 60_000_000, "+170% shield capacity", "A larger aura burns enemies for longer."),
+    ev(1, "Burning Bush Protection I", 1_000_000, "+70% shield capacity", { capPct: 70 }),
+    ev(2, "Burning Bush Protection II", 8_000_000, "+120% shield capacity", "A fire aura damages nearby enemies.", { capPct: 120 }),
+    ev(3, "Burning Bush Protection III", 60_000_000, "+170% shield capacity", "A larger aura burns enemies for longer.", { capPct: 170 }),
   ]),
   item("promise", "shield", "Shield of the Promise", "The covenant stands between you and harm.", [
-    ev(1, "Shield of the Promise I", 2_000_000, "+80% shield capacity"),
-    ev(2, "Shield of the Promise II", 12_000_000, "+130% shield capacity", "Blocks one hit every 20 seconds."),
-    ev(3, "Shield of the Promise III", 80_000_000, "+180% shield capacity", "Blocks one hit every 12 seconds."),
+    ev(1, "Shield of the Promise I", 2_000_000, "+80% shield capacity", { capPct: 80 }),
+    ev(2, "Shield of the Promise II", 12_000_000, "+130% shield capacity", "Blocks one hit every 20 seconds.", { capPct: 130 }),
+    ev(3, "Shield of the Promise III", 80_000_000, "+180% shield capacity", "Blocks one hit every 12 seconds.", { capPct: 180 }),
   ]),
   item("cloud", "shield", "Mantle of the Cloud", "The cloud that stood between the camps.", [
-    ev(1, "Mantle of the Cloud I", 5_000_000, "+90% shield capacity"),
-    ev(2, "Mantle of the Cloud II", 20_000_000, "+140% shield capacity", "A cloud blocks projectiles from every direction."),
-    ev(3, "Mantle of the Cloud III", 100_000_000, "+190% shield capacity", "Improves the cloud's effectiveness and recovery."),
+    ev(1, "Mantle of the Cloud I", 5_000_000, "+90% shield capacity", { capPct: 90 }),
+    ev(2, "Mantle of the Cloud II", 20_000_000, "+140% shield capacity", "A cloud blocks projectiles from every direction.", { capPct: 140 }),
+    ev(3, "Mantle of the Cloud III", 100_000_000, "+190% shield capacity", "Improves the cloud's effectiveness and recovery.", { capPct: 190 }),
   ]),
   item("covenant", "shield", "Light of the Covenant", "Light that drives back the darkness.", [
-    ev(1, "Light of the Covenant I", 10_000_000, "+100% shield capacity"),
-    ev(2, "Light of the Covenant II", 30_000_000, "+160% shield capacity", "Repels enemies when health falls below 30%."),
-    ev(3, "Light of the Covenant III", 150_000_000, "+220% shield capacity", "A larger wave also slows enemies."),
+    ev(1, "Light of the Covenant I", 10_000_000, "+100% shield capacity", { capPct: 100 }),
+    ev(2, "Light of the Covenant II", 30_000_000, "+160% shield capacity", "Repels enemies when health falls below 30%.", { capPct: 160 }),
+    ev(3, "Light of the Covenant III", 150_000_000, "+220% shield capacity", "A larger wave also slows enemies.", { capPct: 220 }),
   ]),
   item("israel", "shield", "Shield of the God of Israel", "The LORD shall preserve thy going out and thy coming in.", [
-    ev(1, "Shield of the God of Israel I", 100_000, "+45% shield capacity"),
-    ev(2, "Shield of the God of Israel II", 50_000_000, "+200% shield capacity", "Once per run, survive a lethal hit with 20% health remaining."),
-    ev(3, "Shield of the God of Israel III", 250_000_000, "+300% shield capacity", "Once per run, survive a lethal hit with 35% health remaining."),
+    ev(1, "Shield of the God of Israel I", 100_000, "+45% shield capacity", { capPct: 45 }),
+    ev(2, "Shield of the God of Israel II", 50_000_000, "+200% shield capacity", "Once per run, survive a lethal hit with 20% health remaining.", { capPct: 200 }),
+    ev(3, "Shield of the God of Israel III", 250_000_000, "+300% shield capacity", "Once per run, survive a lethal hit with 35% health remaining.", { capPct: 300 }),
   ]),
 ];
 
