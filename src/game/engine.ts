@@ -376,6 +376,17 @@ export function update(state: GameState, dt: number) {
   for (const en of state.entities.values()) {
     if (en.team === "enemy") weaponDot(state, en, dt);
   }
+  // Shop equipment abilities (staff specials, shield auras, footwear effects).
+  updateEquipment(state, (kind, pos, ttl, data, team) => {
+    const e: Entity = {
+      id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+      radius: 6, hp: 1, maxHp: 1, team: team ?? "hazard", facing: 1,
+      animT: 0, born: state.now, ttl, kind, data,
+    };
+    state.entities.set(e.id, e);
+    return e;
+  }, (en) => killEnemy(state, en));
+
 
 
   // Cast plagues
