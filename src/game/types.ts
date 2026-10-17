@@ -204,5 +204,10 @@ export type GameState = {
 
   /** Set only for the separate Test Map session. */
   testMap?: TestMapConfig;
+
+  /** Shop loadout applied at run start (see game/loadout.ts). */
+  loadout?: import("./loadout").Loadout;
+  /** Fruit of the Tree of Life: one resurrection per run. */
+  resurrectUsed?: boolean;
 };
 
