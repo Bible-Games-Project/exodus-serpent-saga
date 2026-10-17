@@ -237,7 +237,7 @@ export function ShopScreen() {
                       <span className="block text-[11px]">
                         {owned > 0
                           ? <span className="shop-tag">Owned · Ev {sel ?? owned} · Summonable</span>
-                          : <span>🔒 LOCKED · {formatCoins(c.evolutions[0].price)}</span>}
+                          : <span className="shop-tag shop-tag-gold">Locked</span> <span> · {formatCoins(c.evolutions[0].price)}</span>}
                       </span>
                     </span>
                   </button>
