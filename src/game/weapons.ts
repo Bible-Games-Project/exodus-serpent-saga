@@ -227,7 +227,7 @@ export function updateWeaponEntities(
         }
         if (d.whirlpool) {
           ctx.spawn("whirlpool", { ...en.pos }, 2, {
-            dps: dmg * 0.5, r: 60 * (d.whirlpool as number), slow: d.whirlpool >= 1.6 ? 1 : 0,
+            dps: dmg * 0.5, r: 60 * (d.whirlpool as number), slow: (d.whirlpool as number) >= 1.6 ? 1 : 0,
           }, "hazard");
         }
         if (en.hp <= 0) ctx.killEnemy(en);
