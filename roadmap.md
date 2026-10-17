@@ -62,3 +62,6 @@
 - [x] Verify the Home screen and protected Test Map behavior across desktop and mobile.
 
 - [x] Rework Locusts, Darkness, Firstborn, Hail+Fire, Pillars and Red Sea per spec.
+
+- [x] Phase 5: shop visuals, Home→Shop→Play flow, 3 champion shop artworks, 11 champion abilities.
+- [ ] Final PNGs for 11 champions (waiting on user).
