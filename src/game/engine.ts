@@ -6,6 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
+import { updateWeaponEntities, weaponDot, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit } from "./weapons";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
@@ -547,7 +548,7 @@ export function update(state: GameState, dt: number) {
       const targetPos: Vec2 = { x: e.pos.x + wrapDelta(tgt.pos.x, e.pos.x, state.worldW), y: e.pos.y + wrapDelta(tgt.pos.y, e.pos.y, state.worldH) };
       const beforeEnemyMove = { x: e.pos.x, y: e.pos.y };
       enemyTick(state, e, targetPos, dt, {
-        baseSlow: enemySlow,
+        baseSlow: enemySlow * ((e.data?.slowUntil as number) > state.now ? 0.5 : 1),
         resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),
         spawnFx: (kind, pos, ttl, data) => spawnVisualHazard(state, kind, pos, ttl, data),
@@ -1091,6 +1092,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   for (const { en, px, py } of candidates) {
     en.hp -= dmg;
     hit.add(en.id);
+    weaponOnMeleeHit(state, en);
     // Small pixel-art blood burst on the enemy, at the staff contact point.
     // One of five variations is picked at random so hits never look identical.
     const bx = en.pos.x + (px - en.pos.x) * 0.5;
@@ -1358,6 +1360,16 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       },
     };
     state.entities.set(sw.id, sw);
+    // The equipped shop weapon adds its own projectiles / hazards / shockwaves.
+    weaponOnCast(state, (kind, pos, ttl, data, team) => {
+      const e: Entity = {
+        id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+        radius: 6, hp: 1, maxHp: 1, team: team ?? "projectile", facing: state.player.facing,
+        animT: 0, born: state.now, ttl, kind, data,
+      };
+      state.entities.set(e.id, e);
+      return e;
+    });
   } else if (id === "serpent") {
     let nearest: Entity | null = null;
     let bestD = Infinity;
@@ -1987,6 +1999,15 @@ function killEnemy(state: GameState, e: Entity) {
     return;
   }
   if (!state.entities.has(e.id)) return;
+  weaponOnEnemyDeath(state, e, (kind, pos, ttl, data, team) => {
+    const x: Entity = {
+      id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+      radius: 6, hp: 1, maxHp: 1, team: team ?? "hazard", facing: 1,
+      animT: 0, born: state.now, ttl, kind, data,
+    };
+    state.entities.set(x.id, x);
+    return x;
+  }, (a, b) => wrapDist2(state, a, b));
   state.entities.delete(e.id);
   state.kills++;
   spawnVisualHazard(state, "deathpuff", e.pos, 0.48, {
