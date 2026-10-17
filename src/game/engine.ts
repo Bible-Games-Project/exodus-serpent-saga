@@ -5,6 +5,7 @@ import { canRefreshRoute, markRouteRefresh, ROUTE_MIN_INTERVAL } from "./routing
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
+import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
@@ -164,6 +165,7 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
   state.obstacles = obstacles;
   state.ramsesPending = withRamses;
   if (test) applyTestMapConfig(state, test);
+  else applyLoadout(state);
   return state;
 }
 
@@ -302,7 +304,7 @@ export function update(state: GameState, dt: number) {
   // Passive health regeneration — always on, deliberately very slow
   // (0.35 HP/second, ~1 HP every 3 seconds). Stops at full health.
   if (state.player.hp > 0 && state.player.hp < state.player.maxHp) {
-    state.player.hp = Math.min(state.player.maxHp, state.player.hp + 0.35 * dt);
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + (0.35 + foodRegen(state)) * dt);
   }
 
 
@@ -1058,7 +1060,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // damage from it, not even the ones standing behind him.
   if (d.blocked) return;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
-  const dmg = stats.dmg * damageMultiplier(state);
+  const dmg = stats.dmg * damageMultiplier(state) * magicMultiplier(state);
   const tolerance = 14; // segment thickness
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
@@ -1158,7 +1160,7 @@ function enemyInStaffCone(state: GameState): boolean {
 function applyRedSeaWallHits(state: GameState, wall: Entity) {
   const d = wall.data!;
   const hit = (d.hit ??= new Set<number>()) as Set<number>;
-  const dmg = (d.dmg as number) * damageMultiplier(state);
+  const dmg = (d.dmg as number) * damageMultiplier(state) * magicMultiplier(state);
   const wallW = 60;
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
@@ -1323,7 +1325,7 @@ function removeProjectile(state: GameState, projectile: Entity): void {
 function castPlague(state: GameState, id: PlagueId, level: number) {
   const def = PLAGUES[id];
   const stats = def.scale(level);
-  const dmul = damageMultiplier(state);
+  const dmul = damageMultiplier(state) * magicMultiplier(state);
   const p = state.player.pos;
 
   if (id === "leprosy") {
@@ -2227,7 +2229,7 @@ function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
 }
 
 function staffStrikeDamage(state: GameState): number {
-  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state);
+  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state) * weaponDamage(state) * 2;
 }
 
 function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
