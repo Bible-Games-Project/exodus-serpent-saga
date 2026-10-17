@@ -10,7 +10,7 @@ import {
   type ChampionDef, type EquipItem, type ShopCategory,
 } from "@/game/shopCatalog";
 import {
-  equipItem, loadShop, purchaseChampion, purchaseItem, saveShop,
+  equipItem, loadShop, purchaseChampion, purchaseItem,
   selectChampionEvolution, setShopUi, type ShopSave,
 } from "@/lib/shopSave";
 
