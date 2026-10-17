@@ -1690,6 +1690,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "heavyslash") { drawHeavySlash(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
+    if (drawWeaponEntity(ctx, e, s, camX, camY)) continue;
 
 
     // Programmatic enemy renderers
