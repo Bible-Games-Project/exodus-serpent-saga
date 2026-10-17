@@ -2,6 +2,13 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PixelIcon } from "./PixelIcon";
+import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
+import pAaron from "@/assets/shop-portrait-aaron.png.asset.json";
+import pJochebed from "@/assets/shop-portrait-jochebed.png.asset.json";
+import pMiriam from "@/assets/shop-portrait-miriam.png.asset.json";
+import fAaron from "@/assets/shop-full-aaron.png.asset.json";
+import fJochebed from "@/assets/shop-full-jochebed.png.asset.json";
+import fMiriam from "@/assets/shop-full-miriam.png.asset.json";
 import {
   BOOT_ICON, COIN_ART, HEART_ICON, PORTRAIT_PLACEHOLDER, SHIELD_ICON, STAFF_ICON, SWORD_ICON,
 } from "./shopIcons";
@@ -21,6 +28,20 @@ const CATEGORY_ICONS = {
   shield: SHIELD_ICON,
   footwear: BOOT_ICON,
 } as const;
+
+// Shop artwork per champion. Champions without an entry show the neutral
+// placeholder until their final PNGs are supplied.
+const CHAMPION_ART: Record<string, { portrait: string; full: string }> = {
+  aaron: { portrait: pAaron.url, full: fAaron.url },
+  jochebed: { portrait: pJochebed.url, full: fJochebed.url },
+  miriam: { portrait: pMiriam.url, full: fMiriam.url },
+};
+
+function ChampionPortrait({ id, size }: { id: string; size: number }) {
+  const art = CHAMPION_ART[id];
+  if (!art) return <PixelIcon art={PORTRAIT_PLACEHOLDER} size={size} />;
+  return <img src={art.portrait} alt="" width={size} height={size} className="shop-portrait shrink-0" style={{ width: size, height: size }} />;
+}
 
 type Notice = { kind: "ok" | "err"; text: string } | null;
 
@@ -84,17 +105,22 @@ export function ShopScreen() {
 
   return (
     <main className="sub-screen flex flex-col px-4 py-4">
+      <img src={cover.url} alt="" aria-hidden className="sub-bg" />
+      <div className="shop-veil" aria-hidden />
       {/* Header */}
       <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
         <Link to="/" className="cover-button pixel-btn-press font-display uppercase">← Menu</Link>
         <div className="flex items-center gap-3">
-          <h1 className="sub-title font-display text-3xl uppercase sm:text-4xl">Shop</h1>
+          <div className="text-center">
+            <h1 className="sub-title font-display text-3xl uppercase sm:text-4xl">Shop</h1>
+            <p className="sub-sub hidden text-[11px] uppercase sm:block">Prepare for the journey</p>
+          </div>
           <div className="sub-panel flex items-center gap-2 px-3 py-1.5" aria-label="Coin balance">
             <PixelIcon art={COIN_ART} size={20} />
             <span className="font-display text-sm">{formatCoins(save.coins)}</span>
           </div>
         </div>
-        <Link to="/play" className="cover-button cover-button-primary pixel-btn-press font-display uppercase">Play</Link>
+        <Link to="/play" className="cover-button cover-button-primary pixel-btn-press font-display uppercase">Play ▶</Link>
       </header>
 
       {notice && (
@@ -134,8 +160,8 @@ export function ShopScreen() {
               </button>
             ))}
           </div>
-          <h2 className="mt-2 font-display text-xs uppercase">{CATEGORY_LABELS[category]}</h2>
-          <ul className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: "55vh" }}>
+          <h2 className="sub-head mt-3 px-2 py-1 font-display text-xs uppercase">{CATEGORY_LABELS[category]}</h2>
+          <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2" style={{ maxHeight: "55vh" }}>
             {items.map((it) => {
               const owned = save.owned[it.id] ?? 0;
               const equipped = save.equipped[category].itemId === it.id;
@@ -144,15 +170,14 @@ export function ShopScreen() {
                 <li key={it.id}>
                   <button
                     onClick={() => pickItem(it.id)}
-                    className={`pixel-btn-press flex w-full items-center gap-2 border-3 p-2 text-left ${
-                      selectedItem === it.id ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
-                    } border-[var(--title-ink)]`}
+                    data-active={selectedItem === it.id}
+                    className="shop-card pixel-btn-press flex w-full items-center gap-2 p-2 text-left"
                   >
                     <PixelIcon art={CATEGORY_ICONS[category]} size={26} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-display text-[11px] uppercase">{it.name}</span>
-                      <span className="block text-[11px]">
-                        {equipped ? "EQUIPPED" : owned > 0 ? `OWNED · EV ${owned}` : next ? formatCoins(next.price) : "—"}
+                      <span className="mt-0.5 block text-[11px]">
+                        {equipped ? <span className="shop-tag">Equipped</span> : owned > 0 ? <span className="shop-tag shop-tag-gold">Owned · Ev {owned}</span> : next ? (next.price === 0 ? "FREE" : formatCoins(next.price)) : "—"}
                       </span>
                     </span>
                   </button>
@@ -191,8 +216,8 @@ export function ShopScreen() {
 
         {/* Right: champions */}
         <section className="sub-panel flex min-h-0 flex-col p-3" aria-label="Champions">
-          <h2 className="font-display text-xs uppercase">Champions</h2>
-          <ul className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: "62vh" }}>
+          <h2 className="sub-head px-2 py-1 font-display text-xs uppercase">Champions</h2>
+          <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2" style={{ maxHeight: "62vh" }}>
             {CHAMPIONS.map((c) => {
               const owned = save.championsOwned[c.id] ?? 0;
               const sel = save.championsSelected[c.id];
@@ -203,17 +228,16 @@ export function ShopScreen() {
                       setSelectedChampion(c.id);
                       setSelectedItem(null);
                     }}
-                    className={`pixel-btn-press flex w-full items-center gap-2 border-3 p-2 text-left ${
-                      selectedChampion === c.id ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
-                    } border-[var(--title-ink)]`}
+                    data-active={selectedChampion === c.id}
+                    className="shop-card pixel-btn-press flex w-full items-center gap-2 p-2 text-left"
                   >
-                    <PixelIcon art={PORTRAIT_PLACEHOLDER} size={30} />
+                    <ChampionPortrait id={c.id} size={40} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-display text-[11px] uppercase">{c.name}</span>
                       <span className="block text-[11px]">
                         {owned > 0
-                          ? `OWNED · EV ${sel ?? owned} · can summon`
-                          : `LOCKED · ${formatCoins(c.evolutions[0].price)}`}
+                          ? <span className="shop-tag">Owned · Ev {sel ?? owned} · Summonable</span>
+                          : <span>🔒 LOCKED · {formatCoins(c.evolutions[0].price)}</span>}
                       </span>
                     </span>
                   </button>
@@ -330,10 +354,19 @@ function ChampionDetail({
 
   return (
     <div>
-      <div className="flex items-center gap-3">
-        <PixelIcon art={PORTRAIT_PLACEHOLDER} size={56} />
+      <div className="shop-stage flex h-56 items-end justify-center overflow-hidden p-2 sm:h-72">
+        {CHAMPION_ART[champ.id] ? (
+          <img src={CHAMPION_ART[champ.id].full} alt={`${champ.name}, full body`} className="h-full w-auto object-contain" style={{ imageRendering: "pixelated" }} />
+        ) : (
+          <div className="flex flex-col items-center gap-2 pb-6">
+            <PixelIcon art={PORTRAIT_PLACEHOLDER} size={96} />
+            <span className="shop-tag">Artwork coming soon</span>
+          </div>
+        )}
+      </div>
+      <div className="mt-3 flex items-center gap-3">
         <div>
-          <h3 className="font-display text-sm uppercase">{champ.name}</h3>
+          <h3 className="font-display text-base uppercase">{champ.name}</h3>
           <p className="text-xs">{champ.relationship}</p>
           <p className="mt-1 text-xs font-bold">{owned > 0 ? "OWNED — can be summoned" : "LOCKED — cannot be summoned"}</p>
         </div>
