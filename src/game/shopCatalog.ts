@@ -103,69 +103,69 @@ export const WEAPONS: EquipItem[] = [
 // ---------------------------------------------------------------- staffs
 export const STAFFS: EquipItem[] = [
   item("moses", "staff", "Staff of Moses", "The staff that turned into a serpent before Pharaoh.", [
-    ev(1, "Staff of Moses I", 0, "+0% magical damage", { magicPct: 0 }),
-    ev(2, "Staff of Moses II", 100_000, "+10% magical damage", { magicPct: 10 }),
-    ev(3, "Staff of Moses III", 1_000_000, "+20% magical damage", { magicPct: 20 }),
+    ev(1, "Staff of Moses I", 0, "+0% magical damage", "", { magicPct: 0 }),
+    ev(2, "Staff of Moses II", 100_000, "+10% magical damage", "", { magicPct: 10 }),
+    ev(3, "Staff of Moses III", 1_000_000, "+20% magical damage", "", { magicPct: 20 }),
   ]),
   item("iron", "staff", "Iron Staff", "A heavy staff that weighs enemies down.", [
-    ev(1, "Iron Staff I", 500, "+10% magical damage", { magicPct: 10 }),
-    ev(2, "Iron Staff II", 150_000, "+25% magical damage", "Plagues slightly slow enemies.", { magicPct: 25 }),
-    ev(3, "Iron Staff III", 1_500_000, "+40% magical damage", "Plagues slow enemies for longer.", { magicPct: 40 }),
+    ev(1, "Iron Staff I", 500, "+10% magical damage", "", { magicPct: 10 }),
+    ev(2, "Iron Staff II", 150_000, "+25% magical damage", "Plagues slightly slow enemies.", "", { magicPct: 25 }),
+    ev(3, "Iron Staff III", 1_500_000, "+40% magical damage", "Plagues slow enemies for longer.", "", { magicPct: 40 }),
   ]),
   item("crystal", "staff", "Crystal Staff", "Its light blinds the enemies of Israel.", [
-    ev(1, "Crystal Staff I", 5_000, "+20% magical damage", { magicPct: 20 }),
-    ev(2, "Crystal Staff II", 250_000, "+35% magical damage", "Blinds one enemy for 3 seconds every 15 seconds.", { magicPct: 35 }),
-    ev(3, "Crystal Staff III", 2_500_000, "+50% magical damage", "Blinds three enemies for 4 seconds every 15 seconds.", { magicPct: 50 }),
+    ev(1, "Crystal Staff I", 5_000, "+20% magical damage", "", { magicPct: 20 }),
+    ev(2, "Crystal Staff II", 250_000, "+35% magical damage", "Blinds one enemy for 3 seconds every 15 seconds.", "", { magicPct: 35 }),
+    ev(3, "Crystal Staff III", 2_500_000, "+50% magical damage", "Blinds three enemies for 4 seconds every 15 seconds.", "", { magicPct: 50 }),
   ]),
   item("diamond", "staff", "Diamond Staff", "A harder light, a deeper blindness.", [
-    ev(1, "Diamond Staff I", 50_000, "+35% magical damage", { magicPct: 35 }),
-    ev(2, "Diamond Staff II", 500_000, "+50% magical damage", "Blinds three enemies for 3 seconds every 15 seconds.", { magicPct: 50 }),
-    ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "Blinds five enemies for 4 seconds every 15 seconds.", { magicPct: 70 }),
+    ev(1, "Diamond Staff I", 50_000, "+35% magical damage", "", { magicPct: 35 }),
+    ev(2, "Diamond Staff II", 500_000, "+50% magical damage", "Blinds three enemies for 3 seconds every 15 seconds.", "", { magicPct: 50 }),
+    ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "Blinds five enemies for 4 seconds every 15 seconds.", "", { magicPct: 70 }),
   ]),
   item("bronze", "staff", "Burning Bronze Staff", "Bronze that remembers the furnace.", [
-    ev(1, "Burning Bronze Staff I", 250_000, "+50% magical damage", { magicPct: 50 }),
-    ev(2, "Burning Bronze Staff II", 1_000_000, "+70% magical damage", "Creates a ring of fire every 25 seconds.", { magicPct: 70 }),
-    ev(3, "Burning Bronze Staff III", 10_000_000, "+90% magical damage", "Creates a larger ring of fire every 20 seconds that burns enemies.", { magicPct: 90 }),
+    ev(1, "Burning Bronze Staff I", 250_000, "+50% magical damage", "", { magicPct: 50 }),
+    ev(2, "Burning Bronze Staff II", 1_000_000, "+70% magical damage", "Creates a ring of fire every 25 seconds.", "", { magicPct: 70 }),
+    ev(3, "Burning Bronze Staff III", 10_000_000, "+90% magical damage", "Creates a larger ring of fire every 20 seconds that burns enemies.", "", { magicPct: 90 }),
   ]),
   item("fire", "staff", "Fire Staff", "Fire that walks with Moses.", [
-    ev(1, "Fire Staff I", 1_000_000, "+70% magical damage", { magicPct: 70 }),
-    ev(2, "Fire Staff II", 2_500_000, "+90% magical damage", "Burns last longer.", { magicPct: 90 }),
-    ev(3, "Fire Staff III", 20_000_000, "+110% magical damage", "Fire spreads to nearby enemies.", { magicPct: 110 }),
+    ev(1, "Fire Staff I", 1_000_000, "+70% magical damage", "", { magicPct: 70 }),
+    ev(2, "Fire Staff II", 2_500_000, "+90% magical damage", "Burns last longer.", "", { magicPct: 90 }),
+    ev(3, "Fire Staff III", 20_000_000, "+110% magical damage", "Fire spreads to nearby enemies.", "", { magicPct: 110 }),
   ]),
   item("bush", "staff", "Burning Bush Staff", "The bush that burned and was not consumed.", [
-    ev(1, "Burning Bush Staff I", 5_000_000, "+90% magical damage", { magicPct: 90 }),
-    ev(2, "Burning Bush Staff II", 10_000_000, "+115% magical damage", "Launches flames at three enemies every 20 seconds.", { magicPct: 115 }),
-    ev(3, "Burning Bush Staff III", 35_000_000, "+140% magical damage", "Launches flames at five enemies every 18 seconds.", { magicPct: 140 }),
+    ev(1, "Burning Bush Staff I", 5_000_000, "+90% magical damage", "", { magicPct: 90 }),
+    ev(2, "Burning Bush Staff II", 10_000_000, "+115% magical damage", "Launches flames at three enemies every 20 seconds.", "", { magicPct: 115 }),
+    ev(3, "Burning Bush Staff III", 35_000_000, "+140% magical damage", "Launches flames at five enemies every 18 seconds.", "", { magicPct: 140 }),
   ]),
   item("waters", "staff", "Staff of Primordial Waters", "The waters that were before the firmament.", [
-    ev(1, "Staff of Primordial Waters I", 20_000_000, "+120% magical damage", { magicPct: 120 }),
-    ev(2, "Staff of Primordial Waters II", 35_000_000, "+145% magical damage", "Creates a slowing wave every 25 seconds.", { magicPct: 145 }),
-    ev(3, "Staff of Primordial Waters III", 60_000_000, "+170% magical damage", "Creates a larger, more damaging wave every 20 seconds.", { magicPct: 170 }),
+    ev(1, "Staff of Primordial Waters I", 20_000_000, "+120% magical damage", "", { magicPct: 120 }),
+    ev(2, "Staff of Primordial Waters II", 35_000_000, "+145% magical damage", "Creates a slowing wave every 25 seconds.", "", { magicPct: 145 }),
+    ev(3, "Staff of Primordial Waters III", 60_000_000, "+170% magical damage", "Creates a larger, more damaging wave every 20 seconds.", "", { magicPct: 170 }),
   ]),
   item("light", "staff", "Staff of Divine Light", "Lightning answerable to prayer.", [
-    ev(1, "Staff of Divine Light I", 75_000_000, "+160% magical damage", { magicPct: 160 }),
-    ev(2, "Staff of Divine Light II", 100_000_000, "+180% magical damage", "A lightning strike hits three enemies every 25 seconds.", { magicPct: 180 }),
-    ev(3, "Staff of Divine Light III", 150_000_000, "+200% magical damage", "A lightning strike hits five enemies every 20 seconds.", { magicPct: 200 }),
+    ev(1, "Staff of Divine Light I", 75_000_000, "+160% magical damage", "", { magicPct: 160 }),
+    ev(2, "Staff of Divine Light II", 100_000_000, "+180% magical damage", "A lightning strike hits three enemies every 25 seconds.", "", { magicPct: 180 }),
+    ev(3, "Staff of Divine Light III", 150_000_000, "+200% magical damage", "A lightning strike hits five enemies every 20 seconds.", "", { magicPct: 200 }),
   ]),
   item("power", "staff", "Staff of God's Power", "The might of the LORD, measured out in mercy.", [
-    ev(1, "Staff of God's Power I", 200_000_000, "+200% magical damage", { magicPct: 200 }),
-    ev(2, "Staff of God's Power II", 300_000_000, "+250% magical damage", "A powerful lightning strike hits three enemies every 25 seconds.", { magicPct: 250 }),
-    ev(3, "Staff of God's Power III", 500_000_000, "+300% magical damage", "A massive lightning strike hits five enemies every 20 seconds. It wounds Ramses gravely but never kills him with one hit.", { magicPct: 300 }),
+    ev(1, "Staff of God's Power I", 200_000_000, "+200% magical damage", "", { magicPct: 200 }),
+    ev(2, "Staff of God's Power II", 300_000_000, "+250% magical damage", "A powerful lightning strike hits three enemies every 25 seconds.", "", { magicPct: 250 }),
+    ev(3, "Staff of God's Power III", 500_000_000, "+300% magical damage", "A massive lightning strike hits five enemies every 20 seconds. It wounds Ramses gravely but never kills him with one hit.", "", { magicPct: 300 }),
   ]),
 ];
 
 // ---------------------------------------------------------------- food
 export const FOODS: EquipItem[] = [
-  item("sandwich", "food", "Miriam's Sandwich", "Made with sisterly love.", [ev(1, "Miriam's Sandwich", 0, "+1% maximum health")]),
-  item("lentils", "food", "Esau's Lentil Stew", "Worth more than a birthright.", [ev(1, "Esau's Lentil Stew", 5_000, "+5% maximum health")]),
-  item("bread", "food", "Abraham's Bread", "Bread of hospitality under the oaks of Mamre.", [ev(1, "Abraham's Bread", 50_000, "+10% maximum health")]),
-  item("jacob", "food", "Jacob's Meal", "A meal for a long journey.", [ev(1, "Jacob's Meal", 250_000, "+20% maximum health")]),
-  item("blessing", "food", "Bread of Blessing", "Bread that restores as it feeds.", [ev(1, "Bread of Blessing", 1_000_000, "+35% maximum health", "Regenerates 0.5 HP per second.")]),
-  item("banquet", "food", "Banquet of the Promise", "A table set in the wilderness.", [ev(1, "Banquet of the Promise", 5_000_000, "+50% maximum health", "Regenerates 0.5 HP per second.")]),
-  item("manna", "food", "Manna of the Desert", "Bread from heaven, gathered each morning.", [ev(1, "Manna of the Desert", 15_000_000, "+75% maximum health", "Regenerates 1 HP per second.")]),
-  item("patriarchs", "food", "Meal of the Patriarchs", "The table of Abraham, Isaac and Jacob.", [ev(1, "Meal of the Patriarchs", 35_000_000, "+100% maximum health", "Regenerates 1 HP per second.")]),
-  item("elixir", "food", "Elixir of Life", "A draught of long years.", [ev(1, "Elixir of Life", 65_000_000, "+150% maximum health", "Regenerates 2 HP per second.")]),
-  item("fruit", "food", "Fruit of the Tree of Life", "The fruit guarded by the cherubim.", [ev(1, "Fruit of the Tree of Life", 120_000_000, "+200% maximum health", "Regenerates 2 HP per second and allows one resurrection per run with half health and no shield.")]),
+  , { hpPct: 1 }item("sandwich", "food", "Miriam's Sandwich", "Made with sisterly love.", [ev(1, "Miriam's Sandwich", 0, "+1% maximum health")]),
+  , { hpPct: 5 }item("lentils", "food", "Esau's Lentil Stew", "Worth more than a birthright.", [ev(1, "Esau's Lentil Stew", 5_000, "+5% maximum health")]),
+  , { hpPct: 10 }item("bread", "food", "Abraham's Bread", "Bread of hospitality under the oaks of Mamre.", [ev(1, "Abraham's Bread", 50_000, "+10% maximum health")]),
+  , { hpPct: 20 }item("jacob", "food", "Jacob's Meal", "A meal for a long journey.", [ev(1, "Jacob's Meal", 250_000, "+20% maximum health")]),
+  , { hpPct: 35, regen: 0.5 }item("blessing", "food", "Bread of Blessing", "Bread that restores as it feeds.", [ev(1, "Bread of Blessing", 1_000_000, "+35% maximum health", "Regenerates 0.5 HP per second.")]),
+  , { hpPct: 50, regen: 0.5 }item("banquet", "food", "Banquet of the Promise", "A table set in the wilderness.", [ev(1, "Banquet of the Promise", 5_000_000, "+50% maximum health", "Regenerates 0.5 HP per second.")]),
+  , { hpPct: 75, regen: 1 }item("manna", "food", "Manna of the Desert", "Bread from heaven, gathered each morning.", [ev(1, "Manna of the Desert", 15_000_000, "+75% maximum health", "Regenerates 1 HP per second.")]),
+  , { hpPct: 100, regen: 1 }item("patriarchs", "food", "Meal of the Patriarchs", "The table of Abraham, Isaac and Jacob.", [ev(1, "Meal of the Patriarchs", 35_000_000, "+100% maximum health", "Regenerates 1 HP per second.")]),
+  , { hpPct: 150, regen: 2 }item("elixir", "food", "Elixir of Life", "A draught of long years.", [ev(1, "Elixir of Life", 65_000_000, "+150% maximum health", "Regenerates 2 HP per second.")]),
+  , { hpPct: 200, regen: 2, resurrect: true }item("fruit", "food", "Fruit of the Tree of Life", "The fruit guarded by the cherubim.", [ev(1, "Fruit of the Tree of Life", 120_000_000, "+200% maximum health", "Regenerates 2 HP per second and allows one resurrection per run with half health and no shield.")]),
 ];
 
 // ---------------------------------------------------------------- shields
@@ -224,16 +224,16 @@ export const SHIELDS: EquipItem[] = [
 
 // ---------------------------------------------------------------- footwear
 export const FOOTWEAR: EquipItem[] = [
-  item("barefoot", "footwear", "Barefoot, Sacred Ground", "Put off thy shoes, for the ground is holy.", [ev(1, "Barefoot, Sacred Ground", 0, "+0% speed")]),
-  item("patriarchs", "footwear", "Sandals of the Patriarchs", "Worn on the road to Moriah.", [ev(1, "Sandals of the Patriarchs", 350, "+5% speed", "Brown glow.")]),
-  item("pilgrim", "footwear", "Pilgrim's Sandals", "For the long walk of faith.", [ev(1, "Pilgrim's Sandals", 7_000, "+10% speed", "1-second speed boost every 30 seconds; beige-gold glow.")]),
-  item("joshua", "footwear", "Boots of Joshua", "Every place the sole of your foot treads.", [ev(1, "Boots of Joshua", 35_000, "+20% speed", "1-second speed boost every 25 seconds; olive-green glow.")]),
-  item("wind", "footwear", "Sandals of the Wind", "Swift as the east wind.", [ev(1, "Sandals of the Wind", 110_000, "+25% speed", "Leaves a lightly damaging light-blue trail.")]),
-  item("messenger", "footwear", "Messenger's Footwear", "How beautiful upon the mountains.", [ev(1, "Messenger's Footwear", 350_000, "+30% speed", "Attracts coins from farther away; blue-white glow.")]),
-  item("jordan", "footwear", "Sandals of the Jordan", "The waters stood still for these steps.", [ev(1, "Sandals of the Jordan", 1_000_000, "+35% speed", "Leaves aqua footprints that briefly slow enemies.")]),
-  item("bushb", "footwear", "Burning Bush Boots", "Fire underfoot, harmlessly.", [ev(1, "Burning Bush Boots", 3_000_000, "+40% speed", "Repels enemies every 20 seconds without damaging them; orange flash.")]),
-  item("invisible", "footwear", "Sandals of the Invisible Path", "A way where there was no way.", [ev(1, "Sandals of the Invisible Path", 8_000_000, "+45% speed", "Teleports every 15 seconds to a visible area with few enemies; violet flash.")]),
-  item("exodus", "footwear", "Sandals of the Exodus", "Your shoes did not wear out in forty years.", [ev(1, "Sandals of the Exodus", 20_000_000, "+50% speed", "If Moses takes no damage for 5 seconds, +20% extra speed; damage removes it and restarts the wait. Intense golden glow while active.")]),
+  , { speedPct: 0 }item("barefoot", "footwear", "Barefoot, Sacred Ground", "Put off thy shoes, for the ground is holy.", [ev(1, "Barefoot, Sacred Ground", 0, "+0% speed")]),
+  , { hpPct: 100, regen: 1 }item("patriarchs", "footwear", "Sandals of the Patriarchs", "Worn on the road to Moriah.", [ev(1, "Sandals of the Patriarchs", 350, "+5% speed", "Brown glow.")]),
+  , { speedPct: 10 }item("pilgrim", "footwear", "Pilgrim's Sandals", "For the long walk of faith.", [ev(1, "Pilgrim's Sandals", 7_000, "+10% speed", "1-second speed boost every 30 seconds; beige-gold glow.")]),
+  , { speedPct: 20 }item("joshua", "footwear", "Boots of Joshua", "Every place the sole of your foot treads.", [ev(1, "Boots of Joshua", 35_000, "+20% speed", "1-second speed boost every 25 seconds; olive-green glow.")]),
+  , { speedPct: 25 }item("wind", "footwear", "Sandals of the Wind", "Swift as the east wind.", [ev(1, "Sandals of the Wind", 110_000, "+25% speed", "Leaves a lightly damaging light-blue trail.")]),
+  , { speedPct: 30 }item("messenger", "footwear", "Messenger's Footwear", "How beautiful upon the mountains.", [ev(1, "Messenger's Footwear", 350_000, "+30% speed", "Attracts coins from farther away; blue-white glow.")]),
+  , { speedPct: 35 }item("jordan", "footwear", "Sandals of the Jordan", "The waters stood still for these steps.", [ev(1, "Sandals of the Jordan", 1_000_000, "+35% speed", "Leaves aqua footprints that briefly slow enemies.")]),
+  , { speedPct: 40 }item("bushb", "footwear", "Burning Bush Boots", "Fire underfoot, harmlessly.", [ev(1, "Burning Bush Boots", 3_000_000, "+40% speed", "Repels enemies every 20 seconds without damaging them; orange flash.")]),
+  , { speedPct: 45 }item("invisible", "footwear", "Sandals of the Invisible Path", "A way where there was no way.", [ev(1, "Sandals of the Invisible Path", 8_000_000, "+45% speed", "Teleports every 15 seconds to a visible area with few enemies; violet flash.")]),
+  , { speedPct: 50 }item("exodus", "footwear", "Sandals of the Exodus", "Your shoes did not wear out in forty years.", [ev(1, "Sandals of the Exodus", 20_000_000, "+50% speed", "If Moses takes no damage for 5 seconds, +20% extra speed; damage removes it and restarts the wait. Intense golden glow while active.")]),
 ];
 
 // ---------------------------------------------------------------- champions
