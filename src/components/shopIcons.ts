@@ -33,26 +33,26 @@ export const SWORD_ICON: PixelArt = {
     "..KWKGGK.....",
     ".KWWK..KGK...",
     "KWWK....K....",
-    ".KK.........",
+    ".KK..........",
   ],
 };
 
 export const STAFF_ICON: PixelArt = {
   palette: { K: "#2b1d14", W: "#8a5a34", L: "#d8b98a", G: "#e6c261" },
   grid: [
-    "...KK.....",
-    "..KGGK....",
-    "..KGGK....",
-    "...KWKGK..",
-    "...KWKGK..",
-    "...KWK....",
-    "...KWK....",
-    "...KWK....",
-    "...KWK....",
-    "...KWK....",
-    "...KLK....",
-    "...KLK....",
-    "...KK.....",
+    "...KK......",
+    "..KGGK.....",
+    "..KGGK.....",
+    "...KWKGK...",
+    "...KWKGK...",
+    "...KWK.....",
+    "...KWK.....",
+    "...KWK.....",
+    "...KWK.....",
+    "...KWK.....",
+    "...KLK.....",
+    "...KLK.....",
+    "...KK......",
   ],
 };
 
@@ -60,8 +60,8 @@ export const HEART_ICON: PixelArt = {
   palette: { K: "#2b1d14", R: "#a12b2b", L: "#d95f4b" },
   grid: [
     ".KK..KK.",
-    "KRRK KR RK".replace(/ /g, ""),
-    "KLR RRK".replace(/ /g, ""),
+    "KRRKKRRK",
+    "KLRRRRRK",
     "KLRRRRRK",
     "KRRRRRRK",
     ".KRRRRK.",
@@ -71,10 +71,10 @@ export const HEART_ICON: PixelArt = {
 };
 
 export const SHIELD_ICON: PixelArt = {
-  palette: { K: "#2b1d14", B: "#4a7fbf", L: "#8fb8e6", G: "#e6c261" },
+  palette: { K: "#2b1d14", B: "#4a7fbf", L: "#8fb8e6" },
   grid: [
     "KKKKKKKK",
-    "KLLBBBHK".replace("H", "B"),
+    "KLLBBBBK",
     "KLBBBBBK",
     "KBBBBBBK",
     "KBBBBBBK",
@@ -87,16 +87,16 @@ export const SHIELD_ICON: PixelArt = {
 export const BOOT_ICON: PixelArt = {
   palette: { K: "#2b1d14", W: "#8a5a34", L: "#d8b98a", G: "#e6c261" },
   grid: [
-    "..KK....",
-    ".KWWK...",
-    ".KWWK...",
-    ".KWWK...",
-    ".KWWK...",
-    ".KWWKKK.",
-    ".KWWWWWK",
-    "KLLWWWWK",
-    "KGGGGGGK",
-    ".KKKKKK.",
+    "..KK.....",
+    ".KWWK....",
+    ".KWWK....",
+    ".KWWK....",
+    ".KWWK....",
+    ".KWWKKK..",
+    ".KWWWWWK.",
+    "KLLWWWWK.",
+    "KGGGGGGK.",
+    ".KKKKKK..",
   ],
 };
 
@@ -114,7 +114,7 @@ export const PORTRAIT_PLACEHOLDER: PixelArt = {
     "KSSSSSSSSSSK",
     "KSSDDDDDSSSK",
     "KSDDDDDDDSSK",
-    "KDDDDDDDDDDS".slice(0, 12).replace(/S/g, "D").replace(/^KDDDDDDDDDDD$/, "KDDDDDDDDDDK"),
+    "KDDDDDDDDDDK",
     "KDDDDDDDDDDK",
     "KKKKKKKKKKKK",
   ],
