@@ -156,10 +156,10 @@ export const STAFFS: EquipItem[] = [
 
 // ---------------------------------------------------------------- food
 export const FOODS: EquipItem[] = [
-  item("sandwich", "food", "Miriam's Sandwich", "Made with sisterly love.", [ev(1, "Miriam's Sandwich", 0, "+1% maximum health", { hpPct: 1 })]),
-  item("lentils", "food", "Esau's Lentil Stew", "Worth more than a birthright.", [ev(1, "Esau's Lentil Stew", 5_000, "+5% maximum health", { hpPct: 5 })]),
-  item("bread", "food", "Abraham's Bread", "Bread of hospitality under the oaks of Mamre.", [ev(1, "Abraham's Bread", 50_000, "+10% maximum health", { hpPct: 10 })]),
-  item("jacob", "food", "Jacob's Meal", "A meal for a long journey.", [ev(1, "Jacob's Meal", 250_000, "+20% maximum health", { hpPct: 20 })]),
+  item("sandwich", "food", "Miriam's Sandwich", "Made with sisterly love.", [ev(1, "Miriam's Sandwich", 0, "+1% maximum health", "", { hpPct: 1 })]),
+  item("lentils", "food", "Esau's Lentil Stew", "Worth more than a birthright.", [ev(1, "Esau's Lentil Stew", 5_000, "+5% maximum health", "", { hpPct: 5 })]),
+  item("bread", "food", "Abraham's Bread", "Bread of hospitality under the oaks of Mamre.", [ev(1, "Abraham's Bread", 50_000, "+10% maximum health", "", { hpPct: 10 })]),
+  item("jacob", "food", "Jacob's Meal", "A meal for a long journey.", [ev(1, "Jacob's Meal", 250_000, "+20% maximum health", "", { hpPct: 20 })]),
   item("blessing", "food", "Bread of Blessing", "Bread that restores as it feeds.", [ev(1, "Bread of Blessing", 1_000_000, "+35% maximum health", "Regenerates 0.5 HP per second.", { hpPct: 35, regen: 0.5 })]),
   item("banquet", "food", "Banquet of the Promise", "A table set in the wilderness.", [ev(1, "Banquet of the Promise", 5_000_000, "+50% maximum health", "Regenerates 0.5 HP per second.", { hpPct: 50, regen: 0.5 })]),
   item("manna", "food", "Manna of the Desert", "Bread from heaven, gathered each morning.", [ev(1, "Manna of the Desert", 15_000_000, "+75% maximum health", "Regenerates 1 HP per second.", { hpPct: 75, regen: 1 })]),
@@ -171,52 +171,52 @@ export const FOODS: EquipItem[] = [
 // ---------------------------------------------------------------- shields
 export const SHIELDS: EquipItem[] = [
   item("abel", "shield", "Shield of Abel", "The accepted offering, a blue guard.", [
-    ev(1, "Shield of Abel I", 0, "+1% shield capacity", { capPct: 1 }),
-    ev(2, "Shield of Abel II", 500_000, "+50% shield capacity", { capPct: 50 }),
-    ev(3, "Shield of Abel III", 5_000_000, "+100% shield capacity", { capPct: 100 }),
+    ev(1, "Shield of Abel I", 0, "+1% shield capacity", "", { capPct: 1 }),
+    ev(2, "Shield of Abel II", 500_000, "+50% shield capacity", "", { capPct: 50 }),
+    ev(3, "Shield of Abel III", 5_000_000, "+100% shield capacity", "", { capPct: 100 }),
   ]),
   item("noah", "shield", "Protection of Noah", "Covering like the ark's pitch.", [
-    ev(1, "Protection of Noah I", 100_000, "+45% shield capacity", { capPct: 45 }),
+    ev(1, "Protection of Noah I", 100_000, "+45% shield capacity", "", { capPct: 45 }),
     ev(2, "Protection of Noah II", 1_000_000, "+75% shield capacity", "Reduces projectile damage.", { capPct: 75 }),
     ev(3, "Protection of Noah III", 10_000_000, "+120% shield capacity", "Reduces projectile damage further.", { capPct: 120 }),
   ]),
   item("abraham", "shield", "Shield of Abraham", "Fear not: I am thy shield.", [
-    ev(1, "Shield of Abraham I", 250_000, "+55% shield capacity", { capPct: 55 }),
+    ev(1, "Shield of Abraham I", 250_000, "+55% shield capacity", "", { capPct: 55 }),
     ev(2, "Shield of Abraham II", 2_000_000, "+90% shield capacity", "A sphere absorbs one hit and recharges in 15 seconds.", { capPct: 90 }),
     ev(3, "Shield of Abraham III", 20_000_000, "+140% shield capacity", "The sphere recharges in 10 seconds.", { capPct: 140 }),
   ]),
   item("jacobm", "shield", "Mantle of Jacob", "A covering on the stony road.", [
-    ev(1, "Mantle of Jacob I", 400_000, "+60% shield capacity", { capPct: 60 }),
+    ev(1, "Mantle of Jacob I", 400_000, "+60% shield capacity", "", { capPct: 60 }),
     ev(2, "Mantle of Jacob II", 3_000_000, "+100% shield capacity", "A cloud blocks projectiles from behind.", { capPct: 100 }),
     ev(3, "Mantle of Jacob III", 30_000_000, "+150% shield capacity", "A larger cloud blocks more projectiles.", { capPct: 150 }),
   ]),
   item("joseph", "shield", "Shield of Joseph", "The coat of many colours, turned to armor.", [
-    ev(1, "Shield of Joseph I", 600_000, "+65% shield capacity", { capPct: 65 }),
+    ev(1, "Shield of Joseph I", 600_000, "+65% shield capacity", "", { capPct: 65 }),
     ev(2, "Shield of Joseph II", 5_000_000, "+110% shield capacity", "Taking damage increases movement speed for 2 seconds.", { capPct: 110 }),
     ev(3, "Shield of Joseph III", 40_000_000, "+160% shield capacity", "A stronger speed increase for 3 seconds.", { capPct: 160 }),
   ]),
   item("bushp", "shield", "Burning Bush Protection", "Fire that guards instead of consuming.", [
-    ev(1, "Burning Bush Protection I", 1_000_000, "+70% shield capacity", { capPct: 70 }),
+    ev(1, "Burning Bush Protection I", 1_000_000, "+70% shield capacity", "", { capPct: 70 }),
     ev(2, "Burning Bush Protection II", 8_000_000, "+120% shield capacity", "A fire aura damages nearby enemies.", { capPct: 120 }),
     ev(3, "Burning Bush Protection III", 60_000_000, "+170% shield capacity", "A larger aura burns enemies for longer.", { capPct: 170 }),
   ]),
   item("promise", "shield", "Shield of the Promise", "The covenant stands between you and harm.", [
-    ev(1, "Shield of the Promise I", 2_000_000, "+80% shield capacity", { capPct: 80 }),
+    ev(1, "Shield of the Promise I", 2_000_000, "+80% shield capacity", "", { capPct: 80 }),
     ev(2, "Shield of the Promise II", 12_000_000, "+130% shield capacity", "Blocks one hit every 20 seconds.", { capPct: 130 }),
     ev(3, "Shield of the Promise III", 80_000_000, "+180% shield capacity", "Blocks one hit every 12 seconds.", { capPct: 180 }),
   ]),
   item("cloud", "shield", "Mantle of the Cloud", "The cloud that stood between the camps.", [
-    ev(1, "Mantle of the Cloud I", 5_000_000, "+90% shield capacity", { capPct: 90 }),
+    ev(1, "Mantle of the Cloud I", 5_000_000, "+90% shield capacity", "", { capPct: 90 }),
     ev(2, "Mantle of the Cloud II", 20_000_000, "+140% shield capacity", "A cloud blocks projectiles from every direction.", { capPct: 140 }),
     ev(3, "Mantle of the Cloud III", 100_000_000, "+190% shield capacity", "Improves the cloud's effectiveness and recovery.", { capPct: 190 }),
   ]),
   item("covenant", "shield", "Light of the Covenant", "Light that drives back the darkness.", [
-    ev(1, "Light of the Covenant I", 10_000_000, "+100% shield capacity", { capPct: 100 }),
+    ev(1, "Light of the Covenant I", 10_000_000, "+100% shield capacity", "", { capPct: 100 }),
     ev(2, "Light of the Covenant II", 30_000_000, "+160% shield capacity", "Repels enemies when health falls below 30%.", { capPct: 160 }),
     ev(3, "Light of the Covenant III", 150_000_000, "+220% shield capacity", "A larger wave also slows enemies.", { capPct: 220 }),
   ]),
   item("israel", "shield", "Shield of the God of Israel", "The LORD shall preserve thy going out and thy coming in.", [
-    ev(1, "Shield of the God of Israel I", 100_000, "+45% shield capacity", { capPct: 45 }),
+    ev(1, "Shield of the God of Israel I", 100_000, "+45% shield capacity", "", { capPct: 45 }),
     ev(2, "Shield of the God of Israel II", 50_000_000, "+200% shield capacity", "Once per run, survive a lethal hit with 20% health remaining.", { capPct: 200 }),
     ev(3, "Shield of the God of Israel III", 250_000_000, "+300% shield capacity", "Once per run, survive a lethal hit with 35% health remaining.", { capPct: 300 }),
   ]),
@@ -224,7 +224,7 @@ export const SHIELDS: EquipItem[] = [
 
 // ---------------------------------------------------------------- footwear
 export const FOOTWEAR: EquipItem[] = [
-  item("barefoot", "footwear", "Barefoot, Sacred Ground", "Put off thy shoes, for the ground is holy.", [ev(1, "Barefoot, Sacred Ground", 0, "+0% speed", { speedPct: 0 })]),
+  item("barefoot", "footwear", "Barefoot, Sacred Ground", "Put off thy shoes, for the ground is holy.", [ev(1, "Barefoot, Sacred Ground", 0, "+0% speed", "", { speedPct: 0 })]),
   item("patriarchs", "footwear", "Sandals of the Patriarchs", "Worn on the road to Moriah.", [ev(1, "Sandals of the Patriarchs", 350, "+5% speed", "Brown glow.", { hpPct: 100, regen: 1 })]),
   item("pilgrim", "footwear", "Pilgrim's Sandals", "For the long walk of faith.", [ev(1, "Pilgrim's Sandals", 7_000, "+10% speed", "1-second speed boost every 30 seconds; beige-gold glow.", { speedPct: 10 })]),
   item("joshua", "footwear", "Boots of Joshua", "Every place the sole of your foot treads.", [ev(1, "Boots of Joshua", 35_000, "+20% speed", "1-second speed boost every 25 seconds; olive-green glow.", { speedPct: 20 })]),
