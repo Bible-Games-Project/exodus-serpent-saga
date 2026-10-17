@@ -68,4 +68,13 @@ export const NPCS: Record<NpcId, NpcDef> = {
     description: "One of the seventy elders who bore the burden with Moses.",
     scripture: "Numbers 11:16-17 — Gather unto me seventy men of the elders of Israel... and I will take of the spirit which is upon thee.",
   },
+  puah: { id: "puah", name: "Puah", description: "The midwife who feared God." },
+  shiphrah: { id: "shiphrah", name: "Shiphrah", description: "The midwife who stood before Pharaoh." },
+  gershom: { id: "gershom", name: "Gershom", description: "Moses' firstborn son." },
+  eliezer: { id: "eliezer", name: "Eliezer", description: "Moses' second son." },
+  amram: { id: "amram", name: "Amram", description: "Moses' father." },
+  ithamar: { id: "ithamar", name: "Ithamar", description: "Aaron's youngest son." },
+  nadab: { id: "nadab", name: "Nadab", description: "Aaron's firstborn." },
+  abihu: { id: "abihu", name: "Abihu", description: "Aaron's second son." },
+  eleazar: { id: "eleazar", name: "Eleazar", description: "Aaron's son, priest after him." },
 };
