@@ -2229,7 +2229,9 @@ function allyHitEnemy(state: GameState, en: Entity, dmg: number) {
 }
 
 function staffStrikeDamage(state: GameState): number {
-  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state) * weaponDamage(state) * 2;
+  // Weapon damage is relative to the free starter (Branch of the Tree of Life,
+  // 0.5), so the default loadout leaves the classic staff strike unchanged.
+  return PLAGUES.staff.scale(state.plagues.get("staff") ?? 1).dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5);
 }
 
 function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
