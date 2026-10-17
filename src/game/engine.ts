@@ -358,6 +358,25 @@ export function update(state: GameState, dt: number) {
   // Orbiting flies
   syncOrbitFlies(state, dt);
 
+  // Shop weapons: projectiles, hazards and damage-over-time.
+  updateWeaponEntities(state, dt, {
+    wrapDelta,
+    killEnemy: (en) => killEnemy(state, en),
+    spawn: (kind, pos, ttl, data, team) => {
+      const e: Entity = {
+        id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+        radius: 6, hp: 1, maxHp: 1, team: team ?? "hazard", facing: 1,
+        animT: 0, born: state.now, ttl, kind, data,
+      };
+      state.entities.set(e.id, e);
+      return e;
+    },
+  });
+  for (const en of state.entities.values()) {
+    if (en.team === "enemy") weaponDot(state, en, dt);
+  }
+
+
   // Cast plagues
   if (state.queuedCasts?.length) {
     const rest: NonNullable<GameState["queuedCasts"]> = [];
