@@ -209,5 +209,7 @@ export type GameState = {
   loadout?: import("./loadout").Loadout;
   /** Fruit of the Tree of Life: one resurrection per run. */
   resurrectUsed?: boolean;
+  /** Equipment ability timers (see game/equipment.ts). */
+  equipFx?: Record<string, number>;
 };
 

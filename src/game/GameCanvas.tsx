@@ -4961,7 +4961,7 @@ function drawWeaponEntity(
   camY: number,
 ): boolean {
   const k = e.kind;
-  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud"].includes(k)) return false;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff"].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
   ctx.save();
@@ -5037,6 +5037,43 @@ function drawWeaponEntity(
     for (let i = 0; i < 3; i++) {
       ctx.beginPath(); ctx.arc(0, 0, r * (0.35 + i * 0.3), i, i + Math.PI * 1.3); ctx.stroke();
     }
+    ctx.globalAlpha = 1;
+  } else if (k === "firering" || k === "slowwave") {
+    const r = (d.r as number) ?? 120;
+    const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.8));
+    ctx.globalAlpha = 0.6 * (1 - life * 0.7);
+    ctx.strokeStyle = k === "firering" ? "#e07a3a" : "#4a8fbf";
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(x, y, r * (0.3 + life * 0.7), 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  } else if (k === "lightningstrike") {
+    ctx.globalAlpha = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.3));
+    ctx.strokeStyle = "#fffbe0"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x + 4, y - 60);
+    ctx.lineTo(x - 4, y - 30); ctx.lineTo(x + 5, y - 18); ctx.lineTo(x - 3, y);
+    ctx.stroke();
+    ctx.fillStyle = "#ffe9a8";
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  } else if (k === "staffflame") {
+    ctx.fillStyle = "#e07a3a";
+    ctx.beginPath(); ctx.arc(x, y, 5 + Math.sin(s.now * 18) * 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffd47a";
+    ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI * 2); ctx.fill();
+  } else if (k === "windtrail") {
+    ctx.globalAlpha = Math.max(0, Math.min(0.5, (e.ttl ?? 0) / 1.2 * 0.5));
+    ctx.fillStyle = "#9fd4e8";
+    ctx.fillRect(x - 6, y - 2, 12, 4);
+    ctx.globalAlpha = 1;
+  } else if (k === "slowprint") {
+    ctx.globalAlpha = Math.max(0, Math.min(0.55, (e.ttl ?? 0) / 1.6 * 0.55));
+    ctx.fillStyle = "#6fc3c9";
+    ctx.fillRect(x - 4, y - 3, 8, 6);
+    ctx.globalAlpha = 1;
+  } else if (k === "shieldpuff") {
+    ctx.globalAlpha = Math.max(0, Math.min(0.7, (e.ttl ?? 0) / 0.3 * 0.7));
+    ctx.strokeStyle = "#cfe8ff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 10 + (0.3 - (e.ttl ?? 0)) * 40, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (k === "toxiccloud") {
     const r = (d.r as number) ?? 60;

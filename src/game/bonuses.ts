@@ -1,6 +1,7 @@
 // Bonus system — modular, data-driven pickups that appear randomly in the world
 // (no longer dropped by enemies). Add a new bonus by adding an entry to BONUSES.
 import type { GameState } from "./types";
+import { shieldModifyDamage, shieldOnDamageTaken } from "./equipment";
 
 export type BonusKind = "heart" | "magnet" | "star" | "lightning" | "shield";
 
@@ -113,9 +114,13 @@ export function restoreShield(s: GameState, amount: number) {
 }
 
 /** The single entry point for all damage dealt to Moses: shield absorbs first,
- * only the excess reaches HP. Neither value can go negative from here. */
-export function damagePlayer(s: GameState, amount: number) {
+ * only the excess reaches HP. Neither value can go negative from here.
+ * Shop shields can reduce or fully block the hit (see equipment.ts). */
+export function damagePlayer(s: GameState, amount: number, projectile = false) {
   if (!(amount > 0)) return;
+  amount = shieldModifyDamage(s, amount, projectile);
+  if (!(amount > 0)) return;
+  shieldOnDamageTaken(s);
   const sh = Math.max(0, s.shield ?? 0);
   const absorbed = Math.min(sh, amount);
   s.shield = sh - absorbed;

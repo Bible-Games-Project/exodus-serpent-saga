@@ -8,7 +8,7 @@ export type Loadout = {
   weapon: { id: string; evolution: number; dmg: number };
   staff: { id: string; evolution: number; magicPct: number };
   food: { id: string; hpPct: number; regen: number; resurrect: boolean };
-  shield: { id: string; capPct: number };
+  shield: { id: string; evolution: number; capPct: number };
   footwear: { id: string; speedPct: number };
 };
 
@@ -29,7 +29,7 @@ export function getLoadout(): Loadout {
     weapon: { id: s.equipped.weapon.itemId, evolution: s.equipped.weapon.evolution, dmg: w?.dmg ?? 0.5 },
     staff: { id: s.equipped.staff.itemId, evolution: s.equipped.staff.evolution, magicPct: st?.magicPct ?? 0 },
     food: { id: s.equipped.food.itemId, hpPct: f?.hpPct ?? 1, regen: f?.regen ?? 0, resurrect: f?.resurrect ?? false },
-    shield: { id: s.equipped.shield.itemId, capPct: sh?.capPct ?? 1 },
+    shield: { id: s.equipped.shield.itemId, evolution: s.equipped.shield.evolution, capPct: sh?.capPct ?? 1 },
     footwear: { id: s.equipped.footwear.itemId, speedPct: fw?.speedPct ?? 0 },
   };
 }
