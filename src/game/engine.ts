@@ -2,12 +2,17 @@ import type { Entity, GameState, PlagueId, UpgradeChoice, Vec2 } from "./types";
 import { PLAGUES, PLAGUE_ORDER, attackCasts, MULTI_ATTACK_STAGGER, evolutionNote, plagueAreaMul } from "./plagues";
 import { angelSwordOffset, ANGEL_FADE } from "./angelArt";
 import { canRefreshRoute, markRouteRefresh, ROUTE_MIN_INTERVAL } from "./routing";
-import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, type AllyDef } from "./allies";
+import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, CHAMPION_REFERENCE_HP, type AllyDef } from "./allies";
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { updateWeaponEntities, weaponDot, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit } from "./weapons";
 import { staffOnPlagueCast, updateEquipment } from "./equipment";
+import {
+  broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
+  resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, type ChampHelpers,
+} from "./championAbilities";
+import { findChampion } from "./shopCatalog";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
@@ -376,6 +381,8 @@ export function update(state: GameState, dt: number) {
   for (const en of state.entities.values()) {
     if (en.team === "enemy") weaponDot(state, en, dt);
   }
+  // Shop champion ability entities (projectiles, zones, beams, wards, birds).
+  updateChampionEntities(state, dt, champHelpers(state));
   // Shop equipment abilities (staff specials, shield auras, footwear effects).
   updateEquipment(state, (kind, pos, ttl, data, team) => {
     const e: Entity = {
@@ -550,6 +557,8 @@ export function update(state: GameState, dt: number) {
         // still take contact damage handled in tickRamses; skip here.
         continue;
       }
+      // Jethro: converted enemies fight for Moses; confused ones wander harmlessly.
+      if (championControlsEnemy(state, e, dt, champHelpers(state))) { wrapPos(state, e.pos); continue; }
       // Target selection is refreshed every ~0.3-0.5s (staggered per enemy)
       // instead of every frame; the chosen target's live position is still
       // followed each frame so movement stays smooth.
@@ -742,6 +751,7 @@ export function update(state: GameState, dt: number) {
       }
 
     } else if (e.team === "ally") {
+      updateChampionAlly(state, e, dt, champHelpers(state));
       updateCompanion(state, e, dt);
     } else if (e.team === "projectile") {
       // The living serpent is viewport-bound, not timer-bound: it remains in
@@ -854,7 +864,7 @@ export function update(state: GameState, dt: number) {
           const bx = n.pos.x + wrapDelta(e.pos.x, n.pos.x, state.worldW) - n.pos.x;
           const by = e.pos.y - (n.pos.y - 22);
           if (Math.abs(bx) < n.radius + e.radius && Math.abs(by) < 34 + e.radius) {
-            damageAlly(state, n, e.dmg ?? 5, { x: e.pos.x, y: e.pos.y });
+            damageAlly(state, n, e.dmg ?? 5, { x: e.pos.x, y: e.pos.y }, true);
             removeProjectile(state, e);
             break;
           }
@@ -899,6 +909,15 @@ export function update(state: GameState, dt: number) {
           for (const o of [...state.entities.values()]) {
             if (o.team !== "enemy" || o === en) continue;
             if (wrapDist2(state, o.pos, e.pos) < R * R) { o.hp -= (e.dmg ?? 0) * 0.5; if (o.hp <= 0) killEnemy(state, o); }
+          }
+          // Jochebed II+: the jet pushes enemies it soaks.
+          if (e.data.push) {
+            for (const o of state.entities.values()) {
+              if (o.team !== "enemy" || o.kind === "ramses" || wrapDist2(state, o.pos, e.pos) >= R * R) continue;
+              o.data ??= {};
+              o.data.knockVx = e.vel.x * 0.8; o.data.knockVy = e.vel.y * 0.8;
+              o.data.knockUntil = state.now + 0.22;
+            }
           }
           spawnVisualHazard(state, "allysplash", e.pos, 0.42, { seed: (e.data.seed as number) ?? 1, radius: R });
           if (en.hp <= 0) killEnemy(state, en);
@@ -2098,6 +2117,22 @@ function tickBonusSpawns(state: GameState, dt: number) {
 
 
 // ---------- allied champions (common system; data in allies.ts) ----------
+function champHelpers(state: GameState): ChampHelpers {
+  return {
+    wrapDelta,
+    killEnemy: (en) => killEnemy(state, en),
+    spawn: (kind, pos, ttl, data) => {
+      const e: Entity = {
+        id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
+        radius: 6, hp: 1, maxHp: 1, team: "hazard", facing: 1,
+        animT: 0, born: state.now, ttl, kind, data: { maxTtl: ttl, ...data },
+      };
+      state.entities.set(e.id, e);
+      return e;
+    },
+  };
+}
+
 function allyTargetValid(state: GameState, id: number | undefined): Entity | undefined {
   if (id == null) return undefined;
   const t = state.entities.get(id);
@@ -2191,7 +2226,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
         d.attackDir = { x: dx / dd, y: dy / dd };
         d.attackTarget = { x: e.pos.x + dx, y: e.pos.y + dy };
         d.attackNearestId = target.id;
-        d.atkCd = def.cooldown;
+        d.atkCd = def.cooldown * championCooldownMul(e);
         d.fxSeed = Math.floor(Math.random() * 100000);
       } else {
         allyRetreat(e, def, dt);
@@ -2293,18 +2328,25 @@ function staffStrikeDamage(state: GameState): number {
 function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
   const d = ally.data!;
   const dir = (d.attackDir as Vec2) ?? { x: ally.facing, y: 0 };
-  const dmg = def.damage * damageMultiplier(state) * 3;
+  // Every champion hits for a percentage of Miriam's broom (= Staff of Moses
+  // strike) taken from the purchased shop evolution.
+  const dmg = staffStrikeDamage(state) * (((d.atkPct as number) ?? 100) / 100);
+  d.lastDmg = dmg;
   const seed = (d.fxSeed as number) ?? 1;
+  const H = champHelpers(state);
+  if (resolveChampionAttack(state, ally, def, dmg, H)) return;
   if (def.attack === "broom") {
     // The broom head is the hit: its reach at full swing defines the contact
     // point, never the champion's own body.
     const c = { x: ally.pos.x + dir.x * def.range, y: ally.pos.y + dir.y * def.range };
+    const hr = def.hitRadius * broomRadiusMul(ally);
     for (const en of [...state.entities.values()]) {
       if (en.team !== "enemy" || en.hp <= 0) continue;
       if (en.kind === "ramses" && (en.data?.seated || en.data?.downedUntil != null)) continue;
-      if (wrapDist2(state, en.pos, c) < (def.hitRadius + en.radius) ** 2) allyHitEnemy(state, en, def.staffDamage ? staffStrikeDamage(state) : dmg);
+      if (wrapDist2(state, en.pos, c) < (hr + en.radius) ** 2) allyHitEnemy(state, en, dmg);
     }
-    spawnVisualHazard(state, "allydust", c, 0.5, { seed, radius: def.hitRadius });
+    spawnVisualHazard(state, "allydust", c, 0.5, { seed, radius: hr });
+    classicChampionExtras(state, ally, def, dmg, c, H);
   } else if (def.attack === "water") {
     // Water leaves the basket and travels to the target as a real projectile.
     const spd = 300;
@@ -2323,9 +2365,10 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
       animT: 0, born: state.now,
       ttl: 1.2, dmg,
       kind: "bolt",
-      data: { hit: new Set<number>(), boltKind: "allywater", lift0, seed, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius },
+      data: { hit: new Set<number>(), boltKind: "allywater", lift0, seed, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius * (champEvo(ally) >= 2 ? 1.4 : 1), push: champEvo(ally) >= 2 ? 1 : 0 },
     };
     state.entities.set(w.id, w);
+    classicChampionExtras(state, ally, def, dmg, origin, H);
   } else if (def.attack === "horn") {
     // Sound waves expand forward from the horn in a cone.
     const R = def.hitRadius;
@@ -2343,8 +2386,8 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
       if (en.kind !== "ramses" && !(en.kind === "agilesoldier" && en.data?.specialDash)) {
         en.data ??= {};
         const k = dd > 1 ? dd : 1;
-        en.data.knockVx = (dd > 1 ? dx / k : dir.x) * 260;
-        en.data.knockVy = (dd > 1 ? dy / k : dir.y) * 260;
+        en.data.knockVx = (dd > 1 ? dx / k : dir.x) * 260 * hornKnockMul(ally);
+        en.data.knockVy = (dd > 1 ? dy / k : dir.y) * 260 * hornKnockMul(ally);
         en.data.knockUntil = state.now + 0.22;
       }
     }
@@ -2374,8 +2417,9 @@ function levelUp(state: GameState) {
 }
 
 /** Shared champion damage: real HP loss, hit feedback, and the death/grave path. */
-function damageAlly(state: GameState, n: Entity, dmg: number, fxAt?: Vec2) {
+function damageAlly(state: GameState, n: Entity, dmg: number, fxAt?: Vec2, projectile = false) {
   if (n.data?.downedUntil) return;
+  if (wardAbsorb(state, n, projectile)) return;
   n.hp -= dmg;
   if (fxAt) spawnVisualHazard(state, "hitspark", fxAt, 0.18, { seed: n.id, small: 1 });
   if (n.hp <= 0) downCompanion(state, n);
@@ -2389,16 +2433,20 @@ function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
   const m = 80;
   const px = state.camera.x + rand(-vw / 2 + m, vw / 2 - m);
   const py = state.camera.y + rand(-vh / 2 + m, vh / 2 - m);
+  // Stats come from the purchased (selected) shop evolution; the Test Map uses Evolution 1.
+  const evo = state.testMap ? 1 : (summonableChampions().find((c) => c.id === npcId)?.evolution ?? 1);
+  const ce = findChampion(npcId)?.evolutions[evo - 1];
+  const maxHp = ce ? Math.round(CHAMPION_REFERENCE_HP * ce.healthPct / 100) : def.maxHp;
   const ally: Entity = {
     id: state.nextId++,
     pos: { x: px, y: py },
     vel: { x: 0, y: 0 },
     radius: 12,
-    hp: def.maxHp, maxHp: def.maxHp,
+    hp: maxHp, maxHp,
     team: "ally", facing: 1,
     animT: 0, born: state.now,
     kind: npcId,
-    data: { atkCd: 1.0, summonUntil: state.now + 1.0 },
+    data: { atkCd: 1.0, summonUntil: state.now + 1.0, evo, atkPct: ce?.attackPct ?? 100 },
   };
   state.entities.set(ally.id, ally);
   state.npcs.set(npcId, ally.id);

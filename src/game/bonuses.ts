@@ -1,3 +1,4 @@
+import { wardAbsorb } from "./championAbilities";
 // Bonus system — modular, data-driven pickups that appear randomly in the world
 // (no longer dropped by enemies). Add a new bonus by adding an entry to BONUSES.
 import type { GameState } from "./types";
@@ -118,6 +119,7 @@ export function restoreShield(s: GameState, amount: number) {
  * Shop shields can reduce or fully block the hit (see equipment.ts). */
 export function damagePlayer(s: GameState, amount: number, projectile = false) {
   if (!(amount > 0)) return;
+  if (wardAbsorb(s, s.player, projectile)) return;
   amount = shieldModifyDamage(s, amount, projectile);
   if (!(amount > 0)) return;
   shieldOnDamageTaken(s);

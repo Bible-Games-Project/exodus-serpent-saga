@@ -89,9 +89,8 @@ function MainMenu() {
     <main className="cover-screen fixed inset-0 overflow-hidden">
       <img src={cover.url} alt="Exodus Survivors — Moses parts the sea" width={1920} height={1080} className="cover-bg" />
       <nav aria-label="Main menu" className="cover-menu">
-        <div className="cover-play"><PixelLink to="/play" variant="primary">Play</PixelLink></div>
+        <div className="cover-play"><PixelLink to="/shop" variant="primary">Play</PixelLink></div>
         <div className="cover-row">
-          <PixelLink to="/shop">Shop</PixelLink>
           <PixelLink to="/leaderboard">Leaderboard</PixelLink>
           <PixelLink to="/more-games">More Games</PixelLink>
         </div>

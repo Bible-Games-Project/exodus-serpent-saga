@@ -29,7 +29,7 @@ function LeaderboardPage() {
       <div className="relative mx-auto max-w-3xl">
         <div className="flex items-center justify-between">
           <Link to="/" className="cover-button pixel-btn-press font-display uppercase">← Menu</Link>
-          <Link to="/play" className="cover-button cover-button-primary pixel-btn-press font-display uppercase" style={{ fontSize: 15 }}>Play</Link>
+          <Link to="/shop" className="cover-button cover-button-primary pixel-btn-press font-display uppercase" style={{ fontSize: 15 }}>Play</Link>
         </div>
         <h1 className="sub-title mt-6 text-center font-display text-4xl uppercase sm:text-5xl">Leaderboard</h1>
         <p className="sub-sub mt-3 text-center text-sm">The 100 greatest survivors of the plagues.</p>
@@ -39,7 +39,7 @@ function LeaderboardPage() {
           {error && <div className="p-6 text-center text-sm">Couldn't load the leaderboard.</div>}
           {data && data.length === 0 && (
             <div className="p-8 text-center text-sm">
-              No survivors yet. Be the first — <Link to="/play" className="underline">play now</Link>.
+              No survivors yet. Be the first — <Link to="/shop" className="underline">play now</Link>.
             </div>
           )}
           {data && data.length > 0 && (

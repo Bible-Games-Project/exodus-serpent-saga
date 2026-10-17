@@ -314,3 +314,14 @@
 .sub-head { background: var(--title-mid); color: var(--title-ink); }
 .sub-slot { background: color-mix(in oklab, var(--title-light) 60%, transparent); outline: 3px dashed var(--title-shade); outline-offset: -6px; }
 .sub-screen .cover-button { --btn-fs: 13px; min-width: 0; }
+
+/* Shop: same blurred cover backdrop as the Leaderboard, with a warm vignette. */
+.shop-veil { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, color-mix(in oklab, var(--cover-night) 20%, transparent) 0%, color-mix(in oklab, var(--cover-night) 70%, transparent) 100%); }
+.shop-card { background: var(--title-light); box-shadow: 0 0 0 3px var(--title-ink), inset 0 -3px 0 var(--title-mid); transition: transform 80ms; }
+.shop-card:hover { transform: translateY(-1px); }
+.shop-card[data-active="true"] { background: var(--title-mid); box-shadow: 0 0 0 3px var(--title-ink), 0 0 0 6px var(--title-light), inset 0 -3px 0 var(--title-shade); }
+.shop-tag { display: inline-block; padding: 1px 6px; font-size: 10px; line-height: 14px; background: var(--title-ink); color: var(--title-light); text-transform: uppercase; letter-spacing: 0.04em; }
+.shop-tag-gold { background: var(--title-shade); color: var(--title-light); }
+.shop-stage { background: radial-gradient(ellipse at 50% 85%, color-mix(in oklab, var(--title-mid) 80%, transparent), transparent 70%), color-mix(in oklab, var(--title-light) 70%, transparent); box-shadow: inset 0 0 0 3px var(--title-ink); }
+.shop-portrait { image-rendering: pixelated; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); object-fit: cover; object-position: top; }
+.shop-scroll { scrollbar-width: thin; scrollbar-color: var(--title-shade) transparent; }

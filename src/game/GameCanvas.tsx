@@ -1,3 +1,4 @@
+import { drawChampionFx } from "./championFx";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
 import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
 import { useEffect, useRef, useState } from "react";
@@ -1691,6 +1692,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
     if (drawWeaponEntity(ctx, e, s, camX, camY)) continue;
+    if (drawChampionFx(ctx, e, camX, camY, s)) continue;
 
 
     // Programmatic enemy renderers

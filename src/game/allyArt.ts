@@ -106,6 +106,8 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   ctx.translate(push, 0);
   if (lean) ctx.rotate(lean);
   ctx.translate(-CX, -H);
+  // Placeholder champions borrow another PNG, tinted until their own arrives.
+  if (def.sprite.placeholderHue != null) ctx.filter = `hue-rotate(${def.sprite.placeholderHue}deg) saturate(0.85)`;
   // Feet band: two feet alternate lift + stride; everything else stays whole.
   if (moving) {
     const a = sw > 0 ? 1 : 0;
@@ -134,6 +136,12 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   ctx.restore();
   ctx.globalAlpha = 1;
   bar(ctx, x, gy - Math.round(H * sc) - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
+  if (def.sprite.placeholderHue != null) {
+    // Clearly identified temporary placeholder: name tag above the bar.
+    ctx.font = "bold 9px monospace"; ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillText(def.name + " (temp)", x + 1, gy - Math.round(H * sc) - 11);
+    ctx.fillStyle = "#ffe9a8"; ctx.fillText(def.name + " (temp)", x, gy - Math.round(H * sc) - 12);
+  }
   return true;
 }
 
