@@ -2411,36 +2411,56 @@ function offerUpgrades(state: GameState) {
     });
   }
 
-  // Champion — offered at isChampionLevel milestones (10, 30, 60, 90...), picked at random from the pool of
-  // champions not yet recruited.
-  let companion: UpgradeChoice | null = null;
-  // A milestone opens a pending offer that persists until a champion is recruited.
+  // Champion — a summoning opportunity opens every 15 levels (isChampionLevel)
+  // and persists until a champion is recruited. In a normal run the player
+  // chooses manually among the champions they own in the shop; owning none
+  // leaves the opportunity untouched. The Test Map keeps the random pick.
+  let companion: UpgradeChoice[] = [];
   if (isChampionLevel(state.level)) state.championOfferPending = true;
   if (state.championOfferPending) {
-    const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
-    if (available.length) {
-      const npcId = available[Math.floor(Math.random() * available.length)];
-      const def = allyDef(npcId)!;
-      companion = {
-        id: `npc-${npcId}-${state.level}`,
-        npc: npcId,
-        isCompanion: true,
-        isUnlock: true,
-        title: `Champion: ${def.name}`,
-        description: def.description,
-        scripture: def.scripture,
-        apply: (s) => { s.championOfferPending = false; summonCompanion(s, npcId); },
-      };
+    if (state.testMap) {
+      const available = ALLY_POOL.filter((id) => !state.npcs.has(id));
+      if (available.length) {
+        const npcId = available[Math.floor(Math.random() * available.length)];
+        const def = allyDef(npcId)!;
+        companion = [{
+          id: `npc-${npcId}-${state.level}`,
+          npc: npcId,
+          isCompanion: true,
+          isUnlock: true,
+          title: `Champion: ${def.name}`,
+          description: def.description,
+          scripture: def.scripture,
+          apply: (s) => { s.championOfferPending = false; summonCompanion(s, npcId); },
+        }];
+      }
+    } else {
+      const owned = summonableChampions()
+        .map((c) => c.id as import("./types").NpcId)
+        .filter((id) => ALLY_POOL.includes(id) && !state.npcs.has(id));
+      companion = owned.slice(0, 3).map((npcId) => {
+        const def = allyDef(npcId)!;
+        return {
+          id: `npc-${npcId}-${state.level}`,
+          npc: npcId,
+          isCompanion: true,
+          isUnlock: true,
+          title: `Champion: ${def.name}`,
+          description: def.description,
+          scripture: def.scripture,
+          apply: (s: GameState) => { s.championOfferPending = false; summonCompanion(s, npcId); },
+        };
+      });
     }
   }
 
-  // Shuffle non-companion choices; cap to 3 (or 2+companion when eligible).
+  // Shuffle non-companion choices; cap to 3 (or fewer when champions are offered).
   for (let i = choices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [choices[i], choices[j]] = [choices[j], choices[i]];
   }
-  const picks = choices.slice(0, companion ? 2 : 3);
-  if (companion) picks.push(companion);
+  const picks = choices.slice(0, Math.max(0, 3 - companion.length));
+  picks.push(...companion);
   if (picks.length === 0) return;
   state.levelUpPending = picks;
 }
