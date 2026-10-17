@@ -10,7 +10,11 @@ import aaronAsset from "@/assets/ally-aaron.png.asset.json";
 import jochebedAsset from "@/assets/ally-jochebed.png.asset.json";
 import type { NpcId } from "./types";
 
-export type AllyAttackKind = "broom" | "water" | "horn";
+export type AllyAttackKind =
+  | "broom" | "water" | "horn"
+  // shop champions (behaviour in championAbilities.ts)
+  | "stone" | "heal" | "vial" | "arrow" | "spear" | "pyramid"
+  | "convert" | "ward" | "fireball" | "firering" | "beam";
 
 export type AllyDef = {
   id: NpcId;
@@ -33,6 +37,11 @@ export type AllyDef = {
     FX: { x: number; y: number };
     /** uniform visual scale (gameplay stats are unaffected) */
     scale?: number;
+    /**
+     * Temporary placeholder: the sprite borrows another champion's PNG, tinted
+     * with this hue and labelled in-game. Remove when the final PNG arrives.
+     */
+    placeholderHue?: number;
   };
   /**
    * Optional held weapon drawn as its own complete layer (never sliced by the
@@ -74,11 +83,29 @@ export type AllyDef = {
   invokeRadius: number;
 };
 
+// Placeholder bodies for champions whose PNGs are pending (see placeholderHue).
+function PH_MALE(hue: number): AllyDef["sprite"] {
+  return { url: aaronAsset.url, W: 47, H: 88, CX: 16, FOOT_TOP: 80, FOOT_X0: 3, FOOT_X1: 30, FOOT_SPLIT: 15, FX: { x: 36, y: 40 }, scale: 0.9, placeholderHue: hue };
+}
+function PH_FEMALE(hue: number): AllyDef["sprite"] {
+  return { url: jochebedAsset.url, W: 42, H: 82, CX: 14, FOOT_TOP: 77, FOOT_X0: 6, FOOT_X1: 25, FOOT_SPLIT: 15, FX: { x: 36, y: 48 }, scale: 0.8, placeholderHue: hue };
+}
+function champ(
+  id: string, name: string, description: string, scripture: string, sprite: AllyDef["sprite"],
+  o: Pick<AllyDef, "cooldown" | "range" | "hitRadius" | "moveSpeed" | "attack">,
+): AllyDef {
+  // maxHp / damage are overridden at summon time from the shop evolution.
+  return { id: id as NpcId, name, description, scripture, sprite, maxHp: 3400, damage: 26, windup: 0.25, action: 0.3, invokeRadius: 150, ...o };
+}
+
+/** Miriam (Evolution 1) is the 100% attack / 100% health reference. */
+export const CHAMPION_REFERENCE_HP = 3400;
+
 // Balance profiles:
 //  Miriam   — glass cannon: low HP, broom hits as hard as the Staff of Moses, fastest attacks.
 //  Jochebed — tank: very high HP, low damage, moderate (not fast) attacks.
 //  Aaron    — high HP and high damage, but a clearly longer cooldown.
-export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
+export const ALLIES: Record<string, AllyDef> = {
   miriam: {
     id: "miriam",
     name: "Miriam",
@@ -142,6 +169,22 @@ export const ALLIES: Record<"miriam" | "jochebed" | "aaron", AllyDef> = {
     attack: "horn",
     invokeRadius: 150,
   },
+
+  // ---- Shop champions awaiting their final PNGs --------------------------
+  // To integrate a supplied PNG: upload it as src/assets/ally-<id>.png.asset.json,
+  // import it here, replace `PH_MALE`/`PH_FEMALE` with its sprite metrics and
+  // drop `placeholderHue`. Gameplay never depends on the sprite.
+  zipporah: champ("zipporah", "Zipporah", "Moses' wife. Throws fast stones.", "Exodus 2:21 — He gave Moses Zipporah his daughter.", PH_FEMALE(30), { cooldown: 1.0, range: 260, hitRadius: 14, moveSpeed: 92, attack: "stone" }),
+  puah: champ("puah", "Puah", "Midwife. Heals Moses and champions with vials and keeps her distance.", "Exodus 1:15-17 — The midwives feared God.", PH_FEMALE(120), { cooldown: 2.2, range: 320, hitRadius: 60, moveSpeed: 90, attack: "heal" }),
+  shiphrah: champ("shiphrah", "Shiphrah", "Midwife. Throws explosive vials.", "Exodus 1:15-17 — The midwives feared God.", PH_FEMALE(200), { cooldown: 1.6, range: 240, hitRadius: 60, moveSpeed: 85, attack: "vial" }),
+  gershom: champ("gershom", "Gershom", "Moses' firstborn. An archer.", "Exodus 2:22 — I have been a stranger in a strange land.", PH_MALE(40), { cooldown: 1.1, range: 320, hitRadius: 12, moveSpeed: 88, attack: "arrow" }),
+  eliezer: champ("eliezer", "Eliezer", "Moses' second son. Throws a piercing spear.", "Exodus 18:4 — The God of my father was mine help.", PH_MALE(90), { cooldown: 1.5, range: 280, hitRadius: 12, moveSpeed: 86, attack: "spear" }),
+  amram: champ("amram", "Amram", "Moses' father. Hurls pyramid stones that crack the ground.", "Exodus 6:20 — Amram took Jochebed to wife.", PH_MALE(150), { cooldown: 2.4, range: 260, hitRadius: 70, moveSpeed: 72, attack: "pyramid" }),
+  jethro: champ("jethro", "Jethro", "Priest of Midian. Turns and confuses enemies.", "Exodus 18:1 — Jethro, the priest of Midian, Moses' father in law.", PH_MALE(200), { cooldown: 1.0, range: 260, hitRadius: 200, moveSpeed: 78, attack: "convert" }),
+  ithamar: champ("ithamar", "Ithamar", "Aaron's son. Raises protective wards instead of attacking.", "Exodus 38:21 — By the hand of Ithamar.", PH_MALE(250), { cooldown: 1.0, range: 400, hitRadius: 46, moveSpeed: 82, attack: "ward" }),
+  nadab: champ("nadab", "Nadab", "Aaron's firstborn. Throws exploding fireballs.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", PH_MALE(320), { cooldown: 1.5, range: 280, hitRadius: 60, moveSpeed: 84, attack: "fireball" }),
+  abihu: champ("abihu", "Abihu", "Aaron's second son. Surrounds himself with fire.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", PH_MALE(10), { cooldown: 4.0, range: 120, hitRadius: 70, moveSpeed: 90, attack: "firering" }),
+  eleazar: champ("eleazar", "Eleazar", "Aaron's son. Fires continuous beams of light.", "Numbers 20:28 — Moses put Aaron's garments upon Eleazar.", PH_MALE(60), { cooldown: 3.0, range: 300, hitRadius: 10, moveSpeed: 80, attack: "beam" }),
 };
 
 export const ALLY_POOL: NpcId[] = Object.keys(ALLIES) as NpcId[];

@@ -46,7 +46,16 @@ export type NpcId =
   | "joshua"
   | "hur"
   | "elder"
-  | "jochebed";
+  | "jochebed"
+  | "puah"
+  | "shiphrah"
+  | "gershom"
+  | "eliezer"
+  | "amram"
+  | "ithamar"
+  | "nadab"
+  | "abihu"
+  | "eleazar";
 
 export type UpgradeChoice = {
   id: string;
