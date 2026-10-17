@@ -1060,7 +1060,8 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // damage from it, not even the ones standing behind him.
   if (d.blocked) return;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
-  const dmg = stats.dmg * damageMultiplier(state) * magicMultiplier(state);
+  // Physical attack: scaled by the equipped weapon, not by the staff's magic.
+  const dmg = stats.dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5);
   const tolerance = 14; // segment thickness
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
