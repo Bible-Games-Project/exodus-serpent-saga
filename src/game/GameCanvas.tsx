@@ -1,3 +1,4 @@
+import { drawOffscreenIndicators } from "./offscreenIndicators";
 import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
 export { BONUS_ART } from "./uiIcons";
 import { drawChampionFx } from "./championFx";
@@ -1766,6 +1767,9 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const e = s.entities.get(id);
     if (e) { e.pos.x = ox; e.pos.y = oy; }
   }
+  // Read restored world positions without changing gameplay state.
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawOffscreenIndicators(ctx, s, cnv.clientWidth, cnv.clientHeight, zoom);
 }
 
 

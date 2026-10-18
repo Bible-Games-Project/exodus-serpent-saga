@@ -99,6 +99,15 @@
   --title-mid: #e1a256;
   --title-sand: #f6c674;
   --title-light: #fbd98f;
+  --indicator-ally-dark: #64152a;
+  --indicator-ally-light: #ffbac0;
+  --indicator-enemy-dark: #123b7b;
+  --indicator-enemy-light: #b0deff;
+  --indicator-dead-dark: #292c30;
+  --indicator-dead-light: #9c9da2;
+  --indicator-ink: #191d24;
+  --indicator-health: #7ed992;
+  --indicator-critical: #f24848;
 }
 
 /* Full-screen cover (1920x1080). The stage covers the viewport; on narrow
