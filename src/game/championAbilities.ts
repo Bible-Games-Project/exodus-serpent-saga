@@ -483,7 +483,10 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     if (!validEnemy(en, state.now) || hitArr.includes(en.id)) continue;
     if (segmentDistance(en.pos) > en.radius + 10) continue;
     hitArr.push(en.id);
-    if (d.explodeR) { explode(state, e, d, h); e.ttl = 0; return; }
+    if (d.explodeR) {
+      // Detonate where the swept path contacted the enemy, not past it.
+      e.pos = { ...en.pos }; explode(state, e, d, h); e.ttl = 0; return;
+    }
     hit(state, h, en, d.dmg as number);
     if (d.burn) { en.data ??= {}; en.data.burnUntil = state.now + (d.burn as number); }
     if (d.chainN && !d.chained) { d.chained = 1; chainHit(state, h, en, d.chainN as number, (d.dmg as number) * 0.5); }

@@ -64,7 +64,7 @@ test('Ithamar II and III protect against projectiles for five and eight hits', (
   }
 });
 test('Shiphrah vials explode on their target and damage enemies at every evolution', () => {
-  for (const evo of [1, 2, 3]) { const a = arena('shiphrah', evo); const e = a.enemy(120); a.cast(); updateChampionEntities(a.state, .5, a.h); assert.equal(e.hp, 900); }
+  for (const evo of [1, 2, 3]) { const a = arena('shiphrah', evo); const e = a.enemy(120); a.cast(); updateChampionEntities(a.state, .5, a.h); assert.equal(e.hp, evo === 3 ? 840 : 900); }
 });
 test('Gershom fires one arrow then fire arrows then three explosive fire arrows', () => {
   for (const [evo, count, art] of [[1, 1, 'arrow'], [2, 1, 'firearrow'], [3, 3, 'firearrow']] as const) {
