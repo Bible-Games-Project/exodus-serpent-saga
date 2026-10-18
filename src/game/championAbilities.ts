@@ -118,21 +118,25 @@ function alliesAndMoses(state: GameState): Entity[] {
  * kinds (broom / water / horn), which the engine resolves itself.
  */
 export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyDef, dmg: number, h: ChampHelpers): boolean {
-  const d = ally.data!;
+  const d = (ally.data ??= {});
   const evo = champEvo(ally);
   const dir = (d.attackDir as Vec2) ?? { x: ally.facing, y: 0 };
   const tgt = (d.attackTarget as Vec2) ?? { x: ally.pos.x + dir.x * def.range, y: ally.pos.y + dir.y * def.range };
-  const from = { x: ally.pos.x, y: ally.pos.y - 20 };
+  // Simulation stays at ground coordinates; visual lift follows the original hand.
+  const sc = def.sprite.scale ?? 1;
+  const from = { x: ally.pos.x + (def.sprite.FX.x - def.sprite.CX) * sc * ally.facing, y: ally.pos.y };
+  const lift = (def.sprite.H - def.sprite.FX.y) * sc - 10;
+  const thrown = (v: Vec2, speed: number, ttl: number, data: Record<string, unknown>) => proj(h, from, v, speed, ttl, { lift, ...data });
   d.atkCount = ((d.atkCount as number) ?? 0) + 1;
   const count = d.atkCount as number;
 
   switch (def.attack) {
     case "stone": {
       if (evo >= 3 && count % 3 === 0) {
-        for (let i = 0; i < 8; i++) proj(h, from, rot({ x: 1, y: 0 }, (i / 8) * Math.PI * 2), 520, 0.9, { dmg, pierce: 3, art: "stone" });
+        for (let i = 0; i < 8; i++) thrown( rot({ x: 1, y: 0 }, (i / 8) * Math.PI * 2), 520, 0.9, { dmg, pierce: 3, art: "stone" });
       } else {
         const n = evo >= 2 ? 2 : 1;
-        for (let i = 0; i < n; i++) proj(h, from, rot(dir, (i - (n - 1) / 2) * 0.15), 560, 0.9, { dmg, pierce: evo >= 2 ? 3 : 1, art: "stone" });
+        for (let i = 0; i < n; i++) thrown( rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.15), 560, 0.9, { dmg, pierce: evo >= 2 ? 3 : 1, art: "stone" });
       }
       return true;
     }
@@ -145,7 +149,7 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       for (let i = 0; i < Math.min(n, hurt.length); i++) {
         const t = hurt[i];
         const v = delta(state, h, t.pos, ally.pos);
-        proj(h, from, v, 340, 3, { heal: t.maxHp * 0.06 * mul, targetId: t.id, art: "heal" });
+        thrown( v, 340, 3, { heal: t.maxHp * 0.06 * mul, targetId: t.id, art: "heal" });
       }
       // Puah III: a marked healing area near Moses (re-cast every 10 s).
       if (evo >= 3 && state.now >= ((d.zoneNext as number) ?? 0)) {
@@ -157,13 +161,13 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
     }
     case "vial": {
       const R = evo >= 2 ? 85 : 55;
-      proj(h, from, delta(state, h, tgt, from), 360, 0.9, { dmg, explodeR: R, chain: evo >= 3 ? 2 : 0, art: "vial", stopAt: tgt });
+      thrown( delta(state, h, tgt, from), 360, 0.9, { dmg, explodeR: R, chain: evo >= 3 ? 2 : 0, art: "vial", stopAt: tgt });
       return true;
     }
     case "arrow": {
       const n = evo >= 3 ? 3 : 1;
       for (let i = 0; i < n; i++) {
-        proj(h, from, rot(dir, (i - (n - 1) / 2) * 0.18), 640, 0.8, {
+        thrown( rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.18), 640, 0.8, {
           dmg, pierce: 1, art: evo >= 2 ? "firearrow" : "arrow",
           burn: evo >= 2 ? 3 : 0, explodeR: evo >= 3 ? 45 : 0,
         });
@@ -171,7 +175,7 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "spear": {
-      proj(h, from, dir, 500, 0.9, { dmg, pierce: 4, art: evo >= 2 ? "espear" : "spear", chainN: evo >= 3 ? 15 : evo >= 2 ? 7 : 0 });
+      thrown( delta(state, h, tgt, from), 500, 0.9, { dmg, pierce: 4, art: evo >= 2 ? "espear" : "spear", chainN: evo >= 3 ? 15 : evo >= 2 ? 7 : 0 });
       return true;
     }
     case "pyramid": {
@@ -179,7 +183,7 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       for (let i = 0; i < evo; i++) {
         const off = i === 0 ? { x: 0, y: 0 } : rot({ x: 55, y: 0 }, (i / evo) * Math.PI * 2 + Math.random());
         const at = { x: tgt.x + off.x, y: tgt.y + off.y };
-        proj(h, from, delta(state, h, at, from), 300, 1.2, { dmg, explodeR: R, knock: 90, art: "pyramid", stopAt: at, crack: 1, noContact: 1 });
+        thrown( delta(state, h, at, from), 300, 1.2, { dmg, explodeR: R, knock: 90, art: "pyramid", stopAt: at, crack: 1, noContact: 1 });
       }
       return true;
     }
@@ -229,9 +233,9 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "fireball": {
-      if (evo >= 3) proj(h, from, dir, 460, 2.0, { dmg, pierce: 1, rebound: 5, art: "flame", burn: 3 });
-      else if (evo >= 2) proj(h, from, dir, 520, 0.8, { dmg, pierce: 99, art: "flameline", burn: 3 });
-      else proj(h, from, dir, 420, 0.9, { dmg, pierce: 1, explodeR: 60, art: "fireball" });
+      if (evo >= 3) thrown( dir, 460, 2.0, { dmg, pierce: 1, rebound: 5, art: "flame", burn: 3 });
+      else if (evo >= 2) thrown( dir, 520, 0.8, { dmg, pierce: 99, art: "flameline", burn: 3 });
+      else thrown( dir, 420, 0.9, { dmg, pierce: 1, explodeR: 60, art: "fireball" });
       return true;
     }
     case "firering": {
@@ -255,7 +259,7 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
 /** Evolution extras for the three classic champions (Miriam / Jochebed / Aaron). */
 export function classicChampionExtras(state: GameState, ally: Entity, def: AllyDef, dmg: number, contact: Vec2, h: ChampHelpers) {
   const evo = champEvo(ally);
-  const d = ally.data!;
+  const d = (ally.data ??= {});
   d.atkCount = ((d.atkCount as number) ?? 0) + 1;
   if (ally.kind === "miriam" && evo >= 3) {
     // Miriam III: damaging whirlwinds drifting from the broom's contact point.
@@ -369,7 +373,7 @@ export function championControlsEnemy(state: GameState, e: Entity, dt: number, h
 export function updateChampionEntities(state: GameState, dt: number, h: ChampHelpers) {
   for (const e of [...state.entities.values()]) {
     if (!CH_KINDS.has(e.kind)) continue;
-    const d = e.data!;
+    const d = (e.data ??= {});
     if (e.kind === "chproj") updateProj(state, e, d, dt, h);
     else if (e.kind === "chzone") {
       if (d.followId != null) {
@@ -443,6 +447,7 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
 }
 
 function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt: number, h: ChampHelpers) {
+  if ((e.ttl ?? 1) <= 0) return;
   // Healing vial: homes in on its ally / Moses and heals on arrival.
   if (d.heal) {
     const t = state.entities.get(d.targetId as number) ?? (d.targetId === state.player.id ? state.player : undefined);
@@ -458,21 +463,30 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     e.pos.x += (v.x / dd) * 340 * dt; e.pos.y += (v.y / dd) * 340 * dt;
     return;
   }
+  const previous = { ...e.pos };
   e.pos.x += (d.vx as number) * dt;
   e.pos.y += (d.vy as number) * dt;
+  const movement = delta(state, h, e.pos, previous);
+  const segmentDistance = (point: Vec2) => {
+    const v = delta(state, h, point, previous);
+    const length2 = movement.x ** 2 + movement.y ** 2;
+    const t = length2 ? Math.max(0, Math.min(1, (v.x * movement.x + v.y * movement.y) / length2)) : 0;
+    return Math.hypot(v.x - movement.x * t, v.y - movement.y * t);
+  };
   // Lobbed projectiles land on their target point.
   if (d.stopAt) {
-    const v = delta(state, h, d.stopAt as Vec2, e.pos);
-    if (Math.hypot(v.x, v.y) < 14 || (e.ttl ?? 0) <= dt) { explode(state, e, d, h); e.ttl = 0; return; }
+    if (segmentDistance(d.stopAt as Vec2) < 14 || (e.ttl ?? 0) <= dt) { e.pos = { ...(d.stopAt as Vec2) }; explode(state, e, d, h); e.ttl = 0; return; }
   }
   if (d.noContact) return;
   const hitArr = d.hit as number[];
   for (const en of [...state.entities.values()]) {
     if (!validEnemy(en, state.now) || hitArr.includes(en.id)) continue;
-    const v = delta(state, h, en.pos, e.pos);
-    if (Math.hypot(v.x, v.y) > en.radius + 10) continue;
+    if (segmentDistance(en.pos) > en.radius + 10) continue;
     hitArr.push(en.id);
-    if (d.explodeR) { explode(state, e, d, h); e.ttl = 0; return; }
+    if (d.explodeR) {
+      // Detonate where the swept path contacted the enemy, not past it.
+      e.pos = { ...en.pos }; explode(state, e, d, h); e.ttl = 0; return;
+    }
     hit(state, h, en, d.dmg as number);
     if (d.burn) { en.data ??= {}; en.data.burnUntil = state.now + (d.burn as number); }
     if (d.chainN && !d.chained) { d.chained = 1; chainHit(state, h, en, d.chainN as number, (d.dmg as number) * 0.5); }

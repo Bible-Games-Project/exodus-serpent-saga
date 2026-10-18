@@ -12,3 +12,6 @@
 - Ramses art switches: `RAMSES_VISUAL_VERSION` (ramsesArt.ts: v2 walk + seated-with-throne; procedural throne hidden while he sits) and `RAMSES_CHARIOT_VERSION` (ramsesChariotArt.ts). Old assets stay for rollback; never delete them.
 - Route refreshes (enemy target choice, champion target + retreat heading, wolf pack centre) go through `routing.ts` (`ROUTE_MIN_INTERVAL` 0.4 s per character); per-frame steering toward the cached target is not a refresh.
 - Firstborn branches start at the Angel of Light's sword (`angelArt.ts`, `firstbornangel` visual hazard anchored at cast). Livestock is a camera-following `livestockwave` band.
+- Supplied champions use virtual sprite coordinates and original-pixel arm/weapon layers; draw full-resolution sources into those coordinates without changing their proportions.
+- Champion projectile simulation stays on the ground; hand height is a visual lift only, keeping collision aligned with enemy ground positions.
+- Support timelines run without hostile targets; verify healing and wards in an empty arena as well as in combat.

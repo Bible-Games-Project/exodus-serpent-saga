@@ -6,12 +6,28 @@ import { Button } from "./ui/button";
 import { ShopItemIcon } from "./ShopItemIcon";
 import { BONUS_ART, SWORD_ART, STAFF_ART } from "@/game/uiIcons";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
-import pAaron from "@/assets/shop-portrait-aaron.png.asset.json";
-import pJochebed from "@/assets/shop-portrait-jochebed.png.asset.json";
-import pMiriam from "@/assets/shop-portrait-miriam.png.asset.json";
-import fAaron from "@/assets/shop-aaron-forward.png";
-import fJochebed from "@/assets/shop-jochebed-forward.png";
-import fMiriam from "@/assets/shop-miriam-forward.png";
+import pAaron from "@/assets/shop-aaron-exact-portrait.png.asset.json";
+import fAaron from "@/assets/shop-aaron-exact-full.png.asset.json";
+import pMiriam from "@/assets/shop-miriam-portrait-approved.png";
+import pJochebed from "@/assets/shop-jochebed-portrait-approved.png";
+import fMiriam from "@/assets/shop-miriam-full-approved.png";
+import fJochebed from "@/assets/shop-jochebed-full-approved.png";
+import pzipporah from "@/assets/shop-zipporah-portrait.png.asset.json";
+import fzipporah from "@/assets/ally-zipporah-supplied.png.asset.json";
+import ppuah from "@/assets/shop-puah-portrait.png.asset.json";
+import fpuah from "@/assets/ally-puah-supplied.png.asset.json";
+import pshiphrah from "@/assets/shop-shiphrah-portrait.png.asset.json";
+import fshiphrah from "@/assets/ally-shiphrah-supplied.png.asset.json";
+import pgershom from "@/assets/shop-gershom-portrait.png.asset.json";
+import fgershom from "@/assets/ally-gershom-supplied.png.asset.json";
+import peliezer from "@/assets/shop-eliezer-portrait.png.asset.json";
+import feliezer from "@/assets/ally-eliezer-supplied.png.asset.json";
+import pamram from "@/assets/shop-amram-portrait.png.asset.json";
+import famram from "@/assets/ally-amram-supplied.png.asset.json";
+import pjethro from "@/assets/shop-jethro-portrait.png.asset.json";
+import fjethro from "@/assets/ally-jethro-supplied.png.asset.json";
+import pithamar from "@/assets/shop-ithamar-portrait.png.asset.json";
+import fithamar from "@/assets/ally-ithamar-supplied.png.asset.json";
 import {
   COIN_ART, PORTRAIT_PLACEHOLDER,
 } from "./shopIcons";
@@ -35,15 +51,24 @@ const CATEGORY_ICONS = {
 // Shop artwork per champion. Champions without an entry show the neutral
 // placeholder until their final PNGs are supplied.
 const CHAMPION_ART: Record<string, { portrait: string; full: string }> = {
-  aaron: { portrait: pAaron.url, full: fAaron },
-  jochebed: { portrait: pJochebed.url, full: fJochebed },
-  miriam: { portrait: pMiriam.url, full: fMiriam },
+  aaron: { portrait: pAaron.url, full: fAaron.url },
+  jochebed: { portrait: pJochebed, full: fJochebed },
+  miriam: { portrait: pMiriam, full: fMiriam },
+  zipporah: { portrait: pzipporah.url, full: fzipporah.url },
+  puah: { portrait: ppuah.url, full: fpuah.url },
+  shiphrah: { portrait: pshiphrah.url, full: fshiphrah.url },
+  gershom: { portrait: pgershom.url, full: fgershom.url },
+  eliezer: { portrait: peliezer.url, full: feliezer.url },
+  amram: { portrait: pamram.url, full: famram.url },
+  jethro: { portrait: pjethro.url, full: fjethro.url },
+  ithamar: { portrait: pithamar.url, full: fithamar.url },
+
 };
 
 function ChampionPortrait({ id, size }: { id: string; size: number }) {
   const art = CHAMPION_ART[id];
   if (!art) return <PixelIcon art={PORTRAIT_PLACEHOLDER} size={size} />;
-  return <img src={art.full} alt="" width={size} height={size} className="shop-portrait shrink-0" style={{ width: size, height: size }} />;
+  return <img src={art.portrait} alt="" width={size} height={size} className="shop-portrait shrink-0" style={{ width: size, height: size }} />;
 }
 
 type Notice = { kind: "ok" | "err"; text: string } | null;

@@ -12,7 +12,7 @@ function load(url: string): HTMLImageElement | null {
   return i.complete && i.naturalWidth ? i : null;
 }
 function img(def: AllyDef): HTMLImageElement | null {
-  return load(def.weapon ? def.weapon.bodyUrl : def.sprite.url);
+  return load(def.gesture?.bodyUrl ?? def.weapon?.bodyUrl ?? def.sprite.url);
 }
 
 /** Weapon rotation (rad, facing right) for the current attack timeline. */
@@ -26,6 +26,15 @@ export function allyWeaponAngle(def: AllyDef, attackT: number | undefined): numb
   if (k < f) { const q = k / f; return w.windupAngle + (w.swingAngle - w.windupAngle) * q * q; }
   if (k < f + 0.25) return w.swingAngle;
   return w.swingAngle * (1 - (k - f - 0.25) / (1 - f - 0.25));
+}
+
+export function allyGestureAngle(def: AllyDef, attackT: number | undefined): number {
+  if (!def.gesture || attackT == null) return 0;
+  const elapsed = def.windup + def.action - attackT;
+  if (elapsed < def.windup) return -def.gesture.angle * 0.18 * Math.sin(elapsed / def.windup * Math.PI / 2);
+  const progress = Math.min(1, (elapsed - def.windup) / def.action);
+  const impact = def.impactFrac ?? 0.35;
+  return def.gesture.angle * (progress < impact ? progress / impact : (1 - progress) / (1 - impact));
 }
 
 const rnd = (seed: number, i: number) => {
@@ -80,8 +89,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 
   const moving = Math.hypot(e.vel.x, e.vel.y) > 5;
   // Walk cadence follows ground speed so feet never slide.
-  const phase = (d.walkPhase as number ?? 0) + (moving ? Math.hypot(e.vel.x, e.vel.y) / 60 * 0.1 : 0);
-  d.walkPhase = phase; e.data = d;
+  const phase = e.animT / 6 * (moving ? Math.hypot(e.vel.x, e.vel.y) / 60 : 0);
   const sw = Math.sin(phase * Math.PI * 2);
   const lift = moving ? Math.round(Math.abs(sw) * 2) : 0;
   const bodyBob = moving && lift >= 2 ? -1 : 0;
@@ -95,6 +103,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
     if (el < def.windup) { const k = el / def.windup; lean = -0.12 * k; push = -2 * k; }
     else { const k = Math.min(1, (el - def.windup) / def.action); const f = Math.sin(Math.min(1, k * 1.6) * Math.PI / 2) * (1 - k * 0.6); lean = 0.2 * f; push = 4 * f; }
     if (def.attack === "horn") { lean *= -0.5; push *= 0.3; } // blowing: chest back
+    if (def.gesture) { lean *= 0.15; push *= 0.25; }
     if (def.weapon) { lean = 0; push *= 0.25; } // the weapon strikes, not the body
   }
 
@@ -108,17 +117,30 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   ctx.translate(-CX, -H);
   // Placeholder champions borrow another PNG, tinted until their own arrives.
   if (def.sprite.placeholderHue != null) ctx.filter = `hue-rotate(${def.sprite.placeholderHue}deg) saturate(0.85)`;
+  const sx = im.naturalWidth / W, sy = im.naturalHeight / H;
+  const region = (x0: number, y0: number, width: number, height: number, dx: number, dy: number) =>
+    ctx.drawImage(im, x0 * sx, y0 * sy, width * sx, height * sy, dx, dy, width, height);
   // Feet band: two feet alternate lift + stride; everything else stays whole.
   if (moving) {
     const a = sw > 0 ? 1 : 0;
-    ctx.drawImage(im, 0, 0, W, FOOT_TOP, 0, bodyBob, W, FOOT_TOP);
+    region(0, 0, W, FOOT_TOP, 0, bodyBob);
     const fh = H - FOOT_TOP;
-    ctx.drawImage(im, FOOT_X1, FOOT_TOP, W - FOOT_X1, fh, FOOT_X1, FOOT_TOP, W - FOOT_X1, fh);
-    ctx.drawImage(im, 0, FOOT_TOP, FOOT_X0, fh, 0, FOOT_TOP, FOOT_X0, fh);
-    ctx.drawImage(im, FOOT_X0, FOOT_TOP, FOOT_SPLIT - FOOT_X0, fh, FOOT_X0 - (a ? 1 : -1), FOOT_TOP - (a ? 0 : lift), FOOT_SPLIT - FOOT_X0, fh);
-    ctx.drawImage(im, FOOT_SPLIT, FOOT_TOP, FOOT_X1 - FOOT_SPLIT, fh, FOOT_SPLIT + (a ? 1 : -1), FOOT_TOP - (a ? lift : 0), FOOT_X1 - FOOT_SPLIT, fh);
+    region(FOOT_X1, FOOT_TOP, W - FOOT_X1, fh, FOOT_X1, FOOT_TOP);
+    region(0, FOOT_TOP, FOOT_X0, fh, 0, FOOT_TOP);
+    region(FOOT_X0, FOOT_TOP, FOOT_SPLIT - FOOT_X0, fh, FOOT_X0 - (a ? 1 : -1), FOOT_TOP - (a ? 0 : lift));
+    region(FOOT_SPLIT, FOOT_TOP, FOOT_X1 - FOOT_SPLIT, fh, FOOT_SPLIT + (a ? 1 : -1), FOOT_TOP - (a ? lift : 0));
   } else {
-    ctx.drawImage(im, 0, 0, W, H, 0, 0, W, H);
+    ctx.drawImage(im, 0, 0, im.naturalWidth, im.naturalHeight, 0, 0, W, H);
+  }
+  const gesture = def.gesture;
+  if (gesture) {
+    const action = load(gesture.actionUrl);
+    if (action) {
+      ctx.save(); ctx.translate(gesture.pivot.x, gesture.pivot.y + bodyBob);
+      ctx.rotate(allyGestureAngle(def, at));
+      ctx.drawImage(action, 0, 0, action.naturalWidth, action.naturalHeight, -gesture.pivot.x, -gesture.pivot.y, W, H);
+      ctx.restore();
+    }
   }
   // Held weapon: one complete layer attached to the grip, rotated as a whole.
   const w = def.weapon;

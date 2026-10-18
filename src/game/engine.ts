@@ -2142,7 +2142,7 @@ function allyTargetValid(state: GameState, id: number | undefined): Entity | und
 }
 
 function updateCompanion(state: GameState, e: Entity, dt: number) {
-  const d = e.data!;
+  const d = (e.data ??= {});
   const def = allyDef(e.kind);
   e.vel.x = 0; e.vel.y = 0;
   if (!def) return;
@@ -2210,6 +2210,14 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   }
 
   d.atkCd = ((d.atkCd as number) ?? 0) - dt;
+  if (def.attack === "heal" || def.attack === "ward") {
+    if ((d.atkCd as number) <= 0) {
+      d.attackT = def.windup + def.action;
+      d.attackResolved = false;
+      d.atkCd = def.cooldown;
+    } else allyRetreat(e, def, dt);
+    return;
+  }
   if (target) {
     const dx = wrapDelta(target.pos.x, e.pos.x, state.worldW);
     const dy = wrapDelta(target.pos.y, e.pos.y, state.worldH);
