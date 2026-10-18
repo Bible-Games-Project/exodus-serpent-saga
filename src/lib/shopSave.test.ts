@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { expect, test } from 'bun:test';
 import { CHAMPIONS } from '@/game/shopCatalog';
 test('Miriam starter is free; paid evolutions unchanged', () => expect(CHAMPIONS.find((c) => c.id === 'miriam')?.evolutions.map((e) => e.price)).toEqual([0, 600000, 1500000]));

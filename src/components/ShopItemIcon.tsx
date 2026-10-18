@@ -25,7 +25,7 @@ const ART: Record<string, string> = { branch, dagger, spear, sword, harpoon, axe
 
 export function ShopItemIcon({ item, size }: { item: EquipItem; size: number }) {
   const url = ART[item.id];
-  if (url) return <img src={url} alt="" width={size} height={size} loading="lazy" className="shop-item-icon shrink-0" />;
+  if (url) return <img src={url} alt="" width={size} height={size} loading="lazy" className="shop-item-icon shrink-0" style={{ width: size, height: size }} />;
   const art = item.category === "food" ? BONUS_ART.heart : item.category === "shield" ? BONUS_ART.shield : BONUS_ART.lightning;
   return <PixelIcon art={art} size={size} />;
 }

@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { expect, test } from 'bun:test';
 import { offscreenPoint, separateIndicators } from './offscreenGeometry';
 const bounds = { left: 34, right: 1246, top: 90, bottom: 590 };
