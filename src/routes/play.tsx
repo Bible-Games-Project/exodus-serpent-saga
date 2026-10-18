@@ -12,6 +12,10 @@ export const Route = createFileRoute("/play")({
     meta: [
       { title: "Play — Exodus Survivors" },
       { name: "description", content: "Survive the plagues. Play Exodus Survivors right in your browser." },
+      { property: "og:title", content: "Play — Exodus Survivors" },
+      { property: "og:description", content: "Survive the plagues. Play Exodus Survivors right in your browser." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),

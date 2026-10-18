@@ -96,3 +96,7 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Subdirectories have their own `AGENTS.md` (e.g. `src/game/AGENTS.md`); read it before changing files there.
 - Shop champions: attack kinds and evolution behaviour live in `src/game/championAbilities.ts` (visuals in `championFx.ts`); stats come from the purchased evolution at summon (`data.evo`, `data.atkPct`, HP = `CHAMPION_REFERENCE_HP` × healthPct). Placeholder sprites use `sprite.placeholderHue` in `allies.ts` until final PNGs arrive.
 - Every new run starts from `/shop` (Home Play, Retry and Leaderboard Play all link there); only the Shop's Play links to `/play`.
+
+- Shared level-up/shop icons live in `game/uiIcons.ts`; shop weapon images are separate from combat art.
+- Off-screen overlays read restored world positions and actual HP; pure geometry is tested separately.
+- Grant free starters during save sanitization to preserve existing purchases.

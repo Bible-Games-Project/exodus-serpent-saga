@@ -65,3 +65,8 @@
 
 - [x] Phase 5: shop visuals, Home→Shop→Play flow, 3 champion shop artworks, 11 champion abilities.
 - [ ] Final PNGs for 11 champions (waiting on user).
+- [x] Make Miriam evolution 1 immediately free and preserve existing saves.
+- [x] Expand shop lists, double champion icons, share level-up icons and add weapon artwork.
+- [x] Add forward-facing shop artwork for Aaron, Miriam and Jochebed only.
+- [x] Add red ally / blue Ramses off-screen portraits with live health and downed states.
+- [x] Verify shop persistence, navigation, indicators and desktop/mobile presentation.

@@ -99,6 +99,15 @@
   --title-mid: #e1a256;
   --title-sand: #f6c674;
   --title-light: #fbd98f;
+  --indicator-ally-dark: #64152a;
+  --indicator-ally-light: #ffbac0;
+  --indicator-enemy-dark: #123b7b;
+  --indicator-enemy-light: #b0deff;
+  --indicator-dead-dark: #292c30;
+  --indicator-dead-light: #9c9da2;
+  --indicator-ink: #191d24;
+  --indicator-health: #7ed992;
+  --indicator-critical: #f24848;
 }
 
 /* Full-screen cover (1920x1080). The stage covers the viewport; on narrow
@@ -323,5 +332,30 @@
 .shop-tag { display: inline-block; padding: 1px 6px; font-size: 10px; line-height: 14px; background: var(--title-ink); color: var(--title-light); text-transform: uppercase; letter-spacing: 0.04em; }
 .shop-tag-gold { background: var(--title-shade); color: var(--title-light); }
 .shop-stage { background: radial-gradient(ellipse at 50% 85%, color-mix(in oklab, var(--title-mid) 80%, transparent), transparent 70%), color-mix(in oklab, var(--title-light) 70%, transparent); box-shadow: inset 0 0 0 3px var(--title-ink); }
-.shop-portrait { image-rendering: pixelated; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); object-fit: cover; object-position: top; }
+.shop-portrait { image-rendering: pixelated; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); object-fit: contain; object-position: center; }
 .shop-scroll { scrollbar-width: thin; scrollbar-color: var(--title-shade) transparent; }
+
+/* Shop columns fill the viewport; individual lists scroll below fixed headers. */
+.shop-screen { padding-bottom: 24px; }
+.shop-screen > header { flex-shrink: 0; }
+.shop-layout { min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); }
+.shop-list-panel, .shop-detail { height: 100%; }
+.shop-scroll { overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: auto; }
+.shop-scroll .shop-card { min-height: 58px; }
+.shop-stage { height: min(42dvh, 460px); }
+.shop-item-icon { object-fit: contain; image-rendering: pixelated; }
+.shop-tag { white-space: normal; letter-spacing: 0; }
+.shop-screen .cover-button { letter-spacing: 0; }
+@media (max-width: 1023px) {
+  .shop-screen { overflow-y: auto; }
+  .shop-layout { flex: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .shop-detail { grid-row: 2; grid-column: 1 / -1; max-height: none; height: auto; }
+  .shop-list-panel { height: max(340px, calc(100dvh - 150px)); }
+  .shop-stage { height: 360px; }
+  .shop-portrait { width: 80px; height: 80px; }
+  .shop-layout > [aria-label="Champions"] .shop-card { flex-wrap: wrap; justify-content: center; text-align: center; }
+  .shop-layout > [aria-label="Champions"] .shop-card > span { flex-basis: 100%; }
+  .shop-screen > header { gap: 10px; }
+  .shop-screen > header > div { flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .shop-screen .cover-button { --btn-fs: 11px; padding: 0.8em; }
+}

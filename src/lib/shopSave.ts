@@ -28,8 +28,8 @@ const DEFAULTS: ShopSave = {
     shield: { itemId: "abel", evolution: 1 },
     footwear: { itemId: "barefoot", evolution: 1 },
   },
-  championsOwned: {},
-  championsSelected: {},
+  championsOwned: { miriam: 1 },
+  championsSelected: { miriam: 1 },
 };
 
 let cache: ShopSave | null = null;
@@ -63,6 +63,9 @@ function sanitize(raw: Partial<ShopSave>): ShopSave {
     if (!findChampion(id)) continue;
     s.championsOwned[id] = Math.min(3, Math.max(1, Math.floor(lvl)));
   }
+  // Upgrade existing saves as well as new saves without losing paid ranks.
+  s.championsOwned.miriam = Math.max(1, s.championsOwned.miriam ?? 0);
+  s.championsSelected.miriam = 1;
   for (const [id, lvl] of Object.entries(raw.championsSelected ?? {})) {
     const owned = s.championsOwned[id] ?? 0;
     if (owned > 0) s.championsSelected[id] = Math.min(owned, Math.max(1, Math.floor(lvl)));

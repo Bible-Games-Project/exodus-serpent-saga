@@ -262,7 +262,7 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "miriam", name: "Miriam", relationship: "Moses' sister, the prophetess with the timbrel.",
     evolutions: [
-      cev(1, 400, 100, 100, "Sweeps in an arc and hits nearby enemies."),
+      cev(1, 0, 100, 100, "Sweeps in an arc and hits nearby enemies."),
       cev(2, 600_000, 150, 110, "Stronger sweep, farther dust and more targets."),
       cev(3, 1_500_000, 250, 130, "Creates damaging whirlwinds over a wider area."),
     ],
