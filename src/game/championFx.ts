@@ -38,7 +38,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     case "chproj": {
       const art = PROJ_ART[(d.art as string) ?? "stone"] ?? PROJ_ART.stone;
       const [a, b, w, hgt] = art;
-      ctx.translate(x, y - (d.heal ? 0 : 0));
+      ctx.translate(x, y - ((d.lift as number) ?? 0) * Math.max(0, 1 - (1 - life) * 3));
       if (d.art === "arrow" || d.art === "firearrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
         ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
       }
@@ -46,6 +46,10 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
         ctx.fillStyle = b;
         ctx.beginPath(); ctx.moveTo(-w / 2, hgt / 2); ctx.lineTo(w / 2, hgt / 2); ctx.lineTo(0, -hgt / 2); ctx.closePath(); ctx.fill();
         ctx.fillStyle = a; ctx.fillRect(-2, -hgt / 2 + 3, 4, hgt - 4);
+      } else if (d.art === "stone") {
+        ctx.rotate(e.animT * 8);
+        ctx.fillStyle = b; ctx.fillRect(-4, -2, 8, 5); ctx.fillRect(-2, -4, 5, 8);
+        ctx.fillStyle = a; ctx.fillRect(-2, -2, 5, 4);
       } else {
         ctx.fillStyle = b; ctx.fillRect(-w / 2 - 1, -hgt / 2 - 1, w + 2, hgt + 2);
         ctx.fillStyle = a; ctx.fillRect(-w / 2, -hgt / 2, w, hgt);
