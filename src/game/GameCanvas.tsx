@@ -1,3 +1,5 @@
+import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
+export { BONUS_ART } from "./uiIcons";
 import { drawChampionFx } from "./championFx";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
 import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
@@ -323,48 +325,6 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
     </div>
   );
 }
-
-// Pixel-art shepherd's staff for the melee-strike stat row (14x14).
-const STAFF_ART: { grid: string[]; palette: Record<string, string> } = {
-  palette: { K: "#2b1d14", w: "#8a5a34", d: "#b48355", W: "#f6efdc" },
-  grid: [
-    "....KKKK......",
-    "...KddwwK.....",
-    "..KdWK.KwK....",
-    "..KdK...KwK...",
-    "..KdK...KwK...",
-    "..KdWK.KwK....",
-    "...KdwwK......",
-    "....KdWK......",
-    "....KdwK......",
-    "....KdwK......",
-    "....KdwK......",
-    "....KdwK......",
-    "....KdwK......",
-    "....KKKK......",
-  ],
-};
-
-// Pixel-art sword for the damage stat row (14x14, same density as BONUS_ART).
-const SWORD_ART: { grid: string[]; palette: Record<string, string> } = {
-  palette: { K: "#2b1d14", W: "#f6efdc", S: "#b9c4cf", s: "#7e8b99", o: "#e6c261", O: "#b48836", b: "#7a4a2b" },
-  grid: [
-    "..........KKK.",
-    ".........KWSK.",
-    "........KWSSK.",
-    ".......KWSSK..",
-    "......KWSSK...",
-    ".....KWSSK....",
-    "....KWSSK.....",
-    "...KWSSK......",
-    "..KWSSK.......",
-    ".KoOoOoOK.....",
-    "KoOK.KOoK.....",
-    ".KbK..KK......",
-    ".KbK..........",
-    ".KKK..........",
-  ],
-};
 
 function StatPixelIcon({
   art,
@@ -3986,103 +3946,6 @@ function drawRedSeaBurst(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 // render from the exact same grid so the visual language stays consistent.
 // Grids are ~14 wide, drawn at half the previous pixel size so each icon
 // carries ~2× the detail while keeping the same on-screen footprint.
-export const BONUS_ART: Record<BonusKind, { grid: string[]; palette: Record<string, string> }> = {
-  heart: {
-    grid: [
-      "..KKK....KKK..",
-      ".KRRRK..KRRRK.",
-      "KRhhRKKKKRhhRK",
-      "KRWWhRRRRhhhRK",
-      "KRWhhhhhhhhhRK",
-      "KRhhhhhhhhhhRK",
-      "KRRhhhhhhhhRRK",
-      ".KRhhhhhhhhRK.",
-      "..KRhhhhhhRK..",
-      "...KRhhhhRK...",
-      "....KRhhRK....",
-      ".....KRRK.....",
-      "......KK......",
-      "..............",
-    ],
-    palette: { K: "#3a0a12", R: "#e12038", h: "#ff5566", W: "#ffd0d6" },
-  },
-  magnet: {
-    grid: [
-      "..KKKKKKKKKK..",
-      ".KRRRRRRRRRRK.",
-      "KRhhhhhhhhhhRK",
-      "KRhhWhhhhWhhRK",
-      "KRhhhKKKKhhhRK",
-      "KRhhRK..KRhhRK",
-      "KRhhRK..KRhhRK",
-      "KRhhRK..KRhhRK",
-      "KRRRRK..KRRRRK",
-      "KSSSSK..KSSSSK",
-      "KSwwSK..KSwwSK",
-      "KSSSSK..KSSSSK",
-      "KKKKKK..KKKKKK",
-      "..............",
-    ],
-    palette: { K: "#2a0810", R: "#d02030", h: "#ff5060", W: "#ffd0d6", S: "#8a8f96", w: "#e6ecef" },
-  },
-  star: {
-    grid: [
-      "......KK......",
-      ".....KYYK.....",
-      ".....KYyK.....",
-      "KKKKKKYyKKKKKK",
-      "KYyyyyYyyyyyYK",
-      ".KYyyyyyyyyYK.",
-      "..KYyyWWyyYK..",
-      "..KYyyyyyyYK..",
-      ".KYyyYYYYyyYK.",
-      "KYyYK....KYyYK",
-      "KYYK......KYYK",
-      "KKK........KKK",
-      "..............",
-      "..............",
-    ],
-    palette: { K: "#3a2a08", Y: "#e8a820", y: "#ffd54a", W: "#fff8c0" },
-  },
-  lightning: {
-    grid: [
-      ".......KKKK...",
-      "......KjjjK...",
-      ".....KjjjK....",
-      "....KjjjK.....",
-      "...KjjjK......",
-      "...KjjjjKKKK..",
-      "...KjjJjjjjK..",
-      "....KKKKjjjK..",
-      ".......KjjjK..",
-      "......KjjjK...",
-      ".....KjjjK....",
-      "....KjjjK.....",
-      "....KjK.......",
-      "....KK........",
-    ],
-    palette: { K: "#3a2a08", j: "#ffd400", J: "#fff36a" },
-  },
-  shield: {
-    grid: [
-      "..KKKKKKKKKK..",
-      ".KBBBBBBBBBBK.",
-      "KBWWWWWWWWWWBK",
-      "KBWWCCCCCCWWBK",
-      "KBWCCGCCGCCWBK",
-      "KBWCGGGGGGCWBK",
-      "KBWCCGGGGCCWBK",
-      "KBWCCCGGCCCWBK",
-      "KBWCCCCCCCCWBK",
-      "KBWWCCCCCCWWBK",
-      "KBBWWWWWWWWBBK",
-      ".KBBBBBBBBBBK.",
-      "..KKBBBBBBKK..",
-      "....KKKKKK....",
-    ],
-    palette: { K: "#101828", B: "#2b4a7a", W: "#dbe9f7", C: "#8ec8ff", G: "#e6c261" },
-  },
-};
 
 function drawBonusArt(
   ctx: CanvasRenderingContext2D,
