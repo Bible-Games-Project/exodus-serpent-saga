@@ -94,7 +94,7 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Multi-attack milestones: `ATTACK_MULTI_MILESTONES` (plagues.ts). Missed champion milestones persist via `championOfferPending`.
 
 - Subdirectories have their own `AGENTS.md` (e.g. `src/game/AGENTS.md`); read it before changing files there.
-- Shop champions: attack kinds and evolution behaviour live in `src/game/championAbilities.ts` (visuals in `championFx.ts`); stats come from the purchased evolution at summon (`data.evo`, `data.atkPct`, HP = `CHAMPION_REFERENCE_HP` × healthPct). Placeholder sprites use `sprite.placeholderHue` in `allies.ts` until final PNGs arrive.
+- Shop champion abilities live in `game/championAbilities.ts`, visuals in `championFx.ts`; summon stats use purchased evolution. See `src/game/AGENTS.md` for supplied-art animation and projectile rules.
 - Every new run starts from `/shop` (Home Play, Retry and Leaderboard Play all link there); only the Shop's Play links to `/play`.
 
 - Shared level-up/shop icons live in `game/uiIcons.ts`; shop weapon images are separate from combat art.
