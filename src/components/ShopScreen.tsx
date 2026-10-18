@@ -2,15 +2,18 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PixelIcon } from "./PixelIcon";
+import { Button } from "./ui/button";
+import { ShopItemIcon } from "./ShopItemIcon";
+import { BONUS_ART, SWORD_ART, STAFF_ART } from "@/game/uiIcons";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
 import pAaron from "@/assets/shop-portrait-aaron.png.asset.json";
 import pJochebed from "@/assets/shop-portrait-jochebed.png.asset.json";
 import pMiriam from "@/assets/shop-portrait-miriam.png.asset.json";
-import fAaron from "@/assets/shop-full-aaron.png.asset.json";
-import fJochebed from "@/assets/shop-full-jochebed.png.asset.json";
-import fMiriam from "@/assets/shop-full-miriam.png.asset.json";
+import fAaron from "@/assets/shop-aaron-forward.png";
+import fJochebed from "@/assets/shop-jochebed-forward.png";
+import fMiriam from "@/assets/shop-miriam-forward.png";
 import {
-  BOOT_ICON, COIN_ART, HEART_ICON, PORTRAIT_PLACEHOLDER, SHIELD_ICON, STAFF_ICON, SWORD_ICON,
+  COIN_ART, PORTRAIT_PLACEHOLDER,
 } from "./shopIcons";
 import {
   CATEGORY_ITEMS, CATEGORY_LABELS, CHAMPIONS, formatCoins,
@@ -22,25 +25,25 @@ import {
 } from "@/lib/shopSave";
 
 const CATEGORY_ICONS = {
-  weapon: SWORD_ICON,
-  staff: STAFF_ICON,
-  food: HEART_ICON,
-  shield: SHIELD_ICON,
-  footwear: BOOT_ICON,
+  weapon: SWORD_ART,
+  staff: STAFF_ART,
+  food: BONUS_ART.heart,
+  shield: BONUS_ART.shield,
+  footwear: BONUS_ART.lightning,
 } as const;
 
 // Shop artwork per champion. Champions without an entry show the neutral
 // placeholder until their final PNGs are supplied.
 const CHAMPION_ART: Record<string, { portrait: string; full: string }> = {
-  aaron: { portrait: pAaron.url, full: fAaron.url },
-  jochebed: { portrait: pJochebed.url, full: fJochebed.url },
-  miriam: { portrait: pMiriam.url, full: fMiriam.url },
+  aaron: { portrait: pAaron.url, full: fAaron },
+  jochebed: { portrait: pJochebed.url, full: fJochebed },
+  miriam: { portrait: pMiriam.url, full: fMiriam },
 };
 
 function ChampionPortrait({ id, size }: { id: string; size: number }) {
   const art = CHAMPION_ART[id];
   if (!art) return <PixelIcon art={PORTRAIT_PLACEHOLDER} size={size} />;
-  return <img src={art.portrait} alt="" width={size} height={size} className="shop-portrait shrink-0" style={{ width: size, height: size }} />;
+  return <img src={art.full} alt="" width={size} height={size} className="shop-portrait shrink-0" style={{ width: size, height: size }} />;
 }
 
 type Notice = { kind: "ok" | "err"; text: string } | null;
@@ -104,7 +107,7 @@ export function ShopScreen() {
   const currentChampion = CHAMPIONS.find((c) => c.id === selectedChampion) ?? null;
 
   return (
-    <main className="sub-screen flex flex-col px-4 py-4">
+    <main className="sub-screen shop-screen flex flex-col px-4 py-4">
       <img src={cover.url} alt="" aria-hidden className="sub-bg" />
       <div className="shop-veil" aria-hidden />
       {/* Header */}
@@ -131,56 +134,56 @@ export function ShopScreen() {
           }`}
         >
           {notice.text}
-          <button
+          <Button variant="ghost" size="sm"
             aria-label="Dismiss"
             onClick={() => setNotice(null)}
             className="absolute right-2 top-1/2 -translate-y-1/2 font-display"
           >
             ×
-          </button>
+          </Button>
         </div>
       )}
 
-      <div className="relative mx-auto mt-4 grid w-full max-w-6xl flex-1 gap-4 lg:grid-cols-[1fr_1.2fr_1fr]">
+      <div className="shop-layout relative mx-auto mt-4 grid w-full max-w-6xl flex-1 gap-4">
         {/* Left: categories + item list */}
-        <section className="sub-panel flex min-h-0 flex-col p-3" aria-label="Equipment">
+        <section className="sub-panel shop-list-panel flex min-h-0 flex-col p-3" aria-label="Equipment">
           <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Categories">
             {(Object.keys(CATEGORY_ITEMS) as ShopCategory[]).map((c) => (
-              <button
+              <Button variant="ghost" size="sm"
                 key={c}
                 role="tab"
                 aria-selected={category === c}
                 title={CATEGORY_LABELS[c]}
                 onClick={() => pickCategory(c)}
-                className={`pixel-btn-press flex h-10 w-10 items-center justify-center border-3 ${
+                className={`pixel-btn-press rounded-none flex h-10 w-10 items-center justify-center border-3 ${
                   category === c ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
                 } border-[var(--title-ink)]`}
               >
                 <PixelIcon art={CATEGORY_ICONS[c]} size={22} />
-              </button>
+              </Button>
             ))}
           </div>
           <h2 className="sub-head mt-3 px-2 py-1 font-display text-xs uppercase">{CATEGORY_LABELS[category]}</h2>
-          <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2" style={{ maxHeight: "55vh" }}>
+          <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2">
             {items.map((it) => {
               const owned = save.owned[it.id] ?? 0;
               const equipped = save.equipped[category].itemId === it.id;
               const next = it.evolutions[owned];
               return (
                 <li key={it.id}>
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={() => pickItem(it.id)}
                     data-active={selectedItem === it.id}
-                    className="shop-card pixel-btn-press flex w-full items-center gap-2 p-2 text-left"
+                    className="shop-card pixel-btn-press flex h-auto w-full items-center justify-start gap-2 whitespace-normal rounded-none p-2 text-left"
                   >
-                    <PixelIcon art={CATEGORY_ICONS[category]} size={26} />
+                    <ShopItemIcon item={it} size={40} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-display text-[11px] uppercase">{it.name}</span>
+                      <span className="block font-display text-[11px] uppercase">{it.name}</span>
                       <span className="mt-0.5 block text-[11px]">
                         {equipped ? <span className="shop-tag">Equipped</span> : owned > 0 ? <span className="shop-tag shop-tag-gold">Owned · Ev {owned}</span> : next ? (next.price === 0 ? "FREE" : formatCoins(next.price)) : "—"}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                 </li>
               );
             })}
@@ -188,7 +191,7 @@ export function ShopScreen() {
         </section>
 
         {/* Middle: detail panel */}
-        <section className="sub-panel min-h-0 overflow-y-auto p-4" style={{ maxHeight: "70vh" }} aria-label="Details">
+        <section className="sub-panel shop-detail min-h-0 overflow-y-auto p-4" aria-label="Details">
           {currentItem ? (
             <ItemDetail
               item={currentItem}
@@ -210,37 +213,37 @@ export function ShopScreen() {
               }
             />
           ) : (
-            <p className="p-4 text-center text-sm">Select an item or a champion to inspect it.</p>
+            <p className="p-4 text-center text-sm">Equipment & Champions</p>
           )}
         </section>
 
         {/* Right: champions */}
-        <section className="sub-panel flex min-h-0 flex-col p-3" aria-label="Champions">
+        <section className="sub-panel shop-list-panel flex min-h-0 flex-col p-3" aria-label="Champions">
           <h2 className="sub-head px-2 py-1 font-display text-xs uppercase">Champions</h2>
-          <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2" style={{ maxHeight: "62vh" }}>
+          <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2">
             {CHAMPIONS.map((c) => {
               const owned = save.championsOwned[c.id] ?? 0;
               const sel = save.championsSelected[c.id];
               return (
                 <li key={c.id}>
-                  <button
+                  <Button variant="ghost" size="sm"
                     onClick={() => {
                       setSelectedChampion(c.id);
                       setSelectedItem(null);
                     }}
                     data-active={selectedChampion === c.id}
-                    className="shop-card pixel-btn-press flex w-full items-center gap-2 p-2 text-left"
+                    className="shop-card pixel-btn-press flex h-auto w-full items-center justify-start gap-2 whitespace-normal rounded-none p-2 text-left"
                   >
-                    <ChampionPortrait id={c.id} size={40} />
+                    <ChampionPortrait id={c.id} size={80} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-display text-[11px] uppercase">{c.name}</span>
+                      <span className="block font-display text-[11px] uppercase">{c.name}</span>
                       <span className="block text-[11px]">
                         {owned > 0
                           ? <span className="shop-tag">Owned · Ev {sel ?? owned} · Summonable</span>
                           : <><span className="shop-tag shop-tag-gold">Locked</span> {formatCoins(c.evolutions[0].price)}</>}
                       </span>
                     </span>
-                  </button>
+                  </Button>
                 </li>
               );
             })}
@@ -273,7 +276,7 @@ function ItemDetail({
   return (
     <div>
       <div className="flex items-center gap-3">
-        <PixelIcon art={CATEGORY_ICONS[item.category]} size={48} />
+        <ShopItemIcon item={item} size={64} />
         <div>
           <h3 className="font-display text-sm uppercase">{item.name}</h3>
           <p className="text-xs">{item.description}</p>
@@ -281,20 +284,20 @@ function ItemDetail({
       </div>
 
       {item.hasEvolutions && (
-        <div className="mt-3 flex gap-2" role="tablist" aria-label="Evolutions">
+        <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Evolutions">
           {item.evolutions.map((e) => (
-            <button
+            <Button variant="ghost" size="sm"
               key={e.level}
               role="tab"
               aria-selected={shown === e.level}
               onClick={() => onSelectEvo(e.level)}
-              className={`pixel-btn-press border-3 border-[var(--title-ink)] px-3 py-1 font-display text-[11px] uppercase ${
+              className={`pixel-btn-press rounded-none border-3 border-[var(--title-ink)] px-3 py-1 font-display text-[11px] uppercase ${
                 shown === e.level ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
               }`}
             >
               Ev {e.level}
               {owned >= e.level ? " ✓" : ""}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -311,21 +314,21 @@ function ItemDetail({
         </p>
         <div className="mt-3 flex gap-2">
           {!isOwned && (
-            <button
+            <Button variant="ghost" size="sm"
               disabled={!canBuy}
               onClick={() => onBuy(item, shown)}
               className="cover-button cover-button-primary pixel-btn-press font-display uppercase disabled:opacity-50"
             >
               Purchase
-            </button>
+            </Button>
           )}
           {isOwned && !isEquipped && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={() => onEquip(item.id, shown)}
               className="cover-button pixel-btn-press font-display uppercase"
             >
               Equip
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -354,7 +357,7 @@ function ChampionDetail({
 
   return (
     <div>
-      <div className="shop-stage flex h-56 items-end justify-center overflow-hidden p-2 sm:h-72">
+      <div className="shop-stage flex items-center justify-center overflow-hidden p-2">
         {CHAMPION_ART[champ.id] ? (
           <img src={CHAMPION_ART[champ.id].full} alt={`${champ.name}, full body`} className="h-full w-auto object-contain" style={{ imageRendering: "pixelated" }} />
         ) : (
@@ -372,47 +375,47 @@ function ChampionDetail({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2" role="tablist" aria-label="Evolutions">
+      <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Evolutions">
         {champ.evolutions.map((e) => (
-          <button
+          <Button variant="ghost" size="sm"
             key={e.level}
             role="tab"
             aria-selected={shown === e.level}
             onClick={() => onSelectEvo(e.level)}
-            className={`pixel-btn-press border-3 border-[var(--title-ink)] px-3 py-1 font-display text-[11px] uppercase ${
+            className={`pixel-btn-press rounded-none border-3 border-[var(--title-ink)] px-3 py-1 font-display text-[11px] uppercase ${
               shown === e.level ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
             }`}
           >
             Ev {e.level}
             {owned >= e.level ? " ✓" : ""}
-          </button>
+          </Button>
         ))}
       </div>
 
       <div className="mt-3 border-3 border-[var(--title-ink)] bg-[var(--title-light)] p-3">
         <p className="text-sm font-bold">Attack {evo.attackPct}% · Health {evo.healthPct}%</p>
         <p className="mt-1 text-sm">{evo.ability}</p>
-        <p className="mt-2 text-sm">Price: {formatCoins(evo.price)}</p>
+        <p className="mt-2 text-sm">Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}</p>
         <p className="mt-1 text-xs font-bold">
           {isSelected ? "SELECTED EVOLUTION" : isOwned ? "OWNED" : canBuy ? "AVAILABLE" : owned !== shown - 1 ? "LOCKED" : `NOT ENOUGH COINS — ${formatCoins(shortage)} more needed`}
         </p>
         <div className="mt-3 flex gap-2">
           {!isOwned && (
-            <button
+            <Button variant="ghost" size="sm"
               disabled={!canBuy}
               onClick={() => onBuy(champ, shown)}
               className="cover-button cover-button-primary pixel-btn-press font-display uppercase disabled:opacity-50"
             >
               Purchase
-            </button>
+            </Button>
           )}
           {isOwned && !isSelected && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={() => onSelect(champ.id, shown)}
               className="cover-button pixel-btn-press font-display uppercase"
             >
               Select
-            </button>
+            </Button>
           )}
         </div>
       </div>
