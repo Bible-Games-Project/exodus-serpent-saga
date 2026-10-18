@@ -70,7 +70,7 @@
 - [x] Add forward-facing shop artwork for Aaron, Miriam and Jochebed only.
 - [x] Add red ally / blue Ramses off-screen portraits with live health and downed states.
 - [x] Verify shop persistence, navigation, indicators and desktop/mobile presentation.
-- [ ] Use exact supplied Aaron shop images and correct Miriam/Jochebed portraits and full-body proportions.
-- [ ] Replace realistic shop weapon icons with cohesive stylized pixel art.
-- [ ] Integrate supplied artwork and action-linked animations for Zipporah, Puah, Shiphrah, Gershom, Eliezer, Amram, Jethro and Ithamar.
-- [ ] Test all three Zipporah evolutions and each supplied champion's established abilities, animation states and shop persistence.
+- [x] Use exact supplied Aaron shop images and correct Miriam/Jochebed portraits and full-body proportions.
+- [x] Replace realistic shop weapon icons with cohesive stylized pixel art.
+- [x] Integrate supplied artwork and action-linked animations for Zipporah, Puah, Shiphrah, Gershom, Eliezer, Amram, Jethro and Ithamar.
+- [x] Test all three Zipporah evolutions and each supplied champion's established abilities, animation states and shop persistence.

@@ -205,7 +205,7 @@ export const ALLIES: Record<string, AllyDef> = {
     invokeRadius: 150,
   },
 
-  // ---- Shop champions awaiting their final PNGs --------------------------
+  // ---- Supplied shop champions and remaining explicit placeholders ------
   // To integrate a supplied PNG: upload it as src/assets/ally-<id>.png.asset.json,
   // import it here, replace `PH_MALE`/`PH_FEMALE` with its sprite metrics and
   // drop `placeholderHue`. Gameplay never depends on the sprite.
