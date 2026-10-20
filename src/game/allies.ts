@@ -108,13 +108,6 @@ export type AllyDef = {
   invokeRadius: number;
 };
 
-// Placeholder bodies for champions whose PNGs are pending (see placeholderHue).
-function PH_MALE(hue: number): AllyDef["sprite"] {
-  return { url: aaronAsset.url, W: 47, H: 88, CX: 16, FOOT_TOP: 80, FOOT_X0: 3, FOOT_X1: 30, FOOT_SPLIT: 15, FX: { x: 36, y: 40 }, scale: 0.9, placeholderHue: hue };
-}
-function PH_FEMALE(hue: number): AllyDef["sprite"] {
-  return { url: jochebedAsset.url, W: 42, H: 82, CX: 14, FOOT_TOP: 77, FOOT_X0: 6, FOOT_X1: 25, FOOT_SPLIT: 15, FX: { x: 36, y: 48 }, scale: 0.8, placeholderHue: hue };
-}
 function champ(
   id: string, name: string, description: string, scripture: string, sprite: AllyDef["sprite"],
   o: Pick<AllyDef, "cooldown" | "range" | "hitRadius" | "moveSpeed" | "attack">,
@@ -204,10 +197,8 @@ export const ALLIES: Record<string, AllyDef> = {
     invokeRadius: 150,
   },
 
-  // ---- Supplied shop champions and remaining explicit placeholders ------
-  // To integrate a supplied PNG: upload it as src/assets/ally-<id>.png.asset.json,
-  // import it here, replace `PH_MALE`/`PH_FEMALE` with its sprite metrics and
-  // drop `placeholderHue`. Gameplay never depends on the sprite.
+  // ---- Supplied shop champions (all use the user's PNGs) ------
+  // Gameplay never depends on the sprite.
   zipporah: suppliedChampion(champ("zipporah", "Zipporah", "Moses' wife. Throws fast stones.", "Exodus 2:21 — He gave Moses Zipporah his daughter.", suppliedSprite(zipporahAsset.url, 39, 116, 25, 60, 43, { x: 11, y: 17 }), { cooldown: 1.0, range: 260, hitRadius: 14, moveSpeed: 92, attack: "stone" }), zipporahBody.url, zipporahAction.url, { x: 26, y: 36 }, -0.85),
   puah: suppliedChampion(champ("puah", "Puah", "Midwife. Heals Moses and champions with vials and keeps her distance.", "Exodus 1:15-17 — The midwives feared God.", suppliedSprite(puahAsset.url, 38, 116, 29, 49, 40, { x: 79, y: 33 }), { cooldown: 2.2, range: 320, hitRadius: 60, moveSpeed: 90, attack: "heal" }), puahBody.url, puahAction.url, { x: 55, y: 37 }, -0.35),
   shiphrah: suppliedChampion(champ("shiphrah", "Shiphrah", "Midwife. Throws explosive vials.", "Exodus 1:15-17 — The midwives feared God.", suppliedSprite(shiphrahAsset.url, 39, 116, 25, 60, 43, { x: 11, y: 16 }), { cooldown: 1.6, range: 240, hitRadius: 60, moveSpeed: 85, attack: "vial" }), shiphrahBody.url, shiphrahAction.url, { x: 26, y: 36 }, -0.85),
