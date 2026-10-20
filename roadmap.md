@@ -64,7 +64,11 @@
 - [x] Rework Locusts, Darkness, Firstborn, Hail+Fire, Pillars and Red Sea per spec.
 
 - [x] Phase 5: shop visuals, Home→Shop→Play flow, 3 champion shop artworks, 11 champion abilities.
-- [ ] Final PNGs for Nadab, Abihu and Eleazar (not present in the supplied files).
+- [x] Receive and integrate final PNGs for Nadab, Abihu and Eleazar.
+- [ ] Replace every shop portrait with aligned Moses-style chest-up art and same-source face crops; show Moses by default.
+- [ ] Replace all item icons with category-keyed polished artwork and shared sidebar box dimensions.
+- [ ] Complete supplied champion animation layers, replace Jethro/Ithamar art, and safely correct outlines and Amram transparency.
+- [ ] Prevent accidental shop zoom gestures; verify layout, artwork, purchases, persistence and gameplay.
 - [x] Make Miriam evolution 1 immediately free and preserve existing saves.
 - [x] Expand shop lists, double champion icons, share level-up icons and add weapon artwork.
 - [x] Add forward-facing shop artwork for Aaron, Miriam and Jochebed only.
