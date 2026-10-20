@@ -11,27 +11,26 @@ import jochebedAsset from "@/assets/ally-jochebed.png.asset.json";
 import zipporahAsset from "@/assets/ally-zipporah-supplied.png.asset.json";
 import zipporahBody from "@/assets/ally-zipporah-body.png.asset.json";
 import zipporahAction from "@/assets/ally-zipporah-action.png.asset.json";
-import puahAsset from "@/assets/ally-puah-supplied.png.asset.json";
-import puahBody from "@/assets/ally-puah-body.png.asset.json";
-import puahAction from "@/assets/ally-puah-action.png.asset.json";
-import shiphrahAsset from "@/assets/ally-shiphrah-supplied.png.asset.json";
-import shiphrahBody from "@/assets/ally-shiphrah-body.png.asset.json";
-import shiphrahAction from "@/assets/ally-shiphrah-action.png.asset.json";
-import gershomAsset from "@/assets/ally-gershom-supplied.png.asset.json";
-import gershomBody from "@/assets/ally-gershom-body.png.asset.json";
-import gershomAction from "@/assets/ally-gershom-action.png.asset.json";
-import eliezerAsset from "@/assets/ally-eliezer-supplied.png.asset.json";
-import eliezerBody from "@/assets/ally-eliezer-body.png.asset.json";
-import eliezerAction from "@/assets/ally-eliezer-action.png.asset.json";
-import amramAsset from "@/assets/ally-amram-supplied.png.asset.json";
-import amramBody from "@/assets/ally-amram-body.png.asset.json";
-import amramAction from "@/assets/ally-amram-action.png.asset.json";
-import jethroAsset from "@/assets/ally-jethro-supplied.png.asset.json";
-import jethroBody from "@/assets/ally-jethro-body.png.asset.json";
-import jethroAction from "@/assets/ally-jethro-action.png.asset.json";
-import ithamarAsset from "@/assets/ally-ithamar-supplied.png.asset.json";
-import ithamarBody from "@/assets/ally-ithamar-body.png.asset.json";
-import ithamarAction from "@/assets/ally-ithamar-action.png.asset.json";
+import puahAsset from "@/assets/ally-puah-clean-supplied.png.asset.json";
+import puahBody from "@/assets/ally-puah-clean-body.png.asset.json";
+import puahAction from "@/assets/ally-puah-clean-action.png.asset.json";
+import shiphrahAsset from "@/assets/ally-shiphrah-clean-supplied.png.asset.json";
+import shiphrahBody from "@/assets/ally-shiphrah-clean-body.png.asset.json";
+import shiphrahAction from "@/assets/ally-shiphrah-clean-action.png.asset.json";
+import gershomAsset from "@/assets/ally-gershom-clean-supplied.png.asset.json";
+import gershomBody from "@/assets/ally-gershom-clean-body.png.asset.json";
+import gershomAction from "@/assets/ally-gershom-clean-action.png.asset.json";
+import eliezerAsset from "@/assets/ally-eliezer-clean-supplied.png.asset.json";
+import eliezerBody from "@/assets/ally-eliezer-clean-body.png.asset.json";
+import eliezerAction from "@/assets/ally-eliezer-clean-action.png.asset.json";
+import amramAsset from "@/assets/ally-amram-clean-supplied.png.asset.json";
+import amramBody from "@/assets/ally-amram-clean-body.png.asset.json";
+import amramAction from "@/assets/ally-amram-clean-action.png.asset.json";
+import jethroAsset from "@/assets/ally-jethro-v2.png.asset.json";
+import ithamarAsset from "@/assets/ally-ithamar-v2.png.asset.json";
+import nadabAsset from "@/assets/ally-nadab-supplied.png.asset.json";
+import abihuAsset from "@/assets/ally-abihu-supplied.png.asset.json";
+import eleazarAsset from "@/assets/ally-eleazar-supplied.png.asset.json";
 import type { NpcId } from "./types";
 
 export type AllyAttackKind =
@@ -215,11 +214,11 @@ export const ALLIES: Record<string, AllyDef> = {
   gershom: suppliedChampion(champ("gershom", "Gershom", "Moses' firstborn. An archer.", "Exodus 2:22 — I have been a stranger in a strange land.", suppliedSprite(gershomAsset.url, 33, 115, 16, 53, 35, { x: 77, y: 32 }), { cooldown: 1.1, range: 320, hitRadius: 12, moveSpeed: 88, attack: "arrow" }), gershomBody.url, gershomAction.url, { x: 61, y: 35 }, -0.08),
   eliezer: suppliedChampion(champ("eliezer", "Eliezer", "Moses' second son. Throws a piercing spear.", "Exodus 18:4 — The God of my father was mine help.", suppliedSprite(eliezerAsset.url, 41, 109, 20, 62, 41, { x: 76, y: 19 }), { cooldown: 1.5, range: 280, hitRadius: 12, moveSpeed: 86, attack: "spear" }), eliezerBody.url, eliezerAction.url, { x: 17, y: 48 }, -0.55),
   amram: suppliedChampion(champ("amram", "Amram", "Moses' father. Hurls pyramid stones that crack the ground.", "Exodus 6:20 — Amram took Jochebed to wife.", suppliedSprite(amramAsset.url, 42, 114, 35, 51, 43, { x: 43, y: 12 }), { cooldown: 2.4, range: 260, hitRadius: 70, moveSpeed: 72, attack: "pyramid" }), amramBody.url, amramAction.url, { x: 43, y: 49 }, 0.25),
-  jethro: suppliedChampion(champ("jethro", "Jethro", "Priest of Midian. Turns and confuses enemies.", "Exodus 18:1 — Jethro, the priest of Midian, Moses' father in law.", suppliedSprite(jethroAsset.url, 40, 116, 32, 55, 42, { x: 73, y: 13 }), { cooldown: 1.0, range: 260, hitRadius: 200, moveSpeed: 78, attack: "convert" }), jethroBody.url, jethroAction.url, { x: 62, y: 56 }, -0.08),
-  ithamar: suppliedChampion(champ("ithamar", "Ithamar", "Aaron's son. Raises protective wards instead of attacking.", "Exodus 38:21 — By the hand of Ithamar.", suppliedSprite(ithamarAsset.url, 44, 115, 30, 63, 44, { x: 21, y: 13 }), { cooldown: 1.0, range: 400, hitRadius: 46, moveSpeed: 82, attack: "ward" }), ithamarBody.url, ithamarAction.url, { x: 22, y: 48 }, 0.08),
-  nadab: champ("nadab", "Nadab", "Aaron's firstborn. Throws exploding fireballs.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", PH_MALE(320), { cooldown: 1.5, range: 280, hitRadius: 60, moveSpeed: 84, attack: "fireball" }),
-  abihu: champ("abihu", "Abihu", "Aaron's second son. Surrounds himself with fire.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", PH_MALE(10), { cooldown: 4.0, range: 120, hitRadius: 70, moveSpeed: 90, attack: "firering" }),
-  eleazar: champ("eleazar", "Eleazar", "Aaron's son. Fires continuous beams of light.", "Numbers 20:28 — Moses put Aaron's garments upon Eleazar.", PH_MALE(60), { cooldown: 3.0, range: 300, hitRadius: 10, moveSpeed: 80, attack: "beam" }),
+  jethro: champ("jethro", "Jethro", "Priest of Midian. Turns and confuses enemies.", "Exodus 18:1 — Jethro, the priest of Midian, Moses' father in law.", suppliedSprite(jethroAsset.url, 42, 116, 30, 54, 42, { x: 78, y: 15 }), { cooldown: 1.0, range: 260, hitRadius: 200, moveSpeed: 78, attack: "convert" }),
+  ithamar: champ("ithamar", "Ithamar", "Aaron's son. Raises protective wards instead of attacking.", "Exodus 38:21 — By the hand of Ithamar.", suppliedSprite(ithamarAsset.url, 44, 116, 34, 56, 45, { x: 12, y: 15 }), { cooldown: 1.0, range: 400, hitRadius: 46, moveSpeed: 82, attack: "ward" }),
+  nadab: champ("nadab", "Nadab", "Aaron's firstborn. Throws exploding fireballs.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(nadabAsset.url, 40, 116, 28, 52, 40, { x: 77, y: 37 }), { cooldown: 1.5, range: 280, hitRadius: 60, moveSpeed: 84, attack: "fireball" }),
+  abihu: champ("abihu", "Abihu", "Aaron's second son. Surrounds himself with fire.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(abihuAsset.url, 40, 116, 28, 52, 40, { x: 75, y: 38 }), { cooldown: 4.0, range: 120, hitRadius: 70, moveSpeed: 90, attack: "firering" }),
+  eleazar: champ("eleazar", "Eleazar", "Aaron's son. Fires continuous beams of light.", "Numbers 20:28 — Moses put Aaron's garments upon Eleazar.", suppliedSprite(eleazarAsset.url, 42, 116, 30, 54, 42, { x: 75, y: 55 }), { cooldown: 3.0, range: 300, hitRadius: 10, moveSpeed: 80, attack: "beam" }),
 };
 
 export const ALLY_POOL: NpcId[] = Object.keys(ALLIES) as NpcId[];
