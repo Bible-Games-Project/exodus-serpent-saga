@@ -421,15 +421,12 @@ function useNoZoom() {
     const wheel = (e: WheelEvent) => { if (e.ctrlKey) e.preventDefault(); };
     const gesture = (e: Event) => e.preventDefault();
     const touch = (e: TouchEvent) => { if (e.touches.length > 1) e.preventDefault(); };
-    const key = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && ["+", "-", "=", "0"].includes(e.key)) e.preventDefault(); };
     window.addEventListener("wheel", wheel, { passive: false });
     window.addEventListener("touchmove", touch, { passive: false });
-    window.addEventListener("keydown", key);
     document.addEventListener("gesturestart", gesture);
     return () => {
       window.removeEventListener("wheel", wheel);
       window.removeEventListener("touchmove", touch);
-      window.removeEventListener("keydown", key);
       document.removeEventListener("gesturestart", gesture);
     };
   }, []);
