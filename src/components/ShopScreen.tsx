@@ -1,35 +1,14 @@
 // Shop screen: header, equipment categories, item detail and champion panels.
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PixelIcon } from "./PixelIcon";
 import { Button } from "./ui/button";
 import { ShopItemIcon } from "./ShopItemIcon";
 import { BONUS_ART, SWORD_ART, STAFF_ART } from "@/game/uiIcons";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
-import pAaron from "@/assets/shop-aaron-exact-portrait.png.asset.json";
-import fAaron from "@/assets/shop-aaron-exact-full.png.asset.json";
-import pMiriam from "@/assets/shop-miriam-portrait-approved.png";
-import pJochebed from "@/assets/shop-jochebed-portrait-approved.png";
-import fMiriam from "@/assets/shop-miriam-full-approved.png";
-import fJochebed from "@/assets/shop-jochebed-full-approved.png";
-import pzipporah from "@/assets/shop-zipporah-portrait.png.asset.json";
-import fzipporah from "@/assets/ally-zipporah-supplied.png.asset.json";
-import ppuah from "@/assets/shop-puah-portrait.png.asset.json";
-import fpuah from "@/assets/ally-puah-supplied.png.asset.json";
-import pshiphrah from "@/assets/shop-shiphrah-portrait.png.asset.json";
-import fshiphrah from "@/assets/ally-shiphrah-supplied.png.asset.json";
-import pgershom from "@/assets/shop-gershom-portrait.png.asset.json";
-import fgershom from "@/assets/ally-gershom-supplied.png.asset.json";
-import peliezer from "@/assets/shop-eliezer-portrait.png.asset.json";
-import feliezer from "@/assets/ally-eliezer-supplied.png.asset.json";
-import pamram from "@/assets/shop-amram-portrait.png.asset.json";
-import famram from "@/assets/ally-amram-supplied.png.asset.json";
-import pjethro from "@/assets/shop-jethro-portrait.png.asset.json";
-import fjethro from "@/assets/ally-jethro-supplied.png.asset.json";
-import pithamar from "@/assets/shop-ithamar-portrait.png.asset.json";
-import fithamar from "@/assets/ally-ithamar-supplied.png.asset.json";
+import { ChampionArt, MOSES_PORTRAIT } from "./ChampionArt";
 import {
-  COIN_ART, PORTRAIT_PLACEHOLDER,
+  COIN_ART,
 } from "./shopIcons";
 import {
   CATEGORY_ITEMS, CATEGORY_LABELS, CHAMPIONS, formatCoins,
@@ -47,29 +26,6 @@ const CATEGORY_ICONS = {
   shield: BONUS_ART.shield,
   footwear: BONUS_ART.lightning,
 } as const;
-
-// Shop artwork per champion. Champions without an entry show the neutral
-// placeholder until their final PNGs are supplied.
-const CHAMPION_ART: Record<string, { portrait: string; full: string }> = {
-  aaron: { portrait: pAaron.url, full: fAaron.url },
-  jochebed: { portrait: pJochebed, full: fJochebed },
-  miriam: { portrait: pMiriam, full: fMiriam },
-  zipporah: { portrait: pzipporah.url, full: fzipporah.url },
-  puah: { portrait: ppuah.url, full: fpuah.url },
-  shiphrah: { portrait: pshiphrah.url, full: fshiphrah.url },
-  gershom: { portrait: pgershom.url, full: fgershom.url },
-  eliezer: { portrait: peliezer.url, full: feliezer.url },
-  amram: { portrait: pamram.url, full: famram.url },
-  jethro: { portrait: pjethro.url, full: fjethro.url },
-  ithamar: { portrait: pithamar.url, full: fithamar.url },
-
-};
-
-function ChampionPortrait({ id, size }: { id: string; size: number }) {
-  const art = CHAMPION_ART[id];
-  if (!art) return <PixelIcon art={PORTRAIT_PLACEHOLDER} size={size} />;
-  return <img src={art.portrait} alt="" width={size} height={size} className="shop-portrait shrink-0" style={{ width: size, height: size }} />;
-}
 
 type Notice = { kind: "ok" | "err"; text: string } | null;
 
@@ -132,7 +88,7 @@ export function ShopScreen() {
   const currentChampion = CHAMPIONS.find((c) => c.id === selectedChampion) ?? null;
 
   return (
-    <main className="sub-screen shop-screen flex flex-col px-4 py-4">
+    <main ref={useNoZoom()} className="sub-screen shop-screen flex flex-col px-4 py-4">
       <img src={cover.url} alt="" aria-hidden className="sub-bg" />
       <div className="shop-veil" aria-hidden />
       {/* Header */}
@@ -201,7 +157,7 @@ export function ShopScreen() {
                     data-active={selectedItem === it.id}
                     className="shop-card pixel-btn-press flex h-auto w-full items-center justify-start gap-2 whitespace-normal rounded-none p-2 text-left"
                   >
-                    <ShopItemIcon item={it} size={40} />
+                    <ShopItemIcon item={it} size={64} />
                     <span className="min-w-0 flex-1">
                       <span className="block font-display text-[11px] uppercase">{it.name}</span>
                       <span className="mt-0.5 block text-[11px]">
@@ -238,7 +194,11 @@ export function ShopScreen() {
               }
             />
           ) : (
-            <p className="p-4 text-center text-sm">Equipment & Champions</p>
+            <div>
+              <div className="shop-stage"><ChampionArt url={MOSES_PORTRAIT} alt="Moses" /></div>
+              <h3 className="shop-name mt-3 font-display uppercase">Moses</h3>
+              <p className="text-xs">Choose equipment or a champion to prepare for the journey.</p>
+            </div>
           )}
         </section>
 
@@ -259,7 +219,7 @@ export function ShopScreen() {
                     data-active={selectedChampion === c.id}
                     className="shop-card pixel-btn-press flex h-auto w-full items-center justify-start gap-2 whitespace-normal rounded-none p-2 text-left"
                   >
-                    <ChampionPortrait id={c.id} size={80} />
+                    <ChampionArt id={c.id} face size={64} />
                     <span className="min-w-0 flex-1">
                       <span className="block font-display text-[11px] uppercase">{c.name}</span>
                       <span className="block text-[11px]">
@@ -382,19 +342,10 @@ function ChampionDetail({
 
   return (
     <div>
-      <div className="shop-stage flex items-center justify-center overflow-hidden p-2">
-        {CHAMPION_ART[champ.id] ? (
-          <img src={CHAMPION_ART[champ.id].full} alt={`${champ.name}, full body`} className="h-full w-auto object-contain" style={{ imageRendering: "pixelated" }} />
-        ) : (
-          <div className="flex flex-col items-center gap-2 pb-6">
-            <PixelIcon art={PORTRAIT_PLACEHOLDER} size={96} />
-            <span className="shop-tag">Artwork coming soon</span>
-          </div>
-        )}
-      </div>
+      <div className="shop-stage"><ChampionArt id={champ.id} alt={champ.name} /></div>
       <div className="mt-3 flex items-center gap-3">
         <div>
-          <h3 className="font-display text-base uppercase">{champ.name}</h3>
+          <h3 className="shop-name font-display uppercase">{champ.name}</h3>
           <p className="text-xs">{champ.relationship}</p>
           <p className="mt-1 text-xs font-bold">{owned > 0 ? "OWNED — can be summoned" : "LOCKED — cannot be summoned"}</p>
         </div>
@@ -418,7 +369,11 @@ function ChampionDetail({
       </div>
 
       <div className="mt-3 border-3 border-[var(--title-ink)] bg-[var(--title-light)] p-3">
-        <p className="text-sm font-bold">Attack {evo.attackPct}% · Health {evo.healthPct}%</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Stat label="Attack" value={evo.attackPct} />
+          <Stat label="Health" value={evo.healthPct} />
+        </div>
+        <p className="mt-1 text-[10px]">Relative to Miriam, evolution I (100%).</p>
         <p className="mt-1 text-sm">{evo.ability}</p>
         <p className="mt-2 text-sm">Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}</p>
         <p className="mt-1 text-xs font-bold">
@@ -446,4 +401,37 @@ function ChampionDetail({
       </div>
     </div>
   );
+}
+
+const STAT_MAX = Math.max(...CHAMPIONS.flatMap((c) => c.evolutions.flatMap((e) => [e.attackPct, e.healthPct])));
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase">{label}</p>
+      <p className="font-display text-2xl leading-none">{value}%</p>
+      <div className="shop-stat-bar mt-1"><span style={{ width: `${(value / STAT_MAX) * 100}%` }} /></div>
+    </div>
+  );
+}
+
+/** Blocks accidental pinch and Ctrl+wheel zoom while the shop is open; scrolling still works. */
+function useNoZoom() {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const wheel = (e: WheelEvent) => { if (e.ctrlKey) e.preventDefault(); };
+    const gesture = (e: Event) => e.preventDefault();
+    const touch = (e: TouchEvent) => { if (e.touches.length > 1) e.preventDefault(); };
+    const key = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && ["+", "-", "=", "0"].includes(e.key)) e.preventDefault(); };
+    window.addEventListener("wheel", wheel, { passive: false });
+    window.addEventListener("touchmove", touch, { passive: false });
+    window.addEventListener("keydown", key);
+    document.addEventListener("gesturestart", gesture);
+    return () => {
+      window.removeEventListener("wheel", wheel);
+      window.removeEventListener("touchmove", touch);
+      window.removeEventListener("keydown", key);
+      document.removeEventListener("gesturestart", gesture);
+    };
+  }, []);
+  return ref;
 }
