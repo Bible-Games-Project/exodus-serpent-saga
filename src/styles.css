@@ -341,8 +341,17 @@
 .shop-layout { min-height: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); }
 .shop-list-panel, .shop-detail { height: 100%; }
 .shop-scroll { overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: auto; }
-.shop-scroll .shop-card { min-height: 58px; }
-.shop-stage { height: min(42dvh, 460px); }
+.shop-scroll .shop-card { min-height: 80px; }
+.shop-stage { height: min(42dvh, 460px); position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+.shop-stage-art { height: 100%; width: auto; aspect-ratio: 1; object-fit: contain; object-position: bottom; }
+.shop-icon-box { flex: none; position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); }
+.shop-icon-box > .shop-item-icon { width: 84%; height: 84%; }
+.shop-face > img { position: absolute; max-width: none; }
+.shop-name { font-size: clamp(18px, 2.2vw, 26px); line-height: 1.1; }
+.shop-stat-bar { height: 6px; background: color-mix(in oklab, var(--title-ink) 25%, transparent); }
+.shop-stat-bar > span { display: block; height: 100%; background: var(--title-shade); }
+.shop-card[disabled] { opacity: 0.5; }
+.shop-screen { touch-action: pan-x pan-y; }
 .shop-item-icon { object-fit: contain; image-rendering: pixelated; }
 .shop-tag { white-space: normal; letter-spacing: 0; }
 .shop-screen .cover-button { letter-spacing: 0; }
@@ -352,7 +361,6 @@
   .shop-detail { grid-row: 2; grid-column: 1 / -1; max-height: none; height: auto; }
   .shop-list-panel { height: max(340px, calc(100dvh - 150px)); }
   .shop-stage { height: 360px; }
-  .shop-portrait { width: 80px; height: 80px; }
   .shop-layout > [aria-label="Champions"] .shop-card { flex-wrap: wrap; justify-content: center; text-align: center; }
   .shop-layout > [aria-label="Champions"] .shop-card > span { flex-basis: 100%; }
   .shop-screen > header { gap: 10px; }

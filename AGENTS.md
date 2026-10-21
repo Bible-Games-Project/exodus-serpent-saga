@@ -100,3 +100,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Shared level-up/shop icons live in `game/uiIcons.ts`; shop weapon images are separate from combat art.
 - Off-screen overlays read restored world positions and actual HP; pure geometry is tested separately.
 - Grant free starters during save sanitization to preserve existing purchases.
+- Shop portraits share one 1024² composition (`shop-portrait-v3-*`); sidebar faces are a fixed crop in `ChampionArt.tsx`, and item icons are keyed `category:id` (`shop-icon-<category>-<id>`) because ids repeat across categories.
