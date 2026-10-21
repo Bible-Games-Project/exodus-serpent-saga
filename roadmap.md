@@ -1,5 +1,12 @@
 # Roadmap
 
+- [ ] Audit and integrate front-hand weapons/rear-hand staffs with distinct evolution artwork, animation and ability-linked effects.
+- [ ] Repair all affected shop icons and branch art, redesign category icons, and add reversible helmet/shoe presentation.
+- [ ] Keep shop in three columns at all widths and replace equipment/champion statistics with accurate diagonal bars.
+- [ ] Add live Test Map equipment/evolution controls and select-all champions without changing saves.
+- [ ] Remove off-screen ally indicators while retaining Ramses.
+- [ ] Verify equipment in motion, Test Map, purchases/persistence, shop widths and zoom; report limitations honestly.
+
 - [x] Replace Spear Soldier with supplied V2 PNG while preserving throw mechanics.
 - [x] Replace mounted Spear Knight with supplied V2 PNG and leg-only movement.
 - [x] Centralize viewport-aware off-screen spawning for all enemies and Ramses.
