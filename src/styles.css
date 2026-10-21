@@ -344,7 +344,7 @@
 .shop-scroll .shop-card { min-height: 80px; }
 .shop-stage { height: min(42dvh, 460px); position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
 .shop-stage-art { height: 100%; width: auto; aspect-ratio: 1; object-fit: contain; object-position: bottom; }
-.shop-icon-box { position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); }
+.shop-icon-box { flex: none; position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); }
 .shop-icon-box > .shop-item-icon { width: 84%; height: 84%; }
 .shop-face > img { position: absolute; max-width: none; }
 .shop-name { font-size: clamp(18px, 2.2vw, 26px); line-height: 1.1; }
