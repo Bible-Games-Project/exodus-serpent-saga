@@ -112,6 +112,7 @@ export type TestMapConfig = {
   ramsesLevel: 1 | 2 | 3 | 4;
   /** champion id -> recruited at the start of this session */
   champions?: Record<string, boolean>;
+  equipment?: import("./testEquipment").TestEquipment;
 };
 
 export type GameState = {

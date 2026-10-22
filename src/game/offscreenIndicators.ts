@@ -1,6 +1,5 @@
 import type { Entity, GameState } from './types';
 import { allyDef } from './allies';
-import { NPCS } from './npcs';
 import { offscreenPoint, separateIndicators, type IndicatorPoint } from './offscreenGeometry';
 import aaron from '@/assets/shop-portrait-aaron.png.asset.json';
 import miriam from '@/assets/shop-portrait-miriam.png.asset.json';
@@ -48,8 +47,7 @@ export function drawOffscreenIndicators(ctx: CanvasRenderingContext2D, state: Ga
     const point = offscreenPoint(entity.pos, state.camera, { x: state.worldW, y: state.worldH }, { x: width, y: height }, zoom, bounds);
     if (point) targets.push({ entity, point, name });
   };
-  for (const [id, entityId] of state.npcs) { const entity = state.entities.get(entityId); if (entity) add(entity, NPCS[id]?.name ?? id); }
-  const boss = state.ramsesId == null ? undefined : state.entities.get(state.ramsesId); if (boss) add(boss, 'Ramses');
+  const boss = state.ramsesId == null ? undefined : state.entities.get(state.ramsesId); if (boss?.kind === 'ramses') add(boss, 'Ramses');
   const packed = separateIndicators(targets.map((t) => t.point), bounds, size + 20), color = colors();
   ctx.save(); ctx.imageSmoothingEnabled = false;
   targets.forEach(({ entity, name }, i) => {
