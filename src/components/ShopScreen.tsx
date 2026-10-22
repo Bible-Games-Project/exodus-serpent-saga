@@ -4,7 +4,9 @@ import { Link } from "@tanstack/react-router";
 import { PixelIcon } from "./PixelIcon";
 import { Button } from "./ui/button";
 import { ShopItemIcon } from "./ShopItemIcon";
-import { BONUS_ART, SWORD_ART, STAFF_ART } from "@/game/uiIcons";
+import { PowerBars } from "./PowerBars";
+import { championBars, equipmentStats } from "@/game/shopStats";
+import { equipmentArtUrl, HELMET_EXPERIMENT } from "@/game/equipmentArt";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
 import { ChampionArt, MOSES_PORTRAIT } from "./ChampionArt";
 import {
@@ -19,13 +21,8 @@ import {
   selectChampionEvolution, setShopUi, type ShopSave,
 } from "@/lib/shopSave";
 
-const CATEGORY_ICONS = {
-  weapon: SWORD_ART,
-  staff: STAFF_ART,
-  food: BONUS_ART.heart,
-  shield: BONUS_ART.shield,
-  footwear: BONUS_ART.lightning,
-} as const;
+const categoryLabel = (category: ShopCategory) => category === "shield" && HELMET_EXPERIMENT ? "Helmets" : CATEGORY_LABELS[category];
+const CATEGORY_ICON_ITEMS = { weapon: "branch", staff: "moses", food: "sandwich", shield: "abel", footwear: "patriarchs" };
 
 type Notice = { kind: "ok" | "err"; text: string } | null;
 
@@ -134,17 +131,18 @@ export function ShopScreen() {
                 key={c}
                 role="tab"
                 aria-selected={category === c}
-                title={CATEGORY_LABELS[c]}
+                title={categoryLabel(c)}
+                aria-label={categoryLabel(c)}
                 onClick={() => pickCategory(c)}
                 className={`pixel-btn-press rounded-none flex h-10 w-10 items-center justify-center border-3 ${
                   category === c ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
                 } border-[var(--title-ink)]`}
               >
-                <PixelIcon art={CATEGORY_ICONS[c]} size={22} />
+                <ShopItemIcon item={CATEGORY_ITEMS[c].find(i => i.id === CATEGORY_ICON_ITEMS[c]) ?? CATEGORY_ITEMS[c][0]} size={24} />
               </Button>
             ))}
           </div>
-          <h2 className="sub-head mt-3 px-2 py-1 font-display text-xs uppercase">{CATEGORY_LABELS[category]}</h2>
+          <h2 className="sub-head mt-3 px-2 py-1 font-display text-xs uppercase">{categoryLabel(category)}</h2>
           <ul className="mt-2 min-h-0 flex-1 shop-scroll space-y-2.5 overflow-y-auto p-1 pr-2">
             {items.map((it) => {
               const owned = save.owned[it.id] ?? 0;
@@ -157,8 +155,8 @@ export function ShopScreen() {
                     data-active={selectedItem === it.id}
                     className="shop-card pixel-btn-press flex h-auto w-full items-center justify-start gap-2 whitespace-normal rounded-none p-2 text-left"
                   >
-                    <ShopItemIcon item={it} size={64} />
-                    <span className="min-w-0 flex-1">
+                    <ShopItemIcon item={it} size={64} evolution={save.equipped[category].itemId === it.id ? save.equipped[category].evolution : Math.max(1, owned)} />
+                    <span className="shop-card-copy min-w-0 flex-1">
                       <span className="block font-display text-[11px] uppercase">{it.name}</span>
                       <span className="mt-0.5 block text-[11px]">
                         {equipped ? <span className="shop-tag">Equipped</span> : owned > 0 ? <span className="shop-tag shop-tag-gold">Owned · Ev {owned}</span> : next ? (next.price === 0 ? "FREE" : formatCoins(next.price)) : "—"}
@@ -220,7 +218,7 @@ export function ShopScreen() {
                     className="shop-card pixel-btn-press flex h-auto w-full items-center justify-start gap-2 whitespace-normal rounded-none p-2 text-left"
                   >
                     <ChampionArt id={c.id} face size={64} />
-                    <span className="min-w-0 flex-1">
+                    <span className="shop-card-copy min-w-0 flex-1">
                       <span className="block font-display text-[11px] uppercase">{c.name}</span>
                       <span className="block text-[11px]">
                         {owned > 0
@@ -261,12 +259,14 @@ function ItemDetail({
   return (
     <div>
       <div className="flex items-center gap-3">
-        <ShopItemIcon item={item} size={64} />
+        <ShopItemIcon item={item} size={64} evolution={shown} />
         <div>
           <h3 className="font-display text-sm uppercase">{item.name}</h3>
-          <p className="text-xs">{item.description}</p>
+          {item.category !== "weapon" && item.category !== "staff" && <p className="text-xs">{item.description}</p>}
         </div>
       </div>
+
+      {equipmentArtUrl(item.category, item.id, shown) && <div className="shop-equipment-stage"><ShopItemIcon item={item} size={160} evolution={shown} /></div>}
 
       {item.hasEvolutions && (
         <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Evolutions">
@@ -289,7 +289,7 @@ function ItemDetail({
 
       <div className="mt-3 border-3 border-[var(--title-ink)] bg-[var(--title-light)] p-3">
         <p className="font-display text-xs uppercase">{evo.name}</p>
-        <p className="mt-1 text-sm font-bold">{evo.stat}</p>
+        <div className="shop-stat-group mt-2">{equipmentStats(evo).map(stat => <PowerBars key={stat.label} {...stat} />)}</div>
         {evo.ability && <p className="mt-1 text-sm">{evo.ability}</p>}
         <p className="mt-2 text-sm">
           Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}
@@ -369,11 +369,10 @@ function ChampionDetail({
       </div>
 
       <div className="mt-3 border-3 border-[var(--title-ink)] bg-[var(--title-light)] p-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Stat label="Attack" value={evo.attackPct} />
-          <Stat label="Health" value={evo.healthPct} />
+        <div className="shop-stat-group">
+          <PowerBars label="Attack" bars={championBars(evo, "attack")} />
+          <PowerBars label="Health" bars={championBars(evo, "health")} />
         </div>
-        <p className="mt-1 text-[10px]">Relative to Miriam, evolution I (100%).</p>
         <p className="mt-1 text-sm">{evo.ability}</p>
         <p className="mt-2 text-sm">Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}</p>
         <p className="mt-1 text-xs font-bold">
@@ -399,17 +398,6 @@ function ChampionDetail({
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-const STAT_MAX = Math.max(...CHAMPIONS.flatMap((c) => c.evolutions.flatMap((e) => [e.attackPct, e.healthPct])));
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <p className="text-[11px] uppercase">{label}</p>
-      <p className="font-display text-2xl leading-none">{value}%</p>
-      <div className="shop-stat-bar mt-1"><span style={{ width: `${(value / STAT_MAX) * 100}%` }} /></div>
     </div>
   );
 }
