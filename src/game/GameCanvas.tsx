@@ -277,6 +277,16 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
     if (stateRef.current) stateRef.current.paused = paused;
   }, [paused]);
 
+  useEffect(() => {
+    const state = stateRef.current;
+    if (!state?.testMap || !testConfig) return;
+    applyTestEquipment(state, testConfig);
+    state.testMap = testConfig;
+    for (const [id, on] of Object.entries(testConfig.champions ?? {})) {
+      if (on && !state.npcs.has(id as import("./types").NpcId)) summonCompanion(state, id);
+    }
+  }, [testConfig]);
+
   const s = stateRef.current;
   const pending = s?.levelUpPending ?? null;
 
@@ -1814,6 +1824,8 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     staffAngle: redSeaStaffAngle(s, RED_SEA_RAISE, RED_SEA_STRIKE) ?? (swingProgress === null ? 0 : mosesSwingAngle(swingProgress)),
     // Frames 1-5 of the swing, paced to the existing attack cadence.
     attackProgress,
+    equipment: s.loadout,
+    castProgress: latestEquipmentCastProgress(s),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -4833,6 +4845,17 @@ function drawWeaponEntity(
   if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff"].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
+  if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
+    const id = k === "wpboom" ? "boomerang" : k === "wpring" ? "ring" : String(d.art ?? "spear");
+    const img = equipmentImage("weapon", id, s.loadout?.weapon.evolution ?? 1);
+    if (img) {
+      ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y);
+      ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + .85);
+      const height = k === "wpnproj" ? 38 : 23, width = img.naturalWidth / img.naturalHeight * height;
+      ctx.drawImage(img, -width / 2, -height / 2, width, height);
+      ctx.restore(); return true;
+    }
+  }
   ctx.save();
   if (k === "wpnproj") {
     const ang = Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1);

@@ -13,6 +13,8 @@ import v2FootLAsset from "@/assets/moses-v2-foot-l.png.asset.json";
 import v2FootRAsset from "@/assets/moses-v2-foot-r.png.asset.json";
 import v2HandAsset from "@/assets/moses-v2-hand.png.asset.json";
 import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
+import type { Loadout } from "./loadout";
+import { drawHeldEquipment, equipmentGesture, equipmentImage, HELMET_EXPERIMENT } from "./equipmentArt";
 
 /**
  * Single switch for Moses' look. "original" = previous sprite/staff/animations
@@ -111,6 +113,8 @@ export type MosesPose = {
   /** kept for API compatibility with the caller; the swing is driven by staffAngle */
   attackProgress?: number | null;
   flash?: number;
+  equipment?: Loadout;
+  castProgress?: number | null;
 };
 
 /** Staff rotation (radians, around the hand) for a swing progress 0..1. */
@@ -160,7 +164,8 @@ export function drawMosesArt(ctx: CanvasRenderingContext2D, pose: MosesPose): vo
 
 /** New look: intact body, sandals step, staff rotates whole around the fist. */
 function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
-  const L = v2!;
+  const L = v2;
+  if (!L) return;
   const { W, H, PX, CX, HAND, STAFF: S } = V2;
   const TAU = Math.PI * 2;
   const step = (phase: number) => {
@@ -193,7 +198,19 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     stamp(L.footL, fL.dx, fL.dy);
     stamp(L.footR, fR.dx, fR.dy);
     const arm = freeArmLayers(L.body);
-    if (arm && pose.moving && !pose.staffAngle) {
+    if (arm && pose.equipment) {
+      ctx.drawImage(arm.body, 0, bodyDY * PX, W * PX, H * PX);
+      const rear = equipmentGesture(pose.equipment.staff.id, pose.castProgress ?? 0, pose.equipment.staff.evolution, true);
+      ctx.save();
+      ctx.translate(ARM.PIVOT.x * PX, (ARM.PIVOT.y + bodyDY) * PX);
+      ctx.rotate((pose.moving ? -Math.sin(pose.walkPhase) * .06 : 0) + rear.angle);
+      ctx.drawImage(arm.arm, -ARM.PIVOT.x * PX, -ARM.PIVOT.y * PX, W * PX, H * PX);
+      ctx.translate(-2 * PX, (16 + rear.thrust) * PX);
+      drawHeldEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, 63 * PX);
+      // Original hand pixels cover the shaft at its grip.
+      ctx.drawImage(L.body, 2, 41, 6, 7, -3 * PX, -3 * PX, 6 * PX, 7 * PX);
+      ctx.restore();
+    } else if (arm && pose.moving && !pose.staffAngle) {
       // Free (non-staff) arm swings gently around the shoulder, opposite to the legs.
       ctx.drawImage(arm.body, 0, bodyDY * PX, W * PX, H * PX);
       ctx.save();
@@ -204,11 +221,31 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     } else stamp(L.body, 0, bodyDY);
     ctx.save();
     ctx.translate((HAND.x + hx) * PX, (HAND.y + bodyDY + hy) * PX);
-    if (rot) ctx.rotate(rot);
-    ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+    const front = pose.equipment ? equipmentGesture(pose.equipment.weapon.id, pose.attackProgress ?? 0, pose.equipment.weapon.evolution) : null;
+    if (front) {
+      ctx.translate(front.thrust * PX, 0);
+      const id = pose.equipment?.weapon.id ?? "branch";
+      ctx.rotate((pose.attackProgress == null ? sway : front.angle) - (id === "ring" || id === "boomerang" ? 0 : .6));
+      const size = id === "dagger" ? 31 : id === "ring" ? 19 : id === "boomerang" ? 26 : 59;
+      if (!drawHeldEquipment(ctx, "weapon", id, pose.equipment?.weapon.evolution ?? 1, size * PX)) ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+    } else {
+      if (rot) ctx.rotate(rot);
+      ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+    }
     ctx.restore();
     // fist drawn over the staff so it reads as gripped
     stamp(L.hand, hx, bodyDY + hy);
+    if (pose.equipment && HELMET_EXPERIMENT) {
+      const helmet = equipmentImage("shield", pose.equipment.shield.id);
+      if (helmet) {
+        const hw = 26 * PX, hh = helmet.naturalHeight / helmet.naturalWidth * hw;
+        ctx.save();
+        // Restrict the headwear to the hairline: the original face/beard remain intact.
+        ctx.beginPath(); ctx.rect(2 * PX, (bodyDY - 1) * PX, 29 * PX, 12 * PX); ctx.clip();
+        ctx.drawImage(helmet, 2 * PX, (bodyDY - 1) * PX, hw, hh);
+        ctx.restore();
+      }
+    }
   };
   paint();
   if (pose.flash && pose.flash > 0) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = pose.flash; paint(); }
@@ -225,7 +262,8 @@ function freeArmLayers(body: HTMLImageElement): typeof armCache {
   const { W, H } = V2;
   const mk = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; };
   const b = mk(), a = mk();
-  const bc = b.getContext("2d")!, ac = a.getContext("2d")!;
+  const bc = b.getContext("2d"), ac = a.getContext("2d");
+  if (!bc || !ac) return null;
   bc.drawImage(body, 0, 0, W, H);
   const src = bc.getImageData(0, 0, W, H);
   const bd = bc.createImageData(W, H); bd.data.set(src.data);
