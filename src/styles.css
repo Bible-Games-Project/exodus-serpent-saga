@@ -347,7 +347,7 @@
 .shop-icon-box { flex: none; position: relative; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; background: var(--title-mid); box-shadow: 0 0 0 2px var(--title-ink); }
 .shop-icon-box > .shop-item-icon { width: 84%; height: 84%; }
 .shop-face > img { position: absolute; max-width: none; }
-.shop-name { font-size: clamp(18px, 2.2vw, 26px); line-height: 1.1; }
+.shop-name { font-size: 22px; line-height: 1.1; }
 .shop-stat-bar { height: 6px; background: color-mix(in oklab, var(--title-ink) 25%, transparent); }
 .shop-stat-bar > span { display: block; height: 100%; background: var(--title-shade); }
 .shop-card[disabled] { opacity: 0.5; }
@@ -356,14 +356,54 @@
 .shop-tag { white-space: normal; letter-spacing: 0; }
 .shop-screen .cover-button { letter-spacing: 0; }
 @media (max-width: 1023px) {
-  .shop-screen { overflow-y: auto; }
-  .shop-layout { flex: none; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .shop-detail { grid-row: 2; grid-column: 1 / -1; max-height: none; height: auto; }
-  .shop-list-panel { height: max(340px, calc(100dvh - 150px)); }
-  .shop-stage { height: 360px; }
-  .shop-layout > [aria-label="Champions"] .shop-card { flex-wrap: wrap; justify-content: center; text-align: center; }
-  .shop-layout > [aria-label="Champions"] .shop-card > span { flex-basis: 100%; }
+  .shop-screen { overflow: hidden; padding: 12px; }
+  .shop-layout { gap: 10px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr); }
+  .shop-detail, .shop-list-panel { min-width: 0; padding: 8px; }
+  .shop-stage { height: min(32dvh, 280px); }
+  .shop-scroll .shop-card { flex-direction: column; min-height: 108px; justify-content: center; gap: 6px; text-align: center; }
+  .shop-card-copy { width: 100%; }
+  .shop-name { font-size: 18px; }
   .shop-screen > header { gap: 10px; }
   .shop-screen > header > div { flex-wrap: wrap; justify-content: center; gap: 8px; }
   .shop-screen .cover-button { --btn-fs: 11px; padding: 0.8em; }
+}
+.shop-screen { overflow: hidden; }
+.shop-layout > section { min-width: 0; }
+.shop-detail { overflow-x: hidden; overflow-wrap: anywhere; }
+.shop-card-copy { overflow-wrap: anywhere; }
+.shop-equipment-stage { display: flex; align-items: center; justify-content: center; height: 180px; }
+.shop-equipment-stage .shop-icon-box { background: transparent; box-shadow: none; }
+.shop-stat-group { display: grid; gap: 9px; }
+.shop-power-stat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.shop-power-label { font-size: 11px; text-transform: uppercase; }
+.shop-power-bars { display: grid; grid-template-columns: repeat(8, 6px); gap: 3px; height: 15px; padding-inline: 3px; }
+.shop-power-bars i { display: block; transform: skewX(-24deg); background: color-mix(in oklab, var(--title-ink) 18%, transparent); }
+.shop-power-bars i[data-active="true"] { background: var(--title-shade); box-shadow: inset 1px 0 var(--title-mid); }
+[role="tablist"] .shop-icon-box { background: transparent; box-shadow: none; }
+@media (max-width: 600px) {
+  .shop-screen { padding: 8px; padding-bottom: 12px; }
+  .shop-layout { gap: 6px; margin-top: 10px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr); }
+  .shop-layout .sub-panel { box-shadow: 0 0 0 2px var(--title-ink); padding: 5px; }
+  .shop-list-panel [role="tablist"] { gap: 4px; }
+  .shop-list-panel [role="tab"] { width: 28px; height: 28px; border-width: 2px; padding: 2px; }
+  .shop-list-panel [role="tab"] .shop-icon-box { width: 20px !important; height: 20px !important; }
+  .shop-card .shop-icon-box { width: 40px !important; height: 40px !important; }
+  .shop-face > img { width: 128px !important; height: 128px !important; left: -44px !important; top: -23.75px !important; }
+  .shop-scroll { padding: 4px; }
+  .shop-scroll .shop-card { padding: 5px 2px; min-height: 94px; }
+  .shop-scroll .shop-card .font-display { font-size: 9px; }
+  .shop-tag { font-size: 8px; padding: 0 2px; line-height: 11px; }
+  .shop-name { font-size: 16px; }
+  .shop-detail > div > .flex { flex-wrap: wrap; gap: 5px; }
+  .shop-detail .border-3 { padding: 5px; border-width: 2px; }
+  .shop-detail [role="tab"] { padding: 3px; font-size: 9px; }
+  .shop-detail .text-sm { font-size: 11px; }
+  .shop-detail .cover-button { font-size: 10px; white-space: normal; overflow-wrap: anywhere; }
+  .shop-detail .mt-3.flex.gap-2 { flex-wrap: wrap; }
+  .shop-stage { height: 150px; }
+  .shop-equipment-stage { height: 120px; }
+  .shop-equipment-stage .shop-icon-box { width: 100px !important; height: 100px !important; }
+  .shop-screen > header .sub-title { font-size: 22px; }
+  .shop-screen > header .sub-panel { padding: 3px 5px; }
+  .shop-screen > header .font-display.text-sm { font-size: 10px; }
 }

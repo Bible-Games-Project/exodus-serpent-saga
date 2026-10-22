@@ -35,6 +35,7 @@ import { offscreenEnemySpawn } from "./enemySpawn";
 import { playShieldBlock } from "./sfx";
 import type { TestMapConfig } from "./types";
 import { TEST_ATTACK_ORDER } from "./testMap";
+import { applyTestEquipment } from "./testEquipment";
 
 
 
@@ -181,6 +182,7 @@ export function createInitialState(test?: TestMapConfig | null): GameState {
  * No damage, cooldown, visual or behaviour value is changed.
  */
 function applyTestMapConfig(state: GameState, test: TestMapConfig) {
+  applyTestEquipment(state, test);
   const upTo = Math.max(-1, Math.min(TEST_ATTACK_ORDER.length - 1, Math.floor(test.maxAttackIndex)));
   for (let i = 0; i < TEST_ATTACK_ORDER.length; i++) {
     const id = TEST_ATTACK_ORDER[i];
