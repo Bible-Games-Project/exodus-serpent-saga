@@ -7,6 +7,7 @@ import { testLoadout, applyTestEquipment } from "./testEquipment";
 import { createInitialState } from "./engine";
 import { updateEquipment } from "./equipment";
 import type { Entity } from "./types";
+import { offscreenTargets } from "./offscreenTargets";
 
 test("Miriam I is the lowest damaging starter with one attack bar and two health bars", () => {
   const miriam = CHAMPIONS[0].evolutions[0];
@@ -59,4 +60,14 @@ test("Bronze III special still spawns its existing ring and records the cast bea
   assert.deepEqual(spawned, ["firering"]);
   assert.equal(state.equipFx?.staffVisualAt, 2);
   assert.equal(state.equipFx?.fireringNext, 22);
+});
+test("Off-screen targets retain only the registered Ramses, never ordinary allies", () => {
+  const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1, champions: { miriam: true } });
+  assert.equal(state.npcs.size, 1);
+  assert.deepEqual(offscreenTargets(state), []);
+  const boss: Entity = { ...state.player, id: 888, kind: "ramses", team: "enemy" };
+  state.entities.set(boss.id, boss); state.ramsesId = boss.id;
+  assert.deepEqual(offscreenTargets(state).map(e => e.kind), ["ramses"]);
+  boss.kind = "miriam";
+  assert.deepEqual(offscreenTargets(state), []);
 });
