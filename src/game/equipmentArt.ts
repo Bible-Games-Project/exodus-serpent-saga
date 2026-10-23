@@ -2,7 +2,7 @@
 import manifest from "./equipmentManifest.json";
 const urls: Record<string, string> = manifest;
 export const HELMET_EXPERIMENT = true;
-export const SHOES_EXPERIMENT = false;
+export const SHOES_EXPERIMENT = true;
 export function equipmentArtUrl(category: string, id: string, evolution = 1): string | undefined {
   const kind = category === "shield" && HELMET_EXPERIMENT ? "helmet" : category;
   return urls[`${kind}:${id}:${kind === "helmet" ? 1 : evolution}`];

@@ -391,6 +391,7 @@
   .shop-screen { padding: 8px; padding-bottom: 12px; }
   .shop-layout { gap: 6px; margin-top: 10px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr); }
   .shop-layout .sub-panel { box-shadow: 0 0 0 2px var(--title-ink); padding: 5px; }
+  .shop-list-panel .sub-head { overflow-wrap: anywhere; padding-inline: 2px; font-size: 9px; }
   .shop-list-panel [role="tablist"] { gap: 4px; }
   .shop-list-panel [role="tab"] { width: 28px; height: 28px; border-width: 2px; padding: 2px; }
   .shop-list-panel [role="tab"] .shop-icon-box { width: 20px !important; height: 20px !important; }

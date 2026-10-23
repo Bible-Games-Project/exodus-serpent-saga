@@ -14,7 +14,7 @@ import v2FootRAsset from "@/assets/moses-v2-foot-r.png.asset.json";
 import v2HandAsset from "@/assets/moses-v2-hand.png.asset.json";
 import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
 import type { Loadout } from "./loadout";
-import { drawHeldEquipment, equipmentGesture, equipmentImage, HELMET_EXPERIMENT } from "./equipmentArt";
+import { drawHeldEquipment, equipmentGesture, equipmentImage, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
 
 /**
  * Single switch for Moses' look. "original" = previous sprite/staff/animations
@@ -183,20 +183,23 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   const sway = pose.moving ? Math.sin(pose.walkPhase) * 0.05 : Math.sin(breathT * 1.6) * 0.015;
   const rot = pose.staffAngle || sway;
   let hx = 0, hy = 0;
+  const frontGesture = pose.equipment ? equipmentGesture(pose.equipment.weapon.id, pose.attackProgress ?? 0, pose.equipment.weapon.evolution) : null;
   if (pose.staffAngle) {
     hy = Math.max(-4, Math.min(2, Math.round(pose.staffAngle * 2.4)));
     hx = Math.max(-1, Math.min(2, Math.round(pose.staffAngle * 1.2)));
   } else if (pose.moving) hx = Math.round(Math.sin(pose.walkPhase) * 1.2);
+  if (frontGesture) hx += frontGesture.thrust;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY + pose.bob));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX, -H * PX);
-  const stamp = (img: HTMLImageElement, dx: number, dy: number) => ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
+  const stamp = (img: CanvasImageSource, dx: number, dy: number) => ctx.drawImage(img, dx * PX, dy * PX, W * PX, H * PX);
   const paint = () => {
-    stamp(L.footL, fL.dx, fL.dy);
-    stamp(L.footR, fR.dx, fR.dy);
+    const footwear = pose.equipment?.footwear.id;
+    stamp(SHOES_EXPERIMENT && footwear && footwear !== "barefoot" ? shoeLayer(L.footL, footwear) ?? L.footL : L.footL, fL.dx, fL.dy);
+    stamp(SHOES_EXPERIMENT && footwear && footwear !== "barefoot" ? shoeLayer(L.footR, footwear) ?? L.footR : L.footR, fR.dx, fR.dy);
     const arm = freeArmLayers(L.body);
     if (arm && pose.equipment) {
       ctx.drawImage(arm.body, 0, bodyDY * PX, W * PX, H * PX);
@@ -221,9 +224,8 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     } else stamp(L.body, 0, bodyDY);
     ctx.save();
     ctx.translate((HAND.x + hx) * PX, (HAND.y + bodyDY + hy) * PX);
-    const front = pose.equipment ? equipmentGesture(pose.equipment.weapon.id, pose.attackProgress ?? 0, pose.equipment.weapon.evolution) : null;
+    const front = frontGesture;
     if (front) {
-      ctx.translate(front.thrust * PX, 0);
       const id = pose.equipment?.weapon.id ?? "branch";
       ctx.rotate((pose.attackProgress == null ? sway : front.angle) - (id === "ring" || id === "boomerang" ? 0 : .6));
       const size = id === "dagger" ? 31 : id === "ring" ? 19 : id === "boomerang" ? 26 : 59;
@@ -250,6 +252,24 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   paint();
   if (pose.flash && pose.flash > 0) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = pose.flash; paint(); }
   ctx.restore();
+}
+
+const shoeLayers = new Map<string, HTMLCanvasElement>();
+/** Adapt existing foot alpha and walking anchors; never enlarge the silhouette. */
+function shoeLayer(source: HTMLImageElement, id: string): HTMLCanvasElement | null {
+  const key = `${source.src}:${id}`;
+  const cached = shoeLayers.get(key);
+  if (cached) return cached;
+  const canvas = document.createElement("canvas"); canvas.width = V2.W; canvas.height = V2.H;
+  const ctx = canvas.getContext("2d"); if (!ctx) return null;
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(source, 0, 0, V2.W, V2.H);
+  const css = getComputedStyle(document.documentElement);
+  const token = ["wind", "jordan", "messenger"].includes(id) ? "water" : id === "bushb" ? "fire" : id === "invisible" ? "iron" : "wood";
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.fillStyle = css.getPropertyValue(`--equip-${token}`).trim();
+  ctx.globalAlpha = .7; ctx.fillRect(0, 78, V2.W, 4);
+  ctx.globalAlpha = 1; ctx.fillStyle = css.getPropertyValue("--equip-iron").trim(); ctx.fillRect(0, 82, V2.W, 1);
+  shoeLayers.set(key, canvas); return canvas;
 }
 
 /** Free-arm region of the v2 body (sprite px) and its shoulder pivot. */
