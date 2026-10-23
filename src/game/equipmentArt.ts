@@ -1,10 +1,6 @@
 // Shared isolated equipment artwork for shop and Canvas; no combat rules here.
-const assets = import.meta.glob<{ default: { url: string } }>("@/assets/equip-*.asset.json", { eager: true });
-const urls: Record<string, string> = {};
-for (const [path, mod] of Object.entries(assets)) {
-  const match = path.match(/equip-(weapon|staff|helmet|food)-([a-z]+)-(\d)(-clean)?(?:\.png)?\.asset\.json$/);
-  if (match && (!urls[`${match[1]}:${match[2]}:${match[3]}`] || match[4])) urls[`${match[1]}:${match[2]}:${match[3]}`] = mod.default.url;
-}
+import manifest from "./equipmentManifest.json";
+const urls: Record<string, string> = manifest;
 export const HELMET_EXPERIMENT = true;
 export const SHOES_EXPERIMENT = false;
 export function equipmentArtUrl(category: string, id: string, evolution = 1): string | undefined {

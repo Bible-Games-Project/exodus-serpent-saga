@@ -20,6 +20,8 @@ import {
 import { PLAGUES } from "@/game/plagues";
 import type { PlagueId } from "@/game/types";
 import type { TestMapConfig } from "@/game/types";
+import { EquipmentControls } from "./EquipmentControls";
+import { Button } from "./ui/button";
 
 const RAMSES_LEVELS: Array<{ level: 1 | 2 | 3 | 4; label: string }> = [
   { level: 1, label: "1 · Throne" },
@@ -75,6 +77,9 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
         </p>
 
         {/* Attacks */}
+        <section className="pixel-panel mb-5 p-5 test-equipment-panel" aria-label="Test equipment">
+          <EquipmentControls value={cfg.equipment} onChange={equipment => setCfg(c => ({ ...c, equipment }))} />
+        </section>
         <section className="pixel-panel mb-5 bg-[#f6e2ad] p-5">
           <h2 className="font-display mb-3 text-sm uppercase tracking-[0.16em] text-[#4a2c10]">
             Maximum Plague Attack
@@ -187,6 +192,7 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
         {/* Champions — listed from the ally registry */}
         <section className="pixel-panel mb-5 bg-[#f6e2ad] p-5">
           <h2 className="font-display mb-3 text-sm uppercase tracking-[0.16em] text-[#4a2c10]">Champions</h2>
+          <Button variant="secondary" onClick={() => setCfg(c => ({ ...c, champions: Object.fromEntries(testChampionIds().map(id => [id, true])) }))}>Select all champions</Button>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {testChampionIds().map((id) => {
               const info = testChampionInfo(id);
@@ -263,6 +269,7 @@ export default function TestMapPage() {
   const portrait = useLandscapeOnly();
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [equipmentOpen, setEquipmentOpen] = useState(false);
   const [gameOver, setGameOver] = useState<null | { level: number; survivalSeconds: number; kills: number }>(null);
   const navigate = useNavigate();
 
@@ -292,6 +299,13 @@ export default function TestMapPage() {
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
+        <div className="test-equipment-live">
+          <Button variant="secondary" aria-expanded={equipmentOpen} onClick={() => setEquipmentOpen(on => !on)}>Equipment</Button>
+          {equipmentOpen && <div className="test-equipment-panel">
+            <EquipmentControls value={cfg.equipment} onChange={equipment => setCfg(c => c ? { ...c, equipment } : c)} />
+            <Button variant="secondary" onClick={() => setCfg(c => c ? { ...c, champions: Object.fromEntries(testChampionIds().map(id => [id, true])) } : c)}>Select all champions</Button>
+          </div>}
+        </div>
 
         <div className="absolute left-3 top-3 z-20">
           <button

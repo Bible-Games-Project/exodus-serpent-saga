@@ -1,7 +1,6 @@
 // Shop weapons: per-weapon combat behavior layered on the basic attack.
-// The staff swing remains the universal melee animation; each weapon adds its
-// own projectiles, hazards and on-hit effects. Visuals are temporary pixel
-// shapes until the final weapon PNGs arrive.
+// Combat cadence is unchanged; equipmentArt handles per-item visual gestures.
+// Each weapon adds its own established projectiles, hazards and on-hit effects.
 import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 
@@ -24,6 +23,7 @@ export function weaponOnCast(
   spawn: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>, team?: Entity["team"]) => Entity,
 ): void {
   const { id, evo } = equippedWeapon(state);
+  (state.equipFx ??= {}).weaponVisualAt = state.now;
   const p = state.player;
   const dir: Vec2 = lastMoveDir(state);
   const dmg = weaponHitDamage(state, 14);
