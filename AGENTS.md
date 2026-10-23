@@ -101,3 +101,5 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Off-screen overlays read restored world positions and actual HP; pure geometry is tested separately.
 - Grant free starters during save sanitization to preserve existing purchases.
 - Shop portraits share one 1024² composition (`shop-portrait-v3-*`); sidebar faces are a fixed crop in `ChampionArt.tsx`, and item icons are keyed `category:id` (`shop-icon-<category>-<id>`) because ids repeat across categories.
+- Equipment visuals resolve through `equipmentManifest.json` and `equipmentArt.ts`, shared by shop and Canvas; retain shield IDs and old assets while helmet presentation is reversible.
+- Test Map equipment overrides live only in session config via `applyTestEquipment`; never write test selections to shop saves, and keep original combat cadence separate from visual gestures.

@@ -30,9 +30,10 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
   const p = state.player.pos;
   const id = lo.staff.id, evo = lo.staff.evolution;
   // Timed specials share their real trigger beat with the rear-hand casting pose.
+  const spawnEntity = spawn;
   const visualSpawn: SpawnFn = (kind, pos, ttl, data, team) => {
     f.staffVisualAt = state.now;
-    return spawn(kind, pos, ttl, data, team);
+    return spawnEntity(kind, pos, ttl, data, team);
   };
   spawn = visualSpawn;
 
