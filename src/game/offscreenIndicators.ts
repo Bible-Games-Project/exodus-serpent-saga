@@ -5,6 +5,7 @@ import aaron from '@/assets/shop-portrait-aaron.png.asset.json';
 import miriam from '@/assets/shop-portrait-miriam.png.asset.json';
 import jochebed from '@/assets/shop-portrait-jochebed.png.asset.json';
 import ramses from '@/assets/ramses-quiet-body.png.asset.json';
+import { offscreenTargets } from './offscreenTargets';
 const portraits: Record<string, string> = { aaron: aaron.url, miriam: miriam.url, jochebed: jochebed.url, ramses: ramses.url };
 const images = new Map<string, HTMLImageElement>(), faces = new Map<string, HTMLCanvasElement>();
 let palette: Record<string, string> | null = null;
@@ -47,7 +48,7 @@ export function drawOffscreenIndicators(ctx: CanvasRenderingContext2D, state: Ga
     const point = offscreenPoint(entity.pos, state.camera, { x: state.worldW, y: state.worldH }, { x: width, y: height }, zoom, bounds);
     if (point) targets.push({ entity, point, name });
   };
-  const boss = state.ramsesId == null ? undefined : state.entities.get(state.ramsesId); if (boss?.kind === 'ramses') add(boss, 'Ramses');
+  for (const boss of offscreenTargets(state)) add(boss, 'Ramses');
   const packed = separateIndicators(targets.map((t) => t.point), bounds, size + 20), color = colors();
   ctx.save(); ctx.imageSmoothingEnabled = false;
   targets.forEach(({ entity, name }, i) => {

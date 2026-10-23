@@ -29,11 +29,19 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
   const f = fx(state);
   const p = state.player.pos;
   const id = lo.staff.id, evo = lo.staff.evolution;
+  // Timed specials share their real trigger beat with the rear-hand casting pose.
+  const spawnEntity = spawn;
+  const visualSpawn: SpawnFn = (kind, pos, ttl, data, team) => {
+    f.staffVisualAt = state.now;
+    return spawnEntity(kind, pos, ttl, data, team);
+  };
+  spawn = visualSpawn;
 
   // Crystal / Diamond: blind N enemies every 15 s.
   if ((id === "crystal" || id === "diamond") && evo >= 2) {
     if (state.now >= (f.blindNext ?? 0)) {
       f.blindNext = state.now + 15;
+      f.staffVisualAt = state.now;
       const n = id === "crystal" ? (evo >= 3 ? 3 : 1) : (evo >= 3 ? 5 : 3);
       const dur = id === "crystal" ? (evo >= 3 ? 4 : 3) : (evo >= 3 ? 4 : 3);
       for (const en of nearestEnemies(state, p, n)) {
@@ -99,6 +107,7 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
 export function staffOnPlagueCast(state: GameState): void {
   const lo = state.loadout;
   if (!lo) return;
+  fx(state).staffVisualAt = state.now;
   const p = state.player.pos;
   const id = lo.staff.id, evo = lo.staff.evolution;
   if (id === "iron" && evo >= 2) {

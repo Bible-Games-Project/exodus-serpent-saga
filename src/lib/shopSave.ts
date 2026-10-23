@@ -52,7 +52,7 @@ function sanitize(raw: Partial<ShopSave>): ShopSave {
     s.owned[id] = l;
   }
   // Free starters are always owned.
-  Object.assign(s.owned, DEFAULTS.owned);
+  for (const [id, starterLevel] of Object.entries(DEFAULTS.owned)) s.owned[id] = Math.max(s.owned[id] ?? 0, starterLevel);
   for (const cat of Object.keys(CATEGORY_ITEMS) as ShopCategory[]) {
     const eq = raw.equipped?.[cat];
     if (eq && findItem(eq.itemId) && (s.owned[eq.itemId] ?? 0) >= eq.evolution) {

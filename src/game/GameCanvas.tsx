@@ -35,7 +35,10 @@ import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
-import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
+import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
+import { applyTestEquipment } from "./testEquipment";
+import { equipmentImage } from "./equipmentArt";
+import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
@@ -283,7 +286,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
     applyTestEquipment(state, testConfig);
     state.testMap = testConfig;
     for (const [id, on] of Object.entries(testConfig.champions ?? {})) {
-      if (on && !state.npcs.has(id as import("./types").NpcId)) summonCompanion(state, id);
+      if (on && !state.npcs.has(id as import("./types").NpcId)) summonCompanion(state, id as import("./types").NpcId);
     }
   }, [testConfig]);
 
@@ -1830,6 +1833,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
   drawMosesLeprosyHand(ctx, x, groundY, flip, s);
+  drawEquipmentPower(ctx, s, x, groundY, flip);
 }
 
 

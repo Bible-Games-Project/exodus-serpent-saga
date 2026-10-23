@@ -379,11 +379,19 @@
 .shop-power-bars { display: grid; grid-template-columns: repeat(8, 6px); gap: 3px; height: 15px; padding-inline: 3px; }
 .shop-power-bars i { display: block; transform: skewX(-24deg); background: color-mix(in oklab, var(--title-ink) 18%, transparent); }
 .shop-power-bars i[data-active="true"] { background: var(--title-shade); box-shadow: inset 1px 0 var(--title-mid); }
+:root { --equip-wood: #ba8751; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
+.test-equipment-panel { background: var(--title-light); color: var(--title-ink); padding: 12px; }
+.test-equipment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.test-equipment-controls label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.test-equipment-controls select { background: var(--title-sand); color: var(--title-ink); border: 2px solid var(--title-shade); border-radius: 0; min-width: 0; padding: 5px; }
+.test-equipment-live { position: absolute; left: 65px; top: 12px; z-index: 25; max-width: min(400px, calc(100% - 135px)); }
+.test-equipment-live > .test-equipment-panel { margin-top: 6px; max-height: 60dvh; overflow-y: auto; box-shadow: 0 0 0 2px var(--title-ink); }
 [role="tablist"] .shop-icon-box { background: transparent; box-shadow: none; }
 @media (max-width: 600px) {
   .shop-screen { padding: 8px; padding-bottom: 12px; }
   .shop-layout { gap: 6px; margin-top: 10px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) minmax(0, 1fr); }
   .shop-layout .sub-panel { box-shadow: 0 0 0 2px var(--title-ink); padding: 5px; }
+  .shop-list-panel .sub-head { overflow-wrap: anywhere; padding-inline: 2px; font-size: 9px; }
   .shop-list-panel [role="tablist"] { gap: 4px; }
   .shop-list-panel [role="tab"] { width: 28px; height: 28px; border-width: 2px; padding: 2px; }
   .shop-list-panel [role="tab"] .shop-icon-box { width: 20px !important; height: 20px !important; }

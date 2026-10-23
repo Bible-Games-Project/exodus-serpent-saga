@@ -2435,7 +2435,7 @@ function damageAlly(state: GameState, n: Entity, dmg: number, fxAt?: Vec2, proje
   if (n.hp <= 0) downCompanion(state, n);
 }
 
-function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
+export function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
   const def = allyDef(npcId);
   if (!def || state.npcs.has(npcId)) return;
   const vw = state.viewport?.w ?? 800;
