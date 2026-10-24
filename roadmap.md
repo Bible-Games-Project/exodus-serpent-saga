@@ -1,5 +1,12 @@
 # Roadmap
 
+- [ ] Enlarge category boxes, use sword tab and add three evolution purchase-state squares to shop lists.
+- [ ] Expand bars to 20 with area damage, utility, footwear speed and helmet shield capacity without changing balance.
+- [ ] Redesign all shop staff evolution icons in weapon style.
+- [ ] Restore original front branch and create separate compact combat weapons/staffs; preserve shoes.
+- [ ] Position front-only headwear on the actual head; use brown Abel hairband.
+- [ ] Move Ramses indicator to viewport edges and verify shop/game flows and tests.
+
 - [x] Audit and integrate front-hand weapons/rear-hand staffs with distinct evolution artwork, animation and ability-linked effects.
 - [x] Repair all affected shop icons and branch art, redesign category icons, and add reversible helmet/shoe presentation.
 - [x] Keep shop in three columns at all widths and replace equipment/champion statistics with accurate diagonal bars.
