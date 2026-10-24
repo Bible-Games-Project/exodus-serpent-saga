@@ -208,10 +208,12 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       ctx.translate(ARM.PIVOT.x * PX, (ARM.PIVOT.y + bodyDY) * PX);
       ctx.rotate((pose.moving ? -Math.sin(pose.walkPhase) * .06 : 0) + rear.angle);
       ctx.drawImage(arm.arm, -ARM.PIVOT.x * PX, -ARM.PIVOT.y * PX, W * PX, H * PX);
-      ctx.translate(-2 * PX, (16 + rear.thrust) * PX);
+      // Centre the original rear fist (source x=2..8, y=41..48) on
+      // the grip; the arm, staff and overlay share this exact transform.
+      ctx.translate(-2 * PX, (16.5 + rear.thrust) * PX);
       drawHeldEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, 63 * PX);
       // Original hand pixels cover the shaft at its grip.
-      ctx.drawImage(L.body, 2, 41, 6, 7, -3 * PX, -3 * PX, 6 * PX, 7 * PX);
+      ctx.drawImage(L.body, 2, 41, 6, 7, -3 * PX, -3.5 * PX, 6 * PX, 7 * PX);
       ctx.restore();
     } else if (arm && pose.moving && !pose.staffAngle) {
       // Free (non-staff) arm swings gently around the shoulder, opposite to the legs.
