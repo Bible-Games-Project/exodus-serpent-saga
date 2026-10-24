@@ -11,6 +11,12 @@ import { offscreenTargets } from "./offscreenTargets";
 
 test("Miriam I is the lowest damaging starter with one attack bar and two health bars", () => {
   const miriam = CHAMPIONS[0].evolutions[0];
+  // Only the starter changes: one point below the weakest existing attacker
+  // and health pool, rather than an arbitrary reduction to every champion.
+  assert.equal(miriam.attackPct, 89);
+  assert.equal(miriam.healthPct, 84);
+  assert.equal(CHAMPIONS[1].evolutions[0].attackPct, 90);
+  assert.equal(CHAMPIONS[1].evolutions[0].healthPct, 85);
   assert.equal(championBars(miriam, "attack"), 1);
   assert.equal(championBars(miriam, "health"), 2);
   for (const c of CHAMPIONS.slice(1)) {

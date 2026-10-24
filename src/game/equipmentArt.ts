@@ -40,8 +40,10 @@ export function drawHeldEquipment(ctx: CanvasRenderingContext2D, category: "weap
   if (!img) return false;
   const width = img.naturalWidth / img.naturalHeight * height;
   const compact = id === "ring" || id === "boomerang";
-  const gripX = category === "weapon" && !compact ? width * .14 : width * .5;
-  const gripY = compact ? height * .65 : category === "weapon" ? height * .87 : height * .60;
+  // Staff shafts sit left of their decorative crowns; diagonal weapon grips
+  // stay at the lower-left end rather than the centre of their bounding box.
+  const gripX = category === "weapon" && !compact ? width * .14 : category === "staff" ? width * .38 : width * .5;
+  const gripY = compact ? height * .65 : category === "weapon" ? height * .87 : height * .74;
   ctx.drawImage(img, -gripX, -gripY, width, height);
   return true;
 }
