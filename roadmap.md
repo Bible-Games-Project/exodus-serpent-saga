@@ -1,11 +1,13 @@
 # Roadmap
 
-- [ ] Audit and integrate front-hand weapons/rear-hand staffs with distinct evolution artwork, animation and ability-linked effects.
-- [ ] Repair all affected shop icons and branch art, redesign category icons, and add reversible helmet/shoe presentation.
-- [ ] Keep shop in three columns at all widths and replace equipment/champion statistics with accurate diagonal bars.
-- [ ] Add live Test Map equipment/evolution controls and select-all champions without changing saves.
-- [ ] Remove off-screen ally indicators while retaining Ramses.
-- [ ] Verify equipment in motion, Test Map, purchases/persistence, shop widths and zoom; report limitations honestly.
+- [x] Audit and integrate front-hand weapons/rear-hand staffs with distinct evolution artwork, animation and ability-linked effects.
+- [x] Repair all affected shop icons and branch art, redesign category icons, and add reversible helmet/shoe presentation.
+- [x] Keep shop in three columns at all widths and replace equipment/champion statistics with accurate diagonal bars.
+- [x] Add live Test Map equipment/evolution controls and select-all champions without changing saves.
+- [x] Remove off-screen ally indicators while retaining Ramses.
+- [x] Verify equipment in motion, Test Map, purchases/persistence, shop widths and zoom; report limitations honestly.
+
+Verification scope: all 57 live weapon/staff selections and 14 champion summons read back correctly; actual combat, purchase/reload/normal Play, seven affected shop icons, widths 320–1280 and zoom 80–150% were checked. Tests: 25 passing. Helmet and shoe overlays remain reversible experiments; footwear adapts existing sandal pixels rather than adding a new silhouette. Individual full attack cycles for every item/evolution have not all been visually inspected.
 
 - [x] Replace Spear Soldier with supplied V2 PNG while preserving throw mechanics.
 - [x] Replace mounted Spear Knight with supplied V2 PNG and leg-only movement.

@@ -104,3 +104,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Equipment visuals resolve through `equipmentManifest.json` and `equipmentArt.ts`, shared by shop and Canvas; retain shield IDs and old assets while helmet presentation is reversible.
 - Test Map equipment overrides live only in session config via `applyTestEquipment`; never write test selections to shop saves, and keep original combat cadence separate from visual gestures.
 - Held equipment and its hand overlay must share one grip transform; tune asset grip coordinates, not combat hitboxes, to correct visual attachment.
+- When establishing a weakest starter, derive the minimum adjustment from existing catalogue minima and keep bar normalization separate from combat values; preserve other champions and later evolutions.
