@@ -22,6 +22,7 @@ export function drawCombatEquipment(ctx: CanvasRenderingContext2D, category: "we
       if(evolution>1) rect(1,-51,2,5,"fire");
     } else {
       shape([[-3,-44],[-4,-49],[0,-54],[4,-49],[3,-44]],accent);
+      rect(-3,-49,1,4,"wood-dark");rect(1,-49,2,3,accent);
       rect(-1,-51,1,5,"ice");
       if (id === "waters") rect(-5,-46,3,2,"water");
       if (id === "power") shape([[0,-56],[5,-56],[2,-52],[5,-52],[-1,-46],[1,-51],[-2,-51]],"light");
@@ -29,7 +30,8 @@ export function drawCombatEquipment(ctx: CanvasRenderingContext2D, category: "we
     if(evolution>1){rect(-2,-32,4,2,accent);rect(-2,-26,4,2,"light");}
     if(evolution>2){rect(-2,-19,4,2,accent);rect(-2,18,4,3,"light");}
   } else if (id === "boomerang") {
-    shape([[-2,3],[-13,-8],[-15,-13],[-11,-12],[0,-4],[11,-12],[15,-13],[13,-8],[2,3]],"wood");
+    shape([[-2,3],[-13,-8],[-15,-13],[-11,-12],[0,-4],[11,-12],[15,-13],[13,-8],[2,3]],"wood-dark");
+    shape([[-1,1],[-12,-8],[-13,-11],[0,-3],[13,-11],[12,-8],[1,1]],"wood");
     shape([[-12,-11],[0,-2],[12,-11],[1,0],[-1,0]],"wood-light");
     if(evolution>=2){shape([[-10,-10],[-7,-8],[-9,-5],[-12,-8]],"red");shape([[7,-8],[10,-10],[12,-8],[9,-5]],"red");}
     if(evolution>=3) rect(-2,-3,4,3,"light");
@@ -40,15 +42,18 @@ export function drawCombatEquipment(ctx: CanvasRenderingContext2D, category: "we
     rect(-1,-38,2,63,"wood");rect(-1,-35,1,55,"wood-light");
     if (id === "sword" || id === "dagger") {
       const tip=id==="dagger"?-24:-43;
-      shape([[-3,-8],[-3,tip+7],[0,tip],[3,tip+7],[3,-8]],accent);rect(-1,tip+7,1,-tip-15,"ice");rect(-6,-7,12,2,"wood");rect(-1,4,3,3,"wood");
+      shape([[-3,-8],[-3,tip+7],[0,tip],[3,tip+7],[3,-8]],accent);rect(-3,tip+8,1,-tip-16,"wood-dark");rect(-1,tip+7,1,-tip-15,"ice");rect(-6,-7,12,2,"wood");rect(-1,4,3,3,"wood");
       ctx.clearRect(-2,8,4,18);
     } else if (id === "spear" || id === "harpoon") {
       shape([[-3,-38],[0,-49],[3,-38]],accent);
+      rect(-1,-44,1,6,"ice");
       if(id==="harpoon") shape([[1,-43],[6,-39],[3,-35],[3,-39]],"iron");
     } else if (id === "axe") {
-      shape([[0,-41],[8,-45],[13,-41],[12,-32],[6,-30],[1,-34]],accent);rect(0,-40,3,7,"wood");
+      shape([[0,-41],[8,-45],[13,-41],[12,-32],[6,-30],[1,-34]],"wood-dark");
+      shape([[2,-40],[8,-43],[11,-40],[10,-33],[6,-32],[3,-35]],accent);rect(9,-39,1,5,"ice");rect(0,-40,3,7,"wood");
     } else if (id === "mace") {
-      shape([[-5,-44],[5,-44],[8,-39],[6,-32],[-5,-32],[-8,-38]],accent);rect(-4,-41,3,6,"ice");
+      shape([[-5,-44],[5,-44],[8,-39],[6,-32],[-5,-32],[-8,-38]],"wood-dark");
+      shape([[-4,-42],[4,-42],[6,-38],[4,-34],[-4,-34],[-6,-38]],accent);rect(-4,-41,2,5,"ice");rect(2,-37,2,2,"wood-dark");
     }
     if(evolution>=2){rect(-2,-17,4,2,"red");rect(-2,-23,4,2,"red");}
     if(evolution>=3)rect(-2,-28,4,2,"light");
