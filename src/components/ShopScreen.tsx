@@ -5,7 +5,8 @@ import { PixelIcon } from "./PixelIcon";
 import { Button } from "./ui/button";
 import { ShopItemIcon } from "./ShopItemIcon";
 import { PowerBars } from "./PowerBars";
-import { championBars, equipmentStats } from "@/game/shopStats";
+import { EvolutionSquares } from "./EvolutionSquares";
+import { championBars, equipmentStats, utilityBars } from "@/game/shopStats";
 import { equipmentArtUrl, HELMET_EXPERIMENT } from "@/game/equipmentArt";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
 import { ChampionArt, MOSES_PORTRAIT } from "./ChampionArt";
@@ -22,7 +23,7 @@ import {
 } from "@/lib/shopSave";
 
 const categoryLabel = (category: ShopCategory) => category === "shield" && HELMET_EXPERIMENT ? "Helmets" : CATEGORY_LABELS[category];
-const CATEGORY_ICON_ITEMS = { weapon: "branch", staff: "moses", food: "sandwich", shield: "abel", footwear: "patriarchs" };
+const CATEGORY_ICON_ITEMS = { weapon: "sword", staff: "moses", food: "sandwich", shield: "abel", footwear: "patriarchs" };
 
 type Notice = { kind: "ok" | "err"; text: string } | null;
 
@@ -134,11 +135,11 @@ export function ShopScreen() {
                 title={categoryLabel(c)}
                 aria-label={categoryLabel(c)}
                 onClick={() => pickCategory(c)}
-                className={`pixel-btn-press rounded-none flex h-10 w-10 items-center justify-center border-3 ${
+                className={`shop-category-tab pixel-btn-press rounded-none flex h-12 w-12 items-center justify-center border-3 ${
                   category === c ? "bg-[var(--title-mid)]" : "bg-[var(--title-light)]"
                 } border-[var(--title-ink)]`}
               >
-                <ShopItemIcon item={CATEGORY_ITEMS[c].find(i => i.id === CATEGORY_ICON_ITEMS[c]) ?? CATEGORY_ITEMS[c][0]} size={24} />
+                <ShopItemIcon item={CATEGORY_ITEMS[c].find(i => i.id === CATEGORY_ICON_ITEMS[c]) ?? CATEGORY_ITEMS[c][0]} size={34} />
               </Button>
             ))}
           </div>
@@ -161,6 +162,7 @@ export function ShopScreen() {
                       <span className="mt-0.5 block text-[11px]">
                         {equipped ? <span className="shop-tag">Equipped</span> : owned > 0 ? <span className="shop-tag shop-tag-gold">Owned · Ev {owned}</span> : next ? (next.price === 0 ? "FREE" : formatCoins(next.price)) : "—"}
                       </span>
+                      <EvolutionSquares evolutions={it.evolutions} owned={owned} coins={save.coins} />
                     </span>
                   </Button>
                 </li>
@@ -225,6 +227,7 @@ export function ShopScreen() {
                           ? <span className="shop-tag">Owned · Ev {sel ?? owned} · Summonable</span>
                           : <><span className="shop-tag shop-tag-gold">Locked</span> {formatCoins(c.evolutions[0].price)}</>}
                       </span>
+                      <EvolutionSquares evolutions={c.evolutions} owned={owned} coins={save.coins} />
                     </span>
                   </Button>
                 </li>
@@ -289,7 +292,7 @@ function ItemDetail({
 
       <div className="mt-3 border-3 border-[var(--title-ink)] bg-[var(--title-light)] p-3">
         <p className="font-display text-xs uppercase">{evo.name}</p>
-        <div className="shop-stat-group mt-2">{equipmentStats(evo).map(stat => <PowerBars key={stat.label} {...stat} />)}</div>
+        <div className="shop-stat-group mt-2">{equipmentStats(evo, item).map(stat => <PowerBars key={stat.label} {...stat} />)}</div>
         {evo.ability && <p className="mt-1 text-sm">{evo.ability}</p>}
         <p className="mt-2 text-sm">
           Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}
@@ -372,6 +375,7 @@ function ChampionDetail({
         <div className="shop-stat-group">
           <PowerBars label="Attack" bars={championBars(evo, "attack")} />
           <PowerBars label="Health" bars={championBars(evo, "health")} />
+          <PowerBars label="Utility" bars={utilityBars(evo)} />
         </div>
         <p className="mt-1 text-sm">{evo.ability}</p>
         <p className="mt-2 text-sm">Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}</p>

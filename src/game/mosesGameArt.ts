@@ -14,7 +14,8 @@ import v2FootRAsset from "@/assets/moses-v2-foot-r.png.asset.json";
 import v2HandAsset from "@/assets/moses-v2-hand.png.asset.json";
 import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
 import type { Loadout } from "./loadout";
-import { drawHeldEquipment, equipmentGesture, equipmentImage, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
+import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
+import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
 
 /**
  * Single switch for Moses' look. "original" = previous sprite/staff/animations
@@ -211,7 +212,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       // Centre the original rear fist (source x=2..8, y=41..48) on
       // the grip; the arm, staff and overlay share this exact transform.
       ctx.translate(-2 * PX, (16.5 + rear.thrust) * PX);
-      drawHeldEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, 63 * PX);
+      drawCombatEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, PX);
       // Original hand pixels cover the shaft at its grip.
       ctx.drawImage(L.body, 2, 41, 6, 7, -3 * PX, -3.5 * PX, 6 * PX, 7 * PX);
       ctx.restore();
@@ -229,9 +230,16 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     const front = frontGesture;
     if (front) {
       const id = pose.equipment?.weapon.id ?? "branch";
-      ctx.rotate((pose.attackProgress == null ? sway : front.angle) - (id === "ring" || id === "boomerang" ? 0 : .6));
-      const size = id === "dagger" ? 31 : id === "ring" ? 19 : id === "boomerang" ? 26 : 59;
-      if (!drawHeldEquipment(ctx, "weapon", id, pose.equipment?.weapon.evolution ?? 1, size * PX)) ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+      ctx.rotate(pose.attackProgress == null ? sway : front.angle);
+      const evolution = pose.equipment?.weapon.evolution ?? 1;
+      if (id === "branch") {
+        // Restore the exact original stick, its 10x80 canvas and hand pivot.
+        ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+        if (evolution > 1) {
+          ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(evolution === 3 ? "--equip-light" : "--equip-red").trim();
+          ctx.fillRect(-1 * PX, -20 * PX, 2 * PX, 2 * PX);
+        }
+      } else drawCombatEquipment(ctx, "weapon", id, evolution, PX);
     } else {
       if (rot) ctx.rotate(rot);
       ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
@@ -240,15 +248,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     // fist drawn over the staff so it reads as gripped
     stamp(L.hand, hx, bodyDY + hy);
     if (pose.equipment && HELMET_EXPERIMENT) {
-      const helmet = equipmentImage("shield", pose.equipment.shield.id);
-      if (helmet) {
-        const hw = 26 * PX, hh = helmet.naturalHeight / helmet.naturalWidth * hw;
-        ctx.save();
-        // Restrict the headwear to the hairline: the original face/beard remain intact.
-        ctx.beginPath(); ctx.rect(2 * PX, (bodyDY - 1) * PX, 29 * PX, 12 * PX); ctx.clip();
-        ctx.drawImage(helmet, 2 * PX, (bodyDY - 1) * PX, hw, hh);
-        ctx.restore();
-      }
+      drawCombatHeadwear(ctx, pose.equipment.shield.id, pose.equipment.shield.evolution, bodyDY, PX);
     }
   };
   paint();

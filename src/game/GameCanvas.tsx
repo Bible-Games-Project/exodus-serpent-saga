@@ -37,7 +37,7 @@ import { drawPixelShadow } from "./shadow";
 
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { applyTestEquipment } from "./testEquipment";
-import { equipmentImage } from "./equipmentArt";
+import { drawCombatEquipment } from "./combatEquipmentArt";
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -4851,14 +4851,10 @@ function drawWeaponEntity(
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
     const id = k === "wpboom" ? "boomerang" : k === "wpring" ? "ring" : String(d.art ?? "spear");
-    const img = equipmentImage("weapon", id, s.loadout?.weapon.evolution ?? 1);
-    if (img) {
-      ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y);
-      ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + .85);
-      const height = k === "wpnproj" ? 38 : 23, width = img.naturalWidth / img.naturalHeight * height;
-      ctx.drawImage(img, -width / 2, -height / 2, width, height);
-      ctx.restore(); return true;
-    }
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y);
+    ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + Math.PI / 2);
+    drawCombatEquipment(ctx, "weapon", id, s.loadout?.weapon.evolution ?? 1, k === "wpnproj" ? .65 : .9);
+    ctx.restore(); return true;
   }
   ctx.save();
   if (k === "wpnproj") {
