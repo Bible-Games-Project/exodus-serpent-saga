@@ -376,7 +376,7 @@
 .shop-stat-group { display: grid; gap: 9px; }
 .shop-power-stat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .shop-power-label { font-size: 11px; text-transform: uppercase; }
-.shop-power-bars { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 2px; height: 15px; padding-inline: 3px; width: 174px; max-width: 100%; }
+.shop-power-bars { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 2px; height: 15px; padding-inline: 3px; width: 174px; max-width: 100%; min-width: 0; flex: 0 1 174px; }
 .shop-power-bars i { display: block; transform: skewX(-24deg); background: color-mix(in oklab, var(--title-ink) 18%, transparent); }
 .shop-power-bars i[data-active="true"] { background: var(--title-shade); box-shadow: inset 1px 0 var(--title-mid); }
 :root { --evolution-owned: #386645; --evolution-ready: #ffe177; --evolution-ready-ink: #624006; --evolution-short: #a74d41; --evolution-locked: #7c7770; }
