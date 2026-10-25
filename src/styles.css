@@ -389,7 +389,7 @@
 .shop-staff-icon { position: relative; display: block; overflow: hidden; width: 84%; height: 84%; }
 .shop-staff-icon img { position: absolute; max-width: none; image-rendering: pixelated; }
 @media (max-width: 1023px) { .shop-evolution-squares { justify-content: center; } }
-:root { --equip-wood: #ba8751; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
+:root { --equip-wood: #ba8751; --equip-wood-dark: #704626; --equip-wood-light: #d3aa73; --equip-red: #bd4b37; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
 .test-equipment-panel { background: var(--title-light); color: var(--title-ink); padding: 12px; }
 .test-equipment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .test-equipment-controls label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }

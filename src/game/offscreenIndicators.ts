@@ -1,6 +1,6 @@
 import type { Entity, GameState } from './types';
 import { allyDef } from './allies';
-import { offscreenPoint, separateIndicators, type IndicatorPoint } from './offscreenGeometry';
+import { offscreenPoint, separateIndicators, indicatorBounds, type IndicatorPoint } from './offscreenGeometry';
 import aaron from '@/assets/shop-portrait-aaron.png.asset.json';
 import miriam from '@/assets/shop-portrait-miriam.png.asset.json';
 import jochebed from '@/assets/shop-portrait-jochebed.png.asset.json';
@@ -40,8 +40,8 @@ function face(e: Entity, dead: boolean, color: Record<string, string>) {
 }
 export function drawOffscreenIndicators(ctx: CanvasRenderingContext2D, state: GameState, width: number, height: number, zoom: number) {
   if (state.gameOver || state.paused || state.levelUpPending) return;
-  const size = width < 600 || height < 500 ? 36 : 44, radius = size / 2, margin = radius + 12;
-  const bounds = { left: margin, right: width - margin, top: Math.max(margin, height < 500 ? 65 : 90), bottom: height - (height < 500 ? 90 : 130) };
+  const size = width < 600 || height < 500 ? 36 : 44, radius = size / 2;
+  const bounds = indicatorBounds(width, height, radius);
   if (bounds.bottom <= bounds.top || bounds.right <= bounds.left) return;
   const targets: Array<{ entity: Entity; point: IndicatorPoint; name: string }> = [];
   const add = (entity: Entity, name: string) => {
@@ -66,8 +66,9 @@ export function drawOffscreenIndicators(ctx: CanvasRenderingContext2D, state: Ga
     ctx.strokeStyle = color[`${mode}-light`]; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
     ctx.fillStyle = color.ink; ctx.fillRect(-radius, radius - 5, size, 7);
     ctx.fillStyle = ratio <= 0.2 ? color.critical : color.health; ctx.fillRect(-radius + 2, radius - 3, Math.round((size - 4) * ratio), 3);
+    const labelY = point.edge === 'bottom' ? -radius - 16 : radius + 5;
     ctx.font = '10px Silkscreen, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.lineWidth = 3; ctx.strokeStyle = color.ink;
-    ctx.strokeText(name, 0, radius + 5, size + 14); ctx.fillStyle = color[`${mode}-light`]; ctx.fillText(name, 0, radius + 5, size + 14);
+    ctx.strokeText(name, 0, labelY, size + 14); ctx.fillStyle = color[`${mode}-light`]; ctx.fillText(name, 0, labelY, size + 14);
     if (dead) { ctx.strokeStyle = color['dead-light']; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-6, -6); ctx.lineTo(6, 6); ctx.moveTo(6, -6); ctx.lineTo(-6, 6); ctx.stroke(); }
     ctx.restore();
   });

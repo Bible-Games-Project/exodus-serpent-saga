@@ -1,6 +1,10 @@
 import type { Vec2 } from './types';
 export type IndicatorPoint = Vec2 & { angle: number; edge: 'left' | 'right' | 'top' | 'bottom' };
 export type IndicatorBounds = { left: number; right: number; top: number; bottom: number };
+export function indicatorBounds(width: number, height: number, radius: number): IndicatorBounds {
+  const margin = radius + 12;
+  return { left: margin, right: width - margin, top: margin, bottom: height - margin };
+}
 export const wrappedDelta = (delta: number, size: number) => delta - Math.round(delta / size) * size;
 export function offscreenPoint(pos: Vec2, camera: Vec2, world: Vec2, view: Vec2, zoom: number, bounds: IndicatorBounds): IndicatorPoint | null {
   const dx = wrappedDelta(pos.x - camera.x, world.x) * zoom, dy = wrappedDelta(pos.y - camera.y, world.y) * zoom;

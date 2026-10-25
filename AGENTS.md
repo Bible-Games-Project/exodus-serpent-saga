@@ -101,7 +101,8 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Off-screen overlays read restored world positions and actual HP; pure geometry is tested separately.
 - Grant free starters during save sanitization to preserve existing purchases.
 - Shop portraits share one 1024² composition (`shop-portrait-v3-*`); sidebar faces are a fixed crop in `ChampionArt.tsx`, and item icons are keyed `category:id` (`shop-icon-<category>-<id>`) because ids repeat across categories.
-- Equipment visuals resolve through `equipmentManifest.json` and `equipmentArt.ts`, shared by shop and Canvas; retain shield IDs and old assets while helmet presentation is reversible.
+- Shop equipment uses `equipmentManifest.json`/`equipmentArt.ts` and separate staff icon assets; in-hand and projectile combat art uses `combatEquipmentArt.ts`, never shop images, to preserve native sprite proportions. The front branch keeps the original Moses stick asset; retain shield IDs and old assets for rollback.
 - Test Map equipment overrides live only in session config via `applyTestEquipment`; never write test selections to shop saves, and keep original combat cadence separate from visual gestures.
 - Held equipment and its hand overlay must share one grip transform; tune asset grip coordinates, not combat hitboxes, to correct visual attachment.
 - When establishing a weakest starter, derive the minimum adjustment from existing catalogue minima and keep bar normalization separate from combat values; preserve other champions and later evolutions.
+- Shop capability bars are presentation-only heuristics in `shopStats.ts`, based on existing geometry and abilities; never use them as combat values. Evolution purchase-state squares use the pure `evolutionState` helper so affordability and sequential unlocks stay consistent.
