@@ -373,7 +373,7 @@
 .shop-card-copy { overflow-wrap: anywhere; }
 .shop-equipment-stage { display: flex; align-items: center; justify-content: center; height: 180px; }
 .shop-equipment-stage .shop-icon-box { background: transparent; box-shadow: none; }
-.shop-stat-group { display: grid; gap: 9px; }
+.shop-stat-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; min-width: 0; }
 .shop-power-stat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .shop-power-label { font-size: 11px; text-transform: uppercase; }
 .shop-power-bars { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 2px; height: 15px; padding-inline: 3px; width: 174px; max-width: 100%; min-width: 0; flex: 0 1 174px; }
@@ -386,8 +386,6 @@
 .shop-evolution-square[data-state="owned"] { background: var(--evolution-owned); }
 .shop-evolution-square[data-state="available"] { color: var(--evolution-ready-ink); background: var(--evolution-ready); border-color: var(--evolution-ready-ink); box-shadow: 0 0 0 1px var(--evolution-ready), 0 2px 0 var(--title-shade); }
 .shop-evolution-square[data-state="unaffordable"] { background: var(--evolution-short); }
-.shop-staff-icon { position: relative; display: block; overflow: hidden; width: 84%; height: 84%; }
-.shop-staff-icon img { position: absolute; max-width: none; image-rendering: pixelated; }
 @media (max-width: 1023px) { .shop-evolution-squares { justify-content: center; } }
 :root { --equip-wood: #ba8751; --equip-wood-dark: #704626; --equip-wood-light: #d3aa73; --equip-red: #bd4b37; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
 .test-equipment-panel { background: var(--title-light); color: var(--title-ink); padding: 12px; }
