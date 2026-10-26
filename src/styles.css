@@ -386,8 +386,6 @@
 .shop-evolution-square[data-state="owned"] { background: var(--evolution-owned); }
 .shop-evolution-square[data-state="available"] { color: var(--evolution-ready-ink); background: var(--evolution-ready); border-color: var(--evolution-ready-ink); box-shadow: 0 0 0 1px var(--evolution-ready), 0 2px 0 var(--title-shade); }
 .shop-evolution-square[data-state="unaffordable"] { background: var(--evolution-short); }
-.shop-staff-icon { position: relative; display: block; overflow: hidden; width: 84%; height: 84%; }
-.shop-staff-icon img { position: absolute; max-width: none; image-rendering: pixelated; }
 @media (max-width: 1023px) { .shop-evolution-squares { justify-content: center; } }
 :root { --equip-wood: #ba8751; --equip-wood-dark: #704626; --equip-wood-light: #d3aa73; --equip-red: #bd4b37; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
 .test-equipment-panel { background: var(--title-light); color: var(--title-ink); padding: 12px; }
