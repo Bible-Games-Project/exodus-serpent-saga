@@ -373,7 +373,7 @@
 .shop-card-copy { overflow-wrap: anywhere; }
 .shop-equipment-stage { display: flex; align-items: center; justify-content: center; height: 180px; }
 .shop-equipment-stage .shop-icon-box { background: transparent; box-shadow: none; }
-.shop-stat-group { display: grid; gap: 9px; }
+.shop-stat-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; min-width: 0; }
 .shop-power-stat { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .shop-power-label { font-size: 11px; text-transform: uppercase; }
 .shop-power-bars { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 2px; height: 15px; padding-inline: 3px; width: 174px; max-width: 100%; min-width: 0; flex: 0 1 174px; }
