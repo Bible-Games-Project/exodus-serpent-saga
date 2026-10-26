@@ -16,6 +16,68 @@ export function weaponHitDamage(state: GameState, base: number): number {
   return base * (weaponDamage(state) / 0.5);
 }
 
+// ---------------------------------------------------------------- tuning
+/** Weapons that only throw projectiles and never perform the melee swing. */
+export function weaponIsRangedOnly(id: string): boolean {
+  return id === "boomerang" || id === "ring" || id === "harpoon";
+}
+/** Attack cooldown multiplier (lower = faster). Only the dagger is faster. */
+export function weaponCooldownMul(state: GameState): number {
+  const { id, evo } = equippedWeapon(state);
+  return id === "dagger" ? [0.7, 0.58, 0.46][evo - 1] ?? 0.7 : 1;
+}
+/** Melee swing duration multiplier for the attack animation. */
+export function weaponSwingDurMul(state: GameState): number {
+  const { id, evo } = equippedWeapon(state);
+  return id === "dagger" ? [0.75, 0.66, 0.58][evo - 1] ?? 0.75 : 1;
+}
+/** Melee reach multiplier: longer swords and bigger dagger cones by level. */
+export function weaponReachMul(state: GameState): number {
+  const { id, evo } = equippedWeapon(state);
+  if (id === "sword") return [1, 1.5, 2][evo - 1] ?? 1;
+  if (id === "dagger") return [1, 1.35, 1.75][evo - 1] ?? 1;
+  if (id === "spear") return 1.45;
+  return 1;
+}
+/** Melee knockback in px. */
+export function weaponKnockback(state: GameState): number {
+  const { id, evo } = equippedWeapon(state);
+  if (id === "sword") return 10 * ([1, 1.6, 2.2][evo - 1] ?? 1);
+  if (id === "spear") return evo >= 2 ? 22 : 14;
+  return 10;
+}
+/** Dagger poison: always present, chance and strength grow with level. */
+export const DAGGER_POISON = [
+  { chance: 0.4, dps: 4, dur: 5 },
+  { chance: 0.65, dps: 6, dur: 7 },
+  { chance: 0.9, dps: 9, dur: 8 },
+] as const;
+/** Ring rebounds per level. */
+export const RING_BOUNCES = [4, 8, 12] as const;
+/** Harpoon whirlpool proc chance per level (none at level 1). */
+export const HARPOON_WHIRL_CHANCE = [0, 0.2, 0.3] as const;
+
+/** Nearest enemy direction from Moses; falls back to the last movement direction. */
+export function aimDir(state: GameState): Vec2 {
+  const p = state.player;
+  let best: Entity | null = null, bd = Infinity;
+  for (const en of state.entities.values()) {
+    if (en.team !== "enemy") continue;
+    const dx = wrapD(en.pos.x, p.pos.x, state.worldW), dy = wrapD(en.pos.y, p.pos.y, state.worldH);
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bd) { bd = d2; best = en; }
+  }
+  if (!best) return lastMoveDir(state);
+  const dx = wrapD(best.pos.x, p.pos.x, state.worldW), dy = wrapD(best.pos.y, p.pos.y, state.worldH);
+  const l = Math.hypot(dx, dy) || 1;
+  return { x: dx / l, y: dy / l };
+}
+function wrapD(a: number, b: number, size: number): number {
+  let d = a - b;
+  if (d > size / 2) d -= size; else if (d < -size / 2) d += size;
+  return d;
+}
+
 // ---------------------------------------------------------------- cast
 // Called when the basic attack fires. Spawns the weapon's extra entities.
 export function weaponOnCast(
@@ -25,30 +87,37 @@ export function weaponOnCast(
   const { id, evo } = equippedWeapon(state);
   (state.equipFx ??= {}).weaponVisualAt = state.now;
   const p = state.player;
-  const dir: Vec2 = lastMoveDir(state);
+  const dir: Vec2 = aimDir(state);
   const dmg = weaponHitDamage(state, 14);
+  const ang = Math.atan2(dir.y, dir.x);
 
   switch (id) {
     case "spear": {
-      spawn("wpnproj", { ...p.pos }, 1.2, {
-        vx: dir.x * 420, vy: dir.y * 420, dmg,
-        pierce: evo >= 2 ? 4 : 1, knock: evo >= 2 ? 26 : 14,
-        trail: evo >= 3 ? 1 : 0, art: "spear",
-      }, "projectile");
+      // Melee only: a horizontal piercing thrust FX in front of Moses.
+      spawn("spearthrust", { ...p.pos }, 0.22, { facing: p.facing, len: 70 * weaponReachMul(state), evo }, "hazard");
+      break;
+    }
+    case "dagger": {
+      // Extra phantom daggers stab ahead from level 2 (visual multi-attack).
+      const n = evo === 3 ? 5 : evo === 2 ? 3 : 0;
+      for (let i = 0; i < n; i++) {
+        spawn("daggerstab", { ...p.pos }, 0.3, { facing: p.facing, delay: i * 0.045, row: i - (n - 1) / 2, reach: 34 * weaponReachMul(state) }, "hazard");
+      }
       break;
     }
     case "harpoon": {
+      const proc = Math.random() < (HARPOON_WHIRL_CHANCE[evo - 1] ?? 0);
       spawn("wpnproj", { ...p.pos }, 1.4, {
-        vx: dir.x * 380, vy: dir.y * 380, dmg,
-        pierce: evo >= 2 ? 5 : 1, knock: 16,
-        whirlpool: evo >= 2 ? (evo >= 3 ? 1.6 : 1) : 0, art: "harpoon",
+        vx: dir.x * 400, vy: dir.y * 400, dmg,
+        pierce: evo >= 2 ? 3 : 1, knock: 16,
+        whirlpool: proc ? (evo >= 3 ? 1.3 : 1) : 0, art: "harpoon",
       }, "projectile");
       break;
     }
     case "boomerang": {
       const n = evo; // 1/2/3 independent returning projectiles
       for (let i = 0; i < n; i++) {
-        const a = Math.atan2(dir.y, dir.x) + (i - (n - 1) / 2) * 0.5;
+        const a = ang + (i - (n - 1) / 2) * 0.5;
         spawn("wpboom", { ...p.pos }, 2.2, {
           vx: Math.cos(a) * 320, vy: Math.sin(a) * 320,
           dmg, phase: 0, flash: evo >= 3 ? 1 : 0,
@@ -57,25 +126,24 @@ export function weaponOnCast(
       break;
     }
     case "ring": {
-      spawn("wpring", { ...p.pos }, 3.0, {
-        vx: dir.x * 360, vy: dir.y * 360, dmg,
-        bounces: evo >= 2 ? 5 : 3, returning: 0,
-        trailDmg: evo >= 2 ? dmg * 0.3 : 0, electric: evo >= 3 ? 1 : 0,
+      spawn("wpring", { ...p.pos }, 4.0, {
+        vx: dir.x * 380, vy: dir.y * 380, dmg,
+        bounces: RING_BOUNCES[evo - 1] ?? 4, returning: 0, knock: 12,
+        electric: evo >= 3 ? 1 : 0,
       }, "projectile");
       break;
     }
     case "axe": {
-      // Long ground-level cutting line along the movement direction.
+      // Ground cut toward the nearest enemy (never behind Moses by accident).
       const len = evo >= 3 ? 260 : evo >= 2 ? 200 : 150;
       const wid = evo >= 3 ? 46 : evo >= 2 ? 34 : 22;
       spawn("axeline", { x: p.pos.x + dir.x * len * 0.5, y: p.pos.y + dir.y * len * 0.5 }, 0.45, {
-        dmg, len, wid, angle: Math.atan2(dir.y, dir.x),
+        dmg, len, wid, angle: ang,
         slow: evo >= 2 ? 2 : 0, cracks: evo >= 3 ? 1 : 0, hit: [],
       }, "hazard");
       break;
     }
     case "mace": {
-      // Impact circle centered on the mace's landing point, ahead of Moses.
       const reach = 64;
       const r = evo >= 3 ? 90 : evo >= 2 ? 70 : 48;
       spawn("maceimpact", { x: p.pos.x + dir.x * reach, y: p.pos.y + dir.y * reach }, 0.4, {
@@ -84,10 +152,7 @@ export function weaponOnCast(
       break;
     }
     case "branch": {
-      if (evo >= 3) {
-        // Small shockwave around the swing.
-        spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
-      }
+      if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
       break;
     }
     default:
@@ -102,8 +167,10 @@ export function weaponOnMeleeHit(state: GameState, en: Entity): void {
   en.data ??= {};
   switch (id) {
     case "dagger": {
-      en.data.poisonUntil = state.now + (evo >= 2 ? 8 : 5);
-      en.data.poisonDps = weaponHitDamage(state, 4);
+      const pz = DAGGER_POISON[evo - 1] ?? DAGGER_POISON[0];
+      if (Math.random() >= pz.chance) break;
+      en.data.poisonUntil = state.now + pz.dur;
+      en.data.poisonDps = weaponHitDamage(state, pz.dps);
       en.data.poisonSpread = evo >= 2 ? 1 : 0;
       en.data.poisonCloud = evo >= 3 ? 1 : 0;
       break;
@@ -176,6 +243,7 @@ export function updateWeaponEntities(
   ctx: {
     wrapDelta: (a: number, b: number, size: number) => number;
     killEnemy: (en: Entity) => void;
+    block?: (shield: Entity, source: Vec2) => void;
     spawn: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>, team?: Entity["team"]) => Entity;
   },
 ): void {
@@ -217,6 +285,14 @@ export function updateWeaponEntities(
         const ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
         if (Math.hypot(rx, ry) > en.radius + 10) continue;
         hitSet.add(en.id);
+        // Shield soldiers stop thrown weapons: they bounce back to Moses.
+        if (en.kind === "shieldsoldier" && e.kind !== "staffflame") {
+          ctx.block?.(en, e.pos);
+          if (e.kind === "wpboom") d.phase = 1;
+          else if (e.kind === "wpring") d.returning = 1;
+          else e.ttl = 0;
+          break;
+        }
         let dmg = d.dmg as number;
         // Celestial Ring: double damage on the return trip.
         if (e.kind === "wpring" && d.returning && d.electric) dmg *= 2;
@@ -227,10 +303,11 @@ export function updateWeaponEntities(
           en.pos.y += (ry / kd) * (d.knock as number);
         }
         if (d.whirlpool) {
-          ctx.spawn("whirlpool", { ...en.pos }, 2, {
-            dps: dmg * 0.5, r: 60 * (d.whirlpool as number), slow: (d.whirlpool as number) >= 1.6 ? 1 : 0,
+          ctx.spawn("whirlpool", { ...en.pos }, 1.6, {
+            dps: dmg * 0.25, r: 60 * (d.whirlpool as number), slow: (d.whirlpool as number) >= 1.6 ? 1 : 0,
           }, "hazard");
         }
+        if (d.whirlpool) d.whirlpool = 0; // one whirlpool per throw
         if (d.burn) { en.data ??= {}; en.data.burnUntil = state.now + 2; }
         if (en.hp <= 0) ctx.killEnemy(en);
         // Pierce / rebound bookkeeping.
@@ -246,7 +323,7 @@ export function updateWeaponEntities(
             let best: Entity | null = null, bd = Infinity;
             for (const o of state.entities.values()) {
               if (o.team !== "enemy" || hitSet.has(o.id)) continue;
-              const dd2 = ctx.wrapDelta(o.pos.x, e.pos.x, state.worldW) ** 2 + ctx.wrapDelta(o.pos.y, e.pos.y, state.worldH) ** 2;
+              const dd2 = ctx.wrapDelta(o.pos.x, en.pos.x, state.worldW) ** 2 + ctx.wrapDelta(o.pos.y, en.pos.y, state.worldH) ** 2;
               if (dd2 < bd) { bd = dd2; best = o; }
             }
             if (best) {
