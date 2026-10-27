@@ -3,6 +3,7 @@
 // Each weapon adds its own established projectiles, hazards and on-hit effects.
 import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
+import { WEAPON_COOLDOWN_MUL } from "./shopStats";
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
 
@@ -24,7 +25,7 @@ export function weaponIsRangedOnly(id: string): boolean {
 /** Attack cooldown multiplier (lower = faster). Only the dagger is faster. */
 export function weaponCooldownMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
-  return id === "dagger" ? [0.7, 0.58, 0.46][evo - 1] ?? 0.7 : 1;
+  return WEAPON_COOLDOWN_MUL[id]?.[evo - 1] ?? 1;
 }
 /** Melee swing duration multiplier for the attack animation. */
 export function weaponSwingDurMul(state: GameState): number {
