@@ -25,9 +25,18 @@ export function equipmentGesture(id: string, progress: number, evolution: number
     const gestures: Record<string, number> = { moses: -.28, iron: .18, crystal: -.38, diamond: -.46, bronze: .34, fire: -.5, bush: .42, waters: -.32, light: -.58, power: -.65 };
     return { angle: pulse * (gestures[id] ?? -.28) * rank, thrust: -pulse * (id === "iron" ? -2 : 2) };
   }
-  if (id === "spear" || id === "harpoon") return { angle: pulse * 1.1, thrust: pulse * (id === "spear" ? 8 : 6) * rank };
+  // Spear and harpoon are held level and driven straight forward.
+  if (id === "spear" || id === "harpoon") {
+    const level = Math.min(1, p / .2) * (p > .85 ? (1 - p) / .15 : 1);
+    const jab = p < .3 ? -p / .3 * 3 : Math.sin(Math.PI * Math.min(1, (p - .3) / .45)) * (id === "spear" ? 12 : 9);
+    return { angle: level * Math.PI / 2, thrust: jab * (p < .3 ? 1 : rank) };
+  }
   if (id === "boomerang" || id === "ring") return { angle: pulse * (id === "ring" ? 1.8 : 1.35) * rank, thrust: pulse * 4 };
-  if (id === "dagger") return { angle: pulse * 1.2 * rank, thrust: pulse * 3 };
+  // Fencer stabs: high, middle, low — three quick thrusts per attack.
+  if (id === "dagger") {
+    const k = Math.min(2, Math.floor(p * 3)), u = p * 3 - k;
+    return { angle: Math.PI / 2 + [-.45, 0, .45][k], thrust: Math.sin(Math.PI * u) * 7 * rank };
+  }
   if (id === "mace") return { angle: p < .4 ? -p * 1.8 : (p - .4) * 3.2, thrust: 0 };
   if (id === "axe") return { angle: p < .3 ? -p * 1.7 : (p - .3) * 2.8 * rank, thrust: 0 };
   if (id === "sword") return { angle: pulse * 2.0 * rank - .3, thrust: 0 };
