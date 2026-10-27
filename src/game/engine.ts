@@ -6,7 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
-import { updateWeaponEntities, weaponDot, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit } from "./weapons";
+import { equippedWeapon, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { staffOnPlagueCast, updateEquipment } from "./equipment";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
@@ -370,6 +370,7 @@ export function update(state: GameState, dt: number) {
   updateWeaponEntities(state, dt, {
     wrapDelta,
     killEnemy: (en) => killEnemy(state, en),
+    block: (shield, source) => triggerShieldBlock(state, shield, source),
     spawn: (kind, pos, ttl, data, team) => {
       const e: Entity = {
         id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
@@ -428,7 +429,7 @@ export function update(state: GameState, dt: number) {
       for (let k = 1; k < casts; k++) (state.queuedCasts ??= []).push({ id, level, at: state.now + k * MULTI_ATTACK_STAGGER });
       const def = PLAGUES[id];
       // White Leprosy rolls a fresh random 10–15 s cooldown after every cast.
-      state.plagueCooldown.set(id, id === "leprosy" ? (5 + Math.random() * 2.5) * (1 - 0.08 * Math.min(4, level - 1)) : def.scale(level).cooldown);
+      state.plagueCooldown.set(id, id === "leprosy" ? (5 + Math.random() * 2.5) * (1 - 0.08 * Math.min(4, level - 1)) : def.scale(level).cooldown * (id === "staff" ? weaponCooldownMul(state) : 1));
     } else {
       state.plagueCooldown.set(id, cd);
     }
@@ -1121,7 +1122,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const tolerance = 14; // segment thickness
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
-  const reach = Math.hypot(tipX - cx, tipY - cy) + tolerance;
+  const reach = (Math.hypot(tipX - cx, tipY - cy) + tolerance) * weaponReachMul(state);
   const candidates: Array<{ en: Entity; px: number; py: number }> = [];
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
@@ -1137,7 +1138,11 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     // Radial melee zone centred on Moses: any direction within staff reach.
     const rx = wrapDelta(en.pos.x, state.player.pos.x, state.worldW);
     const ry = wrapDelta(en.pos.y, state.player.pos.y, state.worldH);
-    const inRange = dd < en.radius + tolerance || Math.hypot(rx, ry) < reach * 1.15 + en.radius;
+    // Spear thrusts are horizontal: only foes roughly level with Moses.
+    const spear = equippedWeapon(state).id === "spear";
+    const inRange = spear
+      ? rx * facing > -10 && Math.abs(rx) < reach * 1.3 + en.radius && Math.abs(ry) < 34 + en.radius
+      : dd < en.radius + tolerance || Math.hypot(rx, ry) < reach * 1.15 + en.radius;
     if (inRange) candidates.push({ en, px, py });
   }
 
@@ -1164,8 +1169,9 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
       const kx = en.pos.x - state.player.pos.x;
       const ky = en.pos.y - state.player.pos.y;
       const kd = Math.hypot(kx, ky) || 1;
-      en.pos.x += (kx / kd) * 10;
-      en.pos.y += (ky / kd) * 10;
+      const kb = weaponKnockback(state);
+      en.pos.x += (kx / kd) * kb;
+      en.pos.y += (ky / kd) * kb;
     }
     if (en.hp <= 0) killEnemy(state, en);
   }
@@ -1204,7 +1210,7 @@ function enemyInStaffCone(state: GameState): boolean {
   const c = Math.cos(ang), s = Math.sin(ang);
   const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
   const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
-  const reach = Math.hypot(tipX - cx, tipY - cy) + 14;
+  const reach = weaponIsRangedOnly(equippedWeapon(state).id) ? 360 : (Math.hypot(tipX - cx, tipY - cy) + 14) * weaponReachMul(state) * 1.3;
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     const ex = wrapDelta(en.pos.x, state.player.pos.x, state.worldW);
@@ -1396,6 +1402,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     const facing = state.player.facing;
     const range = (def.base.extra?.range ?? 70) + Math.min(level, 10) * 4;
     const halfArc = (def.base.extra?.arc ?? 1.05);
+    const durMul = weaponSwingDurMul(state);
+    const ranged = weaponIsRangedOnly(equippedWeapon(state).id);
     const sw: Entity = {
       id: state.nextId++,
       pos: { x: p.x, y: p.y },
@@ -1407,11 +1415,13 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       // The entity spans the whole attack cycle so the sprite animation can be
       // driven from it; the wind FX + hitbox only live inside the impact window
       // that starts when the sprite reaches frame 3.
-      ttl: MOSES_ATTACK.DUR,
+      ttl: MOSES_ATTACK.DUR * durMul,
       kind: "staffswing",
       data: {
         range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>(),
-        dur: MOSES_ATTACK.DUR, windup: MOSES_ATTACK.WINDUP, maxTtl: 0.18,
+        dur: MOSES_ATTACK.DUR * durMul, windup: MOSES_ATTACK.WINDUP * durMul, maxTtl: 0.18 * durMul,
+        // Thrown-only weapons keep the throwing animation but deal no melee.
+        blocked: ranged ? 1 : 0, noFx: ranged ? 1 : 0,
       },
     };
     state.entities.set(sw.id, sw);
