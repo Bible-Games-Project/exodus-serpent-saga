@@ -212,7 +212,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       // Centre the original rear fist (source x=2..8, y=41..48) on
       // the grip; the arm, staff and overlay share this exact transform.
       ctx.translate(-2 * PX, (16.5 + rear.thrust) * PX);
-      drawCombatEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, PX);
+      if (pose.equipment.staff.id !== "none") drawCombatEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, PX);
       // Original hand pixels cover the shaft at its grip.
       ctx.drawImage(L.body, 2, 41, 6, 7, -3 * PX, -3.5 * PX, 6 * PX, 7 * PX);
       ctx.restore();
@@ -239,7 +239,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
           ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(evolution === 3 ? "--equip-light" : "--equip-red").trim();
           ctx.fillRect(-1 * PX, -20 * PX, 2 * PX, 2 * PX);
         }
-      } else drawCombatEquipment(ctx, "weapon", id, evolution, PX);
+      } else if (id !== "none") drawCombatEquipment(ctx, "weapon", id, evolution, PX);
     } else {
       if (rot) ctx.rotate(rot);
       ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
@@ -247,7 +247,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     ctx.restore();
     // fist drawn over the staff so it reads as gripped
     stamp(L.hand, hx, bodyDY + hy);
-    if (pose.equipment && HELMET_EXPERIMENT) {
+    if (pose.equipment && HELMET_EXPERIMENT && pose.equipment.shield.id !== "none") {
       drawCombatHeadwear(ctx, pose.equipment.shield.id, pose.equipment.shield.evolution, bodyDY, PX);
     }
   };

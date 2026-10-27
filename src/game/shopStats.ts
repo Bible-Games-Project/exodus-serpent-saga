@@ -43,12 +43,12 @@ export function areaDamageBars(item: EquipItem, evo: Evolution): number {
       case "mace": return bars(([48, 70, 90][level - 1] / 90) ** 2 * 16 + (level === 3 ? 4 : 0));
       case "axe": return bars([150 * 22, 200 * 34, 260 * 46][level - 1] / (Math.PI * 90 ** 2) * 20);
       case "boomerang": return bars(level / 3 * 20);
-      case "ring": return bars((level >= 2 ? 5 : 3) / 5 * 16 + (level >= 2 ? 4 : 0));
-      case "spear": return bars((level >= 2 ? 4 : 1) / 5 * 5);
-      case "harpoon": return bars(level === 1 ? 1 : (60 * (level === 3 ? 1.6 : 1) / 90) ** 2 * 16);
+      case "ring": return bars([4, 8, 12][level - 1] / 12 * 18);
+      case "spear": return 3 + level;
+      case "harpoon": return level === 1 ? 1 : level + 1;
       case "branch": return level === 3 ? 16 : level * 2;
-      case "dagger": return level === 3 ? 9 : level === 2 ? 5 : 2;
-      case "sword": return level * 3;
+      case "dagger": return level === 3 ? 10 : level === 2 ? 6 : 2;
+      case "sword": return [3, 6, 9][level - 1];
       default: return 0;
     }
   }
@@ -62,6 +62,16 @@ export function areaDamageBars(item: EquipItem, evo: Evolution): number {
   }
 }
 
+/** Weapon attack cadence relative to the branch (combat uses the same table). */
+export const WEAPON_COOLDOWN_MUL: Record<string, readonly number[]> = { dagger: [0.7, 0.58, 0.46] };
+/** Presentation-only attack speed: weapons from real cadence, others from "every N s" text. */
+export function attackSpeedBars(evo: Evolution | ChampionEvo, item?: EquipItem): number {
+  if (item?.category === "weapon") return bars(8 / (WEAPON_COOLDOWN_MUL[item.id]?.[evo.level - 1] ?? 1));
+  const m = /every (\d+(?:\.\d+)?)\s*(?:s\b|sec)/i.exec(evo.ability);
+  if (m) return bars(40 / Number(m[1]));
+  return item ? 0 : 8;
+}
+
 export function equipmentStats(evo: Evolution, item?: EquipItem): Array<{ label: string; bars: number }> {
   const result = fields.flatMap((field) => {
     const value = evo[field];
@@ -70,7 +80,10 @@ export function equipmentStats(evo: Evolution, item?: EquipItem): Array<{ label:
     return [{ label: labels[field], bars: value > 0 ? Math.max(1, Math.ceil(value / max * POWER_BAR_MAX)) : 0 }];
   });
   if (item?.category === "footwear" && evo.speedPct === undefined) result.push({ label: "Speed", bars: 0 });
-  if (item?.category === "weapon" || item?.category === "staff") result.push({ label: "Area damage", bars: areaDamageBars(item, evo) });
+  if (item?.category === "weapon" || item?.category === "staff") {
+    result.push({ label: "Area damage", bars: areaDamageBars(item, evo) });
+    result.push({ label: "Attack speed", bars: attackSpeedBars(evo, item) });
+  }
   result.push({ label: "Utility", bars: utilityBars(evo) });
   return result;
 }

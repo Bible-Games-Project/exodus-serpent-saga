@@ -58,45 +58,45 @@ export const WEAPONS: EquipItem[] = [
     ev(2, "Branch of the Tree of Knowledge", 150_000, "Damage 0.65", "Wider frontal attack with greater reach and knockback.", { dmg: 0.65 }),
     ev(3, "Branch of the Eternal Tree", 1_000_000, "Damage 0.8", "Wide frontal attack that creates a small shockwave.", { dmg: 0.8 }),
   ]),
-  item("dagger", "weapon", "Dagger", "A quick blade that poisons what it cuts.", [
-    ev(1, "Fang of Eden", 100, "Damage 0.65", "Fast frontal slash that poisons enemies for 5 seconds.", { dmg: 0.65 }),
-    ev(2, "Fang of the Serpent", 220_000, "Damage 0.8", "Wider slash; poison lasts 8 seconds and spreads when a poisoned enemy dies.", { dmg: 0.8 }),
-    ev(3, "Fang of the Ancient Serpent", 1_500_000, "Damage 0.95", "Wide slash affecting several nearby enemies; poisoned enemies create a toxic cloud when they die.", { dmg: 0.95 }),
+  item("dagger", "weapon", "Dagger", "A fast fencer's blade; every level poisons more often and harder.", [
+    ev(1, "Fang of Eden", 100, "Damage 0.65", "Fast high-middle-low stabs; 40% chance to poison for 5 seconds.", { dmg: 0.65 }),
+    ev(2, "Fang of the Serpent", 220_000, "Damage 0.8", "Faster, wider stabs with phantom daggers; 65% chance of stronger poison that spreads when a poisoned enemy dies.", { dmg: 0.8 }),
+    ev(3, "Fang of the Ancient Serpent", 1_500_000, "Damage 0.95", "Very fast, very wide flurry of phantom daggers; 90% chance of strong poison and a toxic cloud when poisoned enemies die.", { dmg: 0.95 }),
   ]),
-  item("spear", "weapon", "Spear", "A straight thrust that becomes a thrown projectile.", [
-    ev(1, "Spear of Nod", 1_000, "Damage 0.75", "Straight projectile that pushes enemies.", { dmg: 0.75 }),
-    ev(2, "Spear of the Patriarchs", 320_000, "Damage 0.9", "Pierces multiple enemies with greater range and knockback.", { dmg: 0.9 }),
-    ev(3, "Spear of the Promise", 1_800_000, "Damage 1.05", "Long piercing projectile with a luminous damaging trail.", { dmg: 1.05 }),
+  item("spear", "weapon", "Spear", "A long horizontal melee thrust that pierces every foe in line.", [
+    ev(1, "Spear of Nod", 1_000, "Damage 0.75", "Horizontal piercing thrust that pushes enemies.", { dmg: 0.75 }),
+    ev(2, "Spear of the Patriarchs", 320_000, "Damage 0.9", "Horizontal piercing thrust with greater knockback.", { dmg: 0.9 }),
+    ev(3, "Spear of the Promise", 1_800_000, "Damage 1.05", "Powerful horizontal piercing thrust with strong knockback.", { dmg: 1.05 }),
   ]),
   item("sword", "weapon", "Sword", "A blade that grows sharper with every strike.", [
     ev(1, "Serpent Sword", 3_000, "Damage 0.9", "Frontal slash; every 10 attacks deal a critical hit.", { dmg: 0.9 }),
-    ev(2, "Sword of the Cherubim", 450_000, "Damage 1.05", "Frontal slash followed by an air wave; critical hit every 8 attacks.", { dmg: 1.05 }),
-    ev(3, "Eden's Flaming Sword", 2_500_000, "Damage 1.2", "Wider slash followed by a second wave that can briefly burn enemies.", { dmg: 1.2 }),
+    ev(2, "Sword of the Cherubim", 450_000, "Damage 1.05", "Blade 50% longer: wider reach and knockback; critical hit every 8 attacks.", { dmg: 1.05 }),
+    ev(3, "Eden's Flaming Sword", 2_500_000, "Damage 1.2", "Blade twice as long: widest reach and knockback; critical every 8 attacks and burns enemies.", { dmg: 1.2 }),
   ]),
   item("harpoon", "weapon", "Harpoon", "An ancient wooden shaft with a bronze fishing point.", [
-    ev(1, "Harpoon of the Abyss", 9_000, "Damage 0.9", "Straight projectile with moderate knockback.", { dmg: 0.9 }),
-    ev(2, "Harpoon of Primordial Waters", 650_000, "Damage 1.05", "Pierces enemies and creates a damaging water whirlpool for 2 seconds.", { dmg: 1.05 }),
-    ev(3, "Harpoon of the Depths", 3_500_000, "Damage 1.2", "Longer piercing projectile that creates a larger whirlpool which damages and slows enemies.", { dmg: 1.2 }),
+    ev(1, "Harpoon of the Abyss", 9_000, "Damage 0.9", "Thrown spear with moderate knockback.", { dmg: 0.9 }),
+    ev(2, "Harpoon of Primordial Waters", 650_000, "Damage 1.05", "Thrown spear that pierces enemies; sometimes (20%) opens a small whirlpool.", { dmg: 1.05 }),
+    ev(3, "Harpoon of the Depths", 3_500_000, "Damage 1.2", "Thrown spear that pierces enemies; sometimes (30%) opens a larger whirlpool.", { dmg: 1.2 }),
   ]),
-  item("axe", "weapon", "Axe", "Cuts a long ground-level line in the direction Moses moves.", [
+  item("axe", "weapon", "Axe", "Cuts a long ground-level line toward the nearest enemy.", [
     ev(1, "Axe of Cain", 15_000, "Damage 1.1", "Long, narrow cutting line that damages every enemy it intersects.", { dmg: 1.1 }),
     ev(2, "Axe of Tubal-Cain", 900_000, "Damage 1.25", "Longer and wider line that slows enemies for 2 seconds.", { dmg: 1.25 }),
     ev(3, "Axe of the Flood", 4_500_000, "Damage 1.4", "Very long, wide cut that leaves damaging cracks.", { dmg: 1.4 }),
   ]),
-  item("boomerang", "weapon", "Boomerang", "A returning projectile; each evolution adds another.", [
-    ev(1, "Rainbow Boomerang", 25_000, "Damage 0.9 per hit", "One returning boomerang that can hit multiple times.", { dmg: 0.9 }),
+  item("boomerang", "weapon", "Boomerang", "Thrown only; returns to Moses. Shield soldiers block it.", [
+    ev(1, "Rainbow Boomerang", 25_000, "Damage 0.9 per hit", "One returning boomerang thrown at the nearest enemy.", { dmg: 0.9 }),
     ev(2, "Boomerang of the Promise", 1_300_000, "Damage 0.8 per hit", "Two boomerangs with different trajectories.", { dmg: 0.8 }),
     ev(3, "Boomerang of the Eternal Covenant", 5_500_000, "Damage 0.75 per hit", "Three boomerangs with rebounds and damaging flashes.", { dmg: 0.75 }),
   ]),
-  item("mace", "weapon", "Mace", "Its damage area is centered on the impact point, not on Moses.", [
+  item("mace", "weapon", "Mace", "Ground impact toward the nearest enemy that makes foes jump.", [
     ev(1, "Mace of the Giants", 50_000, "Damage 1.3", "Small cracked-ground impact circle.", { dmg: 1.3 }),
     ev(2, "Mace of the Flood", 1_900_000, "Damage 1.45", "Larger impact radius, more visible cracks and greater damage.", { dmg: 1.45 }),
     ev(3, "Mace of Judgment", 7_000_000, "Damage 1.6", "Wide cracked-ground impact that causes a second damage event.", { dmg: 1.6 }),
   ]),
-  item("ring", "weapon", "Ring", "Thrown, rebounds between enemies and returns to Moses.", [
-    ev(1, "Ring of the Cherubim", 100_000, "Damage 1.0", "The ring is thrown, rebounds between enemies and returns to Moses.", { dmg: 1.0 }),
-    ev(2, "Ring of the Firmament", 2_800_000, "Damage 1.1", "Wider path with small rings along its trail that cause additional damage.", { dmg: 1.1 }),
-    ev(3, "Celestial Ring", 9_000_000, "Damage 1.2", "Returns at lightning speed and deals double damage on its return, with electrical effects.", { dmg: 1.2 }),
+  item("ring", "weapon", "Ring", "Thrown at the nearest enemy, chains to the next nearest and returns. Shield soldiers block it.", [
+    ev(1, "Ring of the Cherubim", 100_000, "Damage 1.0", "Thrown ring that rebounds 4 times between nearby enemies with knockback.", { dmg: 1.0 }),
+    ev(2, "Ring of the Firmament", 2_800_000, "Damage 1.1", "Thrown ring that rebounds 8 times between nearby enemies with knockback.", { dmg: 1.1 }),
+    ev(3, "Celestial Ring", 9_000_000, "Damage 1.2", "Rebounds 12 times, returns at lightning speed and deals double damage on its return.", { dmg: 1.2 }),
   ]),
 ];
 

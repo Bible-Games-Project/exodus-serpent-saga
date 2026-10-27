@@ -1597,6 +1597,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // blanched toward white there, so only their own pixels change colour.
     const leper = e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
     const ctx = leper ? beginLeprosyLayer(mainCtx) : mainCtx;
+    // Mace hit reaction: the foe hops up and falls back down (visual only).
+    const liftAt = e.team === "enemy" ? (e.data?.liftAt as number | undefined) : undefined;
+    const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
+    const lifted = liftT >= 0 && liftT < 1;
+    if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
     try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
@@ -1679,6 +1684,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // Fallback: sprite-based rendering
     drawSpriteEntity(ctx, e, camX, camY, s);
       } finally {
+      if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
     }
   }
@@ -3649,7 +3655,8 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
   const progress = staffFxProgress(e);
   // Wind-up frames (1-2): the staff has not landed yet, so no FX at all.
-  if (progress === null) return;
+  // Thrown-only weapons have no melee wind slash.
+  if (progress === null || e.data?.noFx) return;
   const life = 1 - progress;
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
@@ -4846,7 +4853,7 @@ function drawWeaponEntity(
   camY: number,
 ): boolean {
   const k = e.kind;
-  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff"].includes(k)) return false;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab"].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
@@ -4888,30 +4895,46 @@ function drawWeaponEntity(
       ctx.globalAlpha = 1;
     }
   } else if (k === "axeline") {
+    // Smooth tapered cleave streak: bright core, soft dust edge, fades out.
     const len = (d.len as number) ?? 150, wid = (d.wid as number) ?? 22;
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.45));
+    const grow = Math.min(1, (1 - life) * 4);
     ctx.translate(x, y);
     ctx.rotate((d.angle as number) ?? 0);
-    ctx.globalAlpha = 0.25 + 0.5 * life;
-    ctx.fillStyle = "#5a3a22";
-    ctx.fillRect(-len / 2, -wid / 2, len, wid);
-    ctx.fillStyle = "#2b1d14";
-    for (let i = 0; i < 6; i++) {
-      const cx0 = -len / 2 + (i + 0.5) * (len / 6);
-      ctx.fillRect(cx0, -wid / 4 + ((i * 7) % 3) * 4, 8, 2);
+    const L = len * grow, x0 = -len / 2;
+    const g = ctx.createLinearGradient(x0, 0, x0 + L, 0);
+    g.addColorStop(0, "rgba(120,86,52,0)"); g.addColorStop(0.3, "rgba(150,112,70,0.55)"); g.addColorStop(1, "rgba(196,160,110,0.15)");
+    ctx.globalAlpha = life;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(x0, 0);
+    ctx.quadraticCurveTo(x0 + L * 0.5, -wid * 0.55, x0 + L, 0);
+    ctx.quadraticCurveTo(x0 + L * 0.5, wid * 0.55, x0, 0); ctx.fill();
+    ctx.strokeStyle = "rgba(255,246,220,0.9)"; ctx.lineWidth = Math.max(2, wid * 0.12); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(x0 + 6, 0); ctx.lineTo(x0 + L - 4, 0); ctx.stroke();
+    if (d.cracks) {
+      ctx.strokeStyle = "rgba(60,38,22,0.7)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x0 + 8, 2);
+      for (let i = 1; i <= 8; i++) ctx.lineTo(x0 + (L - 8) * i / 8, ((i * 37) % 7 - 3) * 1.4);
+      ctx.stroke();
     }
     ctx.globalAlpha = 1;
   } else if (k === "maceimpact") {
+    // Soft dust shock: radial dust disc plus an expanding round ring.
     const r = (d.r as number) ?? 48;
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.4));
-    ctx.globalAlpha = 0.3 + 0.4 * life;
-    ctx.fillStyle = "#6b4a2e";
-    ctx.beginPath(); ctx.arc(x, y, r * (1.1 - 0.3 * life), 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#2b1d14"; ctx.lineWidth = 2;
-    for (let i = 0; i < 7; i++) {
-      const a = (i / 7) * Math.PI * 2 + 0.3;
-      ctx.beginPath(); ctx.moveTo(x, y);
-      ctx.lineTo(x + Math.cos(a) * r * 0.9, y + Math.sin(a) * r * 0.9); ctx.stroke();
+    const t = 1 - life;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, "rgba(140,104,66,0.55)"); g.addColorStop(0.7, "rgba(170,132,88,0.3)"); g.addColorStop(1, "rgba(190,150,100,0)");
+    ctx.globalAlpha = life;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "rgba(255,240,205,0.85)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(x, y, r * (0.4 + t * 0.65), r * 0.6 * (0.4 + t * 0.65), 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = "rgba(110,80,50,0.8)";
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + 0.4;
+      const rr = r * (0.3 + t * 0.6);
+      ctx.beginPath(); ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.6 - Math.sin(Math.PI * t) * 10, 2.2, 0, Math.PI * 2); ctx.fill();
     }
     ctx.globalAlpha = 1;
   } else if (k === "shockwave") {
@@ -4921,15 +4944,54 @@ function drawWeaponEntity(
     ctx.beginPath(); ctx.arc(x, y, 20 + life * ((d.r as number) ?? 90), 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (k === "whirlpool") {
+    // Smooth spiral water swirl.
     const r = (d.r as number) ?? 60;
-    ctx.translate(x, y);
-    ctx.rotate(s.now * 3);
-    ctx.globalAlpha = 0.55;
-    ctx.strokeStyle = "#4a8fbf"; ctx.lineWidth = 3;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath(); ctx.arc(0, 0, r * (0.35 + i * 0.3), i, i + Math.PI * 1.3); ctx.stroke();
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 1.6));
+    ctx.translate(x, y); ctx.scale(1, 0.55);
+    ctx.globalAlpha = 0.7 * Math.min(1, life * 3);
+    ctx.lineCap = "round";
+    for (let arm = 0; arm < 3; arm++) {
+      ctx.strokeStyle = arm === 0 ? "rgba(214,240,250,0.9)" : "rgba(96,164,206,0.75)";
+      ctx.lineWidth = arm === 0 ? 2 : 3;
+      ctx.beginPath();
+      for (let i = 0; i <= 30; i++) {
+        const u = i / 30, a = s.now * 4 + arm * (Math.PI * 2 / 3) + u * 4.2, rr = r * (0.12 + u * 0.85);
+        const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+        if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+      }
+      ctx.stroke();
     }
     ctx.globalAlpha = 1;
+  } else if (k === "spearthrust") {
+    // Long horizontal piercing streak from Moses' hand.
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.22));
+    const t = 1 - life, f = Number(d.facing ?? 1) || 1;
+    const len = Number(d.len ?? 100);
+    const hx = s.player.pos.x - camX + f * 14, hy = s.player.pos.y - camY - 34;
+    ctx.translate(hx, hy); ctx.scale(f, 1);
+    const reach = len * Math.min(1, t * 3);
+    const g = ctx.createLinearGradient(0, 0, reach, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.6, "rgba(255,250,230,0.6)"); g.addColorStop(1, "rgba(255,255,255,0.95)");
+    ctx.globalAlpha = life;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(reach, 0); ctx.lineTo(0, 5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1;
+    for (const oy of [-9, 9]) { ctx.beginPath(); ctx.moveTo(reach * 0.25, oy * 0.6); ctx.lineTo(reach * 0.8, oy * 0.2); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+  } else if (k === "daggerstab") {
+    // Phantom daggers stabbing ahead of Moses (visual multi-attack).
+    const delay = Number(d.delay ?? 0);
+    const t = (0.3 - (e.ttl ?? 0) - delay) / 0.2;
+    if (t >= 0 && t <= 1) {
+      const f = Number(d.facing ?? 1) || 1;
+      const hx = s.player.pos.x - camX + f * 18, hy = s.player.pos.y - camY - 32 + Number(d.row ?? 0) * 11;
+      const push = Math.sin(Math.PI * t) * Number(d.reach ?? 34);
+      ctx.translate(hx + f * push, hy); ctx.scale(f, 1);
+      ctx.globalAlpha = Math.sin(Math.PI * t) * 0.85;
+      ctx.rotate(Math.PI / 2);
+      drawCombatEquipment(ctx, "weapon", "dagger", s.loadout?.weapon.evolution ?? 1, 0.8);
+      ctx.globalAlpha = 1;
+    }
   } else if (k === "firering" || k === "slowwave") {
     const r = (d.r as number) ?? 120;
     const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.8));
