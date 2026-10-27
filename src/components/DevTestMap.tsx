@@ -270,6 +270,7 @@ export default function TestMapPage() {
   const [homeOpen, setHomeOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [equipmentOpen, setEquipmentOpen] = useState(false);
+  const [runKey, setRunKey] = useState(0);
   const [gameOver, setGameOver] = useState<null | { level: number; survivalSeconds: number; kills: number }>(null);
   const navigate = useNavigate();
 
@@ -294,13 +295,17 @@ export default function TestMapPage() {
       <div className="relative flex-1">
         {portrait && <RotateDeviceOverlay />}
         <GameCanvas
+          key={runKey}
           testConfig={cfg}
           paused={paused || homeOpen || settingsOpen || portrait}
           onTogglePause={() => setPaused((p) => !p)}
           onGameOver={(info) => setGameOver(info)}
         />
         <div className="test-equipment-live">
-          <Button variant="secondary" aria-expanded={equipmentOpen} onClick={() => setEquipmentOpen(on => !on)}>Equipment</Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" aria-expanded={equipmentOpen} onClick={() => setEquipmentOpen(on => !on)}>Equipment</Button>
+            <Button variant="secondary" onClick={() => { setGameOver(null); setPaused(false); setRunKey(k => k + 1); }}>Reset</Button>
+          </div>
           {equipmentOpen && <div className="test-equipment-panel">
             <EquipmentControls value={cfg.equipment} onChange={equipment => setCfg(c => c ? { ...c, equipment } : c)} />
             <Button variant="secondary" onClick={() => setCfg(c => c ? { ...c, champions: Object.fromEntries(testChampionIds().map(id => [id, true])) } : c)}>Select all champions</Button>

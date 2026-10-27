@@ -392,6 +392,9 @@
 .test-equipment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .test-equipment-controls label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
 .test-equipment-controls select { background: var(--title-sand); color: var(--title-ink); border: 2px solid var(--title-shade); border-radius: 0; min-width: 0; padding: 5px; }
+.test-equipment-infos { display: grid; gap: 8px; margin-top: 10px; }
+.test-equipment-info { border-top: 2px solid var(--title-shade); padding-top: 6px; font-size: 11px; }
+.test-equipment-info p { margin: 2px 0 4px; line-height: 1.35; }
 .test-equipment-live { position: absolute; left: 65px; top: 12px; z-index: 25; max-width: min(400px, calc(100% - 135px)); }
 .test-equipment-live > .test-equipment-panel { margin-top: 6px; max-height: 60dvh; overflow-y: auto; box-shadow: 0 0 0 2px var(--title-ink); }
 [role="tablist"] .shop-icon-box { background: transparent; box-shadow: none; }
