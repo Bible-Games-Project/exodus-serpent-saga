@@ -1210,7 +1210,7 @@ function enemyInStaffCone(state: GameState): boolean {
   const c = Math.cos(ang), s = Math.sin(ang);
   const tipX = cx + (TIP.x * c - TIP.y * s) * PX * facing;
   const tipY = cy + (TIP.x * s + TIP.y * c) * PX;
-  const reach = weaponIsRangedOnly(equippedWeapon(state).id) ? 360 : (Math.hypot(tipX - cx, tipY - cy) + 14) * weaponReachMul(state) * 1.3;
+  const reach = weaponIsRangedOnly(equippedWeapon(state).id) ? 360 : (Math.hypot(tipX - cx, tipY - cy) + 14) * weaponReachMul(state);
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     const ex = wrapDelta(en.pos.x, state.player.pos.x, state.worldW);
