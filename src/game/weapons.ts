@@ -374,7 +374,7 @@ export function updateWeaponEntities(
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + (d.slow as number); }
           if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + 3; }
           // Mace hit reaction: a brief rise, not a knockback launch.
-          if (e.kind === "maceimpact") { en.data ??= {}; en.data.liftUntil = state.now + 0.25; }
+          if (e.kind === "maceimpact") { en.data ??= {}; en.data.liftAt = state.now; }
         }
         if (en.hp <= 0) ctx.killEnemy(en);
       }

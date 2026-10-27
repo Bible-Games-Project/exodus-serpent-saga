@@ -1597,6 +1597,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // blanched toward white there, so only their own pixels change colour.
     const leper = e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
     const ctx = leper ? beginLeprosyLayer(mainCtx) : mainCtx;
+    // Mace hit reaction: the foe hops up and falls back down (visual only).
+    const liftAt = e.team === "enemy" ? (e.data?.liftAt as number | undefined) : undefined;
+    const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
+    const lifted = liftT >= 0 && liftT < 1;
+    if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
     try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
@@ -1679,6 +1684,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // Fallback: sprite-based rendering
     drawSpriteEntity(ctx, e, camX, camY, s);
       } finally {
+      if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
     }
   }
@@ -3649,7 +3655,8 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   const facing: 1 | -1 = ((e.data?.facing as number) ?? 1) === -1 ? -1 : 1;
   const progress = staffFxProgress(e);
   // Wind-up frames (1-2): the staff has not landed yet, so no FX at all.
-  if (progress === null) return;
+  // Thrown-only weapons have no melee wind slash.
+  if (progress === null || e.data?.noFx) return;
   const life = 1 - progress;
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
