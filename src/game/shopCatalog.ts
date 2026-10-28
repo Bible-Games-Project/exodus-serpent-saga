@@ -85,13 +85,13 @@ export const WEAPONS: EquipItem[] = [
   ]),
   item("boomerang", "weapon", "Boomerang", "Thrown only; returns to Moses. Shield soldiers block it.", [
     ev(1, "Rainbow Boomerang", 25_000, "Damage 0.9 per hit", "One returning boomerang thrown at the nearest enemy.", { dmg: 0.9 }),
-    ev(2, "Boomerang of the Promise", 1_300_000, "Damage 0.8 per hit", "Two boomerangs with different trajectories.", { dmg: 0.8 }),
-    ev(3, "Boomerang of the Eternal Covenant", 5_500_000, "Damage 0.75 per hit", "Three boomerangs with rebounds and damaging flashes.", { dmg: 0.75 }),
+    ev(2, "Boomerang of the Promise", 1_300_000, "Damage 0.8 per hit", "Two thrown boomerangs with different trajectories.", { dmg: 0.8 }),
+    ev(3, "Boomerang of the Eternal Covenant", 5_500_000, "Damage 0.75 per hit", "Three thrown boomerangs with damaging flashes.", { dmg: 0.75 }),
   ]),
   item("mace", "weapon", "Mace", "Ground impact toward the nearest enemy that makes foes jump.", [
-    ev(1, "Mace of the Giants", 50_000, "Damage 1.3", "Small cracked-ground impact circle.", { dmg: 1.3 }),
-    ev(2, "Mace of the Flood", 1_900_000, "Damage 1.45", "Larger impact radius, more visible cracks and greater damage.", { dmg: 1.45 }),
-    ev(3, "Mace of Judgment", 7_000_000, "Damage 1.6", "Wide cracked-ground impact that causes a second damage event.", { dmg: 1.6 }),
+    ev(1, "Mace of the Giants", 50_000, "Damage 1.3", "Small impact circle that makes foes jump.", { dmg: 1.3 }),
+    ev(2, "Mace of the Flood", 1_900_000, "Damage 1.45", "Larger impact circle that makes foes jump.", { dmg: 1.45 }),
+    ev(3, "Mace of Judgment", 7_000_000, "Damage 1.6", "Wide impact circle that makes foes jump and hits twice.", { dmg: 1.6 }),
   ]),
   item("ring", "weapon", "Ring", "Thrown at the nearest enemy, chains to the next nearest and returns. Shield soldiers block it.", [
     ev(1, "Ring of the Cherubim", 100_000, "Damage 1.0", "Thrown ring that rebounds 4 times between nearby enemies with knockback.", { dmg: 1.0 }),

@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { ShopItemIcon } from "./ShopItemIcon";
 import { PowerBars } from "./PowerBars";
 import { EvolutionSquares } from "./EvolutionSquares";
-import { championBars, equipmentStats, utilityBars } from "@/game/shopStats";
+import { attackSpeedBars, championBars, equipmentStats, utilityBars } from "@/game/shopStats";
 import { equipmentArtUrl, HELMET_EXPERIMENT } from "@/game/equipmentArt";
 import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
 import { ChampionArt, MOSES_PORTRAIT } from "./ChampionArt";
@@ -150,7 +150,7 @@ export function ShopScreen() {
               const equipped = save.equipped[category].itemId === it.id;
               const next = it.evolutions[owned];
               return (
-                <li key={it.id}>
+                <li key={it.id} className="shop-card-wrap">
                   <Button variant="ghost" size="sm"
                     onClick={() => pickItem(it.id)}
                     data-active={selectedItem === it.id}
@@ -162,9 +162,10 @@ export function ShopScreen() {
                       <span className="mt-0.5 block text-[11px]">
                         {equipped ? <span className="shop-tag">Equipped</span> : owned > 0 ? <span className="shop-tag shop-tag-gold">Owned · Ev {owned}</span> : next ? (next.price === 0 ? "FREE" : formatCoins(next.price)) : "—"}
                       </span>
-                      <EvolutionSquares evolutions={it.evolutions} owned={owned} coins={save.coins} />
                     </span>
                   </Button>
+                  <EvolutionSquares evolutions={it.evolutions} owned={owned} coins={save.coins}
+                    onPick={(l) => { pickItem(it.id); setEvoSel((p) => ({ ...p, [it.id]: l })); }} />
                 </li>
               );
             })}
@@ -210,7 +211,7 @@ export function ShopScreen() {
               const owned = save.championsOwned[c.id] ?? 0;
               const sel = save.championsSelected[c.id];
               return (
-                <li key={c.id}>
+                <li key={c.id} className="shop-card-wrap">
                   <Button variant="ghost" size="sm"
                     onClick={() => {
                       setSelectedChampion(c.id);
@@ -227,9 +228,10 @@ export function ShopScreen() {
                           ? <span className="shop-tag">Owned · Ev {sel ?? owned} · Summonable</span>
                           : <><span className="shop-tag shop-tag-gold">Locked</span> {formatCoins(c.evolutions[0].price)}</>}
                       </span>
-                      <EvolutionSquares evolutions={c.evolutions} owned={owned} coins={save.coins} />
                     </span>
                   </Button>
+                  <EvolutionSquares evolutions={c.evolutions} owned={owned} coins={save.coins}
+                    onPick={(l) => { setSelectedChampion(c.id); setSelectedItem(null); setEvoSel((p) => ({ ...p, [c.id]: l })); }} />
                 </li>
               );
             })}
@@ -376,6 +378,7 @@ function ChampionDetail({
           <PowerBars label="Attack" bars={championBars(evo, "attack")} />
           <PowerBars label="Health" bars={championBars(evo, "health")} />
           <PowerBars label="Utility" bars={utilityBars(evo)} />
+          <PowerBars label="Attack speed" bars={attackSpeedBars(evo)} />
         </div>
         <p className="mt-1 text-sm">{evo.ability}</p>
         <p className="mt-2 text-sm">Price: {evo.price === 0 ? "FREE" : formatCoins(evo.price)}</p>

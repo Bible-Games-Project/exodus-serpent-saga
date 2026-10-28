@@ -106,3 +106,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Held equipment and its hand overlay must share one grip transform; tune asset grip coordinates, not combat hitboxes, to correct visual attachment.
 - When establishing a weakest starter, derive the minimum adjustment from existing catalogue minima and keep bar normalization separate from combat values; preserve other champions and later evolutions.
 - Shop capability bars are presentation-only heuristics in `shopStats.ts`, based on existing geometry and abilities; never use them as combat values. Evolution purchase-state squares use the pure `evolutionState` helper so affordability and sequential unlocks stay consistent.
+- Weapon combat tuning (cadence, reach, knockback, ranged-only, ring bounces, dagger poison) lives in `weapons.ts`; shop attack-speed bars read the same `WEAPON_COOLDOWN_MUL` table. Test Map uses the `none` id for unequipped slots.

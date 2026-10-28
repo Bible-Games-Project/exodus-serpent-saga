@@ -379,14 +379,18 @@
 .shop-power-bars { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 2px; height: 15px; padding-inline: 3px; width: 174px; max-width: 100%; min-width: 0; flex: 0 1 174px; }
 .shop-power-bars i { display: block; transform: skewX(-24deg); background: color-mix(in oklab, var(--title-ink) 18%, transparent); }
 .shop-power-bars i[data-active="true"] { background: var(--title-shade); box-shadow: inset 1px 0 var(--title-mid); }
-:root { --evolution-owned: #386645; --evolution-ready: #ffe177; --evolution-ready-ink: #624006; --evolution-short: #a74d41; --evolution-locked: #7c7770; }
-.shop-evolution-squares { display: flex; flex-wrap: nowrap; gap: 5px; margin-top: 7px; }
-.shop-evolution-square { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 28px; height: 34px; flex: 0 1 28px; min-width: 0; border: 2px solid var(--title-ink); font-size: 11px; line-height: 12px; color: var(--title-light); background: var(--evolution-locked); }
-.shop-evolution-square svg { width: 12px; height: 12px; flex: none; }
+:root { --evolution-owned: #3f8a4c; --evolution-ready: #f2c443; --evolution-ready-ink: #5a3a06; --evolution-short: #a8463a; --evolution-locked: #8a8378; }
+/* Evolution level buttons: bevelled pixel plaques like the game's buttons. */
+.shop-card-wrap { position: relative; }
+.shop-card-wrap > .shop-card { padding-bottom: 34px; }
+.shop-evolution-squares { position: absolute; left: 80px; bottom: 7px; display: flex; gap: 4px; }
+.shop-evolution-square { width: 30px; height: 22px; padding: 0; font-family: var(--font-display, inherit); font-size: 10px; letter-spacing: .04em; color: var(--title-light); background: var(--evolution-locked); border: 2px solid var(--title-ink); border-radius: 0; box-shadow: inset 2px 2px 0 rgba(255,255,255,.35), inset -2px -2px 0 rgba(0,0,0,.3); text-shadow: 1px 1px 0 rgba(0,0,0,.45); cursor: pointer; transition: transform .08s; }
+.shop-evolution-square:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.shop-evolution-square:active { transform: translateY(1px); box-shadow: inset -2px -2px 0 rgba(255,255,255,.3), inset 2px 2px 0 rgba(0,0,0,.3); }
 .shop-evolution-square[data-state="owned"] { background: var(--evolution-owned); }
-.shop-evolution-square[data-state="available"] { color: var(--evolution-ready-ink); background: var(--evolution-ready); border-color: var(--evolution-ready-ink); box-shadow: 0 0 0 1px var(--evolution-ready), 0 2px 0 var(--title-shade); }
 .shop-evolution-square[data-state="unaffordable"] { background: var(--evolution-short); }
-@media (max-width: 1023px) { .shop-evolution-squares { justify-content: center; } }
+.shop-evolution-square[data-state="available"] { color: var(--evolution-ready-ink); text-shadow: 1px 1px 0 rgba(255,255,255,.5); background: var(--evolution-ready); animation: evo-ready 1.2s steps(2) infinite; }
+@keyframes evo-ready { 50% { box-shadow: inset 2px 2px 0 rgba(255,255,255,.6), inset -2px -2px 0 rgba(0,0,0,.25), 0 0 0 2px var(--evolution-ready); } }
 :root { --equip-wood: #ba8751; --equip-wood-dark: #704626; --equip-wood-light: #d3aa73; --equip-red: #bd4b37; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
 .test-equipment-panel { background: var(--title-light); color: var(--title-ink); padding: 12px; }
 .test-equipment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -412,8 +416,6 @@
   .shop-scroll .shop-card { padding: 5px 2px; min-height: 94px; }
   .shop-scroll .shop-card .font-display { font-size: 9px; }
   .shop-tag { font-size: 8px; padding: 0 2px; line-height: 11px; }
-  .shop-evolution-squares { gap: 3px; }
-  .shop-evolution-square { height: 29px; font-size: 9px; }
   .shop-power-bars { gap: 1px; height: 12px; }
   .shop-name { font-size: 16px; }
   .shop-detail > div > .flex { flex-wrap: wrap; gap: 5px; }
