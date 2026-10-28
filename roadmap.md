@@ -96,3 +96,7 @@ Verification scope: all 57 live weapon/staff selections and 14 champion summons 
 - [x] Replace realistic shop weapon icons with cohesive stylized pixel art.
 - [x] Integrate supplied artwork and action-linked animations for Zipporah, Puah, Shiphrah, Gershom, Eliezer, Amram, Jethro and Ithamar.
 - [x] Test all three Zipporah evolutions and each supplied champion's established abilities, animation states and shop persistence.
+
+- [x] Test Map: unequip options, Reset with current choices, and selected-item ability/stat readout.
+- [x] Weapons rework: dagger poison chance/fencer stabs/faster flurry, horizontal melee spear, longer swords, thrown-only harpoon/boomerang/ring (shield-blocked), nearest-enemy aim for axe/mace/ring, ring 4/8/12 rebounds, mace hop, smoother FX and in-hand art; arc-dot FX removed.
+- [x] Shop: updated weapon texts, attack-speed bars, evolution level buttons that open that level.
