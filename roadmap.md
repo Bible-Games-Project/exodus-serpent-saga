@@ -100,3 +100,11 @@ Verification scope: all 57 live weapon/staff selections and 14 champion summons 
 - [x] Test Map: unequip options, Reset with current choices, and selected-item ability/stat readout.
 - [x] Weapons rework: dagger poison chance/fencer stabs/faster flurry, horizontal melee spear, longer swords, thrown-only harpoon/boomerang/ring (shield-blocked), nearest-enemy aim for axe/mace/ring, ring 4/8/12 rebounds, mace hop, smoother FX and in-hand art; arc-dot FX removed.
 - [x] Shop: updated weapon texts, attack-speed bars, evolution level buttons that open that level.
+
+## Gameplay-only weapon polish
+- [ ] Dagger forward multi-projectiles and poison head bubbles; remove serpent red dots.
+- [ ] Horizontal-only spear animation and wind; preserve spear art.
+- [ ] Replace gameplay dagger/sword/axe/mace/ring PNGs only.
+- [ ] Match thrown harpoon scale and rotate new whirlpool PNG.
+- [ ] Integrate axe/mace impact PNGs and axe handle-away knockback.
+- [ ] Tie boomerang/ring gestures to actual launches; test gameplay and unchanged shop.
