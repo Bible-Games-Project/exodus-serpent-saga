@@ -6,7 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
-import { equippedWeapon, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { daggerTarget, equippedWeapon, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { staffOnPlagueCast, updateEquipment } from "./equipment";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
@@ -900,7 +900,7 @@ export function update(state: GameState, dt: number) {
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
-        if ((e.kind === "serpent" || e.kind === "frog" || e.kind === "locust") && (e.dmg ?? 0) > 0) {
+        if ((e.kind === "frog" || e.kind === "locust") && (e.dmg ?? 0) > 0) {
           // Blood bursts at the contact point; the snake keeps moving.
           // Only on a real damaging hit.
           const j = () => (Math.random() - 0.5) * 8;
@@ -1165,7 +1165,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     });
     // A committed agile pass cannot be displaced by the staff: contact only
     // affects health and feedback, never its locked trajectory.
-    if (!(en.kind === "agilesoldier" && en.data?.specialDash)) {
+    if (equippedWeapon(state).id !== 'axe' && !(en.kind === "agilesoldier" && en.data?.specialDash)) {
       const kx = en.pos.x - state.player.pos.x;
       const ky = en.pos.y - state.player.pos.y;
       const kd = Math.hypot(kx, ky) || 1;
@@ -1202,6 +1202,7 @@ function staffSwingActive(state: GameState): boolean {
  * same geometry as applyStaffSwingHits, sampled at the swing's peak.
  */
 function enemyInStaffCone(state: GameState): boolean {
+  if (equippedWeapon(state).id === 'dagger') return daggerTarget(state) !== null;
   const facing = state.player.facing;
   const { HAND, TIP, CX, H, PX } = MOSES_ART;
   const cx = state.player.pos.x + (HAND.x - CX) * PX * facing;
@@ -1421,7 +1422,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>(),
         dur: MOSES_ATTACK.DUR * durMul, windup: MOSES_ATTACK.WINDUP * durMul, maxTtl: 0.18 * durMul,
         // Thrown-only weapons keep the throwing animation but deal no melee.
-        blocked: ranged ? 1 : 0, noFx: ranged ? 1 : 0,
+        blocked: ranged || equippedWeapon(state).id === 'dagger' ? 1 : 0,
+        noFx: ranged || ['dagger', 'spear'].includes(equippedWeapon(state).id) ? 1 : 0,
       },
     };
     state.entities.set(sw.id, sw);

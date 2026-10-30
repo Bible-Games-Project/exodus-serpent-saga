@@ -38,6 +38,8 @@ import { drawPixelShadow } from "./shadow";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
+import { drawWeaponImpact } from './combatWeaponPng';
+import { weaponLaunchProgress } from './weapons';
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1587,6 +1589,10 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     drawList.push(e);
   }
+  if (['boomerang', 'ring', 'harpoon', 'dagger'].includes(s.loadout?.weapon.id ?? '')) {
+    attackProgress = weaponLaunchProgress(s);
+    swingProgress = null;
+  }
   // Thrones are furniture: always behind whoever sits on them, even at equal depth.
   const depthOf = (e: Entity) => e.pos.y - (e.kind === "throne" ? 1 : 0);
   drawList.sort((a, b) => depthOf(a) - depthOf(b));
@@ -1602,6 +1608,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
     const lifted = liftT >= 0 && liftT < 1;
     if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
+    if (e.team === 'enemy') drawEnemyPoisonBubbles(ctx, e, s, camX, camY);
     try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
@@ -2216,6 +2223,30 @@ function drawPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameStat
       ctx.fillStyle = "#eafff0";
       ctx.fillRect(bx, by, PX, PX);
     }
+  }
+  ctx.restore();
+}
+
+/** Small bubbles follow the poisoned NPC's actual sprite head, never its feet. */
+function drawEnemyPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
+  if (Number(e.data?.poisonUntil ?? 0) <= s.now) return;
+  const heights: Record<string, number> = {
+    soldier: SOLDIER_ART.H * SOLDIER_ART.PX, archer: ARCHER_ART.H * ARCHER_ART.PX,
+    spearsoldier: SPEAR_SOLDIER_ART.H * SPEAR_SOLDIER_ART.PX,
+    axesoldier: AXE_ART.H * AXE_ART.PX, shieldsoldier: SHIELD_ART.H * SHIELD_ART.PX,
+    heavysoldier: HEAVY_ART.H * HEAVY_ART.PX, agilesoldier: AGILE_ART.H * AGILE_ART.PX,
+    mage: MAGE_ART.H * MAGE_ART.PX, cobra: COBRA_ART.H * COBRA_ART.PX,
+    wolf: WOLF_ART.H * WOLF_ART.PX, lion: LION_ART.H * LION_ART.PX,
+  };
+  const x = e.pos.x - camX, y = e.pos.y - camY - (heights[e.kind] ?? e.radius * 3) + 12;
+  ctx.save(); ctx.imageSmoothingEnabled = false;
+  for (let i = 0; i < 5; i++) {
+    const t = (s.now * .8 + i * .23) % 1;
+    const bx = Math.round(x + Math.sin(i * 2.4 + s.now) * (8 + i)), by = Math.round(y - t * 13);
+    const size = i % 2 ? 3 : 4;
+    ctx.globalAlpha = .8 * (1 - t * .5); ctx.fillStyle = '#58b56c';
+    ctx.fillRect(bx + 1, by, size - 2, size); ctx.fillRect(bx, by + 1, size, size - 2);
+    ctx.fillStyle = '#c1efb2'; ctx.fillRect(bx + 1, by + 1, 1, 1);
   }
   ctx.restore();
 }
@@ -4858,9 +4889,9 @@ function drawWeaponEntity(
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
     const id = k === "wpboom" ? "boomerang" : k === "wpring" ? "ring" : String(d.art ?? "spear");
-    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y);
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y - (id === 'dagger' ? 28 : 0));
     ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + Math.PI / 2);
-    drawCombatEquipment(ctx, "weapon", id, s.loadout?.weapon.evolution ?? 1, k === "wpnproj" ? .65 : .9);
+    drawCombatEquipment(ctx, "weapon", id, Number(d.evo ?? s.loadout?.weapon.evolution ?? 1), id === 'harpoon' ? .95 : k === "wpnproj" ? .8 : .9);
     ctx.restore(); return true;
   }
   ctx.save();
@@ -5030,11 +5061,7 @@ function drawWeaponEntity(
     ctx.beginPath(); ctx.arc(x, y, 10 + (0.3 - (e.ttl ?? 0)) * 40, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (k === "toxiccloud") {
-    const r = (d.r as number) ?? 60;
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = "#5a7a2a";
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1;
+    // Keep the existing damage zone, but poison is communicated on affected NPCs.
   }
   ctx.restore();
   return true;
