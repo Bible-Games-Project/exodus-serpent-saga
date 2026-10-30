@@ -1608,7 +1608,6 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
     const lifted = liftT >= 0 && liftT < 1;
     if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
-    if (e.team === 'enemy') drawEnemyPoisonBubbles(ctx, e, s, camX, camY);
     try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
@@ -1691,6 +1690,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // Fallback: sprite-based rendering
     drawSpriteEntity(ctx, e, camX, camY, s);
       } finally {
+      if (e.team === 'enemy') drawEnemyPoisonBubbles(ctx, e, s, camX, camY);
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
     }
