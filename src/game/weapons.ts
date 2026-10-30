@@ -122,7 +122,7 @@ export function weaponOnCast(
   switch (id) {
     case "spear": {
       // Melee only: a horizontal piercing thrust FX in front of Moses.
-      spawn("spearthrust", { ...p.pos }, 0.22, { facing: p.facing, len: 70 * weaponReachMul(state), evo }, "hazard");
+      spawn("spearthrust", { ...p.pos }, 0.42, { facing: p.facing, len: 70 * weaponReachMul(state), evo }, "hazard");
       break;
     }
     case "dagger": {
@@ -201,18 +201,22 @@ export function weaponOnCast(
 }
 
 // ---------------------------------------------------------------- melee hits
+function applyDaggerPoison(state: GameState, en: Entity, evo: number): void {
+  const pz = DAGGER_POISON[evo - 1] ?? DAGGER_POISON[0];
+  if (Math.random() >= pz.chance) return;
+  const data = (en.data ??= {});
+  data.poisonUntil = state.now + pz.dur;
+  data.poisonDps = weaponHitDamage(state, pz.dps);
+  data.poisonSpread = evo >= 2 ? 1 : 0;
+  data.poisonCloud = evo >= 3 ? 1 : 0;
+}
 // Called for every enemy hit by the basic melee swing.
 export function weaponOnMeleeHit(state: GameState, en: Entity): void {
   const { id, evo } = equippedWeapon(state);
   en.data ??= {};
   switch (id) {
     case "dagger": {
-      const pz = DAGGER_POISON[evo - 1] ?? DAGGER_POISON[0];
-      if (Math.random() >= pz.chance) break;
-      en.data.poisonUntil = state.now + pz.dur;
-      en.data.poisonDps = weaponHitDamage(state, pz.dps);
-      en.data.poisonSpread = evo >= 2 ? 1 : 0;
-      en.data.poisonCloud = evo >= 3 ? 1 : 0;
+      applyDaggerPoison(state, en, evo);
       break;
     }
     case "sword": {
@@ -337,7 +341,7 @@ export function updateWeaponEntities(
         // Celestial Ring: double damage on the return trip.
         if (e.kind === "wpring" && d.returning && d.electric) dmg *= 2;
         en.hp -= dmg;
-        if (d.poisonEvo) weaponOnMeleeHit(state, en);
+        if (d.poisonEvo) applyDaggerPoison(state, en, Number(d.poisonEvo));
         if (d.knock) {
           const kd = Math.hypot(rx, ry) || 1;
           en.pos.x += (rx / kd) * (d.knock as number);

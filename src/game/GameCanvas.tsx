@@ -4949,6 +4949,7 @@ function drawWeaponEntity(
     ctx.restore();
   } else if (k === "spearthrust") {
     // Long horizontal piercing streak from Moses' hand.
+    if ((e.ttl ?? 0) > .22) { ctx.restore(); return true; }
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.22));
     const t = 1 - life, f = Number(d.facing ?? 1) || 1;
     const len = Number(d.len ?? 100);
