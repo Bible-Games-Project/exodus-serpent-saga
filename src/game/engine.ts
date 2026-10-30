@@ -1436,7 +1436,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       };
       state.entities.set(e.id, e);
       return e;
-    });
+    }, stats.dmg * damageMultiplier(state) * (weaponDamage(state) / .5));
   } else if (id === "serpent") {
     let nearest: Entity | null = null;
     let bestD = Infinity;

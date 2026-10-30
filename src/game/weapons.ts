@@ -110,6 +110,7 @@ function wrapD(a: number, b: number, size: number): number {
 export function weaponOnCast(
   state: GameState,
   spawn: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>, team?: Entity["team"]) => Entity,
+  basicDamage?: number,
 ): void {
   const { id, evo } = equippedWeapon(state);
   const launch = () => { (state.equipFx ??= {}).weaponVisualAt = state.now; };
@@ -135,7 +136,7 @@ export function weaponOnCast(
         // Clamp the fan into the same forward half-plane as its target.
         const vx = p.facing * Math.abs(Math.cos(a)) * 400;
         const vy = Math.sin(a) * 400;
-        spawn('wpnproj', { ...p.pos }, cfg.reach / 400, { vx, vy, dmg, pierce: 1, art: 'dagger', evo, targetId: target.id, poisonEvo: evo }, 'projectile');
+        spawn('wpnproj', { ...p.pos }, cfg.reach / 400, { vx, vy, dmg: basicDamage ?? dmg, pierce: 1, art: 'dagger', evo, targetId: target.id, poisonEvo: evo }, 'projectile');
       }
       launch();
       break;
