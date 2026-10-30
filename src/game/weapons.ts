@@ -4,6 +4,7 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
+import { mosesGrip } from './mosesGameArt';
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
 
@@ -174,9 +175,10 @@ export function weaponOnCast(
       // Ground cut toward the nearest enemy (never behind Moses by accident).
       const len = evo >= 3 ? 260 : evo >= 2 ? 200 : 150;
       const wid = evo >= 3 ? 46 : evo >= 2 ? 34 : 22;
+      const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
       spawn("axeline", { x: p.pos.x + dir.x * len * 0.5, y: p.pos.y + dir.y * len * 0.5 }, 0.45, {
         dmg, len, wid, angle: ang,
-        slow: evo >= 2 ? 2 : 0, cracks: evo >= 3 ? 1 : 0, hit: [], handleX: p.pos.x, handleY: p.pos.y, knock: 18,
+        slow: evo >= 2 ? 2 : 0, cracks: evo >= 3 ? 1 : 0, hit: [], handleX: grip.x, handleY: grip.y, knock: 18,
       }, "hazard");
       break;
     }
