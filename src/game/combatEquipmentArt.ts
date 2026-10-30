@@ -1,5 +1,6 @@
 // In-hand art uses the original stick's native pixel scale, never shop images.
 // Coordinates are relative to the grip; the hand overlay shares the pivot.
+import { drawWeaponPng } from './combatWeaponPng';
 const paletteCache: Record<string, string> = {};
 function color(token: string): string {
   if (!paletteCache[token]) paletteCache[token] = getComputedStyle(document.documentElement).getPropertyValue(`--equip-${token}`).trim();
@@ -98,6 +99,9 @@ function drawSmoothWeapon(ctx: CanvasRenderingContext2D, id: string, evo: number
 
 export function drawCombatEquipment(ctx: CanvasRenderingContext2D, category: "weapon" | "staff", id: string, evolution: number, scale = 1): void {
   ctx.save(); ctx.scale(scale, scale); ctx.imageSmoothingEnabled = false;
+  if (category === "weapon" && ["dagger", "sword", "axe", "mace", "ring"].includes(id)) {
+    drawWeaponPng(ctx, id, evolution); ctx.restore(); return;
+  }
   if (category === "weapon" && drawSmoothWeapon(ctx, id, evolution)) { ctx.restore(); return; }
   const rect = (x: number, y: number, w: number, h: number, token: string) => { ctx.fillStyle = color(token); ctx.fillRect(x, y, w, h); };
   const shape = (points: number[][], token: string) => {
