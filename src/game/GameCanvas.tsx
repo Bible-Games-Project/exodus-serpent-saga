@@ -38,6 +38,8 @@ import { drawPixelShadow } from "./shadow";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
+import { drawWeaponImpact } from './combatWeaponPng';
+import { weaponLaunchProgress } from './weapons';
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1587,6 +1589,10 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     drawList.push(e);
   }
+  if (['boomerang', 'ring', 'harpoon', 'dagger'].includes(s.loadout?.weapon.id ?? '')) {
+    attackProgress = weaponLaunchProgress(s);
+    swingProgress = null;
+  }
   // Thrones are furniture: always behind whoever sits on them, even at equal depth.
   const depthOf = (e: Entity) => e.pos.y - (e.kind === "throne" ? 1 : 0);
   drawList.sort((a, b) => depthOf(a) - depthOf(b));
@@ -1684,6 +1690,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     // Fallback: sprite-based rendering
     drawSpriteEntity(ctx, e, camX, camY, s);
       } finally {
+      if (e.team === 'enemy') drawEnemyPoisonBubbles(ctx, e, s, camX, camY);
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
     }
@@ -2216,6 +2223,30 @@ function drawPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameStat
       ctx.fillStyle = "#eafff0";
       ctx.fillRect(bx, by, PX, PX);
     }
+  }
+  ctx.restore();
+}
+
+/** Small bubbles follow the poisoned NPC's actual sprite head, never its feet. */
+function drawEnemyPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
+  if (Number(e.data?.poisonUntil ?? 0) <= s.now) return;
+  const heights: Record<string, number> = {
+    soldier: SOLDIER_ART.H * SOLDIER_ART.PX, archer: ARCHER_ART.H * ARCHER_ART.PX,
+    spearsoldier: SPEAR_SOLDIER_ART.H * SPEAR_SOLDIER_ART.PX,
+    axesoldier: AXE_ART.H * AXE_ART.PX, shieldsoldier: SHIELD_ART.H * SHIELD_ART.PX,
+    heavysoldier: HEAVY_ART.H * HEAVY_ART.PX, agilesoldier: AGILE_ART.H * AGILE_ART.PX,
+    mage: MAGE_ART.H * MAGE_ART.PX, cobra: COBRA_ART.H * COBRA_ART.PX,
+    wolf: WOLF_ART.H * WOLF_ART.PX, lion: LION_ART.H * LION_ART.PX,
+  };
+  const x = e.pos.x - camX, y = e.pos.y - camY - (heights[e.kind] ?? e.radius * 3) + 12;
+  ctx.save(); ctx.imageSmoothingEnabled = false;
+  for (let i = 0; i < 5; i++) {
+    const t = (s.now * .8 + i * .23) % 1;
+    const bx = Math.round(x + Math.sin(i * 2.4 + s.now) * (8 + i)), by = Math.round(y - t * 13);
+    const size = i % 2 ? 3 : 4;
+    ctx.globalAlpha = .8 * (1 - t * .5); ctx.fillStyle = '#58b56c';
+    ctx.fillRect(bx + 1, by, size - 2, size); ctx.fillRect(bx, by + 1, size, size - 2);
+    ctx.fillStyle = '#c1efb2'; ctx.fillRect(bx + 1, by + 1, 1, 1);
   }
   ctx.restore();
 }
@@ -4858,9 +4889,9 @@ function drawWeaponEntity(
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
     const id = k === "wpboom" ? "boomerang" : k === "wpring" ? "ring" : String(d.art ?? "spear");
-    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y);
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y - (id === 'dagger' ? 28 : 0));
     ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + Math.PI / 2);
-    drawCombatEquipment(ctx, "weapon", id, s.loadout?.weapon.evolution ?? 1, k === "wpnproj" ? .65 : .9);
+    drawCombatEquipment(ctx, "weapon", id, Number(d.evo ?? s.loadout?.weapon.evolution ?? 1), id === 'harpoon' ? .95 : k === "wpnproj" ? .8 : .9);
     ctx.restore(); return true;
   }
   ctx.save();
@@ -4895,48 +4926,14 @@ function drawWeaponEntity(
       ctx.globalAlpha = 1;
     }
   } else if (k === "axeline") {
-    // Smooth tapered cleave streak: bright core, soft dust edge, fades out.
-    const len = (d.len as number) ?? 150, wid = (d.wid as number) ?? 22;
-    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.45));
-    const grow = Math.min(1, (1 - life) * 4);
-    ctx.translate(x, y);
-    ctx.rotate((d.angle as number) ?? 0);
-    const L = len * grow, x0 = -len / 2;
-    const g = ctx.createLinearGradient(x0, 0, x0 + L, 0);
-    g.addColorStop(0, "rgba(120,86,52,0)"); g.addColorStop(0.3, "rgba(150,112,70,0.55)"); g.addColorStop(1, "rgba(196,160,110,0.15)");
-    ctx.globalAlpha = life;
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(x0, 0);
-    ctx.quadraticCurveTo(x0 + L * 0.5, -wid * 0.55, x0 + L, 0);
-    ctx.quadraticCurveTo(x0 + L * 0.5, wid * 0.55, x0, 0); ctx.fill();
-    ctx.strokeStyle = "rgba(255,246,220,0.9)"; ctx.lineWidth = Math.max(2, wid * 0.12); ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(x0 + 6, 0); ctx.lineTo(x0 + L - 4, 0); ctx.stroke();
-    if (d.cracks) {
-      ctx.strokeStyle = "rgba(60,38,22,0.7)"; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(x0 + 8, 2);
-      for (let i = 1; i <= 8; i++) ctx.lineTo(x0 + (L - 8) * i / 8, ((i * 37) % 7 - 3) * 1.4);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
+    const len = Number(d.len ?? 150), wid = Number(d.wid ?? 22);
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .45));
+    drawWeaponImpact(ctx, 'axe', x, y, len, wid * 1.7, Number(d.angle ?? 0), life);
   } else if (k === "maceimpact") {
-    // Soft dust shock: radial dust disc plus an expanding round ring.
-    const r = (d.r as number) ?? 48;
-    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.4));
-    const t = 1 - life;
-    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, "rgba(140,104,66,0.55)"); g.addColorStop(0.7, "rgba(170,132,88,0.3)"); g.addColorStop(1, "rgba(190,150,100,0)");
-    ctx.globalAlpha = life;
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "rgba(255,240,205,0.85)"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(x, y, r * (0.4 + t * 0.65), r * 0.6 * (0.4 + t * 0.65), 0, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = "rgba(110,80,50,0.8)";
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2 + 0.4;
-      const rr = r * (0.3 + t * 0.6);
-      ctx.beginPath(); ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.6 - Math.sin(Math.PI * t) * 10, 2.2, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
+    const r = Number(d.r ?? 48);
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .4));
+    const pulse = d.secondDone ? 1.08 : 1;
+    drawWeaponImpact(ctx, 'mace', x, y, r * 2 * pulse, r * 1.2 * pulse, 0, life * .8);
   } else if (k === "shockwave") {
     const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.35));
     ctx.globalAlpha = 0.5 * (1 - life);
@@ -4944,39 +4941,26 @@ function drawWeaponEntity(
     ctx.beginPath(); ctx.arc(x, y, 20 + life * ((d.r as number) ?? 90), 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (k === "whirlpool") {
-    // Smooth spiral water swirl.
-    const r = (d.r as number) ?? 60;
+    const r = Number(d.r ?? 60);
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 1.6));
-    ctx.translate(x, y); ctx.scale(1, 0.55);
-    ctx.globalAlpha = 0.7 * Math.min(1, life * 3);
-    ctx.lineCap = "round";
-    for (let arm = 0; arm < 3; arm++) {
-      ctx.strokeStyle = arm === 0 ? "rgba(214,240,250,0.9)" : "rgba(96,164,206,0.75)";
-      ctx.lineWidth = arm === 0 ? 2 : 3;
-      ctx.beginPath();
-      for (let i = 0; i <= 30; i++) {
-        const u = i / 30, a = s.now * 4 + arm * (Math.PI * 2 / 3) + u * 4.2, rr = r * (0.12 + u * 0.85);
-        const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
-        if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
-      }
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
+    // Rotate around a fixed centre before ground-perspective compression.
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, .65);
+    drawWeaponImpact(ctx, 'whirlpool', 0, 0, r * 2, r * 2, Math.floor(s.now * 12) * Math.PI / 12, Math.min(1, life * 3) * .8);
+    ctx.restore();
   } else if (k === "spearthrust") {
     // Long horizontal piercing streak from Moses' hand.
+    if ((e.ttl ?? 0) > .22) { ctx.restore(); return true; }
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.22));
     const t = 1 - life, f = Number(d.facing ?? 1) || 1;
     const len = Number(d.len ?? 100);
     const hx = s.player.pos.x - camX + f * 14, hy = s.player.pos.y - camY - 34;
     ctx.translate(hx, hy); ctx.scale(f, 1);
     const reach = len * Math.min(1, t * 3);
-    const g = ctx.createLinearGradient(0, 0, reach, 0);
-    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.6, "rgba(255,250,230,0.6)"); g.addColorStop(1, "rgba(255,255,255,0.95)");
-    ctx.globalAlpha = life;
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(0, -5); ctx.lineTo(reach, 0); ctx.lineTo(0, 5); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1;
-    for (const oy of [-9, 9]) { ctx.beginPath(); ctx.moveTo(reach * 0.25, oy * 0.6); ctx.lineTo(reach * 0.8, oy * 0.2); ctx.stroke(); }
+    ctx.globalAlpha = life * .7; ctx.fillStyle = "#f5f4dc";
+    for (const row of [-4, 0, 4]) {
+      ctx.fillRect(Math.round(reach * .2), row, Math.max(1, Math.round(reach * .65)), 1);
+      ctx.fillRect(Math.round(reach * .75), row, Math.max(1, Math.round(reach * .18)), 2);
+    }
     ctx.globalAlpha = 1;
   } else if (k === "daggerstab") {
     // Phantom daggers stabbing ahead of Moses (visual multi-attack).
@@ -5030,11 +5014,7 @@ function drawWeaponEntity(
     ctx.beginPath(); ctx.arc(x, y, 10 + (0.3 - (e.ttl ?? 0)) * 40, 0, Math.PI * 2); ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (k === "toxiccloud") {
-    const r = (d.r as number) ?? 60;
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = "#5a7a2a";
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = 1;
+    // Keep the existing damage zone, but poison is communicated on affected NPCs.
   }
   ctx.restore();
   return true;

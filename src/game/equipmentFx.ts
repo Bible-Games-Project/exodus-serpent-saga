@@ -13,7 +13,9 @@ export function drawEquipmentPower(ctx: CanvasRenderingContext2D, state: GameSta
   const css = getComputedStyle(document.documentElement);
   const color = (name: string) => css.getPropertyValue(`--equip-${name}`).trim();
   ctx.save(); ctx.translate(x, y); ctx.scale(flip, 1); ctx.imageSmoothingEnabled = false;
-  if (sp !== null) {
+  // A serpent release has no decorative particles beside Moses' head.
+  const serpentRelease = [...state.entities.values()].some(e => e.kind === 'serpent' && state.now - e.born < .65);
+  if (sp !== null && !serpentRelease) {
     const id = lo.staff.id, rank = lo.staff.evolution;
     ctx.globalAlpha = Math.sin(Math.PI * sp) * .65;
     ctx.fillStyle = color(["bronze", "fire", "bush"].includes(id) ? "fire" : id === "waters" ? "water" : ["crystal", "diamond"].includes(id) ? "ice" : ["light", "power"].includes(id) ? "light" : id === "iron" ? "iron" : "wood");

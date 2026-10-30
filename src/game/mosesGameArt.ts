@@ -184,8 +184,10 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   const sway = pose.moving ? Math.sin(pose.walkPhase) * 0.05 : Math.sin(breathT * 1.6) * 0.015;
   const rot = pose.staffAngle || sway;
   let hx = 0, hy = 0;
-  const frontGesture = pose.equipment ? equipmentGesture(pose.equipment.weapon.id, pose.attackProgress ?? 0, pose.equipment.weapon.evolution) : null;
-  if (pose.staffAngle) {
+  const frontGesture = pose.equipment?.weapon.id === 'spear'
+    ? { angle: Math.PI / 2, thrust: pose.attackProgress == null ? 0 : Math.sin(Math.PI * pose.attackProgress) * 12 }
+    : pose.equipment ? equipmentGesture(pose.equipment.weapon.id, pose.attackProgress ?? 0, pose.equipment.weapon.evolution) : null;
+  if (pose.staffAngle && pose.equipment?.weapon.id !== 'spear') {
     hy = Math.max(-4, Math.min(2, Math.round(pose.staffAngle * 2.4)));
     hx = Math.max(-1, Math.min(2, Math.round(pose.staffAngle * 1.2)));
   } else if (pose.moving) hx = Math.round(Math.sin(pose.walkPhase) * 1.2);
@@ -230,7 +232,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     const front = frontGesture;
     if (front) {
       const id = pose.equipment?.weapon.id ?? "branch";
-      ctx.rotate(pose.attackProgress == null ? sway : front.angle);
+      ctx.rotate(id === 'spear' ? Math.PI / 2 : pose.attackProgress == null ? sway : front.angle);
       const evolution = pose.equipment?.weapon.evolution ?? 1;
       if (id === "branch") {
         // Restore the exact original stick, its 10x80 canvas and hand pivot.
