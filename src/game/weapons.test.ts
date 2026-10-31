@@ -107,3 +107,18 @@ test('Dagger collision applies the established poison to the hit enemy only', ()
   assert.equal(target.data?.poisonUntil, 18); assert.equal(other.data?.poisonUntil, undefined);
   assert.equal(s.player.data?.poisonUntil, undefined);
 });
+test('Dagger projectiles preserve the supplied basic attack damage', () => {
+  const s = arena('dagger'); s.entities.set(1, enemy(1,1080,1000));
+  weaponOnCast(s, spawner(s), 37);
+  const projectiles = [...s.entities.values()].filter(e => e.kind === 'wpnproj');
+  assert.equal(projectiles.length, 3);
+  assert.ok(projectiles.every(e => e.data?.dmg === 37));
+});
+test('A flying dagger retains its poison evolution after equipment changes', () => {
+  const s = arena('branch'); const target = enemy(1,1080,1000); s.entities.set(1,target);
+  const spawn=spawner(s); spawn('wpnproj',{...target.pos},1,{vx:0,vy:0,dmg:14,pierce:1,poisonEvo:3,art:'dagger'},'projectile');
+  const random=Math.random; Math.random=()=>0;
+  try { updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn}); } finally { Math.random=random; }
+  assert.equal(target.data?.poisonUntil,18);
+  assert.equal(target.data?.poisonSpread,1);
+});

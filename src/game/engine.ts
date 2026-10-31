@@ -901,7 +901,7 @@ export function update(state: GameState, dt: number) {
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
         if ((e.kind === "frog" || e.kind === "locust") && (e.dmg ?? 0) > 0) {
-          // Blood bursts at the contact point; the snake keeps moving.
+          // Frog and locust blood bursts stay at the damaging contact point.
           // Only on a real damaging hit.
           const j = () => (Math.random() - 0.5) * 8;
           const bt = 0.32 + Math.random() * 0.22;

@@ -102,9 +102,11 @@ Verification scope: all 57 live weapon/staff selections and 14 champion summons 
 - [x] Shop: updated weapon texts, attack-speed bars, evolution level buttons that open that level.
 
 ## Gameplay-only weapon polish
-- [ ] Dagger forward multi-projectiles and poison head bubbles; remove serpent red dots.
-- [ ] Horizontal-only spear animation and wind; preserve spear art.
-- [ ] Replace gameplay dagger/sword/axe/mace/ring PNGs only.
-- [ ] Match thrown harpoon scale and rotate new whirlpool PNG.
-- [ ] Integrate axe/mace impact PNGs and axe handle-away knockback.
-- [ ] Tie boomerang/ring gestures to actual launches; test gameplay and unchanged shop.
+- [x] Dagger forward multi-projectiles and poison head bubbles; remove serpent release dots.
+- [x] Horizontal-only spear animation and wind; preserve spear art.
+- [x] Replace gameplay dagger/sword/axe/mace/ring PNGs only.
+- [x] Match thrown harpoon scale and rotate new whirlpool PNG.
+- [x] Integrate axe/mace impact PNGs and axe handle-away knockback.
+- [x] Tie boomerang/ring gestures to actual launches; test gameplay and unchanged shop.
+
+Verification: live Test Map exercised all 24 weapon/evolution selections in landscape with no page errors; PNG alpha checked; 163 protected shop/spear/harpoon files have unchanged hashes. Direction, throw counts, poison, damage preservation, launch lifecycle and four axe orientations are covered by focused tests. Poison bubbles and centered whirlpool were inspected in live screenshots. Art quality remains subjective; snapshots do not establish every frame of every attack cycle.
