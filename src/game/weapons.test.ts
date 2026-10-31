@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerTarget, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponReachMul } from "./weapons";
 import type { Entity, GameState, Vec2 } from "./types";
+import { GROUND_IMPACT_DELAY, groundStrikeAngle, impactLife, spearAttack, thrustPose } from './weaponAttack';
 
 const withWeapon = (id: string, evolution: number) => ({ loadout: { weapon: { id, evolution, dmg: 1 } } }) as unknown as GameState;
 
@@ -121,4 +122,55 @@ test('A flying dagger retains its poison evolution after equipment changes', () 
   try { updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn}); } finally { Math.random=random; }
   assert.equal(target.data?.poisonUntil,18);
   assert.equal(target.data?.poisonSpread,1);
+});
+
+test('Spear evolves shaft reach and attacks faster than the branch', () => {
+  assert.deepEqual([1,2,3].map(e => spearAttack(e).reach), [110,155,200]);
+  assert.deepEqual([1,2,3].map(e => spearAttack(e).shaft), [70,115,160]);
+  assert.deepEqual([1,2,3].map(e => weaponCooldownMul(withWeapon('spear',e))), [.7,.6,.5]);
+});
+test('Spear aims at nearest live enemy in any direction, rather than facing', () => {
+  const s = arena('spear',3); s.entities.set(1,enemy(1,980,960)); s.entities.set(2,enemy(2,1090,1000));
+  const dead = enemy(3,1001,1000); dead.hp=0; s.entities.set(3,dead);
+  weaponOnCast(s,spawner(s));
+  const fx=[...s.entities.values()].find(e=>e.kind==='spearthrust');
+  assert.ok(fx); assert.equal(fx.data?.len,200);
+  assert.ok(Math.abs(Number(fx.data?.angle)-Math.atan2(-40,-20))<.00001);
+  assert.equal(s.player.facing,-1);
+  assert.equal([...s.entities.values()].filter(e=>e.team==='projectile').length,0);
+});
+test('Harpoon remains level in its idle pose and points its thrust at the launch target', () => {
+  assert.equal(thrustPose(null,0,1).angle,Math.PI/2);
+  const s=arena('harpoon'); s.entities.set(1,enemy(1,1080,1040)); weaponOnCast(s,spawner(s));
+  const pose=thrustPose(.6,Number(s.equipFx?.weaponAimAngle),1);
+  assert.ok(Math.abs(pose.y/pose.x-.5)<.00001);
+  assert.equal([...s.entities.values()].filter(e=>e.kind==='wpnproj').length,1);
+});
+test('Axe and mace cracks and damage wait until the shared contact beat', () => {
+  for (const id of ['axe','mace']) {
+    const s=arena(id); const en=enemy(1,1064,1000); s.entities.set(1,en);
+    const spawn=spawner(s); weaponOnCast(s,spawn);
+    const fx=[...s.entities.values()].find(e=>e.kind===(id==='axe'?'axeline':'maceimpact'));
+    assert.ok(fx); assert.equal(fx.data?.impactAt,10+GROUND_IMPACT_DELAY);
+    const ctx={wrapDelta:(a:number,b:number)=>a-b,killEnemy:()=>{},spawn};
+    s.now=10+GROUND_IMPACT_DELAY-.01; updateWeaponEntities(s,.01,ctx); assert.equal(en.hp,1000);
+    assert.equal(impactLife(s.now,Number(fx.data?.impactAt),.4),0);
+    s.now=10+GROUND_IMPACT_DELAY+.001; updateWeaponEntities(s,.01,ctx); assert.ok(en.hp<1000);
+    assert.equal(groundStrikeAngle(GROUND_IMPACT_DELAY/.5),1.8);
+  }
+});
+test('Mace crack rotation is chosen once per strike, not reset on its second damage pulse', () => {
+  const s=arena('mace',3); const spawn=spawner(s); const random=Math.random;
+  try {
+    Math.random=()=>.1; weaponOnCast(s,spawn);
+    Math.random=()=>.7; weaponOnCast(s,spawn);
+  } finally {Math.random=random;}
+  const impacts=[...s.entities.values()].filter(e=>e.kind==='maceimpact');
+  assert.notEqual(impacts[0].data?.rotation,impacts[1].data?.rotation);
+  assert.equal(impacts[0].data?.r,90);
+  const rotation=impacts[0].data?.rotation; impacts[0].ttl=.19; s.now+=.51;
+  updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,90);
+  assert.equal(impacts[0].data?.rotation,rotation);
+  assert.ok(impactLife(10.51,10.3,.4)>impactLife(10.52,10.3,.4));
 });

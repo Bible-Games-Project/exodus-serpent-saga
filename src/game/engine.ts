@@ -7,6 +7,7 @@ import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pus
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { daggerTarget, equippedWeapon, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { staffOnPlagueCast, updateEquipment } from "./equipment";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
@@ -1138,10 +1139,13 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     // Radial melee zone centred on Moses: any direction within staff reach.
     const rx = wrapDelta(en.pos.x, state.player.pos.x, state.worldW);
     const ry = wrapDelta(en.pos.y, state.player.pos.y, state.worldH);
-    // Spear thrusts are horizontal: only foes roughly level with Moses.
+    // Spear collision shares the captured direction and evolved shaft reach.
     const spear = equippedWeapon(state).id === "spear";
+    const aim = Number(state.equipFx?.weaponAimAngle ?? 0);
+    const along = rx * Math.cos(aim) + ry * Math.sin(aim);
+    const across = -rx * Math.sin(aim) + ry * Math.cos(aim);
     const inRange = spear
-      ? rx * facing > -10 && Math.abs(rx) < reach * 1.3 + en.radius && Math.abs(ry) < 34 + en.radius
+      ? along > -en.radius && along < spearAttack(equippedWeapon(state).evo).reach + en.radius && Math.abs(across) < 14 + en.radius
       : dd < en.radius + tolerance || Math.hypot(rx, ry) < reach * 1.15 + en.radius;
     if (inRange) candidates.push({ en, px, py });
   }
@@ -1203,6 +1207,10 @@ function staffSwingActive(state: GameState): boolean {
  */
 function enemyInStaffCone(state: GameState): boolean {
   if (equippedWeapon(state).id === 'dagger') return daggerTarget(state) !== null;
+  if (equippedWeapon(state).id === 'spear') {
+    const reach = spearAttack(equippedWeapon(state).evo).reach;
+    return [...state.entities.values()].some(en => en.team === 'enemy' && en.hp > 0 && wrapDist2(state, en.pos, state.player.pos) < (reach + en.radius) ** 2);
+  }
   const facing = state.player.facing;
   const { HAND, TIP, CX, H, PX } = MOSES_ART;
   const cx = state.player.pos.x + (HAND.x - CX) * PX * facing;
@@ -1420,7 +1428,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       kind: "staffswing",
       data: {
         range, halfArc, facing, dps: 0, staffLen: 60, hit: new Set<number>(),
-        dur: MOSES_ATTACK.DUR * durMul, windup: MOSES_ATTACK.WINDUP * durMul, maxTtl: 0.18 * durMul,
+        dur: MOSES_ATTACK.DUR * durMul, windup: ['axe', 'mace'].includes(equippedWeapon(state).id) ? GROUND_IMPACT_DELAY : equippedWeapon(state).id === 'spear' ? MOSES_ATTACK.DUR * durMul * .2 : MOSES_ATTACK.WINDUP * durMul, maxTtl: 0.18 * durMul,
         // Thrown-only weapons keep the throwing animation but deal no melee.
         blocked: ranged || equippedWeapon(state).id === 'dagger' ? 1 : 0,
         noFx: ranged || ['dagger', 'spear'].includes(equippedWeapon(state).id) ? 1 : 0,

@@ -5,6 +5,7 @@ import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
 import { mosesGrip } from './mosesGameArt';
+import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
 
@@ -26,19 +27,20 @@ export function weaponIsRangedOnly(id: string): boolean {
 /** Attack cooldown multiplier (lower = faster). Only the dagger is faster. */
 export function weaponCooldownMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
+  if (id === 'spear') return spearAttack(evo).cooldown;
   return WEAPON_COOLDOWN_MUL[id]?.[evo - 1] ?? 1;
 }
 /** Melee swing duration multiplier for the attack animation. */
 export function weaponSwingDurMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
-  return id === "dagger" ? [0.75, 0.66, 0.58][evo - 1] ?? 0.75 : 1;
+  return id === 'spear' ? .7 : id === "dagger" ? [0.75, 0.66, 0.58][evo - 1] ?? 0.75 : 1;
 }
 /** Melee reach multiplier: longer swords and bigger dagger cones by level. */
 export function weaponReachMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
   if (id === "sword") return [1, 1.5, 2][evo - 1] ?? 1;
   if (id === "dagger") return [1, 1.35, 1.75][evo - 1] ?? 1;
-  if (id === "spear") return 1.45;
+  if (id === "spear") return spearAttack(evo).reach / 70;
   return 1;
 }
 /** Melee knockback in px. */
@@ -89,7 +91,7 @@ export function aimDir(state: GameState): Vec2 {
   const p = state.player;
   let best: Entity | null = null, bd = Infinity;
   for (const en of state.entities.values()) {
-    if (en.team !== "enemy") continue;
+    if (en.team !== "enemy" || en.hp <= 0) continue;
     const dx = wrapD(en.pos.x, p.pos.x, state.worldW), dy = wrapD(en.pos.y, p.pos.y, state.worldH);
     const d2 = dx * dx + dy * dy;
     if (d2 < bd) { bd = d2; best = en; }
@@ -118,11 +120,16 @@ export function weaponOnCast(
   const dir: Vec2 = aimDir(state);
   const dmg = weaponHitDamage(state, 14);
   const ang = Math.atan2(dir.y, dir.x);
+  if (['spear', 'harpoon', 'axe', 'mace'].includes(id)) {
+    (state.equipFx ??= {}).weaponAimAngle = ang;
+    if (dir.x) p.facing = dir.x >= 0 ? 1 : -1;
+  }
 
   switch (id) {
     case "spear": {
       // Melee only: a horizontal piercing thrust FX in front of Moses.
-      spawn("spearthrust", { ...p.pos }, 0.42, { facing: p.facing, len: 70 * weaponReachMul(state), evo }, "hazard");
+      const duration = .5 * weaponSwingDurMul(state);
+      spawn("spearthrust", { ...p.pos }, duration, { facing: p.facing, angle: ang, len: spearAttack(evo).reach, impactAt: state.now + duration * .2, duration: duration * .8, evo }, "hazard");
       break;
     }
     case "dagger": {
@@ -177,8 +184,9 @@ export function weaponOnCast(
       const len = evo >= 3 ? 260 : evo >= 2 ? 200 : 150;
       const wid = evo >= 3 ? 46 : evo >= 2 ? 34 : 22;
       const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
-      spawn("axeline", { x: p.pos.x + dir.x * len * 0.5, y: p.pos.y + dir.y * len * 0.5 }, 0.45, {
+      spawn("axeline", { x: p.pos.x + dir.x * len * 0.5, y: p.pos.y + dir.y * len * 0.5 }, GROUND_IMPACT_DELAY + 0.45, {
         dmg, len, wid, angle: ang,
+        impactAt: state.now + GROUND_IMPACT_DELAY,
         slow: evo >= 2 ? 2 : 0, cracks: evo >= 3 ? 1 : 0, hit: [], handleX: grip.x, handleY: grip.y, knock: 18,
       }, "hazard");
       break;
@@ -186,8 +194,8 @@ export function weaponOnCast(
     case "mace": {
       const reach = 64;
       const r = evo >= 3 ? 90 : evo >= 2 ? 70 : 48;
-      spawn("maceimpact", { x: p.pos.x + dir.x * reach, y: p.pos.y + dir.y * reach }, 0.4, {
-        dmg, r, second: evo >= 3 ? 1 : 0, hit: [],
+      spawn("maceimpact", { x: p.pos.x + dir.x * reach, y: p.pos.y + dir.y * reach }, GROUND_IMPACT_DELAY + 0.4, {
+        dmg, r, second: evo >= 3 ? 1 : 0, hit: [], impactAt: state.now + GROUND_IMPACT_DELAY, rotation: Math.random() * Math.PI * 2,
       }, "hazard");
       break;
     }
@@ -388,6 +396,7 @@ export function updateWeaponEntities(
 
     // Damaging ground hazards: axeline, maceimpact, shockwave, whirlpool, toxiccloud.
     if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "windtrail", "slowprint"].includes(e.kind)) {
+      if (state.now < Number(d.impactAt ?? e.born)) continue;
       const hitArr = (d.hit ??= []) as number[];
       const isDot = e.kind === "whirlpool" || e.kind === "toxiccloud" || e.kind === "windtrail" || e.kind === "slowprint";
       if (e.kind === "firering" && d.burn) d.burnHit = 1;
