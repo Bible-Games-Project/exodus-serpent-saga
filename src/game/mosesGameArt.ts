@@ -16,6 +16,7 @@ import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
 import type { Loadout } from "./loadout";
 import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
 import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
+import { groundStrikeAngle, thrustPose } from './weaponAttack';
 
 /**
  * Single switch for Moses' look. "original" = previous sprite/staff/animations
@@ -116,6 +117,7 @@ export type MosesPose = {
   flash?: number;
   equipment?: Loadout;
   castProgress?: number | null;
+  weaponAimAngle?: number;
 };
 
 /** Staff rotation (radians, around the hand) for a swing progress 0..1. */
@@ -184,14 +186,19 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   const sway = pose.moving ? Math.sin(pose.walkPhase) * 0.05 : Math.sin(breathT * 1.6) * 0.015;
   const rot = pose.staffAngle || sway;
   let hx = 0, hy = 0;
-  const frontGesture = pose.equipment?.weapon.id === 'spear'
-    ? { angle: Math.PI / 2, thrust: pose.attackProgress == null ? 0 : Math.sin(Math.PI * pose.attackProgress) * 12 }
+  const directionalThrust = ['spear', 'harpoon'].includes(pose.equipment?.weapon.id ?? '');
+  const thrust = thrustPose(pose.attackProgress ?? null, pose.weaponAimAngle ?? (pose.flip === 1 ? 0 : Math.PI), pose.flip);
+  const groundStrike = ['axe', 'mace'].includes(pose.equipment?.weapon.id ?? '');
+  const frontGesture = directionalThrust
+    ? { angle: thrust.angle, thrust: thrust.x }
+    : groundStrike ? { angle: groundStrikeAngle(pose.attackProgress ?? 0), thrust: 0 }
     : pose.equipment ? equipmentGesture(pose.equipment.weapon.id, pose.attackProgress ?? 0, pose.equipment.weapon.evolution) : null;
-  if (pose.staffAngle && pose.equipment?.weapon.id !== 'spear') {
+  if (pose.staffAngle && !directionalThrust) {
     hy = Math.max(-4, Math.min(2, Math.round(pose.staffAngle * 2.4)));
     hx = Math.max(-1, Math.min(2, Math.round(pose.staffAngle * 1.2)));
   } else if (pose.moving) hx = Math.round(Math.sin(pose.walkPhase) * 1.2);
   if (frontGesture) hx += frontGesture.thrust;
+  if (directionalThrust) hy += thrust.y;
 
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -232,7 +239,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     const front = frontGesture;
     if (front) {
       const id = pose.equipment?.weapon.id ?? "branch";
-      ctx.rotate(id === 'spear' ? Math.PI / 2 : pose.attackProgress == null ? sway : front.angle);
+      ctx.rotate(directionalThrust ? front.angle : pose.attackProgress == null ? sway : front.angle);
       const evolution = pose.equipment?.weapon.evolution ?? 1;
       if (id === "branch") {
         // Restore the exact original stick, its 10x80 canvas and hand pivot.

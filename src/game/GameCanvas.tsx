@@ -40,6 +40,7 @@ import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawWeaponImpact } from './combatWeaponPng';
 import { weaponLaunchProgress } from './weapons';
+import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1841,6 +1842,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     // Frames 1-5 of the swing, paced to the existing attack cadence.
     attackProgress,
     equipment: s.loadout,
+    weaponAimAngle: s.equipFx?.weaponAimAngle,
     castProgress: latestEquipmentCastProgress(s),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
@@ -4927,13 +4929,16 @@ function drawWeaponEntity(
     }
   } else if (k === "axeline") {
     const len = Number(d.len ?? 150), wid = Number(d.wid ?? 22);
-    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .45));
+    const life = impactLife(s.now, Number(d.impactAt ?? e.born), .45);
     drawWeaponImpact(ctx, 'axe', x, y, len, wid * 1.7, Number(d.angle ?? 0), life);
   } else if (k === "maceimpact") {
     const r = Number(d.r ?? 48);
-    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .4));
-    const pulse = d.secondDone ? 1.08 : 1;
-    drawWeaponImpact(ctx, 'mace', x, y, r * 2 * pulse, r * 1.2 * pulse, 0, life * .8);
+    const life = impactLife(s.now, Number(d.impactAt ?? e.born), .4);
+    // Rotate in ground coordinates before perspective compression; never resize
+    // or flash when the second damage pulse occurs.
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, .6);
+    drawWeaponImpact(ctx, 'mace', 0, 0, r * 2, r * 2, Number(d.rotation ?? 0), life * .8);
+    ctx.restore();
   } else if (k === "shockwave") {
     const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.35));
     ctx.globalAlpha = 0.5 * (1 - life);
@@ -4949,12 +4954,12 @@ function drawWeaponEntity(
     ctx.restore();
   } else if (k === "spearthrust") {
     // Long horizontal piercing streak from Moses' hand.
-    if ((e.ttl ?? 0) > .22) { ctx.restore(); return true; }
-    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.22));
-    const t = 1 - life, f = Number(d.facing ?? 1) || 1;
+    const life = impactLife(s.now, Number(d.impactAt ?? e.born), Number(d.duration ?? .22));
+    if (!life) { ctx.restore(); return true; }
+    const t = 1 - life;
     const len = Number(d.len ?? 100);
-    const hx = s.player.pos.x - camX + f * 14, hy = s.player.pos.y - camY - 34;
-    ctx.translate(hx, hy); ctx.scale(f, 1);
+    const grip = mosesGrip(s.player.pos.x - camX, s.player.pos.y - camY + 8, s.player.facing);
+    ctx.translate(grip.x, grip.y); ctx.rotate(Number(d.angle ?? 0));
     const reach = len * Math.min(1, t * 3);
     ctx.globalAlpha = life * .7; ctx.fillStyle = "#f5f4dc";
     for (const row of [-4, 0, 4]) {

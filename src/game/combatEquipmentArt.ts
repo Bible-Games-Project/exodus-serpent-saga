@@ -1,6 +1,7 @@
 // In-hand art uses the original stick's native pixel scale, never shop images.
 // Coordinates are relative to the grip; the hand overlay shares the pivot.
 import { drawWeaponPng } from './combatWeaponPng';
+import { spearAttack } from './weaponAttack';
 const paletteCache: Record<string, string> = {};
 function color(token: string): string {
   if (!paletteCache[token]) paletteCache[token] = getComputedStyle(document.documentElement).getPropertyValue(`--equip-${token}`).trim();
@@ -136,15 +137,18 @@ export function drawCombatEquipment(ctx: CanvasRenderingContext2D, category: "we
     if(evolution>=3){rect(-2,-17,4,2,"ice");rect(8,-8,2,3,"ice");}
   } else {
     const blade = id === "sword" || id === "dagger";
-    rect(-1,blade ? -7 : -38,2,blade ? 14 : 63,"wood");
-    rect(-1,blade ? -5 : -35,1,blade ? 10 : 55,"wood-light");
+    const extension = id === 'spear' ? spearAttack(evolution).shaft - 38 : 0;
+    rect(-1,blade ? -7 : -38 - extension,2,blade ? 14 : 63 + extension,"wood");
+    rect(-1,blade ? -5 : -35 - extension,1,blade ? 10 : 55 + extension,"wood-light");
     if (id === "sword" || id === "dagger") {
       const tip=id==="dagger"?-24:-43;
       shape([[-3,-8],[-3,tip+7],[0,tip],[3,tip+7],[3,-8]],accent);rect(-3,tip+8,1,-tip-16,"wood-dark");rect(-1,tip+7,1,-tip-15,"ice");rect(-6,-7,12,2,"wood");rect(-1,4,3,3,"wood");
     } else if (id === "spear" || id === "harpoon") {
+      ctx.save(); ctx.translate(0, -extension);
       shape([[-3,-38],[0,-49],[3,-38]],accent);
       rect(-1,-44,1,6,"ice");
       if(id==="harpoon") shape([[1,-43],[6,-39],[3,-35],[3,-39]],"iron");
+      ctx.restore();
     } else if (id === "axe") {
       shape([[0,-41],[8,-45],[13,-41],[12,-32],[6,-30],[1,-34]],"wood-dark");
       shape([[2,-40],[8,-43],[11,-40],[10,-33],[6,-32],[3,-35]],accent);rect(9,-39,1,5,"ice");rect(0,-40,3,7,"wood");
