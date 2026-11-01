@@ -118,6 +118,7 @@ export type MosesPose = {
   equipment?: Loadout;
   castProgress?: number | null;
   weaponAimAngle?: number;
+  hideHeldWeapon?: boolean;
 };
 
 /** Staff rotation (radians, around the hand) for a swing progress 0..1. */
@@ -248,7 +249,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
           ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(evolution === 3 ? "--equip-light" : "--equip-red").trim();
           ctx.fillRect(-1 * PX, -20 * PX, 2 * PX, 2 * PX);
         }
-      } else if (id !== "none") drawCombatEquipment(ctx, "weapon", id, evolution, PX);
+      } else if (id !== "none" && !pose.hideHeldWeapon) drawCombatEquipment(ctx, "weapon", id, evolution, PX);
     } else {
       if (rot) ctx.rotate(rot);
       ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);

@@ -40,7 +40,7 @@ import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawWeaponImpact } from './combatWeaponPng';
 import { weaponLaunchProgress } from './weapons';
-import { impactLife } from './weaponAttack';
+import { heldHarpoonVisible, impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1575,6 +1575,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "pillarcloud") drawPillarCloud(ctx, e, camX, camY, s.now);
     if (e.kind === "pillarfire") drawPillarFire(ctx, e, camX, camY, s.now);
     if (e.kind === "corpseflame") drawCorpseFlame(ctx, e, camX, camY, s.now);
+    if (e.kind === 'whirlpool') drawWeaponEntity(ctx, e, s, camX, camY);
   }
 
   // 2) Depth-sorted pass
@@ -1582,7 +1583,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   let swingProgress: number | null = null;
   let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
-    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer") continue;
+    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || e.kind === 'whirlpool') continue;
     if (e.kind === "staffswing") {
       const dur = (e.data?.dur as number) ?? MOSES_ATTACK.DUR;
       attackProgress = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / dur));
@@ -1692,6 +1693,16 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     drawSpriteEntity(ctx, e, camX, camY, s);
       } finally {
       if (e.team === 'enemy') drawEnemyPoisonBubbles(ctx, e, s, camX, camY);
+      if (e.team === 'enemy' && s.now < Number(e.data?.axeFreezeUntil ?? 0)) {
+        ctx.save(); ctx.translate(e.pos.x - camX, e.pos.y - camY - e.radius);
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--equip-ice').trim();
+        ctx.globalAlpha = .75; ctx.lineWidth = 2;
+        for (const angle of [0, Math.PI / 3, Math.PI * 2 / 3]) {
+          ctx.beginPath(); ctx.moveTo(-Math.cos(angle) * 10, -Math.sin(angle) * 10);
+          ctx.lineTo(Math.cos(angle) * 10, Math.sin(angle) * 10); ctx.stroke();
+        }
+        ctx.restore();
+      }
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
     }
@@ -1842,7 +1853,8 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     // Frames 1-5 of the swing, paced to the existing attack cadence.
     attackProgress,
     equipment: s.loadout,
-    weaponAimAngle: s.equipFx?.weaponAimAngle,
+    weaponAimAngle: s.equipFx?.weaponVisualAim ?? s.equipFx?.weaponAimAngle,
+    hideHeldWeapon: s.loadout?.weapon.id === 'harpoon' && !heldHarpoonVisible(s.now, s.equipFx?.weaponVisualAt),
     castProgress: latestEquipmentCastProgress(s),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
@@ -3694,6 +3706,19 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
 
+  if (s.loadout?.weapon.id === 'branch' && s.loadout.weapon.evolution >= 2) {
+    const grip = mosesGrip(px, groundY, facing);
+    const radius = s.loadout.weapon.evolution === 3 ? 90 : 58;
+    ctx.save(); ctx.translate(grip.x, grip.y); ctx.scale(facing, 1);
+    ctx.globalAlpha = life * .7;
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--equip-ice').trim();
+    ctx.lineWidth = s.loadout.weapon.evolution === 3 ? 6 : 4;
+    for (const offset of [0, 9, 18]) {
+      ctx.beginPath(); ctx.arc(0, 0, radius - offset, -.9 + progress * .35, .85 + progress * .35); ctx.stroke();
+    }
+    ctx.restore(); return;
+  }
+
   ctx.save();
   const trailStart = Math.max(0, progress - 0.75);
   const segs = 26;
@@ -4886,7 +4911,7 @@ function drawWeaponEntity(
   camY: number,
 ): boolean {
   const k = e.kind;
-  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab"].includes(k)) return false;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind'].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
@@ -4952,6 +4977,18 @@ function drawWeaponEntity(
     ctx.save(); ctx.translate(x, y); ctx.scale(1, .65);
     drawWeaponImpact(ctx, 'whirlpool', 0, 0, r * 2, r * 2, Math.floor(s.now * 12) * Math.PI / 12, Math.min(1, life * 3) * .8);
     ctx.restore();
+  } else if (k === 'swordwind') {
+    if (s.now < Number(d.impactAt)) { ctx.restore(); return true; }
+    ctx.translate(x, y - 32); ctx.rotate(Number(d.angle));
+    const css = getComputedStyle(document.documentElement);
+    const fire = Number(d.evo) >= 3;
+    ctx.strokeStyle = css.getPropertyValue(fire ? '--equip-fire' : '--equip-ice').trim();
+    ctx.globalAlpha = .8; ctx.lineWidth = fire ? 7 : 5; ctx.lineCap = 'round';
+    for (const angle of [-Math.PI / 4, Math.PI / 4]) {
+      ctx.save(); ctx.rotate(angle); ctx.beginPath();
+      ctx.moveTo(-22, 0); ctx.quadraticCurveTo(0, -8, 22, 0); ctx.stroke();
+      ctx.strokeStyle = css.getPropertyValue('--equip-light').trim(); ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    }
   } else if (k === "spearthrust") {
     // Long horizontal piercing streak from Moses' hand.
     const life = impactLife(s.now, Number(d.impactAt ?? e.born), Number(d.duration ?? .22));

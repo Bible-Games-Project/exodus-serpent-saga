@@ -5,7 +5,7 @@ import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
 import { mosesGrip } from './mosesGameArt';
-import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
+import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, GROUND_IMPACT_DELAY, spearAttack, turnWeaponAngle } from './weaponAttack';
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
 
@@ -28,12 +28,13 @@ export function weaponIsRangedOnly(id: string): boolean {
 export function weaponCooldownMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
   if (id === 'spear') return spearAttack(evo).cooldown;
+  if (id === 'branch') return BRANCH_COOLDOWN[evo - 1] ?? 1;
   return WEAPON_COOLDOWN_MUL[id]?.[evo - 1] ?? 1;
 }
 /** Melee swing duration multiplier for the attack animation. */
 export function weaponSwingDurMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
-  return id === 'spear' ? .7 : id === "dagger" ? [0.75, 0.66, 0.58][evo - 1] ?? 0.75 : 1;
+  return id === 'branch' ? BRANCH_COOLDOWN[evo - 1] ?? 1 : id === 'spear' ? .7 : id === "dagger" ? [0.75, 0.66, 0.58][evo - 1] ?? 0.75 : 1;
 }
 /** Melee reach multiplier: longer swords and bigger dagger cones by level. */
 export function weaponReachMul(state: GameState): number {
@@ -47,7 +48,8 @@ export function weaponReachMul(state: GameState): number {
 export function weaponKnockback(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
   if (id === "sword") return 10 * ([1, 1.6, 2.2][evo - 1] ?? 1);
-  if (id === "spear") return evo >= 2 ? 22 : 14;
+  if (id === "spear") return [28, 44, 56][evo - 1] ?? 28;
+  if (id === 'branch') return BRANCH_KNOCKBACK[evo - 1] ?? 10;
   return 10;
 }
 /** Dagger poison: always present, chance and strength grow with level. */
@@ -100,6 +102,13 @@ export function aimDir(state: GameState): Vec2 {
   const dx = wrapD(best.pos.x, p.pos.x, state.worldW), dy = wrapD(best.pos.y, p.pos.y, state.worldH);
   const l = Math.hypot(dx, dy) || 1;
   return { x: dx / l, y: dy / l };
+}
+/** Presentation aim follows the same nearest target without changing cast collision. */
+export function updateWeaponAim(state: GameState, dt: number): void {
+  if (!['spear', 'harpoon'].includes(equippedWeapon(state).id)) return;
+  const dir = aimDir(state), fx = (state.equipFx ??= {});
+  const target = Math.atan2(dir.y, dir.x);
+  fx.weaponVisualAim = turnWeaponAngle(fx.weaponVisualAim ?? (state.player.facing === 1 ? 0 : Math.PI), target, dt);
 }
 function wrapD(a: number, b: number, size: number): number {
   let d = a - b;
@@ -187,7 +196,7 @@ export function weaponOnCast(
       spawn("axeline", { x: p.pos.x + dir.x * len * 0.5, y: p.pos.y + dir.y * len * 0.5 }, GROUND_IMPACT_DELAY + 0.45, {
         dmg, len, wid, angle: ang,
         impactAt: state.now + GROUND_IMPACT_DELAY,
-        slow: evo >= 2 ? 2 : 0, cracks: evo >= 3 ? 1 : 0, hit: [], handleX: grip.x, handleY: grip.y, knock: 18,
+        slow: evo >= 2 ? 2 : 0, freeze: evo >= 3 ? AXE_FREEZE_SECONDS : 0, cracks: evo >= 3 ? 1 : 0, hit: [], handleX: grip.x, handleY: grip.y, knock: 18,
       }, "hazard");
       break;
     }
@@ -201,6 +210,15 @@ export function weaponOnCast(
     }
     case "branch": {
       if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
+      break;
+    }
+    case 'sword': {
+      // Visual only: the travelling cross never changes sword hit damage.
+      const distance = Math.hypot(state.viewport?.w ?? 1280, state.viewport?.h ?? 900) + 200;
+      spawn('swordwind', { ...p.pos }, .2 + distance / 650, {
+        vx: dir.x * 650, vy: dir.y * 650, angle: ang, evo,
+        impactAt: state.now + .2, distance, travelled: 0,
+      }, 'hazard');
       break;
     }
     default:
@@ -238,12 +256,7 @@ export function weaponOnMeleeHit(state: GameState, en: Entity): void {
       break;
     }
     case "branch": {
-      if (evo >= 2) {
-        const kx = en.pos.x - state.player.pos.x, ky = en.pos.y - state.player.pos.y;
-        const kd = Math.hypot(kx, ky) || 1;
-        en.pos.x += (kx / kd) * 14;
-        en.pos.y += (ky / kd) * 14;
-      }
+      // Evolution knockback is applied once through weaponKnockback.
       break;
     }
     default:
@@ -303,6 +316,15 @@ export function updateWeaponEntities(
   for (const e of [...state.entities.values()]) {
     const d = e.data;
     if (!d) continue;
+
+    if (e.kind === 'swordwind') {
+      if (state.now >= Number(d.impactAt)) {
+        e.pos.x += Number(d.vx) * dt;
+        e.pos.y += Number(d.vy) * dt;
+        d.travelled = Number(d.travelled) + 650 * dt;
+      }
+      continue;
+    }
 
     if (e.kind === "wpnproj" || e.kind === "wpboom" || e.kind === "wpring" || e.kind === "staffflame") {
       if (e.kind === "staffflame" && d.pierce == null) d.pierce = 1;
@@ -426,6 +448,7 @@ export function updateWeaponEntities(
           hitArr.push(en.id);
           en.hp -= d.dmg as number;
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + (d.slow as number); }
+          if (d.freeze) { en.data ??= {}; en.data.axeFreezeUntil = state.now + Number(d.freeze); }
           if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + 3; }
           if (e.kind === 'axeline' && !(en.kind === 'agilesoldier' && en.data?.specialDash)) {
             const dx = ctx.wrapDelta(en.pos.x, Number(d.handleX), state.worldW);

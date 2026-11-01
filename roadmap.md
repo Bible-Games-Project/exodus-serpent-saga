@@ -1,5 +1,13 @@
 # Roadmap
 
+## Supplied weapons and attack refinements
+- [ ] Integrate nine supplied gameplay PNGs with normalized hand grips; preserve shop.
+- [ ] Double branch evolution speed/knockback gains and add stronger evolved wind.
+- [ ] Fix spear tip orientation, smooth target turning and strengthen knockback.
+- [ ] Launch sword cross wind/fire to the visible edge without altering damage.
+- [ ] Keep whirlpool below enemies and hide held harpoon for 0.5 seconds after release.
+- [ ] Freeze axe III struck enemies for 0.5 seconds; run focused tests and live checks.
+
 - [x] Enlarge category boxes, use sword tab and add three evolution purchase-state squares to shop lists.
 - [x] Expand bars to 20 with area damage, utility, footwear speed and helmet shield capacity without changing balance.
 - [x] Redesign all shop staff evolution icons in weapon style.

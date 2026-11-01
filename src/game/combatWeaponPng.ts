@@ -1,14 +1,17 @@
 // Combat-only assets; shop artwork is deliberately not imported here.
 import whirlpoolUrl from '@/assets/combat-whirlpool-polish.png';
-import dagger1 from '@/assets/combat-dagger-polish-1.png';
-import dagger2 from '@/assets/combat-dagger-polish-2.png';
-import dagger3 from '@/assets/combat-dagger-polish-3.png';
-import sword1 from '@/assets/combat-sword-polish-1.png';
-import sword2 from '@/assets/combat-sword-polish-2.png';
-import sword3 from '@/assets/combat-sword-polish-3.png';
-import axe1 from '@/assets/combat-axe-polish-1.png';
-import axe2 from '@/assets/combat-axe-polish-2.png';
-import axe3 from '@/assets/combat-axe-polish-3.png';
+import dagger1Asset from '@/assets/combat-dagger-supplied-1.png.asset.json';
+import dagger2Asset from '@/assets/combat-dagger-supplied-2.png.asset.json';
+import dagger3Asset from '@/assets/combat-dagger-supplied-3.png.asset.json';
+import sword1Asset from '@/assets/combat-sword-supplied-1.png.asset.json';
+import sword2Asset from '@/assets/combat-sword-supplied-2.png.asset.json';
+import sword3Asset from '@/assets/combat-sword-supplied-3.png.asset.json';
+import axe1Asset from '@/assets/combat-axe-supplied-1.png.asset.json';
+import axe2Asset from '@/assets/combat-axe-supplied-2.png.asset.json';
+import axe3Asset from '@/assets/combat-axe-supplied-3.png.asset.json';
+const [dagger1, dagger2, dagger3] = [dagger1Asset.url, dagger2Asset.url, dagger3Asset.url];
+const [sword1, sword2, sword3] = [sword1Asset.url, sword2Asset.url, sword3Asset.url];
+const [axe1, axe2, axe3] = [axe1Asset.url, axe2Asset.url, axe3Asset.url];
 import mace1 from '@/assets/combat-mace-polish-1.png';
 import mace2 from '@/assets/combat-mace-polish-2.png';
 import mace3 from '@/assets/combat-mace-polish-3.png';
@@ -31,8 +34,12 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
   const height = id === 'dagger' ? 35 : id === 'sword' ? 48 * ([1, 1.5, 2][evolution - 1] ?? 1) : id === 'ring' ? 23 : 53;
   const width = height * img.naturalWidth / img.naturalHeight;
   // Axe shafts sit left of the blade; every other grip is central.
-  const gripX = id === 'axe' ? .24 : .5;
-  const gripY = id === 'ring' ? .8 : .86;
+  const grips: Record<string, readonly (readonly [number, number])[]> = {
+    dagger: [[.55,.82],[.52,.83],[.51,.85]],
+    sword: [[.55,.88],[.52,.9],[.55,.94]],
+    axe: [[.6,.82],[.43,.82],[.56,.82]],
+  };
+  const [gripX, gripY] = grips[id]?.[evolution - 1] ?? [.5, id === 'ring' ? .8 : .86];
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, -width * gripX, -height * gripY, width, height);
   return true;
