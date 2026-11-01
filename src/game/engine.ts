@@ -6,7 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
-import { daggerTarget, equippedWeapon, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { daggerTarget, equippedWeapon, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { staffOnPlagueCast, updateEquipment } from "./equipment";
 import {
@@ -340,6 +340,7 @@ export function update(state: GameState, dt: number) {
   resolveObstacles(p.pos, p.radius, state);
   if (Math.abs(p.vel.x) > 5) p.facing = p.vel.x > 0 ? 1 : -1;
   p.animT += dt * (Math.hypot(p.vel.x, p.vel.y) > 5 ? 6 : 0);
+  updateWeaponAim(state, dt);
 
   // Camera follows with wrapped delta so it never jumps at wrap seams.
   const cdx = wrapDelta(p.pos.x, state.camera.x, state.worldW);
@@ -556,6 +557,11 @@ export function update(state: GameState, dt: number) {
 
       // White Leprosy wastes the afflicted enemy away; it dies normally.
       if (tickLeprosy(state, e, dt)) continue;
+      // Axe ice is a full short stun, distinct from the existing plague slow.
+      if (state.now < Number(e.data?.axeFreezeUntil ?? 0)) {
+        e.vel.x = 0; e.vel.y = 0;
+        continue;
+      }
       // Ramses handled separately.
       if (e.kind === "ramses") {
         // still take contact damage handled in tickRamses; skip here.
