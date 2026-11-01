@@ -112,7 +112,9 @@ Verification scope: all 57 live weapon/staff selections and 14 champion summons 
 Verification: live Test Map exercised all 24 weapon/evolution selections in landscape with no page errors; PNG alpha checked; 163 protected shop/spear/harpoon files have unchanged hashes. Direction, throw counts, poison, damage preservation, launch lifecycle and four axe orientations are covered by focused tests. Poison bubbles and centered whirlpool were inspected in live screenshots. Art quality remains subjective; snapshots do not establish every frame of every attack cycle.
 
 ## Moses thrust and impact alignment
-- [ ] Aim spear at nearest enemy; extend shaft only, increase evolution reach and attack speed.
-- [ ] Keep harpoon level and share the directional thrust while preserving projectiles.
-- [ ] Synchronize axe/mace contact, damage and ground cracks; remove mace size blink and vary crack rotation.
-- [ ] Run focused rules tests and inspect live attack cycles; preserve shop files.
+- [x] Aim spear at nearest enemy; extend shaft only, increase evolution reach and attack speed.
+- [x] Keep harpoon level and share the directional thrust while preserving projectiles.
+- [x] Synchronize axe/mace contact, damage and ground cracks; remove mace size blink and vary crack rotation.
+- [x] Run focused rules tests and inspect live attack cycles; preserve shop files.
+
+Verification: 45 focused tests passed. Live landscape Test Map exercised spear, harpoon, axe and mace III with no page errors; screenshots inspected for aimed extended shaft, level harpoon and ground impacts. Ground damage and crack visibility share the 0.3-second contact gate; the second mace damage event leaves crack dimensions and rotation unchanged. No shop source or assets were edited. Latest preview build reports OK.
