@@ -1,14 +1,14 @@
 // Combat-only assets; shop artwork is deliberately not imported here.
 import whirlpoolUrl from '@/assets/combat-whirlpool-polish.png';
-import dagger1Asset from '@/assets/combat-dagger-supplied-1.png.asset.json';
-import dagger2Asset from '@/assets/combat-dagger-supplied-2.png.asset.json';
-import dagger3Asset from '@/assets/combat-dagger-supplied-3.png.asset.json';
-import sword1Asset from '@/assets/combat-sword-supplied-1.png.asset.json';
-import sword2Asset from '@/assets/combat-sword-supplied-2.png.asset.json';
-import sword3Asset from '@/assets/combat-sword-supplied-3.png.asset.json';
-import axe1Asset from '@/assets/combat-axe-supplied-1.png.asset.json';
-import axe2Asset from '@/assets/combat-axe-supplied-2.png.asset.json';
-import axe3Asset from '@/assets/combat-axe-supplied-3.png.asset.json';
+import dagger1Asset from '@/assets/combat-dagger-clean-1.png.asset.json';
+import dagger2Asset from '@/assets/combat-dagger-clean-2.png.asset.json';
+import dagger3Asset from '@/assets/combat-dagger-clean-3.png.asset.json';
+import sword1Asset from '@/assets/combat-sword-clean-1.png.asset.json';
+import sword2Asset from '@/assets/combat-sword-clean-2.png.asset.json';
+import sword3Asset from '@/assets/combat-sword-clean-3.png.asset.json';
+import axe1Asset from '@/assets/combat-axe-clean-1.png.asset.json';
+import axe2Asset from '@/assets/combat-axe-clean-2.png.asset.json';
+import axe3Asset from '@/assets/combat-axe-clean-3.png.asset.json';
 const [dagger1, dagger2, dagger3] = [dagger1Asset.url, dagger2Asset.url, dagger3Asset.url];
 const [sword1, sword2, sword3] = [sword1Asset.url, sword2Asset.url, sword3Asset.url];
 const [axe1, axe2, axe3] = [axe1Asset.url, axe2Asset.url, axe3Asset.url];
@@ -35,12 +35,14 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
   const width = height * img.naturalWidth / img.naturalHeight;
   // Axe shafts sit left of the blade; every other grip is central.
   const grips: Record<string, readonly (readonly [number, number])[]> = {
-    dagger: [[.55,.82],[.52,.83],[.51,.85]],
-    sword: [[.55,.88],[.52,.9],[.55,.94]],
-    axe: [[.6,.82],[.43,.82],[.56,.82]],
+    dagger: [[.602,.815],[.613,.831],[.603,.849]],
+    sword: [[.673,.865],[.436,.9],[.638,.94]],
+    axe: [[.823,.85],[.405,.826],[.548,.832]],
   };
   const [gripX, gripY] = grips[id]?.[evolution - 1] ?? [.5, id === 'ring' ? .8 : .86];
-  ctx.imageSmoothingEnabled = false;
+  // Supplied high-resolution weapons retain their soft painted edges at native
+  // combat size; nearest-neighbour sampling would break thin blade details.
+  ctx.imageSmoothingEnabled = ['dagger', 'sword', 'axe'].includes(id);
   ctx.drawImage(img, -width * gripX, -height * gripY, width, height);
   return true;
 }

@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerTarget, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponReachMul } from "./weapons";
+import { DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerTarget, updateWeaponAim, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponKnockback, weaponReachMul } from "./weapons";
 import type { Entity, GameState, Vec2 } from "./types";
-import { GROUND_IMPACT_DELAY, groundStrikeAngle, impactLife, spearAttack, thrustPose } from './weaponAttack';
+import { GROUND_IMPACT_DELAY, groundStrikeAngle, heldHarpoonVisible, impactLife, spearAttack, thrustPose, turnWeaponAngle } from './weaponAttack';
 
 const withWeapon = (id: string, evolution: number) => ({ loadout: { weapon: { id, evolution, dmg: 1 } } }) as unknown as GameState;
 
@@ -173,4 +173,53 @@ test('Mace crack rotation is chosen once per strike, not reset on its second dam
   assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,90);
   assert.equal(impacts[0].data?.rotation,rotation);
   assert.ok(impactLife(10.51,10.3,.4)>impactLife(10.52,10.3,.4));
+});
+
+test('Branch evolution doubles the original 0.03-second attack interval reduction', () => {
+  assert.deepEqual([1,2,3].map(e => Number((.55 * weaponCooldownMul(withWeapon('branch',e))).toFixed(2))), [.55,.49,.43]);
+});
+test('Branch evolved knockback doubles its previous 14-pixel evolution bonus', () => {
+  assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('branch',e))), [10,38,38]);
+});
+test('Spear knockback is stronger at all three levels', () => {
+  assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('spear',e))), [28,44,56]);
+});
+test('Spear tip resolves the same world direction for both mirrored body poses', () => {
+  for (const facing of [-1,1]) for (const angle of [0,.5,Math.PI/2,Math.PI,-Math.PI/2,-2.4]) {
+    const pose=thrustPose(.6,angle,facing);
+    const tipX=Math.sin(pose.angle)*facing, tipY=-Math.cos(pose.angle);
+    assert.ok(Math.abs(tipX-Math.cos(angle))<.000001);
+    assert.ok(Math.abs(tipY-Math.sin(angle))<.000001);
+  }
+});
+test('Spear turns rapidly along the shortest path without snapping on a new target', () => {
+  const s=arena('spear'); s.equipFx={weaponVisualAim:0}; s.entities.set(1,enemy(1,1000,900));
+  updateWeaponAim(s,1/60);
+  assert.ok(Number(s.equipFx.weaponVisualAim)<0 && Number(s.equipFx.weaponVisualAim)>-Math.PI/2);
+  for(let i=0;i<15;i++) updateWeaponAim(s,1/60);
+  assert.ok(Math.abs(Number(s.equipFx.weaponVisualAim)+Math.PI/2)<.01);
+  assert.ok(turnWeaponAngle(Math.PI-.01,-Math.PI+.01,1/60)>Math.PI-.01);
+});
+test('Held harpoon disappears on launch and returns at exactly 0.5 seconds', () => {
+  assert.equal(heldHarpoonVisible(10,undefined),true);
+  assert.equal(heldHarpoonVisible(10,10),false);
+  assert.equal(heldHarpoonVisible(10.499,10),false);
+  assert.equal(heldHarpoonVisible(10.5,10),true);
+});
+test('Only axe III freezes hit enemies for exactly 0.5 seconds at impact', () => {
+  for (const evo of [1,2,3]) {
+    const s=arena('axe',evo), en=enemy(1,1064,1000), miss=enemy(2,1000,1300);
+    s.entities.set(1,en);s.entities.set(2,miss);const spawn=spawner(s);weaponOnCast(s,spawn);
+    s.now=10.301;updateWeaponEntities(s,.001,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+    assert.equal(en.data?.axeFreezeUntil,evo===3?10.801:undefined);
+    assert.equal(miss.data?.axeFreezeUntil,undefined);
+  }
+});
+test('Sword wind travels forward without changing any enemy damage', () => {
+  const s=arena('sword',3),en=enemy(1,1080,1000);s.entities.set(1,en);const spawn=spawner(s);
+  weaponOnCast(s,spawn);const wind=[...s.entities.values()].find(e=>e.kind==='swordwind');assert.ok(wind);
+  assert.equal(wind.data?.evo,3);assert.equal(wind.data?.dmg,undefined);
+  updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});assert.equal(wind.pos.x,1000);
+  s.now=10.3;updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+  assert.equal(wind.pos.x,1065);assert.equal(wind.pos.y,1000);assert.equal(en.hp,1000);
 });
