@@ -1,12 +1,14 @@
 # Roadmap
 
 ## Supplied weapons and attack refinements
-- [ ] Integrate nine supplied gameplay PNGs with normalized hand grips; preserve shop.
-- [ ] Double branch evolution speed/knockback gains and add stronger evolved wind.
-- [ ] Fix spear tip orientation, smooth target turning and strengthen knockback.
-- [ ] Launch sword cross wind/fire to the visible edge without altering damage.
-- [ ] Keep whirlpool below enemies and hide held harpoon for 0.5 seconds after release.
-- [ ] Freeze axe III struck enemies for 0.5 seconds; run focused tests and live checks.
+- [x] Integrate nine supplied gameplay PNGs with normalized hand grips; preserve shop.
+- [x] Double branch evolution speed/knockback gains and add stronger evolved wind.
+- [x] Fix spear tip orientation, smooth target turning and strengthen knockback.
+- [x] Launch sword cross wind/fire to the visible edge without altering damage.
+- [x] Keep whirlpool below enemies and hide held harpoon for 0.5 seconds after release.
+- [x] Freeze axe III struck enemies for 0.5 seconds; run focused tests and live checks.
+
+Verification: 40 focused tests pass, including mirrored spear tip geometry, rapid smooth rotation, exact 0.5-second hide/freeze timers, and visual-only sword wind. Live Test Map exercised all six changed weapons, all nine supplied PNGs, branch wind and water depth ordering with no page errors. Supplied artwork is cropped/rotated and cleaned of detached stray pixels without redrawing; smooth downsampling preserves thin edges. The branch had no equipment-specific speed gains, so doubled existing 0.03-second staff evolution interval gains are applied as 0.55/0.49/0.43-second relative baseline. Its previous 14-pixel evolved knockback bonus is now 28 pixels (38 total). All 164 protected shop files remain unchanged; preview build is OK. Static captures do not establish every animation frame.
 
 - [x] Enlarge category boxes, use sword tab and add three evolution purchase-state squares to shop lists.
 - [x] Expand bars to 20 with area damage, utility, footwear speed and helmet shield capacity without changing balance.
