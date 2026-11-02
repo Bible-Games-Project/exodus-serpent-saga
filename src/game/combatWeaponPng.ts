@@ -40,7 +40,9 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
     axe: [[.823,.85],[.405,.826],[.548,.832]],
   };
   const [gripX, gripY] = grips[id]?.[evolution - 1] ?? [.5, id === 'ring' ? .8 : .86];
-  ctx.imageSmoothingEnabled = false;
+  // Supplied high-resolution weapons retain their soft painted edges at native
+  // combat size; nearest-neighbour sampling would break thin blade details.
+  ctx.imageSmoothingEnabled = ['dagger', 'sword', 'axe'].includes(id);
   ctx.drawImage(img, -width * gripX, -height * gripY, width, height);
   return true;
 }
