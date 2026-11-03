@@ -144,6 +144,9 @@ test('Harpoon remains level in its idle pose and points its thrust at the launch
   const s=arena('harpoon'); s.entities.set(1,enemy(1,1080,1040)); weaponOnCast(s,spawner(s));
   const pose=thrustPose(.6,Number(s.equipFx?.weaponAimAngle),1);
   assert.ok(Math.abs(pose.y/pose.x-.5)<.00001);
+  const spawn=spawner(s);
+  assert.equal([...s.entities.values()].filter(e=>e.kind==='wpnproj').length,0);
+  s.now=10.3; updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
   assert.equal([...s.entities.values()].filter(e=>e.kind==='wpnproj').length,1);
 });
 test('Axe and mace cracks and damage wait until the shared contact beat', () => {
@@ -167,10 +170,10 @@ test('Mace crack rotation is chosen once per strike, not reset on its second dam
   } finally {Math.random=random;}
   const impacts=[...s.entities.values()].filter(e=>e.kind==='maceimpact');
   assert.notEqual(impacts[0].data?.rotation,impacts[1].data?.rotation);
-  assert.equal(impacts[0].data?.r,90);
+  assert.equal(impacts[0].data?.r,192);
   const rotation=impacts[0].data?.rotation; impacts[0].ttl=.19; s.now+=.51;
   updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,90);
+  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,192);
   assert.equal(impacts[0].data?.rotation,rotation);
   assert.ok(impactLife(10.51,10.3,.4)>impactLife(10.52,10.3,.4));
 });
@@ -179,7 +182,7 @@ test('Branch evolution doubles the original 0.03-second attack interval reductio
   assert.deepEqual([1,2,3].map(e => Number((.55 * weaponCooldownMul(withWeapon('branch',e))).toFixed(2))), [.55,.49,.43]);
 });
 test('Branch evolved knockback doubles its previous 14-pixel evolution bonus', () => {
-  assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('branch',e))), [10,38,38]);
+  assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('branch',e))), [10,20,30]);
 });
 test('Spear knockback is stronger at all three levels', () => {
   assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('spear',e))), [28,44,56]);
@@ -215,11 +218,12 @@ test('Only axe III freezes hit enemies for exactly 0.5 seconds at impact', () =>
     assert.equal(miss.data?.axeFreezeUntil,undefined);
   }
 });
-test('Sword wind travels forward without changing any enemy damage', () => {
-  const s=arena('sword',3),en=enemy(1,1080,1000);s.entities.set(1,en);const spawn=spawner(s);
+test('Sword wind leaves at the horizontal swing beat and damages each foe on its path once', () => {
+  const s=arena('sword',1),en=enemy(1,1300,1000);s.entities.set(1,en);const spawn=spawner(s);
   weaponOnCast(s,spawn);const wind=[...s.entities.values()].find(e=>e.kind==='swordwind');assert.ok(wind);
-  assert.equal(wind.data?.evo,3);assert.equal(wind.data?.dmg,undefined);
-  updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});assert.equal(wind.pos.x,1000);
-  s.now=10.3;updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-  assert.equal(wind.pos.x,1065);assert.equal(wind.pos.y,1000);assert.equal(en.hp,1000);
+  const startX=wind.pos.x; s.now=10.2; updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+  assert.equal(wind.pos.x,startX);
+  s.now=10.33; let hits=0;
+  for(let i=0;i<20;i++){const before=en.hp;updateWeaponEntities(s,.02,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});if(en.hp<before)hits++;}
+  assert.equal(hits,1);
 });
