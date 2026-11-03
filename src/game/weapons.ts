@@ -4,8 +4,8 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
-import { mosesGrip } from './mosesGameArt';
-import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, GROUND_IMPACT_DELAY, spearAttack, turnWeaponAngle } from './weaponAttack';
+import { MOSES_ATTACK, mosesGrip } from './mosesGameArt';
+import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, GROUND_IMPACT_DELAY, HARPOON_RELEASE_DELAY, MACE_IMPACT_RADIUS, RING_ZAP_CHANCE, SWORD_HORIZONTAL_PROGRESS, spearAttack, turnWeaponAngle } from './weaponAttack';
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
 
@@ -159,11 +159,12 @@ export function weaponOnCast(
     }
     case "harpoon": {
       const proc = Math.random() < (HARPOON_WHIRL_CHANCE[evo - 1] ?? 0);
-      spawn("wpnproj", { ...p.pos }, 1.4, {
-        vx: dir.x * 400, vy: dir.y * 400, dmg,
+      // Released from the hand at the forward peak of the throw gesture.
+      spawn('harpoonthrow', { ...p.pos }, HARPOON_RELEASE_DELAY + .1, {
+        fireAt: state.now + HARPOON_RELEASE_DELAY, vx: dir.x * 400, vy: dir.y * 400, dmg,
         pierce: evo >= 2 ? 3 : 1, knock: 16,
-        whirlpool: proc ? (evo >= 3 ? 1.3 : 1) : 0, art: "harpoon", evo,
-      }, "projectile");
+        whirlpool: proc ? (evo >= 3 ? 1.3 : 1) : 0, evo,
+      }, 'hazard');
       launch();
       break;
     }
@@ -202,22 +203,28 @@ export function weaponOnCast(
     }
     case "mace": {
       const reach = 64;
-      const r = evo >= 3 ? 90 : evo >= 2 ? 70 : 48;
+      const r = MACE_IMPACT_RADIUS[evo - 1] ?? 48;
       spawn("maceimpact", { x: p.pos.x + dir.x * reach, y: p.pos.y + dir.y * reach }, GROUND_IMPACT_DELAY + 0.4, {
         dmg, r, second: evo >= 3 ? 1 : 0, hit: [], impactAt: state.now + GROUND_IMPACT_DELAY, rotation: Math.random() * Math.PI * 2,
       }, "hazard");
       break;
     }
     case "branch": {
+      // Same soft wind arc at every level, flying toward the nearest foe.
+      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + .45, { angle: ang, impactAt: state.now + MOSES_ATTACK.WINDUP }, 'hazard');
       if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
       break;
     }
     case 'sword': {
-      // Visual only: the travelling cross never changes sword hit damage.
+      // The cross leaves the sword tip when the swing passes horizontal and
+      // damages every foe along its path once.
       const distance = Math.hypot(state.viewport?.w ?? 1280, state.viewport?.h ?? 900) + 200;
-      spawn('swordwind', { ...p.pos }, .2 + distance / 650, {
-        vx: dir.x * 650, vy: dir.y * 650, angle: ang, evo,
-        impactAt: state.now + .2, distance, travelled: 0,
+      const delay = (MOSES_ATTACK.WINDUP + SWORD_HORIZONTAL_PROGRESS * .18) * weaponSwingDurMul(state);
+      const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
+      const blade = 48 * ([1, 1.5, 2][evo - 1] ?? 1);
+      spawn('swordwind', { x: grip.x + dir.x * blade, y: grip.y + 32 + dir.y * blade }, delay + distance / 650, {
+        vx: dir.x * 650, vy: dir.y * 650, angle: ang, evo, dmg: dmg * .6, hit: [],
+        impactAt: state.now + delay, distance, travelled: 0,
       }, 'hazard');
       break;
     }
@@ -322,6 +329,24 @@ export function updateWeaponEntities(
         e.pos.x += Number(d.vx) * dt;
         e.pos.y += Number(d.vy) * dt;
         d.travelled = Number(d.travelled) + 650 * dt;
+        const hit = (d.hit ??= []) as number[];
+        for (const en of state.entities.values()) {
+          if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id)) continue;
+          const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW), ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
+          if (Math.hypot(rx, ry) > en.radius + 26) continue;
+          hit.push(en.id); en.hp -= Number(d.dmg ?? 0);
+          if (Number(d.evo) >= 3) { en.data ??= {}; en.data.burnUntil = state.now + 2; }
+          if (en.hp <= 0) ctx.killEnemy(en);
+        }
+      }
+      continue;
+    }
+
+    if (e.kind === 'harpoonthrow') {
+      if (state.now >= Number(d.fireAt) && !d.fired) {
+        d.fired = 1; e.ttl = 0;
+        const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
+        ctx.spawn('wpnproj', grip, 1.4, { vx: d.vx, vy: d.vy, dmg: d.dmg, pierce: d.pierce, knock: d.knock, whirlpool: d.whirlpool, art: 'harpoon', evo: d.evo, fromHand: 1 }, 'projectile');
       }
       continue;
     }
@@ -347,8 +372,9 @@ export function updateWeaponEntities(
         const spd = d.electric ? 700 : 420;
         d.vx = (dx / dd) * spd;
         d.vy = (dy / dd) * spd;
-        if (dd < 20) { e.ttl = 0; continue; }
+        if (dd < 20) { e.ttl = 0; ringZap(state, e, ctx); continue; }
       }
+      if (e.kind === 'wpring' && (e.ttl ?? 0) <= dt) ringZap(state, e, ctx);
       e.pos.x += (d.vx as number) * dt;
       e.pos.y += (d.vy as number) * dt;
 
@@ -470,6 +496,23 @@ export function updateWeaponEntities(
       }
     }
   }
+}
+
+/** Gold lightning on every still-living foe this ring touched, when it vanishes. */
+function ringZap(state: GameState, ring: Entity, ctx: { killEnemy: (en: Entity) => void; spawn: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>, team?: Entity["team"]) => Entity }): void {
+  const d = ring.data ?? {};
+  if (d.zapped) return;
+  d.zapped = 1;
+  if (Math.random() >= (RING_ZAP_CHANCE[Number(d.evo ?? 1) - 1] ?? .35)) return;
+  const points: { x: number; y: number }[] = [];
+  for (const id of (d.hit as Set<number> | undefined) ?? []) {
+    const en = state.entities.get(id);
+    if (!en || en.team !== 'enemy' || en.hp <= 0) continue;
+    en.hp -= Number(d.dmg ?? 0) * .8;
+    points.push({ x: en.pos.x, y: en.pos.y });
+    if (en.hp <= 0) ctx.killEnemy(en);
+  }
+  if (points.length) ctx.spawn('ringzap', { ...ring.pos }, .45, { points }, 'hazard');
 }
 
 /** Last valid movement direction (falls back to facing). */
