@@ -40,7 +40,7 @@ import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawWeaponImpact } from './combatWeaponPng';
 import { weaponLaunchProgress } from './weapons';
-import { heldHarpoonVisible, impactLife } from './weaponAttack';
+import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";

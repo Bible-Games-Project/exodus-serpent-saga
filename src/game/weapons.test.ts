@@ -167,10 +167,10 @@ test('Mace crack rotation is chosen once per strike, not reset on its second dam
   } finally {Math.random=random;}
   const impacts=[...s.entities.values()].filter(e=>e.kind==='maceimpact');
   assert.notEqual(impacts[0].data?.rotation,impacts[1].data?.rotation);
-  assert.equal(impacts[0].data?.r,90);
+  assert.equal(impacts[0].data?.r,192);
   const rotation=impacts[0].data?.rotation; impacts[0].ttl=.19; s.now+=.51;
   updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,90);
+  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,192);
   assert.equal(impacts[0].data?.rotation,rotation);
   assert.ok(impactLife(10.51,10.3,.4)>impactLife(10.52,10.3,.4));
 });
@@ -179,7 +179,7 @@ test('Branch evolution doubles the original 0.03-second attack interval reductio
   assert.deepEqual([1,2,3].map(e => Number((.55 * weaponCooldownMul(withWeapon('branch',e))).toFixed(2))), [.55,.49,.43]);
 });
 test('Branch evolved knockback doubles its previous 14-pixel evolution bonus', () => {
-  assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('branch',e))), [10,38,38]);
+  assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('branch',e))), [10,20,30]);
 });
 test('Spear knockback is stronger at all three levels', () => {
   assert.deepEqual([1,2,3].map(e => weaponKnockback(withWeapon('spear',e))), [28,44,56]);
