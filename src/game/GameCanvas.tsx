@@ -1854,7 +1854,6 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     attackProgress,
     equipment: s.loadout,
     weaponAimAngle: s.equipFx?.weaponVisualAim ?? s.equipFx?.weaponAimAngle,
-    hideHeldWeapon: s.loadout?.weapon.id === 'harpoon' && !heldHarpoonVisible(s.now, s.equipFx?.weaponVisualAt),
     castProgress: latestEquipmentCastProgress(s),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
@@ -3706,18 +3705,8 @@ function drawStaffSwing(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, 
   const px = s.player.pos.x - camX;
   const groundY = s.player.pos.y - camY + 8;
 
-  if (s.loadout?.weapon.id === 'branch' && s.loadout.weapon.evolution >= 2) {
-    const grip = mosesGrip(px, groundY, facing);
-    const radius = s.loadout.weapon.evolution === 3 ? 90 : 58;
-    ctx.save(); ctx.translate(grip.x, grip.y); ctx.scale(facing, 1);
-    ctx.globalAlpha = life * .7;
-    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--equip-ice').trim();
-    ctx.lineWidth = s.loadout.weapon.evolution === 3 ? 6 : 4;
-    for (const offset of [0, 9, 18]) {
-      ctx.beginPath(); ctx.arc(0, 0, radius - offset, -.9 + progress * .35, .85 + progress * .35); ctx.stroke();
-    }
-    ctx.restore(); return;
-  }
+  // The branch uses its own aimed wind arc (branchwind) at every level.
+  if (s.loadout?.weapon.id === 'branch') return;
 
   ctx.save();
   const trailStart = Math.max(0, progress - 0.75);
@@ -4911,7 +4900,7 @@ function drawWeaponEntity(
   camY: number,
 ): boolean {
   const k = e.kind;
-  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind'].includes(k)) return false;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind', 'branchwind', 'ringzap', 'harpoonthrow'].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
@@ -4919,7 +4908,24 @@ function drawWeaponEntity(
     ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y - (id === 'dagger' ? 28 : 0));
     ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + Math.PI / 2);
     drawCombatEquipment(ctx, "weapon", id, Number(d.evo ?? s.loadout?.weapon.evolution ?? 1), id === 'harpoon' ? .95 : k === "wpnproj" ? .8 : .9);
-    ctx.restore(); return true;
+    ctx.restore();
+    if (k === 'wpring') {
+      // Gold electric crackle around the spinning ring.
+      ctx.save(); ctx.translate(x, y); ctx.lineCap = 'round';
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--equip-light').trim();
+      const seed = Math.floor(s.now * 18) + e.id;
+      for (let b = 0; b < 3; b++) {
+        const a0 = seed * 1.7 + b * 2.1;
+        ctx.globalAlpha = .75; ctx.lineWidth = 1.5; ctx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const a = a0 + i * .35, r = 12 + ((seed + i * 5 + b) % 3) * 3;
+          if (i) ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); else ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    return true;
   }
   ctx.save();
   if (k === "wpnproj") {
@@ -4982,13 +4988,51 @@ function drawWeaponEntity(
     ctx.translate(x, y - 32); ctx.rotate(Number(d.angle));
     const css = getComputedStyle(document.documentElement);
     const fire = Number(d.evo) >= 3;
-    ctx.strokeStyle = css.getPropertyValue(fire ? '--equip-fire' : '--equip-ice').trim();
-    ctx.globalAlpha = .8; ctx.lineWidth = fire ? 7 : 5; ctx.lineCap = 'round';
+    // Levels I-II: monochrome Moses red; III: fire to match its blade.
+    const main = css.getPropertyValue(fire ? '--equip-fire' : '--equip-red').trim();
+    const core = css.getPropertyValue(fire ? '--equip-light' : '--equip-red').trim();
+    ctx.lineCap = 'round';
     for (const angle of [-Math.PI / 4, Math.PI / 4]) {
-      ctx.save(); ctx.rotate(angle); ctx.beginPath();
-      ctx.moveTo(-22, 0); ctx.quadraticCurveTo(0, -8, 22, 0); ctx.stroke();
-      ctx.strokeStyle = css.getPropertyValue('--equip-light').trim(); ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+      ctx.save(); ctx.rotate(angle);
+      ctx.globalAlpha = .35; ctx.strokeStyle = main; ctx.lineWidth = fire ? 12 : 10;
+      ctx.beginPath(); ctx.moveTo(-24, 0); ctx.quadraticCurveTo(0, -9, 24, 0); ctx.stroke();
+      ctx.globalAlpha = .85; ctx.lineWidth = fire ? 5 : 4; ctx.stroke();
+      ctx.globalAlpha = fire ? .9 : .5; ctx.strokeStyle = core; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
     }
+  } else if (k === 'branchwind') {
+    // Soft painted crescent of wind flying toward the attacked foe.
+    const t = (s.now - Number(d.impactAt)) / .45;
+    if (t < 0 || t > 1) { ctx.restore(); return true; }
+    const grip = mosesGrip(s.player.pos.x - camX, s.player.pos.y - camY + 8, s.player.facing);
+    const ang = Number(d.angle ?? 0);
+    ctx.translate(grip.x + Math.cos(ang) * (20 + t * 110), grip.y + Math.sin(ang) * (20 + t * 110) * .8);
+    ctx.rotate(ang);
+    const wind = getComputedStyle(document.documentElement).getPropertyValue('--equip-ice').trim();
+    ctx.lineCap = 'round'; ctx.strokeStyle = wind;
+    const fade = Math.sin(Math.PI * Math.min(1, t * 1.2));
+    for (const [r, w, a] of [[30, 9, .22], [30, 4, .55], [22, 2.5, .45]] as const) {
+      ctx.globalAlpha = fade * a; ctx.lineWidth = w;
+      ctx.beginPath(); ctx.arc(-r * .6, 0, r, -1.05, 1.05); ctx.stroke();
+    }
+  } else if (k === 'ringzap') {
+    const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .45));
+    const css = getComputedStyle(document.documentElement);
+    const pts = (d.points as { x: number; y: number }[]) ?? [];
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (const pt of pts) {
+      const px = pt.x - camX, py = pt.y - camY - 20;
+      for (const [col, w, al] of [['--equip-light', 5, .35], ['--equip-light', 2, .95]] as const) {
+        ctx.globalAlpha = life * al; ctx.strokeStyle = css.getPropertyValue(col).trim(); ctx.lineWidth = w;
+        ctx.beginPath(); ctx.moveTo(px + 3, py - 70);
+        for (let i = 1; i <= 5; i++) ctx.lineTo(px + (Math.sin(e.id * 7 + i * 3.1 + Math.floor(s.now * 20)) * 8), py - 70 + i * 14);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = life * .6; ctx.fillStyle = css.getPropertyValue('--equip-light').trim();
+      ctx.beginPath(); ctx.ellipse(px, py + 20, 16 * (1.3 - life * .3), 6, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (k === 'harpoonthrow') {
+    // Pending release; the harpoon is still drawn in Moses' hand.
   } else if (k === "spearthrust") {
     // Long horizontal piercing streak from Moses' hand.
     const life = impactLife(s.now, Number(d.impactAt ?? e.born), Number(d.duration ?? .22));
