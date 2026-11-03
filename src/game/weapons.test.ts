@@ -227,5 +227,3 @@ test('Sword wind leaves at the horizontal swing beat and damages each foe on its
   for(let i=0;i<20;i++){const before=en.hp;updateWeaponEntities(s,.02,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});if(en.hp<before)hits++;}
   assert.equal(hits,1);
 });
-  assert.equal(wind.pos.x,1065);assert.equal(wind.pos.y,1000);assert.equal(en.hp,1000);
-});
