@@ -144,6 +144,9 @@ test('Harpoon remains level in its idle pose and points its thrust at the launch
   const s=arena('harpoon'); s.entities.set(1,enemy(1,1080,1040)); weaponOnCast(s,spawner(s));
   const pose=thrustPose(.6,Number(s.equipFx?.weaponAimAngle),1);
   assert.ok(Math.abs(pose.y/pose.x-.5)<.00001);
+  const spawn=spawner(s);
+  assert.equal([...s.entities.values()].filter(e=>e.kind==='wpnproj').length,0);
+  s.now=10.3; updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
   assert.equal([...s.entities.values()].filter(e=>e.kind==='wpnproj').length,1);
 });
 test('Axe and mace cracks and damage wait until the shared contact beat', () => {
@@ -215,11 +218,14 @@ test('Only axe III freezes hit enemies for exactly 0.5 seconds at impact', () =>
     assert.equal(miss.data?.axeFreezeUntil,undefined);
   }
 });
-test('Sword wind travels forward without changing any enemy damage', () => {
-  const s=arena('sword',3),en=enemy(1,1080,1000);s.entities.set(1,en);const spawn=spawner(s);
+test('Sword wind leaves at the horizontal swing beat and damages each foe on its path once', () => {
+  const s=arena('sword',1),en=enemy(1,1300,1000);s.entities.set(1,en);const spawn=spawner(s);
   weaponOnCast(s,spawn);const wind=[...s.entities.values()].find(e=>e.kind==='swordwind');assert.ok(wind);
-  assert.equal(wind.data?.evo,3);assert.equal(wind.data?.dmg,undefined);
-  updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});assert.equal(wind.pos.x,1000);
-  s.now=10.3;updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+  const startX=wind.pos.x; s.now=10.2; updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+  assert.equal(wind.pos.x,startX);
+  s.now=10.33; let hits=0;
+  for(let i=0;i<20;i++){const before=en.hp;updateWeaponEntities(s,.02,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});if(en.hp<before)hits++;}
+  assert.equal(hits,1);
+});
   assert.equal(wind.pos.x,1065);assert.equal(wind.pos.y,1000);assert.equal(en.hp,1000);
 });
