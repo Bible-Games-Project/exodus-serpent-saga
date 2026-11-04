@@ -1576,7 +1576,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "pillarcloud") drawPillarCloud(ctx, e, camX, camY, s.now);
     if (e.kind === "pillarfire") drawPillarFire(ctx, e, camX, camY, s.now);
     if (e.kind === "corpseflame") drawCorpseFlame(ctx, e, camX, camY, s.now);
-    if (e.kind === 'whirlpool') drawWeaponEntity(ctx, e, s, camX, camY);
+    if (e.kind === 'whirlpool' || e.kind === 'maceimpact') drawWeaponEntity(ctx, e, s, camX, camY);
   }
 
   // 2) Depth-sorted pass
@@ -4969,7 +4969,7 @@ function drawWeaponEntity(
     if (life > 0) {
       // Supplied ground burst (drawn in the ground pass) plus a fast, wide dust puff.
       const t = 1 - life;
-      const dust = getComputedStyle(document.documentElement).getPropertyValue('--equip-sand').trim() || 'rgb(214,180,140)';
+      const dust = getComputedStyle(document.documentElement).getPropertyValue('--equip-sand').trim() ;
       ctx.save(); ctx.translate(x, y); ctx.fillStyle = dust;
       for (let i = 0; i < 10; i++) {
         const a = i / 10 * Math.PI * 2 + Number(d.rotation ?? 0);

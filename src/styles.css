@@ -391,7 +391,7 @@
 .shop-evolution-square[data-state="unaffordable"] { background: var(--evolution-short); }
 .shop-evolution-square[data-state="available"] { color: var(--evolution-ready-ink); text-shadow: 1px 1px 0 rgba(255,255,255,.5); background: var(--evolution-ready); animation: evo-ready 1.2s steps(2) infinite; }
 @keyframes evo-ready { 50% { box-shadow: inset 2px 2px 0 rgba(255,255,255,.6), inset -2px -2px 0 rgba(0,0,0,.25), 0 0 0 2px var(--evolution-ready); } }
-:root { --equip-wood: #ba8751; --equip-wood-dark: #704626; --equip-wood-light: #d3aa73; --equip-red: #bd4b37; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; }
+:root { --equip-wood: #ba8751; --equip-wood-dark: #704626; --equip-wood-light: #d3aa73; --equip-red: #bd4b37; --equip-poison: #83ad47; --equip-water: #55b5bb; --equip-light: #f3d769; --equip-fire: #e99247; --equip-ice: #bbe8e6; --equip-iron: #a1aaa7; --equip-sand: #d8b48a; }
 .test-equipment-panel { background: var(--title-light); color: var(--title-ink); padding: 12px; }
 .test-equipment-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .test-equipment-controls label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
