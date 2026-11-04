@@ -38,7 +38,8 @@ import { drawPixelShadow } from "./shadow";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
-import { drawWeaponImpact } from './combatWeaponPng';
+import { drawSuppliedFx, drawWeaponImpact } from './combatWeaponPng';
+import { BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weaponAttack';
 import { weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
@@ -1583,7 +1584,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   let swingProgress: number | null = null;
   let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
-    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || e.kind === 'whirlpool') continue;
+    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || e.kind === 'whirlpool' || e.kind === 'maceimpact') continue;
     if (e.kind === "staffswing") {
       const dur = (e.data?.dur as number) ?? MOSES_ATTACK.DUR;
       attackProgress = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / dur));
@@ -4965,11 +4966,22 @@ function drawWeaponEntity(
   } else if (k === "maceimpact") {
     const r = Number(d.r ?? 48);
     const life = impactLife(s.now, Number(d.impactAt ?? e.born), .4);
-    // Rotate in ground coordinates before perspective compression; never resize
-    // or flash when the second damage pulse occurs.
-    ctx.save(); ctx.translate(x, y); ctx.scale(1, .6);
-    drawWeaponImpact(ctx, 'mace', 0, 0, r * 2, r * 2, Number(d.rotation ?? 0), life * .8);
-    ctx.restore();
+    if (life > 0) {
+      // Supplied ground burst (drawn in the ground pass) plus a fast, wide dust puff.
+      const t = 1 - life;
+      const dust = getComputedStyle(document.documentElement).getPropertyValue('--equip-sand').trim() || 'rgb(214,180,140)';
+      ctx.save(); ctx.translate(x, y); ctx.fillStyle = dust;
+      for (let i = 0; i < 10; i++) {
+        const a = i / 10 * Math.PI * 2 + Number(d.rotation ?? 0);
+        const dist = r * (.35 + t * 1.15);
+        ctx.globalAlpha = .45 * life;
+        ctx.beginPath(); ctx.ellipse(Math.cos(a) * dist, Math.sin(a) * dist * .55, r * (.22 + t * .3), r * (.14 + t * .2), 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+      ctx.save(); ctx.translate(x, y + r * .25);
+      drawSuppliedFx(ctx, 'maceimpact', r * 2.4 * (.85 + .15 * Math.min(1, t * 4)), .5, .9, Math.min(1, life * 2));
+      ctx.restore();
+    }
   } else if (k === "shockwave") {
     const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.35));
     ctx.globalAlpha = 0.5 * (1 - life);
@@ -4986,6 +4998,10 @@ function drawWeaponEntity(
   } else if (k === 'swordwind') {
     if (s.now < Number(d.impactAt)) { ctx.restore(); return true; }
     ctx.translate(x, y - 32); ctx.rotate(Number(d.angle));
+    // Starts small at the blade tip and grows along its route; larger per level.
+    const grow = .35 + .9 * Math.min(1, Number(d.travelled ?? 0) / Math.max(1, Number(d.distance ?? 1) * .5));
+    const sc = grow * (SWORD_CROSS_SCALE[Number(d.evo ?? 1) - 1] ?? 1);
+    ctx.scale(sc, sc);
     const css = getComputedStyle(document.documentElement);
     const fire = Number(d.evo) >= 3;
     // Levels I-II: monochrome Moses red; III: fire to match its blade.
@@ -5001,20 +5017,16 @@ function drawWeaponEntity(
       ctx.restore();
     }
   } else if (k === 'branchwind') {
-    // Soft painted crescent of wind flying toward the attacked foe.
+    // Supplied wind crescent, same art at every level, larger with evolution,
+    // flying toward the attacked foe with its convex side leading.
     const t = (s.now - Number(d.impactAt)) / .45;
     if (t < 0 || t > 1) { ctx.restore(); return true; }
     const grip = mosesGrip(s.player.pos.x - camX, s.player.pos.y - camY + 8, s.player.facing);
     const ang = Number(d.angle ?? 0);
     ctx.translate(grip.x + Math.cos(ang) * (20 + t * 110), grip.y + Math.sin(ang) * (20 + t * 110) * .8);
-    ctx.rotate(ang);
-    const wind = getComputedStyle(document.documentElement).getPropertyValue('--equip-ice').trim();
-    ctx.lineCap = 'round'; ctx.strokeStyle = wind;
+    ctx.rotate(ang + Math.PI);
     const fade = Math.sin(Math.PI * Math.min(1, t * 1.2));
-    for (const [r, w, a] of [[30, 9, .22], [30, 4, .55], [22, 2.5, .45]] as const) {
-      ctx.globalAlpha = fade * a; ctx.lineWidth = w;
-      ctx.beginPath(); ctx.arc(-r * .6, 0, r, -1.05, 1.05); ctx.stroke();
-    }
+    drawSuppliedFx(ctx, 'branchwind', (BRANCH_WIND_WIDTH[Number(d.evo ?? 1) - 1] ?? 70) * (.8 + .2 * t), .5, .5, fade);
   } else if (k === 'ringzap') {
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .45));
     const css = getComputedStyle(document.documentElement);

@@ -10,7 +10,11 @@ export const AXE_FREEZE_SECONDS = .5;
 export const BRANCH_COOLDOWN = [1, .49 / .55, .43 / .55] as const;
 export const BRANCH_KNOCKBACK = [10, 20, 30] as const;
 /** Mace ground-impact radius: double at II, quadruple at III. */
-export const MACE_IMPACT_RADIUS = [48, 96, 192] as const;
+export const MACE_IMPACT_RADIUS = [48, 96, 128] as const;
+/** Branch wind art width per level: one shared gust that grows with evolution. */
+export const BRANCH_WIND_WIDTH = [70, 100, 135] as const;
+/** Sword cross scale per level; it also grows from small to full while travelling. */
+export const SWORD_CROSS_SCALE = [1, 1.3, 1.75] as const;
 /** Harpoon leaves the hand when the thrust pose is fully forward. */
 export const HARPOON_RELEASE_DELAY = .3;
 /** Swing fraction where the sword tip passes horizontal (mosesSwingAngle = PI/2). */
