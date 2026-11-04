@@ -46,7 +46,7 @@ function spawner(state: GameState) {
     state.entities.set(e.id, e); return e;
   };
 }
-test('Dagger I throws three; II and III throw more with longer reach and wider spread', () => {
+test('Dagger throws 1/2/3 per animation, II twice and III three times as often as I', () => {
   const counts: number[] = [];
   for (let evo = 1; evo <= 3; evo++) {
     const s = arena('dagger', evo); s.entities.set(1, enemy(1, 1080, 1000));
@@ -56,14 +56,15 @@ test('Dagger I throws three; II and III throw more with longer reach and wider s
     assert.equal(projectiles[0].ttl, DAGGER_THROW[evo - 1].reach / 400);
     assert.ok(projectiles.every(e => Number(e.data?.vx) > 0));
   }
-  assert.deepEqual(counts, [3, 5, 7]);
-  assert.ok(DAGGER_THROW[0].reach < DAGGER_THROW[1].reach && DAGGER_THROW[1].reach < DAGGER_THROW[2].reach);
-  assert.ok(DAGGER_THROW[0].spread < DAGGER_THROW[1].spread && DAGGER_THROW[1].spread < DAGGER_THROW[2].spread);
+  assert.deepEqual(counts, [1, 2, 3]);
+  const c1 = weaponCooldownMul(withWeapon('dagger', 1));
+  assert.ok(Math.abs(c1 / weaponCooldownMul(withWeapon('dagger', 2)) - 2) < 1e-9);
+  assert.ok(Math.abs(c1 / weaponCooldownMul(withWeapon('dagger', 3)) - 3) < 1e-9);
 });
 test('Dagger ignores a closer rear enemy and aims its centre projectile at nearest forward enemy', () => {
   const s = arena('dagger'); s.entities.set(1, enemy(1, 995, 1000)); s.entities.set(2, enemy(2, 1060, 1040)); s.entities.set(3, enemy(3, 1100, 1000));
   assert.equal(daggerTarget(s)?.id, 2); weaponOnCast(s, spawner(s));
-  const centre = [...s.entities.values()].filter(e => e.kind === 'wpnproj')[1];
+  const centre = [...s.entities.values()].filter(e => e.kind === 'wpnproj')[0];
   assert.ok(Math.abs(Number(centre.data?.vy) / Number(centre.data?.vx) - 40 / 60) < .0001);
   s.player.facing = -1; assert.equal(daggerTarget(s)?.id, 1);
 });
@@ -112,7 +113,7 @@ test('Dagger projectiles preserve the supplied basic attack damage', () => {
   const s = arena('dagger'); s.entities.set(1, enemy(1,1080,1000));
   weaponOnCast(s, spawner(s), 37);
   const projectiles = [...s.entities.values()].filter(e => e.kind === 'wpnproj');
-  assert.equal(projectiles.length, 3);
+  assert.equal(projectiles.length, 1);
   assert.ok(projectiles.every(e => e.data?.dmg === 37));
 });
 test('A flying dagger retains its poison evolution after equipment changes', () => {
@@ -170,10 +171,10 @@ test('Mace crack rotation is chosen once per strike, not reset on its second dam
   } finally {Math.random=random;}
   const impacts=[...s.entities.values()].filter(e=>e.kind==='maceimpact');
   assert.notEqual(impacts[0].data?.rotation,impacts[1].data?.rotation);
-  assert.equal(impacts[0].data?.r,192);
+  assert.equal(impacts[0].data?.r,128);
   const rotation=impacts[0].data?.rotation; impacts[0].ttl=.19; s.now+=.51;
   updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,192);
+  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,128);
   assert.equal(impacts[0].data?.rotation,rotation);
   assert.ok(impactLife(10.51,10.3,.4)>impactLife(10.52,10.3,.4));
 });

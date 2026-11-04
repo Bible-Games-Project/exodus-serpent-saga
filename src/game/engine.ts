@@ -1180,8 +1180,15 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
       const ky = en.pos.y - state.player.pos.y;
       const kd = Math.hypot(kx, ky) || 1;
       const kb = weaponKnockback(state);
-      en.pos.x += (kx / kd) * kb;
-      en.pos.y += (ky / kd) * kb;
+      if (equippedWeapon(state).id === 'spear') {
+        // Spear push slides over 0.22s (eased; integral = 0.11 * velocity) instead of teleporting.
+        en.data ??= {};
+        en.data.knockVx = (kx / kd) * kb / 0.11; en.data.knockVy = (ky / kd) * kb / 0.11;
+        en.data.knockUntil = state.now + 0.22;
+      } else {
+        en.pos.x += (kx / kd) * kb;
+        en.pos.y += (ky / kd) * kb;
+      }
     }
     if (en.hp <= 0) killEnemy(state, en);
   }

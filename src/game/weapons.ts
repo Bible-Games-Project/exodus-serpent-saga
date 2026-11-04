@@ -29,12 +29,13 @@ export function weaponCooldownMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
   if (id === 'spear') return spearAttack(evo).cooldown;
   if (id === 'branch') return BRANCH_COOLDOWN[evo - 1] ?? 1;
+  if (id === 'dagger') return DAGGER_CADENCE[evo - 1] ?? DAGGER_CADENCE[0];
   return WEAPON_COOLDOWN_MUL[id]?.[evo - 1] ?? 1;
 }
 /** Melee swing duration multiplier for the attack animation. */
 export function weaponSwingDurMul(state: GameState): number {
   const { id, evo } = equippedWeapon(state);
-  return id === 'branch' ? BRANCH_COOLDOWN[evo - 1] ?? 1 : id === 'spear' ? .7 : id === "dagger" ? [0.75, 0.66, 0.58][evo - 1] ?? 0.75 : 1;
+  return id === 'branch' ? BRANCH_COOLDOWN[evo - 1] ?? 1 : id === 'spear' ? .7 : id === "dagger" ? DAGGER_CADENCE[evo - 1] ?? DAGGER_CADENCE[0] : 1;
 }
 /** Melee reach multiplier: longer swords and bigger dagger cones by level. */
 export function weaponReachMul(state: GameState): number {
@@ -63,11 +64,14 @@ export const RING_BOUNCES = [4, 8, 12] as const;
 /** Harpoon whirlpool proc chance per level (none at level 1). */
 export const HARPOON_WHIRL_CHANCE = [0, 0.2, 0.3] as const;
 
+/** One dagger per throw animation at I; II throws 2 twice as often, III throws 3 three times as often. */
 export const DAGGER_THROW = [
-  { count: 3, reach: 250, spread: .16 },
-  { count: 5, reach: 340, spread: .22 },
-  { count: 7, reach: 440, spread: .28 },
+  { count: 1, reach: 250, spread: 0 },
+  { count: 2, reach: 340, spread: .14 },
+  { count: 3, reach: 440, spread: .14 },
 ] as const;
+/** Gameplay-only dagger cadence (shop bars keep their own table). */
+export const DAGGER_CADENCE = [0.7, 0.35, 0.7 / 3] as const;
 /** Horizontal facing defines the forward half-plane, including above/below. */
 export function daggerTarget(state: GameState): Entity | null {
   let best: Entity | null = null, distance = Infinity;
@@ -211,7 +215,7 @@ export function weaponOnCast(
     }
     case "branch": {
       // Same soft wind arc at every level, flying toward the nearest foe.
-      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + .45, { angle: ang, impactAt: state.now + MOSES_ATTACK.WINDUP }, 'hazard');
+      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + .45, { angle: ang, evo, impactAt: state.now + MOSES_ATTACK.WINDUP }, 'hazard');
       if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
       break;
     }

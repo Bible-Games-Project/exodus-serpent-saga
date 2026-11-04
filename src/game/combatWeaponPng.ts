@@ -15,9 +15,12 @@ const [axe1, axe2, axe3] = [axe1Asset.url, axe2Asset.url, axe3Asset.url];
 import mace1Asset from '@/assets/combat-mace-supplied-1.png.asset.json';
 import mace2Asset from '@/assets/combat-mace-supplied-2.png.asset.json';
 import mace3Asset from '@/assets/combat-mace-supplied-3.png.asset.json';
-import ring1 from '@/assets/combat-ring-gold-1.png';
-import ring2 from '@/assets/combat-ring-gold-2.png';
-import ring3 from '@/assets/combat-ring-gold-3.png';
+import ring1Asset from '@/assets/combat-ring-supplied-1.png.asset.json';
+import ring2Asset from '@/assets/combat-ring-supplied-2.png.asset.json';
+import ring3Asset from '@/assets/combat-ring-supplied-3.png.asset.json';
+import branchWindAsset from '@/assets/combat-branch-wind.png.asset.json';
+import maceImpactAsset from '@/assets/combat-mace-impact-supplied.png.asset.json';
+const [ring1, ring2, ring3] = [ring1Asset.url, ring2Asset.url, ring3Asset.url];
 const [mace1, mace2, mace3] = [mace1Asset.url, mace2Asset.url, mace3Asset.url];
 import fx2 from '@/assets/combat-fx-polish-2.png';
 import fx3 from '@/assets/combat-fx-polish-3.png';
@@ -38,7 +41,8 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
   const grips: Record<string, readonly (readonly [number, number])[]> = {
     dagger: [[.602,.815],[.613,.831],[.603,.849]],
     axe: [[.823,.85],[.405,.826],[.548,.832]],
-    sword: [[.673,.865],[.436,.9],[.638,.975]],
+    // Grip at the middle of each hilt (between guard and pommel).
+    sword: [[.5,.79],[.5,.85],[.5,.9]],
     mace: [[.5,.88],[.5,.89],[.5,.88]],
   };
   const [gripX, gripY] = grips[id]?.[evolution - 1] ?? [.5, id === 'ring' ? .5 : .86];
@@ -49,6 +53,16 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
   ctx.imageSmoothingEnabled = ['dagger', 'sword', 'axe', 'mace', 'ring'].includes(id);
   ctx.drawImage(img, -width * gripX, -height * gripY, width, height);
   if (id === 'axe') ctx.restore();
+  return true;
+}
+/** Supplied painted FX drawn with smoothing; anchor (ax, ay) is a fraction of the image. */
+export function drawSuppliedFx(ctx: CanvasRenderingContext2D, kind: 'branchwind' | 'maceimpact', width: number, ax = .5, ay = .5, alpha = 1): boolean {
+  const img = image(kind === 'branchwind' ? branchWindAsset.url : maceImpactAsset.url);
+  if (!img) return false;
+  const height = width * img.naturalHeight / img.naturalWidth;
+  ctx.save(); ctx.globalAlpha *= alpha; ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, -width * ax, -height * ay, width, height);
+  ctx.restore();
   return true;
 }
 export function drawWeaponImpact(ctx: CanvasRenderingContext2D, kind: 'whirlpool' | 'axe' | 'mace', x: number, y: number, width: number, height: number, angle = 0, alpha = 1): void {
