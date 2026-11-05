@@ -9,8 +9,14 @@ export const HARPOON_HAND_HIDE_SECONDS = .5;
 export const AXE_FREEZE_SECONDS = .5;
 export const BRANCH_COOLDOWN = [1, .49 / .55, .43 / .55] as const;
 export const BRANCH_KNOCKBACK = [10, 20, 30] as const;
-/** Mace ground-impact radius: double at II, quadruple at III. */
+/** Mace ground-impact radii, independent of the dust artwork. */
 export const MACE_IMPACT_RADIUS = [48, 96, 128] as const;
+/** Supplied sword hilt midpoints and full artwork heights, shared with tip geometry. */
+export const SWORD_ART = [
+  { height: 48, gripX: .5, gripY: .79 },
+  { height: 72, gripX: .5, gripY: .85 },
+  { height: 96, gripX: .5, gripY: .9 },
+] as const;
 /** Branch wind art width per level: one shared gust that grows with evolution. */
 export const BRANCH_WIND_WIDTH = [70, 100, 135] as const;
 /** Sword cross scale per level; it also grows from small to full while travelling. */

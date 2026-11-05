@@ -16,7 +16,7 @@ import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
 import type { Loadout } from "./loadout";
 import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
 import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
-import { groundStrikeAngle, thrustPose } from './weaponAttack';
+import { groundStrikeAngle, SWORD_ART, thrustPose } from './weaponAttack';
 
 /**
  * Single switch for Moses' look. "original" = previous sprite/staff/animations
@@ -139,6 +139,18 @@ export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
     x: x + (HAND.x - CX) * PX * flip,
     y: groundY - (H - HAND.y) * PX,
   };
+}
+
+/** Actual supplied sword tip at the current animated hand pose. */
+export function mosesSwordTip(x: number, groundY: number, flip: 1 | -1, evolution: number, attackProgress: number, swingProgress: number, bodyDY = 0) {
+  const grip = mosesGrip(Math.round(x), Math.round(groundY), flip);
+  const staffAngle = mosesSwingAngle(swingProgress);
+  const hx = Math.max(-1, Math.min(2, Math.round(staffAngle * 1.2)));
+  const hy = Math.max(-4, Math.min(2, Math.round(staffAngle * 2.4)));
+  const angle = equipmentGesture('sword', attackProgress, evolution).angle;
+  const art = SWORD_ART[evolution - 1] ?? SWORD_ART[0];
+  const length = art.height * art.gripY * V2.PX;
+  return { x: grip.x + (hx * V2.PX + Math.sin(angle) * length) * flip, y: grip.y + (bodyDY + hy) * V2.PX - Math.cos(angle) * length };
 }
 
 /** Screen position of the staff's crook for a given pose — used by the wind slash. */

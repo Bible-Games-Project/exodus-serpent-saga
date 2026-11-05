@@ -1,5 +1,11 @@
 # Roadmap
 
+## Final Moses weapon review and Git synchronization
+- [ ] Verify the six existing weapon requirements; fix only directly related errors.
+- [ ] Run focused tests and live gameplay checks; verify protected shop files are unchanged.
+- [ ] Check the production-build result supplied by the preview harness.
+- [ ] Explain the GitHub merge-commit steps; synchronization requires the owner's GitHub action and cannot be verified here.
+
 ## Supplied weapons and attack refinements
 - [x] Integrate nine supplied gameplay PNGs with normalized hand grips; preserve shop.
 - [x] Double branch evolution speed/knockback gains and add stronger evolved wind.
