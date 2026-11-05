@@ -4,7 +4,7 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
-import { MOSES_ATTACK, mosesGrip } from './mosesGameArt';
+import { MOSES_ATTACK, mosesGrip, mosesSwordTip } from './mosesGameArt';
 import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, GROUND_IMPACT_DELAY, HARPOON_RELEASE_DELAY, MACE_IMPACT_RADIUS, RING_ZAP_CHANCE, SWORD_HORIZONTAL_PROGRESS, spearAttack, turnWeaponAngle } from './weaponAttack';
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
@@ -88,8 +88,10 @@ export function daggerTarget(state: GameState): Entity | null {
 }
 export function weaponLaunchProgress(state: GameState): number | null {
   const at = state.equipFx?.weaponVisualAt;
-  if (at == null || state.now < at || state.now - at >= .5) return null;
-  return (state.now - at) / .5;
+  const { id, evo } = equippedWeapon(state);
+  const duration = id === 'dagger' ? .5 * (DAGGER_CADENCE[evo - 1] ?? DAGGER_CADENCE[0]) / DAGGER_CADENCE[0] : .5;
+  if (at == null || state.now < at || state.now - at >= duration) return null;
+  return (state.now - at) / duration;
 }
 
 /** Nearest enemy direction from Moses; falls back to the last movement direction. */
@@ -224,11 +226,9 @@ export function weaponOnCast(
       // damages every foe along its path once.
       const distance = Math.hypot(state.viewport?.w ?? 1280, state.viewport?.h ?? 900) + 200;
       const delay = (MOSES_ATTACK.WINDUP + SWORD_HORIZONTAL_PROGRESS * .18) * weaponSwingDurMul(state);
-      const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
-      const blade = 48 * ([1, 1.5, 2][evo - 1] ?? 1);
-      spawn('swordwind', { x: grip.x + dir.x * blade, y: grip.y + 32 + dir.y * blade }, delay + distance / 650, {
+      spawn('swordwind', { ...p.pos }, delay + distance / 650, {
         vx: dir.x * 650, vy: dir.y * 650, angle: ang, evo, dmg: dmg * .6, hit: [],
-        impactAt: state.now + delay, distance, travelled: 0,
+        impactAt: state.now + delay, distance, travelled: 0, releaseDelay: delay,
       }, 'hazard');
       break;
     }
@@ -330,6 +330,17 @@ export function updateWeaponEntities(
 
     if (e.kind === 'swordwind') {
       if (state.now >= Number(d.impactAt)) {
+        if (!d.released) {
+          const elapsed = Number(d.releaseDelay);
+          const moving = Math.hypot(p.vel.x, p.vel.y) > 5;
+          const bodyDY = moving ? (Math.sin(p.animT * 4.2) > .4 ? -1 : 0) : Math.sin(state.now * 1.6) > .55 ? -1 : 0;
+          const bob = moving && Math.sin(p.animT * 4.2) > 0 ? -1 : 0;
+          const tip = mosesSwordTip(p.pos.x, p.pos.y + 8 + bob, p.facing === -1 ? -1 : 1, Number(d.evo), elapsed / MOSES_ATTACK.DUR, SWORD_HORIZONTAL_PROGRESS, bodyDY);
+          // Projectile simulation uses ground coordinates; rendering subtracts 32.
+          e.pos = { x: tip.x, y: tip.y + 32 };
+          d.released = 1;
+          continue;
+        }
         e.pos.x += Number(d.vx) * dt;
         e.pos.y += Number(d.vy) * dt;
         d.travelled = Number(d.travelled) + 650 * dt;

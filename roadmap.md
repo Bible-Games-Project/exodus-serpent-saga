@@ -1,5 +1,13 @@
 # Roadmap
 
+## Final Moses weapon review and Git synchronization
+- [x] Verify the six existing weapon requirements; fix only directly related errors.
+- [x] Run focused tests and live gameplay checks; verify protected shop files are unchanged.
+- [x] Check the build result supplied by the preview harness (build OK; no separate manual production build allowed by the workspace).
+- [ ] Explain the GitHub merge-commit steps; synchronization requires the owner's GitHub action and cannot be verified here.
+
+Verification: 55 tests pass across weapon, equipment and champion suites. Live Test Map at 951x527 exercised all six weapons against enemies without page errors; sword X travel was captured. Corrected the X release origin to the animated supplied-art tip and the dagger's rendered gesture timing to match its already-correct 1/2/3 launch cadence. All 166 protected shop files retained identical hashes. Supplied art and exact mace radii are preserved. GitHub synchronization remains blocked on the owner's merge of lovable-sync into main using Create a merge commit; repository connection/status is not accessible to the agent. No Git mutations were executed.
+
 ## Supplied weapons and attack refinements
 - [x] Integrate nine supplied gameplay PNGs with normalized hand grips; preserve shop.
 - [x] Double branch evolution speed/knockback gains and add stronger evolved wind.

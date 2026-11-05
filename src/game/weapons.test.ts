@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerTarget, updateWeaponAim, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponKnockback, weaponReachMul } from "./weapons";
 import type { Entity, GameState, Vec2 } from "./types";
-import { GROUND_IMPACT_DELAY, groundStrikeAngle, heldHarpoonVisible, impactLife, spearAttack, thrustPose, turnWeaponAngle } from './weaponAttack';
+import { BRANCH_WIND_WIDTH, GROUND_IMPACT_DELAY, MACE_IMPACT_RADIUS, SWORD_ART, SWORD_CROSS_SCALE, groundStrikeAngle, heldHarpoonVisible, impactLife, spearAttack, thrustPose, turnWeaponAngle } from './weaponAttack';
+import { mosesSwordTip } from './mosesGameArt';
 
 const withWeapon = (id: string, evolution: number) => ({ loadout: { weapon: { id, evolution, dmg: 1 } } }) as unknown as GameState;
 
@@ -67,6 +68,29 @@ test('Dagger ignores a closer rear enemy and aims its centre projectile at neare
   const centre = [...s.entities.values()].filter(e => e.kind === 'wpnproj')[0];
   assert.ok(Math.abs(Number(centre.data?.vy) / Number(centre.data?.vx) - 40 / 60) < .0001);
   s.player.facing = -1; assert.equal(daggerTarget(s)?.id, 1);
+});
+test('Dagger animation itself runs twice and three times as fast at II and III', () => {
+  for (const evo of [1,2,3]) {
+    const s=arena('dagger',evo); s.equipFx={weaponVisualAt:10};
+    s.now=10+.1/evo;
+    assert.ok(Math.abs(Number(weaponLaunchProgress(s))-.2)<1e-9);
+    s.now=10+.5/evo+.0001; assert.equal(weaponLaunchProgress(s),null);
+  }
+});
+test('Mace keeps exact 48, 96 and 128 impact radii at every evolution', () => {
+  assert.deepEqual([...MACE_IMPACT_RADIUS],[48,96,128]);
+  assert.deepEqual([1,2,3].map(evo=>{
+    const s=arena('mace',evo);weaponOnCast(s,spawner(s));
+    return [...s.entities.values()].find(e=>e.kind==='maceimpact')?.data?.r;
+  }),[48,96,128]);
+});
+test('Every branch level emits one aimed gust with increasing artwork size', () => {
+  assert.ok(BRANCH_WIND_WIDTH[0]<BRANCH_WIND_WIDTH[1] && BRANCH_WIND_WIDTH[1]<BRANCH_WIND_WIDTH[2]);
+  for(const evo of [1,2,3]) {
+    const s=arena('branch',evo);s.entities.set(1,enemy(1,1000,900));weaponOnCast(s,spawner(s));
+    const gusts=[...s.entities.values()].filter(e=>e.kind==='branchwind');
+    assert.equal(gusts.length,1);assert.equal(gusts[0].data?.evo,evo);assert.equal(gusts[0].data?.angle,-Math.PI/2);
+  }
 });
 test('Dagger permits above/below enemies and uses nearest wrapped forward copy', () => {
   const s = arena('dagger'); s.entities.set(1, enemy(1, 1000, 950)); assert.equal(daggerTarget(s)?.id, 1);
@@ -227,4 +251,17 @@ test('Sword wind leaves at the horizontal swing beat and damages each foe on its
   s.now=10.33; let hits=0;
   for(let i=0;i<20;i++){const before=en.hp;updateWeaponEntities(s,.02,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});if(en.hp<before)hits++;}
   assert.equal(hits,1);
+});
+test('Sword cross releases at the animated PNG tip for all three evolutions and both facings', () => {
+  assert.ok(SWORD_CROSS_SCALE[0]<SWORD_CROSS_SCALE[1] && SWORD_CROSS_SCALE[1]<SWORD_CROSS_SCALE[2]);
+  for(const evo of [1,2,3]) for(const facing of [-1,1] as const) {
+    const s=arena('sword',evo);s.player.facing=facing;s.entities.set(1,enemy(1,1000+facing*200,1000));
+    const spawn=spawner(s);weaponOnCast(s,spawn);
+    const wind=[...s.entities.values()].find(e=>e.kind==='swordwind');assert.ok(wind);
+    s.now=Number(wind.data?.impactAt);
+    const tip=mosesSwordTip(1000,1008,facing,evo,Number(wind.data?.releaseDelay)/.5,.7,Math.sin(s.now*1.6)>.55?-1:0);
+    updateWeaponEntities(s,.001,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
+    assert.deepEqual(wind.pos,{x:tip.x,y:tip.y+32});assert.equal(wind.data?.travelled,0);
+    assert.equal(SWORD_ART[evo-1].gripX,.5);
+  }
 });

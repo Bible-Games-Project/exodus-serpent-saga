@@ -1,5 +1,6 @@
 // Combat-only assets; shop artwork is deliberately not imported here.
 import whirlpoolUrl from '@/assets/combat-whirlpool-polish.png';
+import { SWORD_ART } from './weaponAttack';
 import dagger1Asset from '@/assets/combat-dagger-clean-1.png.asset.json';
 import dagger2Asset from '@/assets/combat-dagger-clean-2.png.asset.json';
 import dagger3Asset from '@/assets/combat-dagger-clean-3.png.asset.json';
@@ -35,14 +36,15 @@ function image(url: string | undefined): HTMLImageElement | null {
 export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evolution: number): boolean {
   const img = image(sources[`../assets/combat-${id}-polish-${evolution}.png`]);
   if (!img) return false;
-  const height = id === 'dagger' ? 35 : id === 'sword' ? 48 * ([1, 1.5, 2][evolution - 1] ?? 1) : id === 'ring' ? 26 : id === 'mace' ? 56 : 53;
+  const swordArt = SWORD_ART[evolution - 1] ?? SWORD_ART[0];
+  const height = id === 'dagger' ? 35 : id === 'sword' ? swordArt.height : id === 'ring' ? 26 : id === 'mace' ? 56 : 53;
   const width = height * img.naturalWidth / img.naturalHeight;
   // Axe shafts sit left of the blade; every other grip is central.
   const grips: Record<string, readonly (readonly [number, number])[]> = {
     dagger: [[.602,.815],[.613,.831],[.603,.849]],
     axe: [[.823,.85],[.405,.826],[.548,.832]],
     // Grip at the middle of each hilt (between guard and pommel).
-    sword: [[.5,.79],[.5,.85],[.5,.9]],
+    sword: SWORD_ART.map(art => [art.gripX, art.gripY] as const),
     mace: [[.5,.88],[.5,.89],[.5,.88]],
   };
   const [gripX, gripY] = grips[id]?.[evolution - 1] ?? [.5, id === 'ring' ? .5 : .86];
