@@ -88,8 +88,10 @@ export function daggerTarget(state: GameState): Entity | null {
 }
 export function weaponLaunchProgress(state: GameState): number | null {
   const at = state.equipFx?.weaponVisualAt;
-  if (at == null || state.now < at || state.now - at >= .5) return null;
-  return (state.now - at) / .5;
+  const { id, evo } = equippedWeapon(state);
+  const duration = id === 'dagger' ? .5 * (DAGGER_CADENCE[evo - 1] ?? DAGGER_CADENCE[0]) / DAGGER_CADENCE[0] : .5;
+  if (at == null || state.now < at || state.now - at >= duration) return null;
+  return (state.now - at) / duration;
 }
 
 /** Nearest enemy direction from Moses; falls back to the last movement direction. */
