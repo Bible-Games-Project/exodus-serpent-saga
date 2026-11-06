@@ -19,8 +19,8 @@ import mace3Asset from '@/assets/combat-mace-supplied-3.png.asset.json';
 import ring1Asset from '@/assets/combat-ring-supplied-1.png.asset.json';
 import ring2Asset from '@/assets/combat-ring-supplied-2.png.asset.json';
 import ring3Asset from '@/assets/combat-ring-supplied-3.png.asset.json';
-import branchWindAsset from '@/assets/combat-branch-wind.png.asset.json';
-import maceImpactAsset from '@/assets/combat-mace-impact-supplied.png.asset.json';
+import branchWindAsset from '@/assets/combat-branch-wind-v2.png.asset.json';
+import maceImpactAsset from '@/assets/combat-mace-impact-v2.png.asset.json';
 const [ring1, ring2, ring3] = [ring1Asset.url, ring2Asset.url, ring3Asset.url];
 const [mace1, mace2, mace3] = [mace1Asset.url, mace2Asset.url, mace3Asset.url];
 import fx2 from '@/assets/combat-fx-polish-2.png';
@@ -46,6 +46,8 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
     // Grip at the middle of each hilt (between guard and pommel).
     sword: SWORD_ART.map(art => [art.gripX, art.gripY] as const),
     mace: [[.5,.88],[.5,.89],[.5,.88]],
+    // Held by the band's lower edge, never through the hole.
+    ring: [[.5,.93],[.5,.93],[.5,.93]],
   };
   const [gripX, gripY] = grips[id]?.[evolution - 1] ?? [.5, id === 'ring' ? .5 : .86];
   // Axe art faces backwards; mirror so the blade leads toward the target.

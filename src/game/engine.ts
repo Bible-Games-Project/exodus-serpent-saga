@@ -8,7 +8,7 @@ import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRan
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { daggerTarget, equippedWeapon, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
-import { staffOnPlagueCast, updateEquipment } from "./equipment";
+import { updateEquipment } from "./equipment";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
   resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, type ChampHelpers,
@@ -425,7 +425,6 @@ export function update(state: GameState, dt: number) {
       // reuse the phase of the cast they belong to.
       if (id === "hail") state.hailFirePhase = !(state.hailFirePhase ?? true);
       castPlague(state, id, level);
-      staffOnPlagueCast(state);
       // Multi-attack milestones: queue extra repeats of this cast.
       const casts = attackCasts(id, level);
       for (let k = 1; k < casts; k++) (state.queuedCasts ??= []).push({ id, level, at: state.now + k * MULTI_ATTACK_STAGGER });
@@ -1151,7 +1150,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     const along = rx * Math.cos(aim) + ry * Math.sin(aim);
     const across = -rx * Math.sin(aim) + ry * Math.cos(aim);
     const inRange = spear
-      ? along > -en.radius && along < spearAttack(equippedWeapon(state).evo).reach + en.radius && Math.abs(across) < 14 + en.radius
+      ? along > 0 && along < spearAttack(equippedWeapon(state).evo).reach + en.radius * .4 && Math.abs(across) < 8 + en.radius * .6
       : dd < en.radius + tolerance || Math.hypot(rx, ry) < reach * 1.15 + en.radius;
     if (inRange) candidates.push({ en, px, py });
   }
@@ -1474,7 +1473,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       const ang = baseAngle + spread;
       const e: Entity = {
         id: state.nextId++,
-        pos: { x: p.x, y: p.y },
+        // Serpents emerge from the foot of the staff in Moses' rear hand.
+        pos: { x: p.x - state.player.facing * 14, y: p.y + 6 },
         vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
         radius: 10,
         hp: 1, maxHp: 1,
