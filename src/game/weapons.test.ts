@@ -47,7 +47,7 @@ function spawner(state: GameState) {
     state.entities.set(e.id, e); return e;
   };
 }
-test('Dagger throws 1/2/3 per animation, II twice and III three times as often as I', () => {
+test('Dagger throws exactly one dagger per hand motion at every level', () => {
   const counts: number[] = [];
   for (let evo = 1; evo <= 3; evo++) {
     const s = arena('dagger', evo); s.entities.set(1, enemy(1, 1080, 1000));
@@ -57,7 +57,7 @@ test('Dagger throws 1/2/3 per animation, II twice and III three times as often a
     assert.equal(projectiles[0].ttl, DAGGER_THROW[evo - 1].reach / 400);
     assert.ok(projectiles.every(e => Number(e.data?.vx) > 0));
   }
-  assert.deepEqual(counts, [1, 2, 3]);
+  assert.deepEqual(counts, [1, 1, 1]);
   const c1 = weaponCooldownMul(withWeapon('dagger', 1));
   assert.ok(Math.abs(c1 / weaponCooldownMul(withWeapon('dagger', 2)) - 2) < 1e-9);
   assert.ok(Math.abs(c1 / weaponCooldownMul(withWeapon('dagger', 3)) - 3) < 1e-9);
@@ -243,25 +243,9 @@ test('Only axe III freezes hit enemies for exactly 0.5 seconds at impact', () =>
     assert.equal(miss.data?.axeFreezeUntil,undefined);
   }
 });
-test('Sword wind leaves at the horizontal swing beat and damages each foe on its path once', () => {
-  const s=arena('sword',1),en=enemy(1,1300,1000);s.entities.set(1,en);const spawn=spawner(s);
-  weaponOnCast(s,spawn);const wind=[...s.entities.values()].find(e=>e.kind==='swordwind');assert.ok(wind);
-  const startX=wind.pos.x; s.now=10.2; updateWeaponEntities(s,.1,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-  assert.equal(wind.pos.x,startX);
-  s.now=10.33; let hits=0;
-  for(let i=0;i<20;i++){const before=en.hp;updateWeaponEntities(s,.02,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});if(en.hp<before)hits++;}
-  assert.equal(hits,1);
-});
-test('Sword cross releases at the animated PNG tip for all three evolutions and both facings', () => {
-  assert.ok(SWORD_CROSS_SCALE[0]<SWORD_CROSS_SCALE[1] && SWORD_CROSS_SCALE[1]<SWORD_CROSS_SCALE[2]);
-  for(const evo of [1,2,3]) for(const facing of [-1,1] as const) {
-    const s=arena('sword',evo);s.player.facing=facing;s.entities.set(1,enemy(1,1000+facing*200,1000));
-    const spawn=spawner(s);weaponOnCast(s,spawn);
-    const wind=[...s.entities.values()].find(e=>e.kind==='swordwind');assert.ok(wind);
-    s.now=Number(wind.data?.impactAt);
-    const tip=mosesSwordTip(1000,1008,facing,evo,Number(wind.data?.releaseDelay)/.5,.7,Math.sin(s.now*1.6)>.55?-1:0);
-    updateWeaponEntities(s,.001,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-    assert.deepEqual(wind.pos,{x:tip.x,y:tip.y+32});assert.equal(wind.data?.travelled,0);
-    assert.equal(SWORD_ART[evo-1].gripX,.5);
+test('Sword is melee only: no wind cross is spawned at any level', () => {
+  for (const evo of [1,2,3]) {
+    const s=arena('sword',evo);s.entities.set(1,enemy(1,1300,1000));weaponOnCast(s,spawner(s));
+    assert.equal([...s.entities.values()].some(e=>e.kind==='swordwind'),false);
   }
 });
