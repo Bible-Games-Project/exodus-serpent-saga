@@ -8,7 +8,7 @@ import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRan
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { daggerTarget, equippedWeapon, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
-import { staffOnPlagueCast, updateEquipment } from "./equipment";
+import { updateEquipment } from "./equipment";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
   resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, type ChampHelpers,
@@ -425,7 +425,6 @@ export function update(state: GameState, dt: number) {
       // reuse the phase of the cast they belong to.
       if (id === "hail") state.hailFirePhase = !(state.hailFirePhase ?? true);
       castPlague(state, id, level);
-      staffOnPlagueCast(state);
       // Multi-attack milestones: queue extra repeats of this cast.
       const casts = attackCasts(id, level);
       for (let k = 1; k < casts; k++) (state.queuedCasts ??= []).push({ id, level, at: state.now + k * MULTI_ATTACK_STAGGER });
