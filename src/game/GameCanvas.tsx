@@ -1826,10 +1826,10 @@ function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState
   const top = Math.round(e.pos.y - camY + 8 - 66 * 1.2);
   const ratio = e.hp / e.maxHp;
   const blinkOff = ratio > 0 && ratio < MOSES_HP_BLINK_BELOW && Math.floor(s.now * MOSES_HP_BLINK_HZ * 2) % 2 === 1;
-  if (!blinkOff) allyHpBar(ctx, cx, top - 8, ratio, "#4ec24e", "#1e5a1e");
+  if (!blinkOff) allyHpBar(ctx, cx, top - 24, ratio, "#4ec24e", "#1e5a1e");
   // Shield bar sits directly above the HP bar; hidden when empty.
   const sh = s.shield ?? 0, mx = s.maxShield ?? 0;
-  if (sh > 0 && mx > 0) allyHpBar(ctx, cx, top - 14, sh / mx, "#5fb4ff", "#1c3f66");
+  if (sh > 0 && mx > 0) allyHpBar(ctx, cx, top - 30, sh / mx, "#5fb4ff", "#1c3f66");
 }
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
@@ -4978,8 +4978,9 @@ function drawWeaponEntity(
         ctx.beginPath(); ctx.ellipse(Math.cos(a) * dist, Math.sin(a) * dist * .55, r * (.22 + t * .3), r * (.14 + t * .2), 0, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
-      ctx.save(); ctx.translate(x, y + r * .25);
-      drawSuppliedFx(ctx, 'maceimpact', r * 2.4 * (.85 + .15 * Math.min(1, t * 4)), .5, .9, Math.min(1, life * 2));
+      // The supplied burst is centred on the impact point and mirrored alternately.
+      ctx.save(); ctx.translate(x, y); ctx.scale(Number(d.flipX ?? 1), 1);
+      drawSuppliedFx(ctx, 'maceimpact', r * 2.4 * (.85 + .15 * Math.min(1, t * 4)), .5, .5, Math.min(1, life * 2));
       ctx.restore();
     }
   } else if (k === "shockwave") {
@@ -5026,7 +5027,7 @@ function drawWeaponEntity(
     ctx.translate(grip.x + Math.cos(ang) * (20 + t * 110), grip.y + Math.sin(ang) * (20 + t * 110) * .8);
     ctx.rotate(ang + Math.PI);
     const fade = Math.sin(Math.PI * Math.min(1, t * 1.2));
-    drawSuppliedFx(ctx, 'branchwind', (BRANCH_WIND_WIDTH[Number(d.evo ?? 1) - 1] ?? 70) * (.8 + .2 * t), .5, .5, fade);
+    drawSuppliedFx(ctx, 'branchwind', (BRANCH_WIND_WIDTH[Number(d.evo ?? 1) - 1] ?? 70) * (.8 + .2 * t), .5, .5, fade * .65);
   } else if (k === 'ringzap') {
     const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / .45));
     const css = getComputedStyle(document.documentElement);

@@ -216,7 +216,9 @@ export function weaponOnCast(
       const reach = 64;
       const r = MACE_IMPACT_RADIUS[evo - 1] ?? 48;
       spawn("maceimpact", { x: p.pos.x + dir.x * reach, y: p.pos.y + dir.y * reach }, GROUND_IMPACT_DELAY + 0.4, {
-        dmg, r, second: evo >= 3 ? 1 : 0, hit: [], impactAt: state.now + GROUND_IMPACT_DELAY, rotation: Math.random() * Math.PI * 2,
+        dmg, r, second: evo >= 3 ? 1 : 0, hit: [], impactAt: state.now + GROUND_IMPACT_DELAY, rotation: 0,
+        // Alternate horizontal mirroring so consecutive impacts look different.
+        flipX: (fxs.maceFlip = fxs.maceFlip ? 0 : 1) ? -1 : 1,
       }, "hazard");
       break;
     }

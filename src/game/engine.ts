@@ -1474,7 +1474,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       const ang = baseAngle + spread;
       const e: Entity = {
         id: state.nextId++,
-        pos: { x: p.x, y: p.y },
+        // Serpents emerge from the foot of the staff in Moses' rear hand.
+        pos: { x: p.x - state.player.facing * 14, y: p.y + 6 },
         vel: { x: Math.cos(ang) * stats.speed, y: Math.sin(ang) * stats.speed },
         radius: 10,
         hp: 1, maxHp: 1,
