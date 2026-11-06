@@ -16,7 +16,9 @@ export function equippedWeapon(state: GameState): { id: WeaponId; evo: number } 
 
 /** Base physical damage of one weapon hit (already includes passives). */
 export function weaponHitDamage(state: GameState, base: number): number {
-  return base * (weaponDamage(state) / 0.5);
+  const f = state.equipFx;
+  const empowered = f && state.now < (f.empowerHitUntil ?? -1) ? (f.empowerMul ?? 1) : 1;
+  return base * (weaponDamage(state) / 0.5) * empowered;
 }
 
 // ---------------------------------------------------------------- tuning
@@ -64,11 +66,11 @@ export const RING_BOUNCES = [4, 8, 12] as const;
 /** Harpoon whirlpool proc chance per level (none at level 1). */
 export const HARPOON_WHIRL_CHANCE = [0, 0.2, 0.3] as const;
 
-/** One dagger per throw animation at I; II throws 2 twice as often, III throws 3 three times as often. */
+/** One dagger per hand motion at every level; II moves the hand twice as often, III three times. */
 export const DAGGER_THROW = [
   { count: 1, reach: 250, spread: 0 },
-  { count: 2, reach: 340, spread: .14 },
-  { count: 3, reach: 440, spread: .14 },
+  { count: 1, reach: 340, spread: 0 },
+  { count: 1, reach: 440, spread: 0 },
 ] as const;
 /** Gameplay-only dagger cadence (shop bars keep their own table). */
 export const DAGGER_CADENCE = [0.7, 0.35, 0.7 / 3] as const;
@@ -130,6 +132,9 @@ export function weaponOnCast(
   basicDamage?: number,
 ): void {
   const { id, evo } = equippedWeapon(state);
+  // A charged staff blessing makes this one attack stronger.
+  const fxs = (state.equipFx ??= {});
+  if (fxs.empowered) { fxs.empowered = 0; fxs.empowerHitUntil = state.now + .8; }
   const launch = () => { (state.equipFx ??= {}).weaponVisualAt = state.now; };
   const p = state.player;
   const dir: Vec2 = aimDir(state);
@@ -219,17 +224,6 @@ export function weaponOnCast(
       // Same soft wind arc at every level, flying toward the nearest foe.
       spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + .45, { angle: ang, evo, impactAt: state.now + MOSES_ATTACK.WINDUP }, 'hazard');
       if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
-      break;
-    }
-    case 'sword': {
-      // The cross leaves the sword tip when the swing passes horizontal and
-      // damages every foe along its path once.
-      const distance = Math.hypot(state.viewport?.w ?? 1280, state.viewport?.h ?? 900) + 200;
-      const delay = (MOSES_ATTACK.WINDUP + SWORD_HORIZONTAL_PROGRESS * .18) * weaponSwingDurMul(state);
-      spawn('swordwind', { ...p.pos }, delay + distance / 650, {
-        vx: dir.x * 650, vy: dir.y * 650, angle: ang, evo, dmg: dmg * .6, hit: [],
-        impactAt: state.now + delay, distance, travelled: 0, releaseDelay: delay,
-      }, 'hazard');
       break;
     }
     default:

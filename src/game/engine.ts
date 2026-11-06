@@ -1151,7 +1151,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
     const along = rx * Math.cos(aim) + ry * Math.sin(aim);
     const across = -rx * Math.sin(aim) + ry * Math.cos(aim);
     const inRange = spear
-      ? along > -en.radius && along < spearAttack(equippedWeapon(state).evo).reach + en.radius && Math.abs(across) < 14 + en.radius
+      ? along > 0 && along < spearAttack(equippedWeapon(state).evo).reach + en.radius * .4 && Math.abs(across) < 8 + en.radius * .6
       : dd < en.radius + tolerance || Math.hypot(rx, ry) < reach * 1.15 + en.radius;
     if (inRange) candidates.push({ en, px, py });
   }

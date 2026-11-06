@@ -32,10 +32,9 @@ export function equipmentGesture(id: string, progress: number, evolution: number
     return { angle: level * Math.PI / 2, thrust: jab * (p < .3 ? 1 : rank) };
   }
   if (id === "boomerang" || id === "ring") return { angle: pulse * (id === "ring" ? 1.8 : 1.35) * rank, thrust: pulse * 4 };
-  // Fencer stabs: high, middle, low — three quick thrusts per attack.
   if (id === "dagger") {
-    const k = Math.min(2, Math.floor(p * 3)), u = p * 3 - k;
-    return { angle: Math.PI / 2 + [-.45, 0, .45][k], thrust: Math.sin(Math.PI * u) * 7 * rank };
+    // One stab per hand motion; each motion throws exactly one dagger.
+    return { angle: Math.PI / 2, thrust: pulse * 7 * rank };
   }
   if (id === "mace") return { angle: p < .4 ? -p * 1.8 : (p - .4) * 3.2, thrust: 0 };
   if (id === "axe") return { angle: p < .3 ? -p * 1.7 : (p - .3) * 2.8 * rank, thrust: 0 };
