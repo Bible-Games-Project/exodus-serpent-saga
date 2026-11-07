@@ -557,6 +557,12 @@ export function update(state: GameState, dt: number) {
       // White Leprosy wastes the afflicted enemy away; it dies normally.
       if (tickLeprosy(state, e, dt)) continue;
       // Axe ice is a full short stun, distinct from the existing plague slow.
+      // Stone Staff: a petrified foe stands still, then crumbles away.
+      if (e.data?.stoneUntil != null) {
+        if (state.now >= Number(e.data.stoneUntil)) { e.hp = 0; killEnemy(state, e); }
+        e.vel.x = 0; e.vel.y = 0;
+        continue;
+      }
       if (state.now < Number(e.data?.axeFreezeUntil ?? 0)) {
         e.vel.x = 0; e.vel.y = 0;
         continue;
@@ -612,6 +618,12 @@ export function update(state: GameState, dt: number) {
           e.pos.x += (e.data!.knockVx as number) * f * dt;
           e.pos.y += (e.data!.knockVy as number) * f * dt;
         } else delete e.data!.knockUntil;
+      }
+      // Divine Light: blinded foes are drawn together and stick for its duration.
+      if (Number(e.data?.glueUntil ?? 0) > state.now) {
+        const k = 1 - Math.exp(-6 * dt);
+        e.pos.x += wrapDelta(Number(e.data!.glueX), e.pos.x, state.worldW) * k;
+        e.pos.y += wrapDelta(Number(e.data!.glueY), e.pos.y, state.worldH) * k;
       }
       // Pillar of Cloud containment: clamp after every movement source
       // (walking, dashes, knockback) so nothing can cross the boundary.
