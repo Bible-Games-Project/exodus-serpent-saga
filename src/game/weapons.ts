@@ -454,10 +454,11 @@ export function updateWeaponEntities(
     }
 
     // Damaging ground hazards: axeline, maceimpact, shockwave, whirlpool, toxiccloud.
-    if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "windtrail", "slowprint"].includes(e.kind)) {
+    if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "windtrail", "slowprint", "waterorbit", "godhand"].includes(e.kind)) {
       if (state.now < Number(d.impactAt ?? e.born)) continue;
+      if (e.kind === "waterorbit") { e.pos.x = state.player.pos.x; e.pos.y = state.player.pos.y; }
       const hitArr = (d.hit ??= []) as number[];
-      const isDot = e.kind === "whirlpool" || e.kind === "toxiccloud" || e.kind === "windtrail" || e.kind === "slowprint";
+      const isDot = e.kind === "waterorbit" || e.kind === "whirlpool" || e.kind === "toxiccloud" || e.kind === "windtrail" || e.kind === "slowprint";
       if (e.kind === "firering" && d.burn) d.burnHit = 1;
       for (const en of state.entities.values()) {
         if (en.team !== "enemy") continue;
@@ -475,7 +476,10 @@ export function updateWeaponEntities(
         } else {
           const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW);
           const ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
-          inside = Math.hypot(rx, ry) < (d.r as number) + en.radius;
+          const dist = Math.hypot(rx, ry);
+          // Expanding fire ring grows from Moses to its full radius over its life.
+          const r = e.kind === "firering" && d.grow ? Number(d.r) * Math.min(1, (state.now - e.born) / Math.max(.01, Number(d.ttl0 ?? 1))) : Number(d.r);
+          inside = e.kind === "waterorbit" ? Math.abs(dist - r) < Number(d.width ?? 20) + en.radius : dist < r + en.radius;
         }
         if (!inside) continue;
         if (isDot) {
@@ -483,10 +487,11 @@ export function updateWeaponEntities(
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + 0.5; }
         } else if (!hitArr.includes(en.id)) {
           hitArr.push(en.id);
-          en.hp -= d.dmg as number;
+          en.hp -= e.kind === "godhand" && en.kind === "ramses" ? Math.min(Number(d.dmg), en.maxHp * .1) : d.dmg as number;
+          if (e.kind === "godhand") { en.data ??= {}; en.data.liftAt = state.now; }
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + (d.slow as number); }
           if (d.freeze) { en.data ??= {}; en.data.axeFreezeUntil = state.now + Number(d.freeze); }
-          if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + 3; }
+          if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + (e.kind === 'firering' ? 2 : 3); }
           if (e.kind === 'axeline' && !(en.kind === 'agilesoldier' && en.data?.specialDash)) {
             const dx = ctx.wrapDelta(en.pos.x, Number(d.handleX), state.worldW);
             const dy = ctx.wrapDelta(en.pos.y, Number(d.handleY), state.worldH);

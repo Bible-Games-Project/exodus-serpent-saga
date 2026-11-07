@@ -16,6 +16,7 @@ import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
 import type { Loadout } from "./loadout";
 import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
 import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
+import { staffCastPose } from './equipmentFx';
 import { groundStrikeAngle, SWORD_ART, thrustPose } from './weaponAttack';
 
 /**
@@ -117,6 +118,8 @@ export type MosesPose = {
   flash?: number;
   equipment?: Loadout;
   castProgress?: number | null;
+  /** Next weapon attack is blessed by the staff (metallic shine). */
+  empowered?: boolean;
   weaponAimAngle?: number;
   hideHeldWeapon?: boolean;
 };
@@ -226,10 +229,12 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     const arm = freeArmLayers(L.body);
     if (arm && pose.equipment) {
       ctx.drawImage(arm.body, 0, bodyDY * PX, W * PX, H * PX);
-      const rear = equipmentGesture(pose.equipment.staff.id, pose.castProgress ?? 0, pose.equipment.staff.evolution, true);
+      // The rear staff only moves while casting its special (raise, then slam).
+      const cast = staffCastPose(pose.castProgress ?? null);
+      const rear = { angle: cast.angle, thrust: cast.lift };
       ctx.save();
       ctx.translate(ARM.PIVOT.x * PX, (ARM.PIVOT.y + bodyDY) * PX);
-      ctx.rotate((pose.moving ? -Math.sin(pose.walkPhase) * .06 : 0) + rear.angle);
+      ctx.rotate((pose.moving ? -Math.sin(pose.walkPhase) * .015 : 0) + rear.angle);
       ctx.drawImage(arm.arm, -ARM.PIVOT.x * PX, -ARM.PIVOT.y * PX, W * PX, H * PX);
       // Centre the original rear fist (source x=2..8, y=41..48) on
       // the grip; the arm, staff and overlay share this exact transform.
@@ -257,11 +262,24 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       if (id === "branch") {
         // Restore the exact original stick, its 10x80 canvas and hand pivot.
         ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+        if (pose.empowered) {
+          ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = .35 + .3 * Math.sin(pose.walkPhase * 3);
+          ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX); ctx.restore();
+        }
         if (evolution > 1) {
           ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(evolution === 3 ? "--equip-light" : "--equip-red").trim();
           ctx.fillRect(-1 * PX, -20 * PX, 2 * PX, 2 * PX);
         }
-      } else if (id !== "none" && !pose.hideHeldWeapon) drawCombatEquipment(ctx, "weapon", id, evolution, PX);
+      } else if (id !== "none" && !pose.hideHeldWeapon) {
+        drawCombatEquipment(ctx, "weapon", id, evolution, PX);
+        // Staff blessing: a metallic shine pulses on the weapon until its next attack.
+        if (pose.empowered) {
+          ctx.save(); ctx.globalCompositeOperation = "lighter";
+          ctx.globalAlpha = .35 + .3 * Math.sin(pose.walkPhase * 3);
+          drawCombatEquipment(ctx, "weapon", id, evolution, PX);
+          ctx.restore();
+        }
+      }
     } else {
       if (rot) ctx.rotate(rot);
       ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);

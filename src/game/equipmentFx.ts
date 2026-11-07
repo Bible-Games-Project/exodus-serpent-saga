@@ -1,34 +1,115 @@
-import type { GameState } from "./types";
+import type { Entity, GameState } from "./types";
+import godHandUrl from "@/assets/staff-god-hand.png";
 
-/** Visual-only cast beat shared by the rear hand and its local power mark. */
+/** Total visual cast: 1 s charge, 0.3 s slam, 0.3 s settle. */
+export const STAFF_CAST_VISUAL_SECONDS = 1.6;
+
+/** Visual-only staff cast progress (0..1) while a staff special is being cast. */
 export function latestEquipmentCastProgress(state: GameState): number | null {
   const at = state.equipFx?.staffVisualAt;
-  if (at === undefined || state.now - at > .65) return null;
-  return Math.max(0, (state.now - at) / .65);
+  if (at === undefined || state.now < at || state.now - at > STAFF_CAST_VISUAL_SECONDS) return null;
+  return (state.now - at) / STAFF_CAST_VISUAL_SECONDS;
 }
+
+/** Rear-staff pose: raised while charging, slammed to the ground, then settles. */
+export function staffCastPose(progress: number | null): { angle: number; lift: number } {
+  if (progress == null) return { angle: 0, lift: 0 };
+  const t = progress * STAFF_CAST_VISUAL_SECONDS;
+  if (t < 1) { const u = Math.sin(Math.min(1, t / .35) * Math.PI / 2); return { angle: -.35 * u, lift: -6 * u }; }
+  if (t < 1.3) { const u = ((t - 1) / .3) ** 2; return { angle: -.35 + .45 * u, lift: -6 + 10 * u }; }
+  const u = Math.min(1, (t - 1.3) / .3);
+  return { angle: .1 * (1 - u), lift: 4 * (1 - u) };
+}
+
+function staffColor(id: string): string {
+  const token = id === "bronze" ? "fire" : id === "waters" ? "water" : id === "crystal" || id === "fire" ? "ice"
+    : id === "bush" ? "sand" : id === "iron" ? "iron" : id === "moses" ? "wood-light" : "light";
+  return getComputedStyle(document.documentElement).getPropertyValue(`--equip-${token}`).trim();
+}
+
+function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, color: string, alpha: number, sy = 1) {
+  if (alpha <= 0 || r <= 0) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(1, sy);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  g.addColorStop(0, color); g.addColorStop(1, "transparent");
+  ctx.globalAlpha = alpha; ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+/** Soft light at the staff head while charging and on the ground at the slam. */
 export function drawEquipmentPower(ctx: CanvasRenderingContext2D, state: GameState, x: number, y: number, flip: number): void {
   const lo = state.loadout;
-  if (!lo) return;
-  const sp = latestEquipmentCastProgress(state);
+  if (!lo || lo.staff.id === "none") return;
+  const p = latestEquipmentCastProgress(state);
+  if (p === null) return;
+  const t = p * STAFF_CAST_VISUAL_SECONDS;
+  const color = staffColor(lo.staff.id);
+  const sx = x - 14 * flip;
+  if (t < 1.3) glow(ctx, sx, y - 92 - (t < 1 ? 14 : 0), 10 + 14 * Math.min(1, t), color, .55 + .25 * Math.sin(t * 18));
+  if (t >= 1.25) { const u = (t - 1.25) / .35; glow(ctx, sx, y, 30 + 50 * u, color, .9 * (1 - u), .45); }
+}
+
+/** Visuals for staff special entities. */
+export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, x: number, y: number): void {
+  const d = e.data ?? {};
   const css = getComputedStyle(document.documentElement);
-  const color = (name: string) => css.getPropertyValue(`--equip-${name}`).trim();
-  ctx.save(); ctx.translate(x, y); ctx.scale(flip, 1); ctx.imageSmoothingEnabled = false;
-  // A serpent release has no decorative particles beside Moses' head.
-  const serpentRelease = [...state.entities.values()].some(e => e.kind === 'serpent' && state.now - e.born < .65);
-  if (sp !== null && !serpentRelease) {
-    const id = lo.staff.id, rank = lo.staff.evolution;
-    ctx.globalAlpha = Math.sin(Math.PI * sp) * .65;
-    ctx.fillStyle = color(["bronze", "fire", "bush"].includes(id) ? "fire" : id === "waters" ? "water" : ["crystal", "diamond"].includes(id) ? "ice" : ["light", "power"].includes(id) ? "light" : id === "iron" ? "iron" : "wood");
-    const count = 3 + rank;
-    for (let i = 0; i < count; i++) {
-      let px = -13 + (i - count / 2) * 3, py = -72 - Math.sin(sp * Math.PI) * 6;
-      if (["light", "power"].includes(id)) { px = -16 + (i % 2) * 4; py += i * 4; }
-      else if (id === "waters") { py += Math.sin(i + sp * 5) * 3; px += sp * 8; }
-      else if (["bronze", "fire", "bush"].includes(id)) { py -= i % 3 * 3 + sp * 4; }
-      else if (["crystal", "diamond"].includes(id)) { px = -14 + Math.cos(i / count * Math.PI * 2) * (5 + rank); py += Math.sin(i / count * Math.PI * 2) * 5; }
-      else if (id === "iron") { py += i * 4; }
-      ctx.fillRect(Math.round(px), Math.round(py), 2, rank === 3 ? 4 : 2);
+  const v = (n: string) => css.getPropertyValue(`--equip-${n}`).trim();
+  if (e.kind === "staffburst") {
+    const ttl0 = 0.6;
+    const u = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / ttl0));
+    const r = Number(d.r ?? 100) * (.25 + .75 * u);
+    const col = v(String(d.color ?? "light"));
+    glow(ctx, x, y, r, col, .5 * (1 - u), .55);
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, .55);
+    ctx.strokeStyle = col; ctx.globalAlpha = .8 * (1 - u); ctx.lineWidth = d.wind ? 3 : 5;
+    if (d.wind) {
+      for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + u * 2; ctx.beginPath(); ctx.arc(0, 0, r, a, a + .6); ctx.stroke(); }
+    } else { ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke(); }
+    if (d.rays) {
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * .3, Math.sin(a) * r * .3); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); ctx.stroke(); }
+    }
+    ctx.restore();
+  } else if (e.kind === "waterorbit") {
+    const r = Number(d.r ?? 80);
+    const fade = Math.min(1, (e.ttl ?? 0) / .4, (s.now - e.born) / .3);
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, .55); ctx.lineCap = "round";
+    const rot = s.now * 4;
+    for (let i = 0; i < 4; i++) {
+      const a = rot + i * Math.PI / 2;
+      ctx.globalAlpha = .35 * fade; ctx.strokeStyle = v("water"); ctx.lineWidth = 14;
+      ctx.beginPath(); ctx.arc(0, 0, r, a, a + 1.1); ctx.stroke();
+      ctx.globalAlpha = .85 * fade; ctx.lineWidth = 5; ctx.stroke();
+      ctx.globalAlpha = .9 * fade; ctx.strokeStyle = v("ice"); ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.restore();
+  } else if (e.kind === "godhand") {
+    const impactAt = Number(d.impactAt ?? e.born);
+    const r = Number(d.r ?? 110);
+    const fall = Math.min(1, (s.now - e.born) / Math.max(.01, impactAt - e.born));
+    const after = Math.max(0, s.now - impactAt);
+    const img = handImage();
+    const w = r * 1.3, h = w * 4 / 3;
+    if (img) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, fall * 2) * (1 - Math.min(1, after / .6));
+      ctx.drawImage(img, x - w / 2, y - h * .9 - (1 - fall * fall) * 260, w, h);
+      ctx.restore();
+    }
+    if (after > 0) {
+      const u = Math.min(1, after / .6);
+      glow(ctx, x, y, r * (.5 + u), v("light"), .9 * (1 - u), .45);
+      ctx.save(); ctx.translate(x, y); ctx.scale(1, .45);
+      ctx.strokeStyle = v("light"); ctx.globalAlpha = 1 - u; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(0, 0, r * (.4 + .8 * u), 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
     }
   }
-  ctx.restore();
+}
+
+let hand: HTMLImageElement | null = null;
+function handImage(): HTMLImageElement | null {
+  if (!hand) { hand = new Image(); hand.src = godHandUrl; }
+  return hand.complete && hand.naturalWidth ? hand : null;
 }

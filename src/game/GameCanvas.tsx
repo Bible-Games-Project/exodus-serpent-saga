@@ -42,7 +42,7 @@ import { drawSuppliedFx, drawWeaponImpact } from './combatWeaponPng';
 import { BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weaponAttack';
 import { weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
-import { latestEquipmentCastProgress, drawEquipmentPower } from "./equipmentFx";
+import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffSpecial } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
@@ -1611,6 +1611,10 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
     const lifted = liftT >= 0 && liftT < 1;
     if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
+    // Stone Staff: petrified foes turn grey and fade out in their last moments.
+    const stoneUntil = e.team === "enemy" ? Number(e.data?.stoneUntil ?? 0) : 0;
+    const stoned = stoneUntil > s.now;
+    if (stoned) { ctx.save(); ctx.filter = 'grayscale(1) brightness(0.85) contrast(1.1)'; ctx.globalAlpha *= Math.min(1, (stoneUntil - s.now) / .8); }
     try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
@@ -1704,6 +1708,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
         }
         ctx.restore();
       }
+      if (stoned) ctx.restore();
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
     }
@@ -1856,6 +1861,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     equipment: s.loadout,
     weaponAimAngle: s.equipFx?.weaponVisualAim ?? s.equipFx?.weaponAimAngle,
     castProgress: latestEquipmentCastProgress(s),
+    empowered: !!s.equipFx?.empowered,
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -4901,7 +4907,7 @@ function drawWeaponEntity(
   camY: number,
 ): boolean {
   const k = e.kind;
-  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind', 'branchwind', 'ringzap', 'harpoonthrow'].includes(k)) return false;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind', 'branchwind', 'ringzap', 'harpoonthrow', 'waterorbit', 'godhand', 'staffburst'].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
@@ -5075,9 +5081,11 @@ function drawWeaponEntity(
       drawCombatEquipment(ctx, "weapon", "dagger", s.loadout?.weapon.evolution ?? 1, 0.8);
       ctx.globalAlpha = 1;
     }
+  } else if (k === 'staffburst' || k === 'waterorbit' || k === 'godhand') {
+    drawStaffSpecial(ctx, e, s, x, y);
   } else if (k === "firering" || k === "slowwave") {
     const r = (d.r as number) ?? 120;
-    const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.8));
+    const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / Number(d.ttl0 ?? 0.8)));
     ctx.globalAlpha = 0.6 * (1 - life * 0.7);
     ctx.strokeStyle = k === "firering" ? "#e07a3a" : "#4a8fbf";
     ctx.lineWidth = 6;
