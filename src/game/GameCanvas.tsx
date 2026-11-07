@@ -1861,6 +1861,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     equipment: s.loadout,
     weaponAimAngle: s.equipFx?.weaponVisualAim ?? s.equipFx?.weaponAimAngle,
     castProgress: latestEquipmentCastProgress(s),
+    empowered: !!s.equipFx?.empowered,
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
