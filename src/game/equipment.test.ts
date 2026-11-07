@@ -54,18 +54,17 @@ test("Test equipment cannot mutate an ordinary run", () => {
   applyTestEquipment(state, { ...config, equipment: { weapon: "mace", weaponLevel: 3, staff: "power", staffLevel: 3 } });
   assert.equal(JSON.stringify(state.loadout), before);
 });
-test("Bronze III special still spawns its existing ring and records the cast beat", () => {
-  const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1, equipment: { weapon: "branch", weaponLevel: 1, staff: "bronze", staffLevel: 3 } });
-  state.now = 2;
-  const spawned: string[] = [];
-  updateEquipment(state, (kind, pos, ttl, data) => {
-    spawned.push(kind);
-    const e: Entity = { id: 999, kind, team: "hazard", pos, ttl, data, vel: { x: 0, y: 0 }, hp: 1, maxHp: 1, radius: 1, facing: 1, animT: 0, born: 2 };
-    assert.equal(data.r, 150); return e;
-  }, () => {});
-  assert.deepEqual(spawned, ["firering"]);
-  assert.equal(state.equipFx?.staffVisualAt, 2);
-  assert.equal(state.equipFx?.fireringNext, 22);
+for (const [level, cd] of [[1, 20], [2, 15], [3, 10]] as const) test(`Staff special level ${level}: charges 1 s, slams at 0.3 s, then waits ${cd} s`, () => {
+  const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1, equipment: { weapon: "branch", weaponLevel: 1, staff: "moses", staffLevel: level } });
+  const spawn = (kind: string, pos: { x: number; y: number }, ttl: number, data: Record<string, unknown>) => ({ id: 999, kind, team: "hazard", pos, ttl, data, vel: { x: 0, y: 0 }, hp: 1, maxHp: 1, radius: 1, facing: 1, animT: 0, born: state.now }) as Entity;
+  state.now = 0; updateEquipment(state, spawn, () => {});
+  state.now = 3; updateEquipment(state, spawn, () => {});
+  assert.equal(state.equipFx?.staffVisualAt, 3);
+  state.now = 4.29; updateEquipment(state, spawn, () => {});
+  assert.ok(!state.equipFx?.empowered);
+  state.now = 4.3; updateEquipment(state, spawn, () => {});
+  assert.equal(state.equipFx?.empowered, 1);
+  assert.equal(state.equipFx?.staffNext, 4.3 + cd);
 });
 test("Off-screen targets retain only the registered Ramses, never ordinary allies", () => {
   const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1, champions: { miriam: true } });
