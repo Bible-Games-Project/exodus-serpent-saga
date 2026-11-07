@@ -103,54 +103,54 @@ export const WEAPONS: EquipItem[] = [
 // ---------------------------------------------------------------- staffs
 export const STAFFS: EquipItem[] = [
   item("moses", "staff", "Staff of Moses", "The staff that turned into a serpent before Pharaoh.", [
-    ev(1, "Staff of Moses I", 0, "+0% magical damage", "", { magicPct: 0 }),
-    ev(2, "Staff of Moses II", 100_000, "+10% magical damage", "", { magicPct: 10 }),
-    ev(3, "Staff of Moses III", 1_000_000, "+20% magical damage", "", { magicPct: 20 }),
+    ev(1, "Staff of Moses I", 0, "+0% magical damage", "Blesses the next weapon attack: x1.5 damage and a metallic shine. Every 20 seconds.", { magicPct: 0 }),
+    ev(2, "Staff of Moses II", 100_000, "+10% magical damage", "Blesses the next weapon attack: x1.8 damage. Every 15 seconds.", { magicPct: 10 }),
+    ev(3, "Staff of Moses III", 1_000_000, "+20% magical damage", "Blesses the next weapon attack: x2.2 damage. Every 10 seconds.", { magicPct: 20 }),
   ]),
-  item("iron", "staff", "Iron Staff", "A heavy staff that weighs enemies down.", [
-    ev(1, "Iron Staff I", 500, "+10% magical damage", "", { magicPct: 10 }),
-    ev(2, "Iron Staff II", 150_000, "+25% magical damage", "Plagues slightly slow enemies.", { magicPct: 25 }),
-    ev(3, "Iron Staff III", 1_500_000, "+40% magical damage", "Plagues slow enemies for longer.", { magicPct: 40 }),
+  item("iron", "staff", "Iron Staff", "A heavy staff that hardens the next blow.", [
+    ev(1, "Iron Staff I", 500, "+10% magical damage", "Blesses the next weapon attack: x1.7 damage and a metallic shine. Every 20 seconds.", { magicPct: 10 }),
+    ev(2, "Iron Staff II", 150_000, "+25% magical damage", "Blesses the next weapon attack: x2.1 damage. Every 15 seconds.", { magicPct: 25 }),
+    ev(3, "Iron Staff III", 1_500_000, "+40% magical damage", "Blesses the next weapon attack: x2.6 damage. Every 10 seconds.", { magicPct: 40 }),
   ]),
-  item("crystal", "staff", "Crystal Staff", "Its light blinds the enemies of Israel.", [
-    ev(1, "Crystal Staff I", 5_000, "+20% magical damage", "", { magicPct: 20 }),
-    ev(2, "Crystal Staff II", 250_000, "+35% magical damage", "Blinds one enemy for 3 seconds every 15 seconds.", { magicPct: 35 }),
-    ev(3, "Crystal Staff III", 2_500_000, "+50% magical damage", "Blinds three enemies for 4 seconds every 15 seconds.", { magicPct: 50 }),
+  item("crystal", "staff", "Crystal Staff", "Its cold light stops the enemies of Israel.", [
+    ev(1, "Crystal Staff I", 5_000, "+20% magical damage", "Freezes nearby enemies for 1 second. Every 20 seconds.", { magicPct: 20 }),
+    ev(2, "Crystal Staff II", 250_000, "+35% magical damage", "Freezes enemies in a wider area for 1 second. Every 15 seconds.", { magicPct: 35 }),
+    ev(3, "Crystal Staff III", 2_500_000, "+50% magical damage", "Freezes enemies in a large area for 1 second. Every 10 seconds.", { magicPct: 50 }),
   ]),
-  item("diamond", "staff", "Diamond Staff", "A harder light, a deeper blindness.", [
-    ev(1, "Diamond Staff I", 50_000, "+35% magical damage", "", { magicPct: 35 }),
-    ev(2, "Diamond Staff II", 500_000, "+50% magical damage", "Blinds three enemies for 3 seconds every 15 seconds.", { magicPct: 50 }),
-    ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "Blinds five enemies for 4 seconds every 15 seconds.", { magicPct: 70 }),
+  item("diamond", "staff", "Diamond Staff", "A circle of hard, bright light.", [
+    ev(1, "Diamond Staff I", 50_000, "+35% magical damage", "A circular ray of light slows nearby enemies for 2 seconds. Every 20 seconds.", { magicPct: 35 }),
+    ev(2, "Diamond Staff II", 500_000, "+50% magical damage", "A wider ray of light slows enemies for 2 seconds. Every 15 seconds.", { magicPct: 50 }),
+    ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "A large ray of light slows enemies for 2 seconds. Every 10 seconds.", { magicPct: 70 }),
   ]),
-  item("bronze", "staff", "Burning Bronze Staff", "Bronze that remembers the furnace.", [
-    ev(1, "Burning Bronze Staff I", 250_000, "+50% magical damage", "", { magicPct: 50 }),
-    ev(2, "Burning Bronze Staff II", 1_000_000, "+70% magical damage", "Creates a ring of fire every 25 seconds.", { magicPct: 70 }),
-    ev(3, "Burning Bronze Staff III", 10_000_000, "+90% magical damage", "Creates a larger ring of fire every 20 seconds that burns enemies.", { magicPct: 90 }),
+  item("bronze", "staff", "Burning Staff", "A staff that remembers the furnace.", [
+    ev(1, "Burning Staff I", 250_000, "+50% magical damage", "An expanding ring of fire (1 s) burns each enemy it touches for 2 seconds. Every 20 seconds.", { magicPct: 50 }),
+    ev(2, "Burning Staff II", 1_000_000, "+70% magical damage", "A wider ring of fire burns enemies for 2 seconds. Every 15 seconds.", { magicPct: 70 }),
+    ev(3, "Burning Staff III", 10_000_000, "+90% magical damage", "A huge ring of fire burns enemies for 2 seconds. Every 10 seconds.", { magicPct: 90 }),
   ]),
-  item("fire", "staff", "Fire Staff", "Fire that walks with Moses.", [
-    ev(1, "Fire Staff I", 1_000_000, "+70% magical damage", "", { magicPct: 70 }),
-    ev(2, "Fire Staff II", 2_500_000, "+90% magical damage", "Burns last longer.", { magicPct: 90 }),
-    ev(3, "Fire Staff III", 20_000_000, "+110% magical damage", "Fire spreads to nearby enemies.", { magicPct: 110 }),
+  item("fire", "staff", "Wind Staff", "The east wind that obeys Moses.", [
+    ev(1, "Wind Staff I", 1_000_000, "+70% magical damage", "A gust around Moses pushes enemies away. Every 20 seconds.", { magicPct: 70 }),
+    ev(2, "Wind Staff II", 2_500_000, "+90% magical damage", "A stronger, wider gust pushes enemies away. Every 15 seconds.", { magicPct: 90 }),
+    ev(3, "Wind Staff III", 20_000_000, "+110% magical damage", "A mighty gust throws enemies far away. Every 10 seconds.", { magicPct: 110 }),
   ]),
-  item("bush", "staff", "Burning Bush Staff", "The bush that burned and was not consumed.", [
-    ev(1, "Burning Bush Staff I", 5_000_000, "+90% magical damage", "", { magicPct: 90 }),
-    ev(2, "Burning Bush Staff II", 10_000_000, "+115% magical damage", "Launches flames at three enemies every 20 seconds.", { magicPct: 115 }),
-    ev(3, "Burning Bush Staff III", 35_000_000, "+140% magical damage", "Launches flames at five enemies every 18 seconds.", { magicPct: 140 }),
+  item("bush", "staff", "Stone Staff", "Hearts of stone, made visible.", [
+    ev(1, "Stone Staff I", 5_000_000, "+90% magical damage", "Turns the nearest enemy to stone; it crumbles after 3 seconds. Never affects Ramses. Every 20 seconds.", { magicPct: 90 }),
+    ev(2, "Stone Staff II", 10_000_000, "+115% magical damage", "Turns an enemy to stone from farther away. Every 15 seconds.", { magicPct: 115 }),
+    ev(3, "Stone Staff III", 35_000_000, "+140% magical damage", "Turns an enemy to stone from far away. Every 10 seconds.", { magicPct: 140 }),
   ]),
   item("waters", "staff", "Staff of Primordial Waters", "The waters that were before the firmament.", [
-    ev(1, "Staff of Primordial Waters I", 20_000_000, "+120% magical damage", "", { magicPct: 120 }),
-    ev(2, "Staff of Primordial Waters II", 35_000_000, "+145% magical damage", "Creates a slowing wave every 25 seconds.", { magicPct: 145 }),
-    ev(3, "Staff of Primordial Waters III", 60_000_000, "+170% magical damage", "Creates a larger, more damaging wave every 20 seconds.", { magicPct: 170 }),
+    ev(1, "Staff of Primordial Waters I", 20_000_000, "+120% magical damage", "A rotating ring of water around Moses damages enemies for 4 seconds. Every 20 seconds.", { magicPct: 120 }),
+    ev(2, "Staff of Primordial Waters II", 35_000_000, "+145% magical damage", "A larger, stronger water ring for 5 seconds. Every 15 seconds.", { magicPct: 145 }),
+    ev(3, "Staff of Primordial Waters III", 60_000_000, "+170% magical damage", "A huge, powerful water ring for 6 seconds. Every 10 seconds.", { magicPct: 170 }),
   ]),
-  item("light", "staff", "Staff of Divine Light", "Lightning answerable to prayer.", [
-    ev(1, "Staff of Divine Light I", 75_000_000, "+160% magical damage", "", { magicPct: 160 }),
-    ev(2, "Staff of Divine Light II", 100_000_000, "+180% magical damage", "A lightning strike hits three enemies every 25 seconds.", { magicPct: 180 }),
-    ev(3, "Staff of Divine Light III", 150_000_000, "+200% magical damage", "A lightning strike hits five enemies every 20 seconds.", { magicPct: 200 }),
+  item("light", "staff", "Staff of Divine Light", "A light no eye can bear.", [
+    ev(1, "Staff of Divine Light I", 75_000_000, "+160% magical damage", "Blinds the 3 nearest enemies and binds them together for 2 seconds (not Ramses). Every 20 seconds.", { magicPct: 160 }),
+    ev(2, "Staff of Divine Light II", 100_000_000, "+180% magical damage", "Blinds and binds the 4 nearest enemies for 2 seconds. Every 15 seconds.", { magicPct: 180 }),
+    ev(3, "Staff of Divine Light III", 150_000_000, "+200% magical damage", "Blinds and binds the 5 nearest enemies for 2 seconds. Every 10 seconds.", { magicPct: 200 }),
   ]),
   item("power", "staff", "Staff of God's Power", "The might of the LORD, measured out in mercy.", [
-    ev(1, "Staff of God's Power I", 200_000_000, "+200% magical damage", "", { magicPct: 200 }),
-    ev(2, "Staff of God's Power II", 300_000_000, "+250% magical damage", "A powerful lightning strike hits three enemies every 25 seconds.", { magicPct: 250 }),
-    ev(3, "Staff of God's Power III", 500_000_000, "+300% magical damage", "A massive lightning strike hits five enemies every 20 seconds. It wounds Ramses gravely but never kills him with one hit.", { magicPct: 300 }),
+    ev(1, "Staff of God's Power I", 200_000_000, "+200% magical damage", "The hand of God strikes the ground and throws enemies into the air. Every 20 seconds.", { magicPct: 200 }),
+    ev(2, "Staff of God's Power II", 300_000_000, "+250% magical damage", "A larger, stronger strike of the hand of God. Every 15 seconds.", { magicPct: 250 }),
+    ev(3, "Staff of God's Power III", 500_000_000, "+300% magical damage", "A massive strike; it wounds Ramses but never kills him in one hit. Every 10 seconds.", { magicPct: 300 }),
   ]),
 ];
 
