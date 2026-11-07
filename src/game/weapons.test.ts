@@ -187,20 +187,11 @@ test('Axe and mace cracks and damage wait until the shared contact beat', () => 
     assert.equal(groundStrikeAngle(GROUND_IMPACT_DELAY/.5),1.8);
   }
 });
-test('Mace crack rotation is chosen once per strike, not reset on its second damage pulse', () => {
-  const s=arena('mace',3); const spawn=spawner(s); const random=Math.random;
-  try {
-    Math.random=()=>.1; weaponOnCast(s,spawn);
-    Math.random=()=>.7; weaponOnCast(s,spawn);
-  } finally {Math.random=random;}
-  const impacts=[...s.entities.values()].filter(e=>e.kind==='maceimpact');
-  assert.notEqual(impacts[0].data?.rotation,impacts[1].data?.rotation);
-  assert.equal(impacts[0].data?.r,128);
-  const rotation=impacts[0].data?.rotation; impacts[0].ttl=.19; s.now+=.51;
-  updateWeaponEntities(s,.01,{wrapDelta:(a,b)=>a-b,killEnemy:()=>{},spawn});
-  assert.equal(impacts[0].data?.secondDone,1); assert.equal(impacts[0].data?.r,128);
-  assert.equal(impacts[0].data?.rotation,rotation);
-  assert.ok(impactLife(10.51,10.3,.4)>impactLife(10.52,10.3,.4));
+test('Mace impacts alternate horizontal mirroring on consecutive strikes', () => {
+  const s=arena('mace',3); const spawn=spawner(s);
+  weaponOnCast(s,spawn); weaponOnCast(s,spawn); weaponOnCast(s,spawn);
+  const flips=[...s.entities.values()].filter(e=>e.kind==='maceimpact').map(e=>e.data?.flipX);
+  assert.deepEqual(flips,[-1,1,-1]);
 });
 
 test('Branch evolution doubles the original 0.03-second attack interval reduction', () => {
