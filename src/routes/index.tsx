@@ -99,7 +99,7 @@ function MainMenu() {
         <PixelIcon art={GEAR_ART} size={24} />
       </button>
       {devAccess && (
-        <Link to="/test-map" className="pixel-btn pixel-btn-press fixed bottom-3 right-3 z-30 bg-secondary px-3 py-2 font-display text-[10px] uppercase text-secondary-foreground">Test Map</Link>
+        <Link to="/test-map" className="pixel-btn pixel-btn-press fixed bottom-3 left-3 z-30 bg-secondary px-3 py-2 font-display text-[10px] uppercase text-secondary-foreground">Test Map</Link>
       )}
       <GameSettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>
