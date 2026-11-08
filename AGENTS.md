@@ -101,7 +101,7 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Off-screen overlays read restored world positions and actual HP; pure geometry is tested separately.
 - Grant free starters during save sanitization to preserve existing purchases.
 - Shop portraits share one 1024² composition (`shop-portrait-v3-*`); sidebar faces are a fixed crop in `ChampionArt.tsx`, and item icons are keyed `category:id` (`shop-icon-<category>-<id>`) because ids repeat across categories.
-- Shop equipment uses `equipmentManifest.json`/`equipmentArt.ts` and separate staff icon assets; in-hand and projectile combat art uses `combatEquipmentArt.ts`, never shop images, to preserve native sprite proportions. The front branch keeps the original Moses stick asset; retain shield IDs and old assets for rollback.
+- Shop equipment uses `equipmentManifest.ts`/`equipmentArt.ts` and separate staff icon assets; in-hand and projectile combat art uses `combatEquipmentArt.ts`, never shop images, to preserve native sprite proportions. The front branch keeps the original Moses stick asset; retain shield IDs and old assets for rollback.
 - Test Map equipment overrides live only in session config via `applyTestEquipment`; never write test selections to shop saves, and keep original combat cadence separate from visual gestures.
 - Held equipment and its hand overlay must share one grip transform; tune asset grip coordinates, not combat hitboxes, to correct visual attachment.
 - When establishing a weakest starter, derive the minimum adjustment from existing catalogue minima and keep bar normalization separate from combat values; preserve other champions and later evolutions.
@@ -112,3 +112,4 @@ bgp-admin at `templates/agent-docs/`, so ask before adding it.
 - Directional weapon art resolves its rotation after body mirroring; smooth visual aim separately from captured collision aim to prevent reversed tips. Weapon ground water belongs in the ground pass, and axe-specific full stuns use a separate timer from plague slows.
 - Sword projectile origins use the supplied PNG grip/height and animated hand transform at release, not a fixed target-direction offset; this keeps the X attached to the visible tip without altering shop art.
 - Staff specials live in `fireStaffSpecial`/`updateStaff` (`equipment.ts`): every staff charges a timed special (cooldowns in `STAFF_SPECIAL_COOLDOWN`) and the rear-staff cast pose/light are driven only by `staffVisualAt` via `staffCastPose` (`equipmentFx.ts`); plague casts no longer animate the staff. Staff ids stay stable (`fire` = Wind Staff, `bush` = Stone Staff) to preserve purchases.
+- All images live as real files in `src/assets` imported directly; never use `.asset.json` CDN pointers (the `/__l5e/` path only exists on Lovable hosting).
