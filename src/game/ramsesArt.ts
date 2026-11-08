@@ -3,13 +3,13 @@
 // a body layer and a staff layer (the staff is cut out around the fist, never
 // through it), so the staff can swing around the hand during a strike while the
 // fist stays on top of it. Neither layer is redrawn or recoloured.
-import quietBodyAsset from "@/assets/ramses-quiet-body.png.asset.json";
-import quietStaffAsset from "@/assets/ramses-quiet-staff.png.asset.json";
-import moveBodyAsset from "@/assets/ramses-move-body.png.asset.json";
-import moveStaffAsset from "@/assets/ramses-move-staff.png.asset.json";
-import walkV2BodyAsset from "@/assets/ramses-v2-walk-body.png.asset.json";
-import walkV2StaffAsset from "@/assets/ramses-v2-walk-staff.png.asset.json";
-import seatedV2Asset from "@/assets/ramses-v2-seated.png.asset.json";
+import quietBodyAsset from "@/assets/ramses-quiet-body.png";
+import quietStaffAsset from "@/assets/ramses-quiet-staff.png";
+import moveBodyAsset from "@/assets/ramses-move-body.png";
+import moveStaffAsset from "@/assets/ramses-move-staff.png";
+import walkV2BodyAsset from "@/assets/ramses-v2-walk-body.png";
+import walkV2StaffAsset from "@/assets/ramses-v2-walk-staff.png";
+import seatedV2Asset from "@/assets/ramses-v2-seated.png";
 
 /**
  * "new" uses the v2 walking sprite for every standing state and the v2 seated
@@ -60,11 +60,11 @@ const ready = (i: HTMLImageElement) => i.complete && i.naturalWidth > 0;
 
 export function ensureRamsesArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!quiet) quiet = { body: load(quietBodyAsset.url), staff: load(quietStaffAsset.url) };
-  if (!move) move = { body: load(moveBodyAsset.url), staff: load(moveStaffAsset.url) };
+  if (!quiet) quiet = { body: load(quietBodyAsset), staff: load(quietStaffAsset) };
+  if (!move) move = { body: load(moveBodyAsset), staff: load(moveStaffAsset) };
   if (RAMSES_VISUAL_VERSION === "new") {
-    if (!walkV2) walkV2 = { body: load(walkV2BodyAsset.url), staff: load(walkV2StaffAsset.url) };
-    if (!seatedV2) seatedV2 = load(seatedV2Asset.url);
+    if (!walkV2) walkV2 = { body: load(walkV2BodyAsset), staff: load(walkV2StaffAsset) };
+    if (!seatedV2) seatedV2 = load(seatedV2Asset);
     return ready(walkV2.body) && ready(walkV2.staff) && ready(seatedV2);
   }
   return ready(quiet.body) && ready(quiet.staff) && ready(move.body) && ready(move.staff);

@@ -4,11 +4,11 @@
 //   body   — head, ears, neck, torso, tail and hips (down to the leg cut)
 //   legRN  — near hind leg      legRF — far hind leg
 //   legFN  — near front leg     legFF — far front leg
-import bodyAsset from "@/assets/wolf-body.png.asset.json";
-import legRNAsset from "@/assets/wolf-legrn.png.asset.json";
-import legRFAsset from "@/assets/wolf-legrf.png.asset.json";
-import legFNAsset from "@/assets/wolf-legfn.png.asset.json";
-import legFFAsset from "@/assets/wolf-legff.png.asset.json";
+import bodyAsset from "@/assets/wolf-body.png";
+import legRNAsset from "@/assets/wolf-legrn.png";
+import legRFAsset from "@/assets/wolf-legrf.png";
+import legFNAsset from "@/assets/wolf-legfn.png";
+import legFFAsset from "@/assets/wolf-legff.png";
 
 export const WOLF_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -42,11 +42,11 @@ export function ensureWolfArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      legRN: load(legRNAsset.url),
-      legRF: load(legRFAsset.url),
-      legFN: load(legFNAsset.url),
-      legFF: load(legFFAsset.url),
+      body: load(bodyAsset),
+      legRN: load(legRNAsset),
+      legRF: load(legRFAsset),
+      legFN: load(legFNAsset),
+      legFF: load(legFFAsset),
     };
   }
   const l = layers;

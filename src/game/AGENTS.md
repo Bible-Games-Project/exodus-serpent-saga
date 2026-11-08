@@ -15,3 +15,13 @@
 - Supplied champions use virtual sprite coordinates and original-pixel arm/weapon layers; draw full-resolution sources into those coordinates without changing their proportions.
 - Champion projectile simulation stays on the ground; hand height is a visual lift only, keeping collision aligned with enemy ground positions.
 - Support timelines run without hostile targets; verify healing and wards in an empty arena as well as in combat.
+- Test Map equipment overrides live only in session config via `applyTestEquipment`; never write test selections to shop saves, and keep original combat cadence separate from visual gestures.
+- Held equipment and its hand overlay must share one grip transform; tune asset grip coordinates, not combat hitboxes, to correct visual attachment.
+- When establishing a weakest starter, derive the minimum adjustment from existing catalogue minima and keep bar normalization separate from combat values; preserve other champions and later evolutions.
+- Shop capability bars are presentation-only heuristics in `shopStats.ts`, based on existing geometry and abilities; never use them as combat values. Evolution purchase-state squares use the pure `evolutionState` helper so affordability and sequential unlocks stay consistent.
+- Weapon combat tuning (cadence, reach, knockback, ranged-only, ring bounces, dagger poison) lives in `weapons.ts`; shop attack-speed bars read the same `WEAPON_COOLDOWN_MUL` table. Test Map uses the `none` id for unequipped slots.
+- Gameplay PNG weapons/effects load through `combatWeaponPng.ts`; grip-normalized drawings are shared by held and flying art. Keep shop assets untouched, capture projectile evolution on launch, and drive ranged gestures from successful launch timestamps rather than projectile presence.
+- Shared thrust geometry and ground-contact timing live in `weaponAttack.ts`; ground hazards gate both rendering and damage on `impactAt`, and mace second hits must not alter crack size or rotation.
+- Directional weapon art resolves its rotation after body mirroring; smooth visual aim separately from captured collision aim to prevent reversed tips. Weapon ground water belongs in the ground pass, and axe-specific full stuns use a separate timer from plague slows.
+- Sword art uses the supplied PNG grip/height (`SWORD_ART`) and animated hand transform; never fixed offsets.
+- Staff specials live in `fireStaffSpecial`/`updateStaff` (`equipment.ts`): every staff charges a timed special (cooldowns in `STAFF_SPECIAL_COOLDOWN`) and the rear-staff cast pose/light are driven only by `staffVisualAt` via `staffCastPose` (`equipmentFx.ts`); plague casts no longer animate the staff. Staff ids stay stable (`fire` = Wind Staff, `bush` = Stone Staff) to preserve purchases.

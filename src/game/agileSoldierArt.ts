@@ -1,6 +1,6 @@
 // Agile Egyptian soldier — the supplied PNG remains one intact visual layer.
 // The whole figure follows the jump arc so no body or limb is cut apart.
-import spriteAsset from "@/assets/agile-new-source.png.asset.json";
+import spriteAsset from "@/assets/agile-new-source.png";
 
 export const AGILE_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -28,7 +28,7 @@ function load(url: string): HTMLImageElement {
 
 export function ensureAgileArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!sprite) sprite = load(spriteAsset.url);
+  if (!sprite) sprite = load(spriteAsset);
   return sprite.complete && sprite.naturalWidth > 0;
 }
 

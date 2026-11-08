@@ -2,7 +2,7 @@ import type { EquipItem } from "@/game/shopCatalog";
 import { equipmentArtUrl } from "@/game/equipmentArt";
 
 // Category-keyed icons ("patriarchs" exists in both food and footwear).
-const ICONS = import.meta.glob<{ default: { url: string } }>("@/assets/shop-icon-*.png.asset.json", { eager: true });
+const ICONS = import.meta.glob<string>("@/assets/shop-icon-*.png", { eager: true, query: "?url", import: "default" });
 const ICON_BY_KEY: Record<string, string> = {};
 const STAFF_ART = import.meta.glob<string>("@/assets/shop-staff-v4-*.png", { eager: true, query: "?url", import: "default" });
 const STAFF_URLS: Record<string, string> = {};
@@ -11,8 +11,8 @@ for (const [path, url] of Object.entries(STAFF_ART)) {
   if (match) STAFF_URLS[`${match[1]}:${match[2]}`] = url;
 }
 for (const [path, mod] of Object.entries(ICONS)) {
-  const m = path.match(/shop-icon-([a-z]+)-([a-z]+)\.png\.asset\.json$/);
-  if (m) ICON_BY_KEY[`${m[1]}:${m[2]}`] = mod.default.url;
+  const m = path.match(/shop-icon-([a-z]+)-([a-z]+)\.png$/);
+  if (m) ICON_BY_KEY[`${m[1]}:${m[2]}`] = mod;
 }
 
 export function shopItemIconUrl(item: EquipItem, evolution = 1): string | undefined {

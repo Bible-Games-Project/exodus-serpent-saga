@@ -4,9 +4,9 @@
 //   body  — torso, hump, saddle, neck, head
 //   legb  — hind legs
 //   legf  — fore legs
-import bodyAsset from "@/assets/camel-body.png.asset.json";
-import legBAsset from "@/assets/camel-legb.png.asset.json";
-import legFAsset from "@/assets/camel-legf.png.asset.json";
+import bodyAsset from "@/assets/camel-body.png";
+import legBAsset from "@/assets/camel-legb.png";
+import legFAsset from "@/assets/camel-legf.png";
 
 export const CAMEL_ART = {
   W: 81,
@@ -28,7 +28,7 @@ function load(url: string): HTMLImageElement {
 export function ensureCamelArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
-    layers = { body: load(bodyAsset.url), legB: load(legBAsset.url), legF: load(legFAsset.url) };
+    layers = { body: load(bodyAsset), legB: load(legBAsset), legF: load(legFAsset) };
   }
   const l = layers;
   return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);

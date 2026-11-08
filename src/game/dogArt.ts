@@ -7,11 +7,11 @@
 //
 // Each leg layer carries a few rows of overlap above the cut, and the body is
 // stamped after them, so a stepping leg can never leave a hole or a hard cut.
-import bodyAsset from "@/assets/dog-body.png.asset.json";
-import legRNAsset from "@/assets/dog-legrn.png.asset.json";
-import legRFAsset from "@/assets/dog-legrf.png.asset.json";
-import legFNAsset from "@/assets/dog-legfn.png.asset.json";
-import legFFAsset from "@/assets/dog-legff.png.asset.json";
+import bodyAsset from "@/assets/dog-body.png";
+import legRNAsset from "@/assets/dog-legrn.png";
+import legRFAsset from "@/assets/dog-legrf.png";
+import legFNAsset from "@/assets/dog-legfn.png";
+import legFFAsset from "@/assets/dog-legff.png";
 
 export const DOG_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -45,11 +45,11 @@ export function ensureDogArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      legRN: load(legRNAsset.url),
-      legRF: load(legRFAsset.url),
-      legFN: load(legFNAsset.url),
-      legFF: load(legFFAsset.url),
+      body: load(bodyAsset),
+      legRN: load(legRNAsset),
+      legRF: load(legRFAsset),
+      legFN: load(legFNAsset),
+      legFF: load(legFFAsset),
     };
   }
   const l = layers;

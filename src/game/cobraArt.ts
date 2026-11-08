@@ -3,8 +3,8 @@
 //
 //   coil — the coiled body and tail (the part that grips the sand)
 //   head — raised neck, hood and head
-import headAsset from "@/assets/cobra-head.png.asset.json";
-import coilAsset from "@/assets/cobra-coil.png.asset.json";
+import headAsset from "@/assets/cobra-head.png";
+import coilAsset from "@/assets/cobra-coil.png";
 
 export const COBRA_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -31,7 +31,7 @@ function load(url: string): HTMLImageElement {
 export function ensureCobraArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
-    layers = { head: load(headAsset.url), coil: load(coilAsset.url) };
+    layers = { head: load(headAsset), coil: load(coilAsset) };
   }
   const l = layers;
   return [l.head, l.coil].every((i) => i.complete && i.naturalWidth > 0);

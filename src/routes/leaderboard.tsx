@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchLeaderboard } from "@/lib/leaderboard";
-import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
+import cover from "@/assets/Fondo_Pantalla_Main_Menu.png";
 
 export const Route = createFileRoute("/leaderboard")({
   head: () => ({
@@ -25,7 +25,7 @@ function LeaderboardPage() {
 
   return (
     <main className="sub-screen px-4 py-8">
-      <img src={cover.url} alt="" aria-hidden className="sub-bg" />
+      <img src={cover} alt="" aria-hidden className="sub-bg" />
       <div className="relative mx-auto max-w-3xl">
         <div className="flex items-center justify-between">
           <Link to="/" className="cover-button pixel-btn-press font-display uppercase">← Menu</Link>

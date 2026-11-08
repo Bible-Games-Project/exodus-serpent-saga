@@ -3,12 +3,12 @@
 // the body (with the painted wheel removed), four horse legs and the supplied
 // wheel, which spins on the exact centre of the original wheel.
 // RAMSES_CHARIOT_VERSION = "original" restores the old procedural chariot.
-import bodyAsset from "@/assets/ramses-chariot-v2-body.png.asset.json";
-import wheelAsset from "@/assets/ramses-chariot-v2-wheel.png.asset.json";
-import legHbAsset from "@/assets/ramses-chariot-v2-leg-hb.png.asset.json";
-import legHfAsset from "@/assets/ramses-chariot-v2-leg-hf.png.asset.json";
-import legFbAsset from "@/assets/ramses-chariot-v2-leg-fb.png.asset.json";
-import legFfAsset from "@/assets/ramses-chariot-v2-leg-ff.png.asset.json";
+import bodyAsset from "@/assets/ramses-chariot-v2-body.png";
+import wheelAsset from "@/assets/ramses-chariot-v2-wheel.png";
+import legHbAsset from "@/assets/ramses-chariot-v2-leg-hb.png";
+import legHfAsset from "@/assets/ramses-chariot-v2-leg-hf.png";
+import legFbAsset from "@/assets/ramses-chariot-v2-leg-fb.png";
+import legFfAsset from "@/assets/ramses-chariot-v2-leg-ff.png";
 
 export const RAMSES_CHARIOT_VERSION: "original" | "new" = "new";
 
@@ -41,9 +41,9 @@ const ok = (i: HTMLImageElement) => i.complete && i.naturalWidth > 0;
 
 export function ensureRamsesChariotArt(): boolean {
   if (typeof document === "undefined" || RAMSES_CHARIOT_VERSION !== "new") return false;
-  if (!body) body = load(bodyAsset.url);
-  if (!wheel) wheel = load(wheelAsset.url);
-  if (!legs) legs = { hb: load(legHbAsset.url), hf: load(legHfAsset.url), fb: load(legFbAsset.url), ff: load(legFfAsset.url) };
+  if (!body) body = load(bodyAsset);
+  if (!wheel) wheel = load(wheelAsset);
+  if (!legs) legs = { hb: load(legHbAsset), hf: load(legHfAsset), fb: load(legFbAsset), ff: load(legFfAsset) };
   return ok(body) && ok(wheel) && Object.values(legs).every(ok);
 }
 

@@ -1,28 +1,28 @@
 // Combat-only assets; shop artwork is deliberately not imported here.
 import whirlpoolUrl from '@/assets/combat-whirlpool-polish.png';
 import { SWORD_ART } from './weaponAttack';
-import dagger1Asset from '@/assets/combat-dagger-clean-1.png.asset.json';
-import dagger2Asset from '@/assets/combat-dagger-clean-2.png.asset.json';
-import dagger3Asset from '@/assets/combat-dagger-clean-3.png.asset.json';
-import sword1Asset from '@/assets/combat-sword-clean-1.png.asset.json';
-import sword2Asset from '@/assets/combat-sword-clean-2.png.asset.json';
-import sword3Asset from '@/assets/combat-sword-clean-3.png.asset.json';
-import axe1Asset from '@/assets/combat-axe-clean-1.png.asset.json';
-import axe2Asset from '@/assets/combat-axe-clean-2.png.asset.json';
-import axe3Asset from '@/assets/combat-axe-clean-3.png.asset.json';
-const [dagger1, dagger2, dagger3] = [dagger1Asset.url, dagger2Asset.url, dagger3Asset.url];
-const [sword1, sword2, sword3] = [sword1Asset.url, sword2Asset.url, sword3Asset.url];
-const [axe1, axe2, axe3] = [axe1Asset.url, axe2Asset.url, axe3Asset.url];
-import mace1Asset from '@/assets/combat-mace-supplied-1.png.asset.json';
-import mace2Asset from '@/assets/combat-mace-supplied-2.png.asset.json';
-import mace3Asset from '@/assets/combat-mace-supplied-3.png.asset.json';
-import ring1Asset from '@/assets/combat-ring-supplied-1.png.asset.json';
-import ring2Asset from '@/assets/combat-ring-supplied-2.png.asset.json';
-import ring3Asset from '@/assets/combat-ring-supplied-3.png.asset.json';
-import branchWindAsset from '@/assets/combat-branch-wind-v2.png.asset.json';
-import maceImpactAsset from '@/assets/combat-mace-impact-v2.png.asset.json';
-const [ring1, ring2, ring3] = [ring1Asset.url, ring2Asset.url, ring3Asset.url];
-const [mace1, mace2, mace3] = [mace1Asset.url, mace2Asset.url, mace3Asset.url];
+import dagger1Asset from '@/assets/combat-dagger-clean-1.png';
+import dagger2Asset from '@/assets/combat-dagger-clean-2.png';
+import dagger3Asset from '@/assets/combat-dagger-clean-3.png';
+import sword1Asset from '@/assets/combat-sword-clean-1.png';
+import sword2Asset from '@/assets/combat-sword-clean-2.png';
+import sword3Asset from '@/assets/combat-sword-clean-3.png';
+import axe1Asset from '@/assets/combat-axe-clean-1.png';
+import axe2Asset from '@/assets/combat-axe-clean-2.png';
+import axe3Asset from '@/assets/combat-axe-clean-3.png';
+const [dagger1, dagger2, dagger3] = [dagger1Asset, dagger2Asset, dagger3Asset];
+const [sword1, sword2, sword3] = [sword1Asset, sword2Asset, sword3Asset];
+const [axe1, axe2, axe3] = [axe1Asset, axe2Asset, axe3Asset];
+import mace1Asset from '@/assets/combat-mace-supplied-1.png';
+import mace2Asset from '@/assets/combat-mace-supplied-2.png';
+import mace3Asset from '@/assets/combat-mace-supplied-3.png';
+import ring1Asset from '@/assets/combat-ring-supplied-1.png';
+import ring2Asset from '@/assets/combat-ring-supplied-2.png';
+import ring3Asset from '@/assets/combat-ring-supplied-3.png';
+import branchWindAsset from '@/assets/combat-branch-wind-v2.png';
+import maceImpactAsset from '@/assets/combat-mace-impact-v2.png';
+const [ring1, ring2, ring3] = [ring1Asset, ring2Asset, ring3Asset];
+const [mace1, mace2, mace3] = [mace1Asset, mace2Asset, mace3Asset];
 import fx2 from '@/assets/combat-fx-polish-2.png';
 import fx3 from '@/assets/combat-fx-polish-3.png';
 const sources: Record<string, string> = {'../assets/combat-dagger-polish-1.png': dagger1, '../assets/combat-dagger-polish-2.png': dagger2, '../assets/combat-dagger-polish-3.png': dagger3, '../assets/combat-sword-polish-1.png': sword1, '../assets/combat-sword-polish-2.png': sword2, '../assets/combat-sword-polish-3.png': sword3, '../assets/combat-axe-polish-1.png': axe1, '../assets/combat-axe-polish-2.png': axe2, '../assets/combat-axe-polish-3.png': axe3, '../assets/combat-mace-polish-1.png': mace1, '../assets/combat-mace-polish-2.png': mace2, '../assets/combat-mace-polish-3.png': mace3, '../assets/combat-ring-polish-1.png': ring1, '../assets/combat-ring-polish-2.png': ring2, '../assets/combat-ring-polish-3.png': ring3, '../assets/combat-fx-polish-2.png': fx2, '../assets/combat-fx-polish-3.png': fx3};
@@ -61,7 +61,7 @@ export function drawWeaponPng(ctx: CanvasRenderingContext2D, id: string, evoluti
 }
 /** Supplied painted FX drawn with smoothing; anchor (ax, ay) is a fraction of the image. */
 export function drawSuppliedFx(ctx: CanvasRenderingContext2D, kind: 'branchwind' | 'maceimpact', width: number, ax = .5, ay = .5, alpha = 1): boolean {
-  const img = image(kind === 'branchwind' ? branchWindAsset.url : maceImpactAsset.url);
+  const img = image(kind === 'branchwind' ? branchWindAsset : maceImpactAsset);
   if (!img) return false;
   const height = width * img.naturalHeight / img.naturalWidth;
   ctx.save(); ctx.globalAlpha *= alpha; ctx.imageSmoothingEnabled = true;

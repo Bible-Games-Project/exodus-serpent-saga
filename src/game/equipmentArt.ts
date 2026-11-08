@@ -1,5 +1,5 @@
 // Shared isolated equipment artwork for shop and Canvas; no combat rules here.
-import manifest from "./equipmentManifest.json";
+import manifest from "./equipmentManifest";
 const urls: Record<string, string> = manifest;
 export const HELMET_EXPERIMENT = true;
 export const SHOES_EXPERIMENT = true;

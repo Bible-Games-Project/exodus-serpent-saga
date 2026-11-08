@@ -1,7 +1,7 @@
 // Egyptian sorcerer — the supplied PNG remains one complete visual layer.
 // Walking, casting, staff magic and aura effects move around the intact image;
 // no part of the head, torso, robe, arm or staff is cut or redrawn.
-import spriteAsset from "@/assets/mage-red-source.png.asset.json";
+import spriteAsset from "@/assets/mage-red-source.png";
 
 /** Original on-screen density of the supplied sprite, before the 40% upscale. */
 const MAGE_BASE_PX = 0.043;
@@ -57,7 +57,7 @@ function load(url: string): HTMLImageElement {
 
 export function ensureMageArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!sprite) sprite = load(spriteAsset.url);
+  if (!sprite) sprite = load(spriteAsset);
   return sprite.complete && sprite.naturalWidth > 0;
 }
 

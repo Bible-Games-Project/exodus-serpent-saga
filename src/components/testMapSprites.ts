@@ -1,42 +1,42 @@
 // Preview sprites for the Test Map configuration screen. Each entry points at
 // the same PNG layer the game itself draws, so the menu shows the real art.
 // A kind with no entry simply falls back to a plain label in the UI.
-import soldier from "@/assets/soldier-body.png.asset.json";
-import jackal from "@/assets/dog-body.png.asset.json";
-import archer from "@/assets/archer-body.png.asset.json";
-import axesoldier from "@/assets/axe-body.png.asset.json";
-import shieldsoldier from "@/assets/shield-green-source.png.asset.json";
-import bat from "@/assets/bat-body.png.asset.json";
-import heavysoldier from "@/assets/heavy-new-source.png.asset.json";
-import wolf from "@/assets/wolf-body.png.asset.json";
-import agilesoldier from "@/assets/agile-new-source.png.asset.json";
-import cobra from "@/assets/cobra-head.png.asset.json";
-import spearsoldier from "@/assets/spear-v2-source.png.asset.json";
-import camel from "@/assets/camel-body.png.asset.json";
-import lion from "@/assets/lion-body.png.asset.json";
-import spearknight from "@/assets/mounted-new-source.png.asset.json";
-import mage from "@/assets/mage-red-source.png.asset.json";
-import chariotarcher from "@/assets/chariot-v2-source.png.asset.json";
-import ramses from "@/assets/ramses-quiet-body.png.asset.json";
+import soldier from "@/assets/soldier-body.png";
+import jackal from "@/assets/dog-body.png";
+import archer from "@/assets/archer-body.png";
+import axesoldier from "@/assets/axe-body.png";
+import shieldsoldier from "@/assets/shield-green-source.png";
+import bat from "@/assets/bat-body.png";
+import heavysoldier from "@/assets/heavy-new-source.png";
+import wolf from "@/assets/wolf-body.png";
+import agilesoldier from "@/assets/agile-new-source.png";
+import cobra from "@/assets/cobra-head.png";
+import spearsoldier from "@/assets/spear-v2-source.png";
+import camel from "@/assets/camel-body.png";
+import lion from "@/assets/lion-body.png";
+import spearknight from "@/assets/mounted-new-source.png";
+import mage from "@/assets/mage-red-source.png";
+import chariotarcher from "@/assets/chariot-v2-source.png";
+import ramses from "@/assets/ramses-quiet-body.png";
 
 const SPRITES: Record<string, string> = {
-  soldier: soldier.url,
-  jackal: jackal.url,
-  archer: archer.url,
-  axesoldier: axesoldier.url,
-  shieldsoldier: shieldsoldier.url,
-  bat: bat.url,
-  heavysoldier: heavysoldier.url,
-  wolf: wolf.url,
-  agilesoldier: agilesoldier.url,
-  cobra: cobra.url,
-  spearsoldier: spearsoldier.url,
-  camel: camel.url,
-  lion: lion.url,
-  spearknight: spearknight.url,
-  mage: mage.url,
-  chariotarcher: chariotarcher.url,
-  ramses: ramses.url,
+  soldier: soldier,
+  jackal: jackal,
+  archer: archer,
+  axesoldier: axesoldier,
+  shieldsoldier: shieldsoldier,
+  bat: bat,
+  heavysoldier: heavysoldier,
+  wolf: wolf,
+  agilesoldier: agilesoldier,
+  cobra: cobra,
+  spearsoldier: spearsoldier,
+  camel: camel,
+  lion: lion,
+  spearknight: spearknight,
+  mage: mage,
+  chariotarcher: chariotarcher,
+  ramses: ramses,
 };
 
 export function enemySpriteUrl(kind: string): string | undefined {

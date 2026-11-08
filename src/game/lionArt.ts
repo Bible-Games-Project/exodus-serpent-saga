@@ -4,9 +4,9 @@
 //   body — mane, head, torso, tail and hips (down to the leg cut)
 //   legb — hind legs
 //   legf — fore legs
-import bodyAsset from "@/assets/lion-body.png.asset.json";
-import legBAsset from "@/assets/lion-legb.png.asset.json";
-import legFAsset from "@/assets/lion-legf.png.asset.json";
+import bodyAsset from "@/assets/lion-body.png";
+import legBAsset from "@/assets/lion-legb.png";
+import legFAsset from "@/assets/lion-legf.png";
 
 export const LION_ART = {
   W: 72,
@@ -33,7 +33,7 @@ function load(url: string): HTMLImageElement {
 export function ensureLionArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
-    layers = { body: load(bodyAsset.url), legB: load(legBAsset.url), legF: load(legFAsset.url) };
+    layers = { body: load(bodyAsset), legB: load(legBAsset), legF: load(legFAsset) };
   }
   const l = layers;
   return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);

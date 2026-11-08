@@ -5,10 +5,10 @@
 //   legb  — trailing leg + sandal
 //   legf  — leading leg + sandal
 //   arm   — bow arm + bow + string (one rigid group, the grip never breaks)
-import bodyAsset from "@/assets/archer-body.png.asset.json";
-import legBAsset from "@/assets/archer-legb.png.asset.json";
-import legFAsset from "@/assets/archer-legf.png.asset.json";
-import armAsset from "@/assets/archer-arm.png.asset.json";
+import bodyAsset from "@/assets/archer-body.png";
+import legBAsset from "@/assets/archer-legb.png";
+import legFAsset from "@/assets/archer-legf.png";
+import armAsset from "@/assets/archer-arm.png";
 
 export const ARCHER_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -38,10 +38,10 @@ export function ensureArcherArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      legB: load(legBAsset.url),
-      legF: load(legFAsset.url),
-      arm: load(armAsset.url),
+      body: load(bodyAsset),
+      legB: load(legBAsset),
+      legF: load(legFAsset),
+      arm: load(armAsset),
     };
   }
   const l = layers;

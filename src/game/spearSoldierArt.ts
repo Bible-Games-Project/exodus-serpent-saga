@@ -2,12 +2,12 @@
 // layer, and the original supplied flying spear remains the projectile.
 // Layers derived from the original supplied PNG: spear-free body, the complete
 // held spear (with the gripping fist), and two complete legs.
-import bodyAsset from "@/assets/spear-v3-body.png.asset.json";
-import heldAsset from "@/assets/spear-v3-held.png.asset.json";
-import legBAsset from "@/assets/spear-v3-legb.png.asset.json";
-import legFAsset from "@/assets/spear-v3-legf.png.asset.json";
+import bodyAsset from "@/assets/spear-v3-body.png";
+import heldAsset from "@/assets/spear-v3-held.png";
+import legBAsset from "@/assets/spear-v3-legb.png";
+import legFAsset from "@/assets/spear-v3-legf.png";
 // The thrown spear is the supplied spear PNG, used exactly as provided.
-import flyAsset from "@/assets/spear-fly2.png.asset.json";
+import flyAsset from "@/assets/spear-fly2.png";
 
 export const SPEAR_SOLDIER_ART = {
   W: 1024,
@@ -44,11 +44,11 @@ export function ensureSpearSoldierArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      character: load(bodyAsset.url),
-      held: load(heldAsset.url),
-      legB: load(legBAsset.url),
-      legF: load(legFAsset.url),
-      fly: load(flyAsset.url),
+      character: load(bodyAsset),
+      held: load(heldAsset),
+      legB: load(legBAsset),
+      legF: load(legFAsset),
+      fly: load(flyAsset),
     };
   }
   const l = layers;

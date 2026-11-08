@@ -1,7 +1,7 @@
 // Moses' living-serpent projectile — the supplied PNG is kept intact and at
 // its original proportions. Narrow overlapping strips receive a tiny travelling
 // vertical offset so the body visibly slithers without redrawing the artwork.
-import serpentAsset from "@/assets/moses-snake.png.asset.json";
+import serpentAsset from "@/assets/moses-snake.png";
 
 export const SERPENT_ART = {
   W: 1983,
@@ -21,7 +21,7 @@ function load(url: string): HTMLImageElement {
 
 export function ensureSerpentArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!serpent) serpent = load(serpentAsset.url);
+  if (!serpent) serpent = load(serpentAsset);
   return serpent.complete && serpent.naturalWidth > 0;
 }
 

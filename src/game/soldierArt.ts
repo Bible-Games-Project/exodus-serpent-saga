@@ -9,10 +9,10 @@
 // The leg layers carry two columns of overlap with each other and two rows of
 // overlap tucked under the kilt, and the body is stamped after them, so a
 // stepping leg can never leave a transparent hole or a visible rectangular cut.
-import bodyAsset from "@/assets/soldier-body.png.asset.json";
-import legBAsset from "@/assets/soldier-legb.png.asset.json";
-import legFAsset from "@/assets/soldier-legf.png.asset.json";
-import armAsset from "@/assets/soldier-arm.png.asset.json";
+import bodyAsset from "@/assets/soldier-body.png";
+import legBAsset from "@/assets/soldier-legb.png";
+import legFAsset from "@/assets/soldier-legf.png";
+import armAsset from "@/assets/soldier-arm.png";
 
 export const SOLDIER_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -37,10 +37,10 @@ export function ensureSoldierArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      legB: load(legBAsset.url),
-      legF: load(legFAsset.url),
-      arm: load(armAsset.url),
+      body: load(bodyAsset),
+      legB: load(legBAsset),
+      legF: load(legFAsset),
+      arm: load(armAsset),
     };
   }
   const l = layers;
