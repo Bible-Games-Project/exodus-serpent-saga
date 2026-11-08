@@ -1,12 +1,12 @@
 import type { Entity, GameState } from './types';
 import { allyDef } from './allies';
 import { offscreenPoint, separateIndicators, indicatorBounds, type IndicatorPoint } from './offscreenGeometry';
-import aaron from '@/assets/shop-portrait-aaron.png.asset.json';
-import miriam from '@/assets/shop-portrait-miriam.png.asset.json';
-import jochebed from '@/assets/shop-portrait-jochebed.png.asset.json';
-import ramses from '@/assets/ramses-quiet-body.png.asset.json';
+import aaron from '@/assets/shop-portrait-aaron.png';
+import miriam from '@/assets/shop-portrait-miriam.png';
+import jochebed from '@/assets/shop-portrait-jochebed.png';
+import ramses from '@/assets/ramses-quiet-body.png';
 import { offscreenTargets } from './offscreenTargets';
-const portraits: Record<string, string> = { aaron: aaron.url, miriam: miriam.url, jochebed: jochebed.url, ramses: ramses.url };
+const portraits: Record<string, string> = { aaron: aaron, miriam: miriam, jochebed: jochebed, ramses: ramses };
 const images = new Map<string, HTMLImageElement>(), faces = new Map<string, HTMLCanvasElement>();
 let palette: Record<string, string> | null = null;
 function colors() {

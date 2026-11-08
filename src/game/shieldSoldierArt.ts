@@ -4,9 +4,9 @@
 //   body  — headdress, head, torso, shield arm + shield (one rigid group)
 //   legb  — trailing leg + sandal
 //   legf  — leading leg + sandal
-import bodyAsset from "@/assets/shield-green-body.png.asset.json";
-import legBAsset from "@/assets/shield-green-legb.png.asset.json";
-import legFAsset from "@/assets/shield-green-legf.png.asset.json";
+import bodyAsset from "@/assets/shield-green-body.png";
+import legBAsset from "@/assets/shield-green-legb.png";
+import legFAsset from "@/assets/shield-green-legf.png";
 
 export const SHIELD_ART = {
   W: 1024,
@@ -33,7 +33,7 @@ function load(url: string): HTMLImageElement {
 export function ensureShieldArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
-    layers = { body: load(bodyAsset.url), legB: load(legBAsset.url), legF: load(legFAsset.url) };
+    layers = { body: load(bodyAsset), legB: load(legBAsset), legF: load(legFAsset) };
   }
   const l = layers;
   return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);

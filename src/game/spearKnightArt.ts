@@ -4,9 +4,9 @@
 //   body — rider, levelled spear, horse torso, head and tail
 //   legb — hind legs
 //   legf — fore legs
-import bodyAsset from "@/assets/mounted-joint-body.png.asset.json";
-import legBAsset from "@/assets/mounted-joint-legb.png.asset.json";
-import legFAsset from "@/assets/mounted-joint-legf.png.asset.json";
+import bodyAsset from "@/assets/mounted-joint-body.png";
+import legBAsset from "@/assets/mounted-joint-legb.png";
+import legFAsset from "@/assets/mounted-joint-legf.png";
 
 export const SPEAR_KNIGHT_ART = {
   W: 1536,
@@ -31,7 +31,7 @@ function load(url: string): HTMLImageElement {
 export function ensureSpearKnightArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
-    layers = { body: load(bodyAsset.url), legB: load(legBAsset.url), legF: load(legFAsset.url) };
+    layers = { body: load(bodyAsset), legB: load(legBAsset), legF: load(legFAsset) };
   }
   const l = layers;
   return [l.body, l.legB, l.legF].every((i) => i.complete && i.naturalWidth > 0);

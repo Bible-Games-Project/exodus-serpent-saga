@@ -1,10 +1,10 @@
 // Egyptian archer chariot — the supplied pixel-art sprite separated only at
 // the horses' legs and wheel. Both horse bodies, their riders and the cab stay
 // intact while the feet stride underneath and the wheel visibly rolls.
-import bodyAsset from "@/assets/chariot-v2-body.png.asset.json";
-import legBAsset from "@/assets/chariot-v2-legb.png.asset.json";
-import legFAsset from "@/assets/chariot-v2-legf.png.asset.json";
-import wheelAsset from "@/assets/chariot-v2-wheel.png.asset.json";
+import bodyAsset from "@/assets/chariot-v2-body.png";
+import legBAsset from "@/assets/chariot-v2-legb.png";
+import legFAsset from "@/assets/chariot-v2-legf.png";
+import wheelAsset from "@/assets/chariot-v2-wheel.png";
 
 export const CHARIOT_ART = {
   W: 1536,
@@ -39,10 +39,10 @@ function load(url: string): HTMLImageElement {
 
 export function ensureChariotArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!bodyImg) bodyImg = load(bodyAsset.url);
-  if (!legBImg) legBImg = load(legBAsset.url);
-  if (!legFImg) legFImg = load(legFAsset.url);
-  if (!wheelImg) wheelImg = load(wheelAsset.url);
+  if (!bodyImg) bodyImg = load(bodyAsset);
+  if (!legBImg) legBImg = load(legBAsset);
+  if (!legFImg) legFImg = load(legFAsset);
+  if (!wheelImg) wheelImg = load(wheelAsset);
   return [bodyImg, legBImg, legFImg, wheelImg].every(image => image?.complete && image.naturalWidth > 0);
 }
 

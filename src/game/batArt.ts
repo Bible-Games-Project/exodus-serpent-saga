@@ -4,9 +4,9 @@
 //   body   — head, ears, torso, feet
 //   wingL  — left wing (pivots on the left shoulder)
 //   wingR  — right wing (pivots on the right shoulder)
-import bodyAsset from "@/assets/bat-body.png.asset.json";
-import wingLAsset from "@/assets/bat-wingl.png.asset.json";
-import wingRAsset from "@/assets/bat-wingr.png.asset.json";
+import bodyAsset from "@/assets/bat-body.png";
+import wingLAsset from "@/assets/bat-wingl.png";
+import wingRAsset from "@/assets/bat-wingr.png";
 
 export const BAT_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -35,9 +35,9 @@ export function ensureBatArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      wingL: load(wingLAsset.url),
-      wingR: load(wingRAsset.url),
+      body: load(bodyAsset),
+      wingL: load(wingLAsset),
+      wingR: load(wingRAsset),
     };
   }
   const l = layers;

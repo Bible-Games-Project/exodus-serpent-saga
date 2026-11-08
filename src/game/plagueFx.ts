@@ -1,8 +1,8 @@
 // Canvas renderers for the reworked plague abilities (locusts, darkness light
 // pockets, firstborn discharges, pillar zones, hail fire, Red Sea waves).
 // Purely visual: no game state is changed here.
-import locustFrontAsset from "@/assets/locust-front.png.asset.json";
-import locustBackAsset from "@/assets/locust-back.png.asset.json";
+import locustFrontAsset from "@/assets/locust-front.png";
+import locustBackAsset from "@/assets/locust-back.png";
 import type { Entity, GameState, Vec2 } from "./types";
 
 /** Hash-ish deterministic noise in [0,1). */
@@ -33,7 +33,7 @@ function locustImg(which: "front" | "back"): HTMLImageElement {
   let i = locustImgs[which];
   if (!i) {
     i = new Image();
-    i.src = which === "front" ? locustFrontAsset.url : locustBackAsset.url;
+    i.src = which === "front" ? locustFrontAsset : locustBackAsset;
     locustImgs[which] = i;
   }
   return i;

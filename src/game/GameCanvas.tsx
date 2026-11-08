@@ -3,7 +3,7 @@ import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
 export { BONUS_ART } from "./uiIcons";
 import { drawChampionFx } from "./championFx";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
-import frogPlagueAsset from "@/assets/frog-plague.png.asset.json";
+import frogPlagueAsset from "@/assets/frog-plague.png";
 import { useEffect, useRef, useState } from "react";
 import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type Sprite } from "./sprites";
 import { drawRamsesArt, drawRamsesSeatedArt, RAMSES_VISUAL_VERSION } from "./ramsesArt";
@@ -49,9 +49,9 @@ import { BONUSES, type BonusKind } from "./bonuses";
 import { passiveRank } from "./passives";
 import { drawShepherdStaff } from "./staff";
 import type { Entity, GameState, NpcId, PlagueId, UpgradeChoice } from "./types";
-import desertTileAsset from "@/assets/tile-desert.png.asset.json";
+import desertTileAsset from "@/assets/tile-desert.png";
 
-const DESERT_TILE_URL = desertTileAsset.url;
+const DESERT_TILE_URL = desertTileAsset;
 
 /** Opacity of the white wash drawn over the ground texture only (0–1). */
 const GROUND_WASH_OPACITY = 0.42;
@@ -1386,7 +1386,7 @@ const BURNING_BUSH_ART = {
 };
 let frogImg: HTMLImageElement | null = null;
 function getFrogImage(): HTMLImageElement {
-  if (!frogImg) { frogImg = new Image(); frogImg.src = frogPlagueAsset.url; }
+  if (!frogImg) { frogImg = new Image(); frogImg.src = frogPlagueAsset; }
   return frogImg;
 }
 // Preload so the supplied frog is ready before the first frog ever spawns.

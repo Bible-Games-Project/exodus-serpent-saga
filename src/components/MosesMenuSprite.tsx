@@ -1,4 +1,4 @@
-import homeMoses from "@/assets/moses-home.png.asset.json";
+import homeMoses from "@/assets/moses-home.png";
 
 /**
  * Home / Main Menu Moses: the supplied pixel-art PNG, shown exactly as provided
@@ -10,7 +10,7 @@ export function MosesMenuSprite({ zoom = 3, className }: { zoom?: number; classN
   const height = zoom * 112;
   return (
     <img
-      src={homeMoses.url}
+      src={homeMoses}
       alt="Moses holding his shepherd's staff"
       className={className}
       style={{ height, width: "auto", imageRendering: "pixelated" }}

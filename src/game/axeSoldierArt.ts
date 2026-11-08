@@ -5,10 +5,10 @@
 //   legb  — trailing leg + sandal
 //   legf  — leading leg + sandal
 //   arm   — axe arm + axe (one rigid group, the grip never breaks)
-import bodyAsset from "@/assets/axe-body.png.asset.json";
-import legBAsset from "@/assets/axe-legb.png.asset.json";
-import legFAsset from "@/assets/axe-legf.png.asset.json";
-import armAsset from "@/assets/axe-arm.png.asset.json";
+import bodyAsset from "@/assets/axe-body.png";
+import legBAsset from "@/assets/axe-legb.png";
+import legFAsset from "@/assets/axe-legf.png";
+import armAsset from "@/assets/axe-arm.png";
 
 export const AXE_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -39,10 +39,10 @@ export function ensureAxeArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      legB: load(legBAsset.url),
-      legF: load(legFAsset.url),
-      arm: load(armAsset.url),
+      body: load(bodyAsset),
+      legB: load(legBAsset),
+      legF: load(legFAsset),
+      arm: load(armAsset),
     };
   }
   const l = layers;

@@ -1,9 +1,9 @@
 // Angel of Light — visual source of the Death of the Firstborn. The supplied
 // PNG is split only at the outer wing tips so they can flap gently; the body,
 // halo and sword stay intact. The angel never moves: hovering is visual only.
-import bodyAsset from "@/assets/angel-body.png.asset.json";
-import wingLAsset from "@/assets/angel-wing-l.png.asset.json";
-import wingRAsset from "@/assets/angel-wing-r.png.asset.json";
+import bodyAsset from "@/assets/angel-body.png";
+import wingLAsset from "@/assets/angel-wing-l.png";
+import wingRAsset from "@/assets/angel-wing-r.png";
 
 export const ANGEL_ART = {
   W: 133,
@@ -30,9 +30,9 @@ const ok = (i: HTMLImageElement | null) => !!i && i.complete && i.naturalWidth >
 
 export function ensureAngelArt(): boolean {
   if (typeof document === "undefined") return false;
-  if (!body) body = load(bodyAsset.url);
-  if (!wingL) wingL = load(wingLAsset.url);
-  if (!wingR) wingR = load(wingRAsset.url);
+  if (!body) body = load(bodyAsset);
+  if (!wingL) wingL = load(wingLAsset);
+  if (!wingR) wingR = load(wingRAsset);
   return ok(body) && ok(wingL) && ok(wingR);
 }
 

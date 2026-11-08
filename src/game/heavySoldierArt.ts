@@ -7,11 +7,11 @@
 //   legf  — leading leg + sandal
 //   upper — attacking upper arm, joined at the shoulder
 //   fore  — forearm, hand and exact supplied axe, joined at the elbow
-import bodyAsset from "@/assets/heavy-new-body.png.asset.json";
-import legBAsset from "@/assets/heavy-new-legb.png.asset.json";
-import legFAsset from "@/assets/heavy-new-legf.png.asset.json";
-import upperAsset from "@/assets/heavy-new-upperarm.png.asset.json";
-import foreAsset from "@/assets/heavy-new-forearm.png.asset.json";
+import bodyAsset from "@/assets/heavy-new-body.png";
+import legBAsset from "@/assets/heavy-new-legb.png";
+import legFAsset from "@/assets/heavy-new-legf.png";
+import upperAsset from "@/assets/heavy-new-upperarm.png";
+import foreAsset from "@/assets/heavy-new-forearm.png";
 
 export const HEAVY_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -48,11 +48,11 @@ export function ensureHeavyArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      legB: load(legBAsset.url),
-      legF: load(legFAsset.url),
-      upper: load(upperAsset.url),
-      fore: load(foreAsset.url),
+      body: load(bodyAsset),
+      legB: load(legBAsset),
+      legF: load(legFAsset),
+      upper: load(upperAsset),
+      fore: load(foreAsset),
     };
   }
   const l = layers;

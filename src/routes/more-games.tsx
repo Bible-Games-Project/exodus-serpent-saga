@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
+import cover from "@/assets/Fondo_Pantalla_Main_Menu.png";
 
 export const Route = createFileRoute("/more-games")({
   head: () => ({
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/more-games")({
 function MoreGamesPage() {
   return (
     <main className="sub-screen px-4 py-8">
-      <img src={cover.url} alt="" aria-hidden className="sub-bg" />
+      <img src={cover} alt="" aria-hidden className="sub-bg" />
       <div className="relative mx-auto max-w-3xl">
         <Link to="/" className="cover-button pixel-btn-press font-display uppercase">← Menu</Link>
         <h1 className="sub-title mt-6 text-center font-display text-4xl uppercase sm:text-5xl">More Games</h1>

@@ -4,15 +4,15 @@
 // The walk cycle only alternates the sandals and re-stamps the arm slices with
 // a tiny offset; the robe pixels are never cut or deformed. Standing still adds
 // a very subtle breathing motion (a single pixel, slowly).
-import bodyAsset from "@/assets/moses4-body.png.asset.json";
-import footLAsset from "@/assets/moses4-foot-l.png.asset.json";
-import footRAsset from "@/assets/moses4-foot-r.png.asset.json";
-import staffAsset from "@/assets/moses-staff3.png.asset.json";
-import v2BodyAsset from "@/assets/moses-v2-body.png.asset.json";
-import v2FootLAsset from "@/assets/moses-v2-foot-l.png.asset.json";
-import v2FootRAsset from "@/assets/moses-v2-foot-r.png.asset.json";
-import v2HandAsset from "@/assets/moses-v2-hand.png.asset.json";
-import v2StaffAsset from "@/assets/moses-v2-staff.png.asset.json";
+import bodyAsset from "@/assets/moses4-body.png";
+import footLAsset from "@/assets/moses4-foot-l.png";
+import footRAsset from "@/assets/moses4-foot-r.png";
+import staffAsset from "@/assets/moses-staff3.png";
+import v2BodyAsset from "@/assets/moses-v2-body.png";
+import v2FootLAsset from "@/assets/moses-v2-foot-l.png";
+import v2FootRAsset from "@/assets/moses-v2-foot-r.png";
+import v2HandAsset from "@/assets/moses-v2-hand.png";
+import v2StaffAsset from "@/assets/moses-v2-staff.png";
 import type { Loadout } from "./loadout";
 import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
 import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
@@ -68,7 +68,7 @@ type V2Layers = { body: HTMLImageElement; footL: HTMLImageElement; footR: HTMLIm
 let v2: V2Layers | null = null;
 function ensureV2(): boolean {
   if (typeof document === "undefined") return false;
-  if (!v2) v2 = { body: load(v2BodyAsset.url), footL: load(v2FootLAsset.url), footR: load(v2FootRAsset.url), hand: load(v2HandAsset.url), staff: load(v2StaffAsset.url) };
+  if (!v2) v2 = { body: load(v2BodyAsset), footL: load(v2FootLAsset), footR: load(v2FootRAsset), hand: load(v2HandAsset), staff: load(v2StaffAsset) };
   return Object.values(v2).every((i) => i.complete && i.naturalWidth > 0);
 }
 
@@ -91,10 +91,10 @@ export function ensureMosesArt(): boolean {
   if (typeof document === "undefined") return false;
   if (!layers) {
     layers = {
-      body: load(bodyAsset.url),
-      footL: load(footLAsset.url),
-      footR: load(footRAsset.url),
-      staff: load(staffAsset.url),
+      body: load(bodyAsset),
+      footL: load(footLAsset),
+      footR: load(footRAsset),
+      staff: load(staffAsset),
     };
   }
   for (const img of Object.values(layers)) {

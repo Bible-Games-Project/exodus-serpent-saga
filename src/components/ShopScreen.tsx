@@ -8,7 +8,7 @@ import { PowerBars } from "./PowerBars";
 import { EvolutionSquares } from "./EvolutionSquares";
 import { attackSpeedBars, championBars, equipmentStats, utilityBars } from "@/game/shopStats";
 import { equipmentArtUrl, HELMET_EXPERIMENT } from "@/game/equipmentArt";
-import cover from "@/assets/Fondo_Pantalla_Main_Menu.png.asset.json";
+import cover from "@/assets/Fondo_Pantalla_Main_Menu.png";
 import { ChampionArt, MOSES_PORTRAIT } from "./ChampionArt";
 import {
   COIN_ART,
@@ -87,7 +87,7 @@ export function ShopScreen() {
 
   return (
     <main ref={useNoZoom()} className="sub-screen shop-screen flex flex-col px-4 py-4">
-      <img src={cover.url} alt="" aria-hidden className="sub-bg" />
+      <img src={cover} alt="" aria-hidden className="sub-bg" />
       <div className="shop-veil" aria-hidden />
       {/* Header */}
       <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-3">

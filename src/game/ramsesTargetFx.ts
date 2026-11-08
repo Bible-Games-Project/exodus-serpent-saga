@@ -1,7 +1,7 @@
 // Ramses jump-attack target / impact visual. The supplied target PNG is the
 // main visual; supporting pixel embers and shards use the same palette so the
 // whole effect reads as one coherent attack. Visual only — no gameplay here.
-import targetAsset from "@/assets/ramses-target.png.asset.json";
+import targetAsset from "@/assets/ramses-target.png";
 
 /** Palette sampled from the supplied target artwork. */
 const PALETTE = ["#b90f12", "#e02c12", "#ff5a0a", "#ff9a0a", "#f8c014", "#f9e08a"] as const;
@@ -9,7 +9,7 @@ const PALETTE = ["#b90f12", "#e02c12", "#ff5a0a", "#ff9a0a", "#f8c014", "#f9e08a
 let img: HTMLImageElement | null = null;
 function ready(): boolean {
   if (typeof document === "undefined") return false;
-  if (!img) { img = new Image(); img.src = targetAsset.url; }
+  if (!img) { img = new Image(); img.src = targetAsset; }
   return img.complete && img.naturalWidth > 0;
 }
 
