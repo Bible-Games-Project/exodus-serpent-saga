@@ -3,11 +3,11 @@
 // sidebar face is a fixed crop of that same image, so no weapons appear.
 import moses from "@/assets/shop-portrait-v3-moses.png";
 
-const PORTRAITS = import.meta.glob<{ default: { url: string } }>("@/assets/shop-portrait-v3-*.png.asset.json", { eager: true });
+const PORTRAITS = import.meta.glob<string>("@/assets/shop-portrait-v3-*.png", { eager: true, query: "?url", import: "default" });
 const BY_ID: Record<string, string> = {};
 for (const [path, mod] of Object.entries(PORTRAITS)) {
-  const m = path.match(/shop-portrait-v3-([a-z]+)\.png\.asset\.json$/);
-  if (m) BY_ID[m[1]] = mod.default.url;
+  const m = path.match(/shop-portrait-v3-([a-z]+)\.png$/);
+  if (m) BY_ID[m[1]] = mod;
 }
 export const MOSES_PORTRAIT = moses;
 

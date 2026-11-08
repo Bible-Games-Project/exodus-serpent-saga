@@ -1,6 +1,11 @@
 // Shared isolated equipment artwork for shop and Canvas; no combat rules here.
 import manifest from "./equipmentManifest.json";
-const urls: Record<string, string> = manifest;
+// Manifest values are file names inside src/assets, resolved to bundled URLs.
+const FILES = import.meta.glob<string>("@/assets/*.png", { eager: true, query: "?url", import: "default" });
+const BY_NAME: Record<string, string> = {};
+for (const [path, url] of Object.entries(FILES)) BY_NAME[path.slice(path.lastIndexOf("/") + 1)] = url;
+const urls: Record<string, string> = {};
+for (const [key, name] of Object.entries(manifest as Record<string, string>)) if (BY_NAME[name]) urls[key] = BY_NAME[name];
 export const HELMET_EXPERIMENT = true;
 export const SHOES_EXPERIMENT = true;
 export function equipmentArtUrl(category: string, id: string, evolution = 1): string | undefined {
