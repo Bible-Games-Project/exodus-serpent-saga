@@ -6,7 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
-import { daggerTarget, equippedWeapon, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { daggerTarget, equippedWeapon, pendingEmpowerMul, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
 import {
@@ -574,6 +574,8 @@ export function update(state: GameState, dt: number) {
       }
       // Jethro: converted enemies fight for Moses; confused ones wander harmlessly.
       if (championControlsEnemy(state, e, dt, champHelpers(state))) { wrapPos(state, e.pos); continue; }
+      // Divine Light: blinded foes walk toward each other and trade blows at arm's length.
+      if (Number(e.data?.brawlUntil ?? 0) > state.now) { brawlTick(state, e, dt); wrapPos(state, e.pos); continue; }
       // Target selection is refreshed every ~0.3-0.5s (staggered per enemy)
       // instead of every frame; the chosen target's live position is still
       // followed each frame so movement stays smooth.
@@ -618,12 +620,6 @@ export function update(state: GameState, dt: number) {
           e.pos.x += (e.data!.knockVx as number) * f * dt;
           e.pos.y += (e.data!.knockVy as number) * f * dt;
         } else delete e.data!.knockUntil;
-      }
-      // Divine Light: blinded foes are drawn together and stick for its duration.
-      if (Number(e.data?.glueUntil ?? 0) > state.now) {
-        const k = 1 - Math.exp(-6 * dt);
-        e.pos.x += wrapDelta(Number(e.data!.glueX), e.pos.x, state.worldW) * k;
-        e.pos.y += wrapDelta(Number(e.data!.glueY), e.pos.y, state.worldH) * k;
       }
       // Pillar of Cloud containment: clamp after every movement source
       // (walking, dashes, knockback) so nothing can cross the boundary.
@@ -1136,7 +1132,8 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   if (d.blocked) return;
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
   // Physical attack: scaled by the equipped weapon, not by the staff's magic.
-  const dmg = stats.dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5);
+  // A Staff of Moses blessing multiplies every hit of this one swing.
+  const dmg = stats.dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5) * Number(sw.data?.empowerMul ?? 1);
   const tolerance = 14; // segment thickness
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
@@ -1456,6 +1453,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         // Thrown-only weapons keep the throwing animation but deal no melee.
         blocked: ranged || equippedWeapon(state).id === 'dagger' ? 1 : 0,
         noFx: ranged || ['dagger', 'spear'].includes(equippedWeapon(state).id) ? 1 : 0,
+        // Read before weaponOnCast spends the blessing.
+        empowerMul: pendingEmpowerMul(state),
       },
     };
     state.entities.set(sw.id, sw);
@@ -2164,6 +2163,47 @@ function tickBonusSpawns(state: GameState, dt: number) {
 
 
 // ---------- allied champions (common system; data in allies.ts) ----------
+/** Brawl spacing (px between the two bodies) and pace for Divine Light. */
+const BRAWL_GAP = 14, BRAWL_SPEED = 52, BRAWL_HIT_EVERY = .7;
+function brawlTick(state: GameState, e: Entity, dt: number): void {
+  const d = e.data!;
+  let foe: Entity | null = null, best = Infinity;
+  for (const o of state.entities.values()) {
+    if (o === e || o.team !== "enemy" || o.hp <= 0 || !(Number(o.data?.brawlUntil ?? 0) > state.now)) continue;
+    const d2 = wrapDist2(state, e.pos, o.pos);
+    if (d2 < best) { best = d2; foe = o; }
+  }
+  e.vel.x = 0; e.vel.y = 0;
+  if (foe) {
+    const vx = wrapDelta(foe.pos.x, e.pos.x, state.worldW), vy = wrapDelta(foe.pos.y, e.pos.y, state.worldH);
+    const dist = Math.hypot(vx, vy) || 1;
+    const reach = e.radius + foe.radius + BRAWL_GAP;
+    e.facing = vx > 0 ? 1 : -1;
+    if (dist > reach) {
+      // A blind, wary walk: never snapped together.
+      const step = Math.min(BRAWL_SPEED * dt, dist - reach);
+      e.vel.x = vx / dist * BRAWL_SPEED; e.vel.y = vy / dist * BRAWL_SPEED;
+      e.pos.x += vx / dist * step; e.pos.y += vy / dist * step;
+      e.animT += dt;
+    } else if (state.now >= Number(d.brawlNext ?? 0)) {
+      d.brawlNext = state.now + BRAWL_HIT_EVERY + Math.random() * .2;
+      d.brawlHitAt = state.now; d.brawlDirX = vx / dist; d.brawlDirY = vy / dist;
+      foe.hp -= Number(d.brawlDmg ?? 5);
+      spawnVisualHazard(state, "hitspark", { x: foe.pos.x, y: foe.pos.y - 14 }, .18, { seed: foe.id, small: 1, maxTtl: .18 });
+      if (foe.hp <= 0) killEnemy(state, foe);
+    }
+  }
+  // Knockback still slides a brawler, eased like everywhere else.
+  const kU = d.knockUntil as number | undefined;
+  if (kU != null) {
+    if (state.now < kU) {
+      const f = (kU - state.now) / .22;
+      e.pos.x += Number(d.knockVx) * f * dt; e.pos.y += Number(d.knockVy) * f * dt;
+    } else delete d.knockUntil;
+  }
+  resolveObstacles(e.pos, e.radius, state);
+}
+
 function champHelpers(state: GameState): ChampHelpers {
   return {
     wrapDelta,

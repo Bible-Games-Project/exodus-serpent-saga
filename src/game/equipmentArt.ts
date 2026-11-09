@@ -1,5 +1,6 @@
 // Shared isolated equipment artwork for shop and Canvas; no combat rules here.
 import manifest from "./equipmentManifest";
+import { daggerThrowPose } from "./weaponAttack";
 const urls: Record<string, string> = manifest;
 export const HELMET_EXPERIMENT = true;
 export const SHOES_EXPERIMENT = true;
@@ -33,8 +34,9 @@ export function equipmentGesture(id: string, progress: number, evolution: number
   }
   if (id === "boomerang" || id === "ring") return { angle: pulse * (id === "ring" ? 1.8 : 1.35) * rank, thrust: pulse * 4 };
   if (id === "dagger") {
-    // One stab per hand motion; each motion throws exactly one dagger.
-    return { angle: Math.PI / 2, thrust: pulse * 7 * rank };
+    // Overhand throw: draw back over the shoulder, whip forward, release, follow through.
+    const pose = daggerThrowPose(p);
+    return { angle: pose.angle, thrust: pose.thrust };
   }
   if (id === "mace") return { angle: p < .4 ? -p * 1.8 : (p - .4) * 3.2, thrust: 0 };
   if (id === "axe") return { angle: p < .3 ? -p * 1.7 : (p - .3) * 2.8 * rank, thrust: 0 };

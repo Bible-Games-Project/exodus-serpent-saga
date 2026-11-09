@@ -18,11 +18,34 @@ export const SWORD_ART = [
   { height: 96, gripX: .5, gripY: .9 },
 ] as const;
 /** Branch wind art width per level: one shared gust that grows with evolution. */
-export const BRANCH_WIND_WIDTH = [70, 100, 135] as const;
+export const BRANCH_WIND_WIDTH = [46, 58, 72] as const;
+/** Push (px, eased over 0.22 s) applied by the branch gust to every foe it crosses. */
+export const BRANCH_WIND_PUSH = [26, 36, 48] as const;
+/** Branch gust travel: starts 20 px ahead of the hand and flies 110 px in 0.45 s. */
+export const BRANCH_WIND_TRAVEL = { start: 20, distance: 110, duration: .45 } as const;
 /** Sword cross scale per level; it also grows from small to full while travelling. */
 export const SWORD_CROSS_SCALE = [1, 1.3, 1.75] as const;
 /** Harpoon leaves the hand when the thrust pose is fully forward. */
 export const HARPOON_RELEASE_DELAY = .3;
+/** A flying harpoon re-reads its target's position this often and steers smoothly toward it. */
+export const HARPOON_RETARGET_SECONDS = .3;
+/** Steering rate (1/s) of the harpoon's smooth look-at between route refreshes. */
+export const HARPOON_TURN_RATE = 7;
+/** Overhand dagger throw: the hand pulls back, swings forward and lets go at this fraction. */
+export const DAGGER_RELEASE_PROGRESS = .45;
+/** Dagger throw gesture length at level I (seconds); faster levels shorten it proportionally. */
+export const DAGGER_GESTURE_SECONDS = .34;
+/** Overhand throw pose for the held dagger (angle in radians, thrust in sprite px). */
+export function daggerThrowPose(progress: number): { angle: number; thrust: number; lift: number } {
+  const p = Math.max(0, Math.min(1, progress));
+  const ease = (t: number) => t * t * (3 - 2 * t);
+  const rel = DAGGER_RELEASE_PROGRESS;
+  // Rest pose points the blade forward (PI/2); wind-up raises it up and back.
+  if (p < .3) { const u = ease(p / .3); return { angle: Math.PI / 2 - 2.1 * u, thrust: -4 * u, lift: -3 * u }; }
+  if (p < rel + .08) { const u = ease((p - .3) / (rel + .08 - .3)); return { angle: Math.PI / 2 - 2.1 + 2.45 * u, thrust: -4 + 11 * u, lift: -3 + 4 * u }; }
+  const u = ease((p - rel - .08) / (1 - rel - .08));
+  return { angle: Math.PI / 2 + .35 * (1 - u), thrust: 7 * (1 - u), lift: 1 - u };
+}
 /** Swing fraction where the sword tip passes horizontal (mosesSwingAngle = PI/2). */
 export const SWORD_HORIZONTAL_PROGRESS = .7;
 /** Chance that a vanishing ring discharges gold lightning on every foe it touched. */

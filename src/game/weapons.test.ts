@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerTarget, updateWeaponAim, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponKnockback, weaponReachMul } from "./weapons";
+import { DAGGER_CADENCE, DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerGestureSeconds, daggerTarget, updateWeaponAim, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponKnockback, weaponReachMul } from "./weapons";
 import type { Entity, GameState, Vec2 } from "./types";
-import { BRANCH_WIND_WIDTH, GROUND_IMPACT_DELAY, MACE_IMPACT_RADIUS, SWORD_ART, SWORD_CROSS_SCALE, groundStrikeAngle, heldHarpoonVisible, impactLife, spearAttack, thrustPose, turnWeaponAngle } from './weaponAttack';
+import { BRANCH_WIND_PUSH, BRANCH_WIND_WIDTH, DAGGER_RELEASE_PROGRESS, GROUND_IMPACT_DELAY, HARPOON_RETARGET_SECONDS, MACE_IMPACT_RADIUS, SWORD_ART, SWORD_CROSS_SCALE, groundStrikeAngle, heldHarpoonVisible, impactLife, spearAttack, thrustPose, turnWeaponAngle } from './weaponAttack';
 import { mosesSwordTip } from './mosesGameArt';
 
 const withWeapon = (id: string, evolution: number) => ({ loadout: { weapon: { id, evolution, dmg: 1 } } }) as unknown as GameState;
@@ -47,34 +47,52 @@ function spawner(state: GameState) {
     state.entities.set(e.id, e); return e;
   };
 }
+/** Cast, then advance to the gesture's release beat so the dagger leaves the hand. */
+function throwDagger(s: GameState, basic?: number) {
+  const spawn = spawner(s);
+  weaponOnCast(s, spawn, basic);
+  assert.equal([...s.entities.values()].filter(e => e.kind === 'wpnproj').length, 0);
+  s.now += daggerGestureSeconds(Number(s.loadout?.weapon.evolution ?? 1)) * DAGGER_RELEASE_PROGRESS + .001;
+  updateWeaponEntities(s, .001, { wrapDelta: (a, b) => a - b, killEnemy: () => {}, spawn });
+}
 test('Dagger throws exactly one dagger per hand motion at every level', () => {
   const counts: number[] = [];
   for (let evo = 1; evo <= 3; evo++) {
     const s = arena('dagger', evo); s.entities.set(1, enemy(1, 1080, 1000));
-    weaponOnCast(s, spawner(s));
+    throwDagger(s);
     const projectiles = [...s.entities.values()].filter(e => e.kind === 'wpnproj');
     counts.push(projectiles.length);
     assert.equal(projectiles[0].ttl, DAGGER_THROW[evo - 1].reach / 400);
     assert.ok(projectiles.every(e => Number(e.data?.vx) > 0));
   }
   assert.deepEqual(counts, [1, 1, 1]);
-  const c1 = weaponCooldownMul(withWeapon('dagger', 1));
-  assert.ok(Math.abs(c1 / weaponCooldownMul(withWeapon('dagger', 2)) - 2) < 1e-9);
-  assert.ok(Math.abs(c1 / weaponCooldownMul(withWeapon('dagger', 3)) - 3) < 1e-9);
+  // Faster at each level, but a gentle progression (level III well under 2x level I).
+  const [c1, c2, c3] = [1, 2, 3].map(l => weaponCooldownMul(withWeapon('dagger', l)));
+  assert.ok(c1 > c2 && c2 > c3);
+  assert.ok(c1 / c3 < 1.6);
+  assert.deepEqual([...DAGGER_CADENCE], [.7, .58, .48]);
+});
+test('Thrown daggers leave from the hand, at hand height', () => {
+  const s = arena('dagger'); s.entities.set(1, enemy(1, 1200, 1000)); throwDagger(s);
+  const d = [...s.entities.values()].find(e => e.kind === 'wpnproj')!;
+  assert.ok(d.pos.x > s.player.pos.x + 15);
+  assert.ok(Number(d.data?.lift) > 30 && Number(d.data?.lift) < 45);
 });
 test('Dagger ignores a closer rear enemy and aims its centre projectile at nearest forward enemy', () => {
   const s = arena('dagger'); s.entities.set(1, enemy(1, 995, 1000)); s.entities.set(2, enemy(2, 1060, 1040)); s.entities.set(3, enemy(3, 1100, 1000));
-  assert.equal(daggerTarget(s)?.id, 2); weaponOnCast(s, spawner(s));
+  assert.equal(daggerTarget(s)?.id, 2); throwDagger(s);
   const centre = [...s.entities.values()].filter(e => e.kind === 'wpnproj')[0];
-  assert.ok(Math.abs(Number(centre.data?.vy) / Number(centre.data?.vx) - 40 / 60) < .0001);
+  assert.ok(Math.abs(Number(centre.data?.vy) / Number(centre.data?.vx) - (1040 - centre.pos.y) / (1060 - centre.pos.x)) < .0001);
   s.player.facing = -1; assert.equal(daggerTarget(s)?.id, 1);
 });
-test('Dagger animation itself runs twice and three times as fast at II and III', () => {
+test('Dagger throw gesture speeds up with the attack cadence', () => {
   for (const evo of [1,2,3]) {
     const s=arena('dagger',evo); s.equipFx={weaponVisualAt:10};
-    s.now=10+.1/evo;
+    const dur = daggerGestureSeconds(evo);
+    assert.ok(Math.abs(dur / daggerGestureSeconds(1) - DAGGER_CADENCE[evo-1] / DAGGER_CADENCE[0]) < 1e-9);
+    s.now=10+dur*.2;
     assert.ok(Math.abs(Number(weaponLaunchProgress(s))-.2)<1e-9);
-    s.now=10+.5/evo+.0001; assert.equal(weaponLaunchProgress(s),null);
+    s.now=10+dur+.0001; assert.equal(weaponLaunchProgress(s),null);
   }
 });
 test('Mace keeps exact 48, 96 and 128 impact radii at every evolution', () => {
@@ -135,7 +153,7 @@ test('Dagger collision applies the established poison to the hit enemy only', ()
 });
 test('Dagger projectiles preserve the supplied basic attack damage', () => {
   const s = arena('dagger'); s.entities.set(1, enemy(1,1080,1000));
-  weaponOnCast(s, spawner(s), 37);
+  throwDagger(s, 37);
   const projectiles = [...s.entities.values()].filter(e => e.kind === 'wpnproj');
   assert.equal(projectiles.length, 1);
   assert.ok(projectiles.every(e => e.data?.dmg === 37));
@@ -239,4 +257,55 @@ test('Sword is melee only: no wind cross is spawned at any level', () => {
     const s=arena('sword',evo);s.entities.set(1,enemy(1,1300,1000));weaponOnCast(s,spawner(s));
     assert.equal([...s.entities.values()].some(e=>e.kind==='swordwind'),false);
   }
+});
+
+test('A thrown harpoon re-reads its target every 0.3 s and turns smoothly toward it', () => {
+  const s = arena('harpoon'); const target = enemy(1, 1200, 1000); s.entities.set(1, target);
+  const spawn = spawner(s); weaponOnCast(s, spawn);
+  const ctx = { wrapDelta: (a: number, b: number) => a - b, killEnemy: () => {}, spawn };
+  s.now = 10.3; updateWeaponEntities(s, .01, ctx);
+  const h = [...s.entities.values()].find(e => e.kind === 'wpnproj')!;
+  assert.equal(h.data?.targetId, 1);
+  s.now += .01; updateWeaponEntities(s, .01, ctx); // first aim, taken on release
+  // The target walks well below the original line.
+  target.pos.y = 1150;
+  const angleOf = () => Math.atan2(Number(h.data?.vy), Number(h.data?.vx));
+  const aim = Number(h.data?.aimAngle);
+  s.now += .01; updateWeaponEntities(s, .01, ctx);
+  assert.equal(Number(h.data?.aimAngle), aim, 'no re-aim before the 0.3 s refresh');
+  const before = angleOf();
+  s.now += HARPOON_RETARGET_SECONDS; updateWeaponEntities(s, .016, ctx);
+  const turned = angleOf();
+  assert.ok(turned > before, 'turns toward the moved target');
+  const wanted = Math.atan2(target.pos.y - h.pos.y, target.pos.x - h.pos.x);
+  assert.ok(turned < wanted, 'eases rather than snapping');
+  assert.ok(Math.abs(Math.hypot(Number(h.data?.vx), Number(h.data?.vy)) - 400) < 1e-6);
+});
+test('Branch gust pushes back each foe it crosses once, more at each level', () => {
+  const pushes: number[] = [];
+  for (const evo of [1, 2, 3]) {
+    const s = arena('branch', evo); const en = enemy(1, 1080, 1000); s.entities.set(1, en);
+    const spawn = spawner(s); weaponOnCast(s, spawn);
+    const gust = [...s.entities.values()].find(e => e.kind === 'branchwind')!;
+    const ctx = { wrapDelta: (a: number, b: number) => a - b, killEnemy: () => {}, spawn };
+    for (let t = Number(gust.data?.impactAt); t < Number(gust.data?.impactAt) + .45; t += .02) {
+      s.now = t; updateWeaponEntities(s, .02, ctx);
+    }
+    assert.ok(Number(en.data?.knockVx) > 0);
+    assert.deepEqual(gust.data?.hit, [1]);
+    pushes.push(Number(en.data?.knockVx) * .11);
+  }
+  assert.deepEqual(pushes.map(p => Math.round(p)), [...BRANCH_WIND_PUSH]);
+});
+test('A blessed attack carries the Staff of Moses multiplier on its thrown weapon, once', () => {
+  const s = arena('boomerang'); s.entities.set(1, enemy(1, 1100, 1000));
+  s.equipFx = { empowered: 1, empowerMul: 3 };
+  const spawn = spawner(s); weaponOnCast(s, spawn);
+  const b = [...s.entities.values()].find(e => e.kind === 'wpboom')!;
+  assert.equal(b.data?.empowered, 1);
+  const blessedDmg = Number(b.data?.dmg);
+  s.entities.clear(); s.entities.set(1, enemy(1, 1100, 1000)); weaponOnCast(s, spawn);
+  const plain = [...s.entities.values()].find(e => e.kind === 'wpboom')!;
+  assert.ok(Math.abs(blessedDmg / Number(plain.data?.dmg) - 3) < 1e-9);
+  assert.equal(plain.data?.empowered, 0);
 });

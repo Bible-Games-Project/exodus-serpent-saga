@@ -14,7 +14,7 @@ function nearestEnemies(state: GameState, from: Vec2, n: number, maxDist = 600):
   const list: Array<{ e: Entity; d: number }> = [];
   for (const e of state.entities.values()) {
     if (e.team !== "enemy") continue;
-    const d = Math.hypot(e.pos.x - from.x, e.pos.y - from.y);
+    const d = Math.hypot(wrapDelta(e.pos.x, from.x, state.worldW), wrapDelta(e.pos.y, from.y, state.worldH));
     if (d <= maxDist) list.push({ e, d });
   }
   list.sort((a, b) => a.d - b.d);
@@ -29,8 +29,16 @@ export const STAFF_CHARGE_SECONDS = 1;
 export const STAFF_SLAM_SECONDS = 0.3;
 /** Power / range multiplier per evolution. */
 export const STAFF_SPECIAL_SCALE = [1, 1.3, 1.6] as const;
-/** Next-attack damage multiplier granted by the blessing staffs. */
-export const STAFF_EMPOWER_MUL: Record<string, readonly number[]> = { moses: [1.5, 1.8, 2.2], iron: [1.7, 2.1, 2.6] };
+/** Staff of Moses: the next attack hits x2 / x3 / x4 by level. */
+export const STAFF_EMPOWER_MUL: Record<string, readonly number[]> = { moses: [2, 3, 4] };
+/** Iron Staff: share of max HP removed from nearby foes, by level. */
+export const IRON_MAXHP_CUT = [.25, .5, .75] as const;
+export const IRON_RADIUS = 130;
+/** Primordial Waters wave: speed (px/s) and base range. */
+export const STAFF_WAVE_SPEED = 300;
+export const STAFF_WAVE_RANGE = 360;
+/** Divine Light: how long blinded foes fight each other. */
+export const LIGHT_BRAWL_SECONDS = 4;
 
 function wrapDelta(a: number, b: number, size: number): number {
   let d = a - b;
@@ -58,14 +66,24 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
   const now = state.now;
   switch (id) {
     case "moses":
-    case "iron":
       f.empowered = 1;
-      f.empowerMul = STAFF_EMPOWER_MUL[id][evo - 1] ?? 1.5;
+      f.empowerMul = STAFF_EMPOWER_MUL.moses[evo - 1] ?? 2;
       break;
+    case "iron": {
+      // Iron Staff: nearby foes permanently lose part of their max HP and turn metallic.
+      const r = IRON_RADIUS * sc, cut = IRON_MAXHP_CUT[evo - 1] ?? IRON_MAXHP_CUT[0];
+      for (const en of enemiesWithin(state, p, r)) {
+        en.maxHp = Math.max(1, en.maxHp * (1 - cut));
+        en.hp = Math.min(en.hp, en.maxHp);
+        en.data ??= {}; en.data.metalAt = now; en.data.metalUntil = now + 1.5;
+      }
+      spawn("staffburst", { ...p }, 0.6, { r, color: "iron" });
+      break;
+    }
     case "crystal": {
       const r = 120 * sc;
       for (const en of enemiesWithin(state, p, r)) { en.data ??= {}; en.data.axeFreezeUntil = now + 1; }
-      spawn("staffburst", { ...p }, 0.6, { r, color: "ice" });
+      spawn("staffring", { ...p }, 1, { r, art: "crystal", ttl0: 1, follow: 1 });
       break;
     }
     case "diamond": {
@@ -75,7 +93,7 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
         en.data.slowUntil = Math.max(Number(en.data.slowUntil ?? 0), now + 2);
         en.hp -= 8 * mag;
       }
-      spawn("staffburst", { ...p }, 0.7, { r, color: "light", rays: 1 });
+      spawn("staffring", { ...p }, 1, { r, art: "diamond", ttl0: 1, follow: 1 });
       break;
     }
     case "bronze":
@@ -93,31 +111,37 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
         en.data.knockUntil = now + 0.22;
       }
       spawn("staffburst", { ...p }, 0.6, { r, color: "ice", wind: 1 });
+      // A small tornado spins up around Moses as the gust leaves.
+      spawn("stafftornado", { x: p.x, y: p.y - 1 }, 1.1, { ttl0: 1.1, evo });
       break;
     }
     case "bush": {
-      // Stone Staff: petrifies the nearest enemy (never Ramses); it crumbles after 3 s.
-      const target = nearestEnemies(state, p, 6, 260 * sc).find((e) => e.kind !== "ramses" && !(e.data?.stoneUntil));
-      if (target) { target.data ??= {}; target.data.stoneAt = now; target.data.stoneUntil = now + 3; }
+      // Stone Staff: petrifies the 1 / 2 / 3 nearest enemies (never Ramses); they crumble after 3 s.
+      const targets = nearestEnemies(state, p, 12, 260 * sc).filter((e) => e.kind !== "ramses" && !(Number(e.data?.stoneUntil ?? 0) > now)).slice(0, evo);
+      for (const target of targets) { target.data ??= {}; target.data.stoneAt = now; target.data.stoneUntil = now + 3; }
       break;
     }
-    case "waters":
-      // Rotating ring of water around Moses that damages what it crosses.
-      spawn("waterorbit", { ...p }, 3 + evo, { r: 80 * sc, dps: 18 * mag, width: 20 });
+    case "waters": {
+      // Primordial Waters: a wave rolls toward the nearest foe, hurting, slowing and pushing back what it crosses.
+      const t = nearestEnemies(state, p, 1, 420)[0];
+      const ang = t ? Math.atan2(wrapDelta(t.pos.y, p.y, state.worldH), wrapDelta(t.pos.x, p.x, state.worldW)) : (state.player.facing === -1 ? Math.PI : 0);
+      const range = STAFF_WAVE_RANGE * sc;
+      spawn("staffwave", { x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20 }, range / STAFF_WAVE_SPEED, {
+        vx: Math.cos(ang) * STAFF_WAVE_SPEED, vy: Math.sin(ang) * STAFF_WAVE_SPEED, ttl0: range / STAFF_WAVE_SPEED,
+        r: 46 * sc, dmg: 30 * mag * sc, knock: 70 * sc, sc, hit: [],
+      }, "hazard");
       break;
+    }
     case "light": {
-      // Blinds the closest enemies and binds them together for 2 s (never Ramses).
+      // Divine Light: blinds the closest enemies, who turn on each other for a while (never Ramses).
       const group = nearestEnemies(state, p, 2 + evo, 300 * sc).filter((e) => e.kind !== "ramses");
-      if (group.length) {
-        let cx = 0, cy = 0;
-        for (const en of group) { cx += wrapDelta(en.pos.x, p.x, state.worldW); cy += wrapDelta(en.pos.y, p.y, state.worldH); }
-        cx = p.x + cx / group.length; cy = p.y + cy / group.length;
-        for (const en of group) {
-          en.data ??= {};
-          en.data.blindUntil = now + 2;
-          en.data.glueUntil = now + 2; en.data.glueX = cx; en.data.glueY = cy;
-        }
-        spawn("staffburst", { x: cx, y: cy }, 0.6, { r: 60 * sc, color: "light" });
+      for (const en of group) {
+        en.data ??= {};
+        en.data.blindUntil = now + LIGHT_BRAWL_SECONDS;
+        en.data.brawlUntil = now + LIGHT_BRAWL_SECONDS;
+        en.data.brawlDmg = 5 * mag * sc;
+        en.data.brawlNext = now + .5;
+        spawn("stafflight", { ...en.pos }, 1.2, { targetId: en.id, ttl0: 1.2 });
       }
       break;
     }
@@ -147,9 +171,9 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
   }
   f.staffNext ??= state.now + 3;
   if (state.now < f.staffNext) return;
-  // Wait for an enemy nearby so the cast is never wasted (blessings need none).
-  if (id !== "moses" && id !== "iron" && !nearestEnemies(state, state.player.pos, 1, 420).length) return;
-  if ((id === "moses" || id === "iron") && f.empowered) return;
+  // Wait for an enemy nearby so the cast is never wasted (the blessing needs none).
+  if (id !== "moses" && !nearestEnemies(state, state.player.pos, 1, 420).length) return;
+  if (id === "moses" && f.empowered) return;
   f.staffVisualAt = state.now;
   f.staffFireAt = state.now + STAFF_CHARGE_SECONDS + STAFF_SLAM_SECONDS;
   f.staffNext = f.staffFireAt + (STAFF_SPECIAL_COOLDOWN[evo - 1] ?? 20);

@@ -5,7 +5,7 @@ import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
 import { MOSES_ATTACK, mosesGrip, mosesSwordTip } from './mosesGameArt';
-import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, GROUND_IMPACT_DELAY, HARPOON_RELEASE_DELAY, MACE_IMPACT_RADIUS, RING_ZAP_CHANCE, SWORD_HORIZONTAL_PROGRESS, spearAttack, turnWeaponAngle } from './weaponAttack';
+import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, BRANCH_WIND_PUSH, BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, DAGGER_GESTURE_SECONDS, DAGGER_RELEASE_PROGRESS, GROUND_IMPACT_DELAY, HARPOON_RELEASE_DELAY, HARPOON_RETARGET_SECONDS, HARPOON_TURN_RATE, MACE_IMPACT_RADIUS, RING_ZAP_CHANCE, SWORD_HORIZONTAL_PROGRESS, spearAttack, turnWeaponAngle } from './weaponAttack';
 
 export type WeaponId = "branch" | "dagger" | "spear" | "sword" | "harpoon" | "axe" | "boomerang" | "mace" | "ring";
 
@@ -16,9 +16,12 @@ export function equippedWeapon(state: GameState): { id: WeaponId; evo: number } 
 
 /** Base physical damage of one weapon hit (already includes passives). */
 export function weaponHitDamage(state: GameState, base: number): number {
+  return base * (weaponDamage(state) / 0.5);
+}
+/** Staff of Moses blessing: multiplier the next attack carries (1 when not blessed). */
+export function pendingEmpowerMul(state: GameState): number {
   const f = state.equipFx;
-  const empowered = f && state.now < (f.empowerHitUntil ?? -1) ? (f.empowerMul ?? 1) : 1;
-  return base * (weaponDamage(state) / 0.5) * empowered;
+  return f?.empowered ? Number(f.empowerMul ?? 1) : 1;
 }
 
 // ---------------------------------------------------------------- tuning
@@ -72,8 +75,12 @@ export const DAGGER_THROW = [
   { count: 1, reach: 340, spread: 0 },
   { count: 1, reach: 440, spread: 0 },
 ] as const;
-/** Gameplay-only dagger cadence (shop bars keep their own table). */
-export const DAGGER_CADENCE = [0.7, 0.35, 0.7 / 3] as const;
+/** Gameplay-only dagger cadence (shop bars keep their own table); a gentle progression per level. */
+export const DAGGER_CADENCE = [0.7, 0.58, 0.48] as const;
+/** Dagger throw gesture length for a level (seconds). */
+export function daggerGestureSeconds(evo: number): number {
+  return DAGGER_GESTURE_SECONDS * (DAGGER_CADENCE[evo - 1] ?? DAGGER_CADENCE[0]) / DAGGER_CADENCE[0];
+}
 /** Horizontal facing defines the forward half-plane, including above/below. */
 export function daggerTarget(state: GameState): Entity | null {
   let best: Entity | null = null, distance = Infinity;
@@ -91,7 +98,7 @@ export function daggerTarget(state: GameState): Entity | null {
 export function weaponLaunchProgress(state: GameState): number | null {
   const at = state.equipFx?.weaponVisualAt;
   const { id, evo } = equippedWeapon(state);
-  const duration = id === 'dagger' ? .5 * (DAGGER_CADENCE[evo - 1] ?? DAGGER_CADENCE[0]) / DAGGER_CADENCE[0] : .5;
+  const duration = id === 'dagger' ? daggerGestureSeconds(evo) : .5;
   if (at == null || state.now < at || state.now - at >= duration) return null;
   return (state.now - at) / duration;
 }
@@ -132,13 +139,16 @@ export function weaponOnCast(
   basicDamage?: number,
 ): void {
   const { id, evo } = equippedWeapon(state);
-  // A charged staff blessing makes this one attack stronger.
+  // A charged Staff of Moses blessing multiplies every hit of this one attack;
+  // thrown weapons carry the multiplier (and its glow) while flying.
   const fxs = (state.equipFx ??= {});
-  if (fxs.empowered) { fxs.empowered = 0; fxs.empowerHitUntil = state.now + .8; }
+  const empower = pendingEmpowerMul(state);
+  if (fxs.empowered) { fxs.empowered = 0; fxs.empowerGlowUntil = state.now + .6; }
+  const blessed = empower > 1 ? 1 : 0;
   const launch = () => { (state.equipFx ??= {}).weaponVisualAt = state.now; };
   const p = state.player;
   const dir: Vec2 = aimDir(state);
-  const dmg = weaponHitDamage(state, 14);
+  const dmg = weaponHitDamage(state, 14) * empower;
   const ang = Math.atan2(dir.y, dir.x);
   if (['spear', 'harpoon', 'axe', 'mace'].includes(id)) {
     (state.equipFx ??= {}).weaponAimAngle = ang;
@@ -155,16 +165,11 @@ export function weaponOnCast(
     case "dagger": {
       const target = daggerTarget(state);
       if (!target) break;
-      const cfg = DAGGER_THROW[evo - 1] ?? DAGGER_THROW[0];
-      const dx = wrapD(target.pos.x, p.pos.x, state.worldW), dy = wrapD(target.pos.y, p.pos.y, state.worldH);
-      const targetAngle = Math.atan2(dy, dx);
-      for (let i = 0; i < cfg.count; i++) {
-        const a = targetAngle + (i - (cfg.count - 1) / 2) * cfg.spread;
-        // Clamp the fan into the same forward half-plane as its target.
-        const vx = p.facing * Math.abs(Math.cos(a)) * 400;
-        const vy = Math.sin(a) * 400;
-        spawn('wpnproj', { ...p.pos }, cfg.reach / 400, { vx, vy, dmg: basicDamage ?? dmg, pierce: 1, art: 'dagger', evo, targetId: target.id, poisonEvo: evo }, 'projectile');
-      }
+      // Overhand throw: the dagger leaves the hand at the release beat of the gesture.
+      const fireAt = state.now + daggerGestureSeconds(evo) * DAGGER_RELEASE_PROGRESS;
+      spawn('daggerthrow', { ...p.pos }, fireAt - state.now + .1, {
+        fireAt, targetId: target.id, evo, facing: p.facing, dmg: (basicDamage ?? dmg / empower) * empower, empowered: blessed,
+      }, 'hazard');
       launch();
       break;
     }
@@ -174,7 +179,7 @@ export function weaponOnCast(
       spawn('harpoonthrow', { ...p.pos }, HARPOON_RELEASE_DELAY + .1, {
         fireAt: state.now + HARPOON_RELEASE_DELAY, vx: dir.x * 400, vy: dir.y * 400, dmg,
         pierce: evo >= 2 ? 3 : 1, knock: 16,
-        whirlpool: proc ? (evo >= 3 ? 1.3 : 1) : 0, evo,
+        whirlpool: proc ? (evo >= 3 ? 1.3 : 1) : 0, evo, empowered: blessed,
       }, 'hazard');
       launch();
       break;
@@ -185,7 +190,7 @@ export function weaponOnCast(
         const a = ang + (i - (n - 1) / 2) * 0.5;
         spawn("wpboom", { ...p.pos }, 2.2, {
           vx: Math.cos(a) * 320, vy: Math.sin(a) * 320,
-          dmg, phase: 0, flash: evo >= 3 ? 1 : 0, evo,
+          dmg, phase: 0, flash: evo >= 3 ? 1 : 0, evo, empowered: blessed,
         }, "projectile");
       }
       launch();
@@ -195,7 +200,7 @@ export function weaponOnCast(
       spawn("wpring", { ...p.pos }, 4.0, {
         vx: dir.x * 380, vy: dir.y * 380, dmg,
         bounces: RING_BOUNCES[evo - 1] ?? 4, returning: 0, knock: 12,
-        electric: evo >= 3 ? 1 : 0, evo,
+        electric: evo >= 3 ? 1 : 0, evo, empowered: blessed,
       }, "projectile");
       launch();
       break;
@@ -223,8 +228,8 @@ export function weaponOnCast(
       break;
     }
     case "branch": {
-      // Same soft wind arc at every level, flying toward the nearest foe.
-      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + .45, { angle: ang, evo, impactAt: state.now + MOSES_ATTACK.WINDUP }, 'hazard');
+      // Same soft wind arc at every level, flying toward the nearest foe and pushing back what it crosses.
+      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + BRANCH_WIND_TRAVEL.duration, { angle: ang, evo, impactAt: state.now + MOSES_ATTACK.WINDUP, originX: p.pos.x, originY: p.pos.y, hit: [] }, 'hazard');
       if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
       break;
     }
@@ -357,7 +362,88 @@ export function updateWeaponEntities(
       if (state.now >= Number(d.fireAt) && !d.fired) {
         d.fired = 1; e.ttl = 0;
         const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
-        ctx.spawn('wpnproj', grip, 1.4, { vx: d.vx, vy: d.vy, dmg: d.dmg, pierce: d.pierce, knock: d.knock, whirlpool: d.whirlpool, art: 'harpoon', evo: d.evo, fromHand: 1 }, 'projectile');
+        const target = nearestEnemyTo(state, grip, ctx.wrapDelta);
+        ctx.spawn('wpnproj', grip, 1.4, { vx: d.vx, vy: d.vy, dmg: d.dmg, pierce: d.pierce, knock: d.knock, whirlpool: d.whirlpool, art: 'harpoon', evo: d.evo, fromHand: 1, empowered: d.empowered, homing: 1, targetId: target?.id, retargetAt: state.now }, 'projectile');
+      }
+      continue;
+    }
+
+    if (e.kind === 'daggerthrow') {
+      if (state.now >= Number(d.fireAt) && !d.fired) {
+        d.fired = 1; e.ttl = 0;
+        const evo = Number(d.evo ?? 1);
+        const cfg = DAGGER_THROW[evo - 1] ?? DAGGER_THROW[0];
+        // Leaves from the dagger in Moses' hand: simulated on the ground under the
+        // hand, drawn lifted to the hand's height (see the dagger renderer).
+        const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
+        const from = { x: grip.x + p.facing * 8, y: p.pos.y };
+        const target = state.entities.get(Number(d.targetId));
+        const alive = target && target.team === 'enemy' && target.hp > 0;
+        const dx = alive ? ctx.wrapDelta(target.pos.x, from.x, state.worldW) : p.facing;
+        const dy = alive ? ctx.wrapDelta(target.pos.y, from.y, state.worldH) : 0;
+        const a = Math.atan2(dy, dx);
+        // Stay in the forward half-plane Moses is facing.
+        const vx = p.facing * Math.abs(Math.cos(a)) * 400, vy = Math.sin(a) * 400;
+        ctx.spawn('wpnproj', from, cfg.reach / 400, { vx, vy, dmg: d.dmg, pierce: 1, art: 'dagger', evo, targetId: d.targetId, poisonEvo: evo, empowered: d.empowered, lift: from.y - grip.y }, 'projectile');
+      }
+      continue;
+    }
+
+    if (e.kind === 'stafftornado') {
+      // Wind Staff tornado stays with Moses, just behind him.
+      e.pos.x = p.pos.x; e.pos.y = p.pos.y - 1;
+      continue;
+    }
+    if (e.kind === 'stafflight') {
+      // Divine Light beam follows the foe it blinded.
+      const t = state.entities.get(Number(d.targetId));
+      if (t && t.hp > 0) { e.pos.x = t.pos.x; e.pos.y = t.pos.y + 1; }
+      continue;
+    }
+    if (e.kind === 'staffwave') {
+      // Primordial Waters wave: hurts, slows and pushes back every foe it rolls over, once.
+      e.pos.x += Number(d.vx) * dt; e.pos.y += Number(d.vy) * dt;
+      const speed = Math.hypot(Number(d.vx), Number(d.vy)) || 1;
+      const dirX = Number(d.vx) / speed, dirY = Number(d.vy) / speed;
+      const hit = (d.hit ??= []) as number[];
+      for (const en of [...state.entities.values()]) {
+        if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id)) continue;
+        const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW), ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
+        if (Math.hypot(rx, ry) > Number(d.r ?? 46) + en.radius) continue;
+        hit.push(en.id);
+        en.hp -= Number(d.dmg ?? 30);
+        en.data ??= {};
+        en.data.slowUntil = Math.max(Number(en.data.slowUntil ?? 0), state.now + 2.5);
+        if (en.kind !== 'ramses') {
+          en.data.knockVx = dirX * Number(d.knock ?? 70) / .11; en.data.knockVy = dirY * Number(d.knock ?? 70) / .11;
+          en.data.knockUntil = state.now + .22;
+        }
+        ctx.spawn('hitspark', { x: en.pos.x, y: en.pos.y - 14 }, .18, { seed: en.id, small: 1, maxTtl: .18 }, 'hazard');
+        if (en.hp <= 0) ctx.killEnemy(en);
+      }
+      continue;
+    }
+
+    if (e.kind === 'branchwind') {
+      // The gust pushes back every foe it crosses, once, along its flight.
+      const t = (state.now - Number(d.impactAt)) / BRANCH_WIND_TRAVEL.duration;
+      if (t < 0 || t > 1) continue;
+      const ang = Number(d.angle ?? 0), evo = Number(d.evo ?? 1);
+      const along = BRANCH_WIND_TRAVEL.start + t * BRANCH_WIND_TRAVEL.distance;
+      const cx = p.pos.x + Math.cos(ang) * along, cy = p.pos.y + Math.sin(ang) * along;
+      const reach = (BRANCH_WIND_WIDTH[evo - 1] ?? BRANCH_WIND_WIDTH[0]) * .55;
+      const push = BRANCH_WIND_PUSH[evo - 1] ?? BRANCH_WIND_PUSH[0];
+      const hit = (d.hit ??= []) as number[];
+      for (const en of state.entities.values()) {
+        if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id) || en.kind === 'ramses') continue;
+        if (en.kind === 'agilesoldier' && en.data?.specialDash) continue;
+        const rx = ctx.wrapDelta(en.pos.x, cx, state.worldW), ry = ctx.wrapDelta(en.pos.y, cy, state.worldH);
+        if (Math.hypot(rx, ry) > reach + en.radius) continue;
+        hit.push(en.id);
+        en.data ??= {};
+        // Eased slide over 0.22 s (integral = 0.11 * velocity), never a teleport.
+        en.data.knockVx = Math.cos(ang) * push / .11; en.data.knockVy = Math.sin(ang) * push / .11;
+        en.data.knockUntil = state.now + .22;
       }
       continue;
     }
@@ -386,6 +472,7 @@ export function updateWeaponEntities(
         if (dd < 20) { e.ttl = 0; ringZap(state, e, ctx); continue; }
       }
       if (e.kind === 'wpring' && (e.ttl ?? 0) <= dt) ringZap(state, e, ctx);
+      if (e.kind === 'wpnproj' && d.homing) steerHarpoon(state, e, dt, ctx.wrapDelta);
       e.pos.x += (d.vx as number) * dt;
       e.pos.y += (d.vy as number) * dt;
 
@@ -512,6 +599,39 @@ export function updateWeaponEntities(
       }
     }
   }
+}
+
+function nearestEnemyTo(state: GameState, from: Vec2, wrapDelta: (a: number, b: number, size: number) => number, skip?: Set<number>): Entity | null {
+  let best: Entity | null = null, bd = Infinity;
+  for (const en of state.entities.values()) {
+    if (en.team !== 'enemy' || en.hp <= 0 || skip?.has(en.id)) continue;
+    const d2 = wrapDelta(en.pos.x, from.x, state.worldW) ** 2 + wrapDelta(en.pos.y, from.y, state.worldH) ** 2;
+    if (d2 < bd) { bd = d2; best = en; }
+  }
+  return best;
+}
+
+/** Harpoon homing: every 0.3 s it re-reads the target's position (picking the
+ * nearest unhit foe if the target is gone) and between refreshes turns smoothly
+ * toward that heading, keeping its speed. */
+function steerHarpoon(state: GameState, e: Entity, dt: number, wrapDelta: (a: number, b: number, size: number) => number): void {
+  const d = e.data!;
+  const hitSet = d.hit as Set<number> | undefined;
+  if (state.now >= Number(d.retargetAt ?? 0)) {
+    d.retargetAt = state.now + HARPOON_RETARGET_SECONDS;
+    let target = state.entities.get(Number(d.targetId));
+    if (!target || target.team !== 'enemy' || target.hp <= 0 || hitSet?.has(target.id)) {
+      target = nearestEnemyTo(state, e.pos, wrapDelta, hitSet) ?? undefined;
+      d.targetId = target?.id;
+    }
+    if (target) d.aimAngle = Math.atan2(wrapDelta(target.pos.y, e.pos.y, state.worldH), wrapDelta(target.pos.x, e.pos.x, state.worldW));
+  }
+  if (d.aimAngle == null) return;
+  const speed = Math.hypot(Number(d.vx), Number(d.vy)) || 400;
+  const current = Math.atan2(Number(d.vy), Number(d.vx));
+  const delta = Math.atan2(Math.sin(Number(d.aimAngle) - current), Math.cos(Number(d.aimAngle) - current));
+  const next = current + delta * (1 - Math.exp(-HARPOON_TURN_RATE * dt));
+  d.vx = Math.cos(next) * speed; d.vy = Math.sin(next) * speed;
 }
 
 /** Gold lightning on every still-living foe this ring touched, when it vanishes. */

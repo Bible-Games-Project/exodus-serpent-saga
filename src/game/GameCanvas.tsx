@@ -30,7 +30,7 @@ import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
-import { drawMosesArt, mosesGrip, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
+import { drawEmpowerHalo, drawMosesArt, mosesGrip, mosesStaffTip, mosesSwingAngle, MOSES_ATTACK } from "./mosesGameArt";
 import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
@@ -39,10 +39,10 @@ import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, upda
 import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawSuppliedFx, drawWeaponImpact } from './combatWeaponPng';
-import { BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weaponAttack';
+import { BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weaponAttack';
 import { weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
-import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffSpecial } from "./equipmentFx";
+import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffRing, drawStaffSpecial } from "./equipmentFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
@@ -1615,6 +1615,17 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const stoneUntil = e.team === "enemy" ? Number(e.data?.stoneUntil ?? 0) : 0;
     const stoned = stoneUntil > s.now;
     if (stoned) { ctx.save(); ctx.filter = 'grayscale(1) brightness(0.85) contrast(1.1)'; ctx.globalAlpha *= Math.min(1, (stoneUntil - s.now) / .8); }
+    // Iron Staff: struck foes flash with a cold metallic sheen for a moment.
+    const metalUntil = e.team === "enemy" && !stoned ? Number(e.data?.metalUntil ?? 0) : 0;
+    const metal = metalUntil > s.now;
+    if (metal) {
+      const shine = 1.15 + .35 * Math.abs(Math.sin((s.now - Number(e.data?.metalAt ?? 0)) * 7));
+      ctx.save(); ctx.filter = `grayscale(1) brightness(${shine.toFixed(2)}) contrast(1.6)`;
+    }
+    // Divine Light brawl: a short lunge toward the foe on each blow.
+    const brawlU = e.team === "enemy" ? (s.now - Number(e.data?.brawlHitAt ?? -9)) / .25 : 9;
+    const lunging = brawlU >= 0 && brawlU < 1;
+    if (lunging) { ctx.save(); const k = Math.sin(Math.PI * brawlU) * 6; ctx.translate(Number(e.data!.brawlDirX ?? 0) * k, Number(e.data!.brawlDirY ?? 0) * k); }
     try {
     if (e.kind === "staffswing") { drawStaffSwing(ctx, e, s, camX, camY); continue; }
     if (e.kind === "serpent") { drawSerpentProjectile(ctx, e, camX, camY); continue; }
@@ -1708,6 +1719,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
         }
         ctx.restore();
       }
+      if (lunging) ctx.restore();
+      if (metal) ctx.restore();
       if (stoned) ctx.restore();
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
@@ -1861,7 +1874,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     equipment: s.loadout,
     weaponAimAngle: s.equipFx?.weaponVisualAim ?? s.equipFx?.weaponAimAngle,
     castProgress: latestEquipmentCastProgress(s),
-    empowered: !!s.equipFx?.empowered,
+    empowered: !!s.equipFx?.empowered || s.now < (s.equipFx?.empowerGlowUntil ?? -1),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
@@ -4907,14 +4920,23 @@ function drawWeaponEntity(
   camY: number,
 ): boolean {
   const k = e.kind;
-  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind', 'branchwind', 'ringzap', 'harpoonthrow', 'waterorbit', 'godhand', 'staffburst'].includes(k)) return false;
+  if (!["wpnproj", "wpboom", "wpring", "axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "lightningstrike", "staffflame", "windtrail", "slowprint", "shieldpuff", "spearthrust", "daggerstab", 'swordwind', 'branchwind', 'ringzap', 'harpoonthrow', 'daggerthrow', 'waterorbit', 'godhand', 'staffburst', 'staffring', 'stafftornado', 'staffwave', 'stafflight'].includes(k)) return false;
   const x = e.pos.x - camX, y = e.pos.y - camY;
   const d = e.data ?? {};
   if (k === "wpnproj" || k === "wpboom" || k === "wpring") {
     const id = k === "wpboom" ? "boomerang" : k === "wpring" ? "ring" : String(d.art ?? "spear");
-    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y - (id === 'dagger' ? 28 : 0));
+    // Daggers fly at the height of the hand that threw them.
+    ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(x, y - (id === 'dagger' ? Number(d.lift ?? 28) : 0));
     ctx.rotate(k === "wpboom" ? s.now * 12 : Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)) + Math.PI / 2);
-    drawCombatEquipment(ctx, "weapon", id, Number(d.evo ?? s.loadout?.weapon.evolution ?? 1), id === 'harpoon' ? .95 : k === "wpnproj" ? .8 : .9);
+    const scale = id === 'harpoon' ? .95 : k === "wpnproj" ? .8 : .9;
+    const evo = Number(d.evo ?? s.loadout?.weapon.evolution ?? 1);
+    // A Staff of Moses blessing keeps glowing on the thrown weapon while it flies.
+    if (d.empowered) drawEmpowerHalo(ctx, s.now * 4.2, id === 'harpoon' ? 30 : 22);
+    drawCombatEquipment(ctx, "weapon", id, evo, scale);
+    if (d.empowered) {
+      ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = .75 + .25 * Math.sin(s.now * 12.6);
+      drawCombatEquipment(ctx, "weapon", id, evo, scale);
+    }
     ctx.restore();
     if (k === 'wpring') {
       // Gold electric crackle around the spinning ring.
@@ -5026,11 +5048,12 @@ function drawWeaponEntity(
   } else if (k === 'branchwind') {
     // Supplied wind crescent, same art at every level, larger with evolution,
     // flying toward the attacked foe with its convex side leading.
-    const t = (s.now - Number(d.impactAt)) / .45;
+    const t = (s.now - Number(d.impactAt)) / BRANCH_WIND_TRAVEL.duration;
     if (t < 0 || t > 1) { ctx.restore(); return true; }
     const grip = mosesGrip(s.player.pos.x - camX, s.player.pos.y - camY + 8, s.player.facing);
     const ang = Number(d.angle ?? 0);
-    ctx.translate(grip.x + Math.cos(ang) * (20 + t * 110), grip.y + Math.sin(ang) * (20 + t * 110) * .8);
+    const along = BRANCH_WIND_TRAVEL.start + t * BRANCH_WIND_TRAVEL.distance;
+    ctx.translate(grip.x + Math.cos(ang) * along, grip.y + Math.sin(ang) * along * .8);
     ctx.rotate(ang + Math.PI);
     const fade = Math.sin(Math.PI * Math.min(1, t * 1.2));
     drawSuppliedFx(ctx, 'branchwind', (BRANCH_WIND_WIDTH[Number(d.evo ?? 1) - 1] ?? 70) * (.8 + .2 * t), .5, .5, fade * .65);
@@ -5050,8 +5073,8 @@ function drawWeaponEntity(
       ctx.globalAlpha = life * .6; ctx.fillStyle = css.getPropertyValue('--equip-light').trim();
       ctx.beginPath(); ctx.ellipse(px, py + 20, 16 * (1.3 - life * .3), 6, 0, 0, Math.PI * 2); ctx.fill();
     }
-  } else if (k === 'harpoonthrow') {
-    // Pending release; the harpoon is still drawn in Moses' hand.
+  } else if (k === 'harpoonthrow' || k === 'daggerthrow') {
+    // Pending release; the weapon is still drawn in Moses' hand.
   } else if (k === "spearthrust") {
     // Long horizontal piercing streak from Moses' hand.
     const life = impactLife(s.now, Number(d.impactAt ?? e.born), Number(d.duration ?? .22));
@@ -5081,8 +5104,12 @@ function drawWeaponEntity(
       drawCombatEquipment(ctx, "weapon", "dagger", s.loadout?.weapon.evolution ?? 1, 0.8);
       ctx.globalAlpha = 1;
     }
-  } else if (k === 'staffburst' || k === 'waterorbit' || k === 'godhand') {
+  } else if (['staffburst', 'waterorbit', 'godhand', 'staffring', 'stafftornado', 'staffwave', 'stafflight'].includes(k)) {
     drawStaffSpecial(ctx, e, s, x, y);
+  } else if (k === "firering" && d.grow && drawStaffRing(ctx, 'fire', x, y,
+    Number(d.r ?? 120) * (.3 + .7 * Math.min(1, (s.now - e.born) / Math.max(.01, Number(d.ttl0 ?? 1)))),
+    (s.now - e.born) * 2.4, Math.min(1, (e.ttl ?? 0) / .3))) {
+    // Burning Staff: the supplied ring of fire, turning as it spreads.
   } else if (k === "firering" || k === "slowwave") {
     const r = (d.r as number) ?? 120;
     const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / Number(d.ttl0 ?? 0.8)));

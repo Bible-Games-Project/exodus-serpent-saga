@@ -76,3 +76,56 @@ test("Off-screen targets retain only the registered Ramses, never ordinary allie
   boss.kind = "miriam";
   assert.deepEqual(offscreenTargets(state), []);
 });
+function staffArena(staff: string, level: number) {
+  const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1, equipment: { weapon: "branch", weaponLevel: 1, staff, staffLevel: level } });
+  const spawned: Entity[] = [];
+  const spawn = (kind: string, pos: { x: number; y: number }, ttl: number, data: Record<string, unknown>) => {
+    const e = { id: 9000 + spawned.length, kind, team: "hazard", pos, ttl, data, vel: { x: 0, y: 0 }, hp: 1, maxHp: 1, radius: 1, facing: 1, animT: 0, born: state.now } as Entity;
+    spawned.push(e); return e;
+  };
+  const foes = [40, 70, 100, 130].map((dx, i) => {
+    const e: Entity = { ...state.player, id: 500 + i, kind: "soldier", team: "enemy", pos: { x: state.player.pos.x + dx, y: state.player.pos.y }, hp: 100, maxHp: 100, radius: 10, data: {} };
+    state.entities.set(e.id, e); return e;
+  });
+  return { state, spawn, spawned, foes };
+}
+function castStaff(a: ReturnType<typeof staffArena>) {
+  a.state.now = 0; updateEquipment(a.state, a.spawn, () => {});
+  a.state.now = 3; updateEquipment(a.state, a.spawn, () => {});
+  a.state.now = 4.3; updateEquipment(a.state, a.spawn, () => {});
+}
+test("Staff of Moses blessing doubles, triples and quadruples the next attack", () => {
+  for (const level of [1, 2, 3]) {
+    const a = staffArena("moses", level); castStaff(a);
+    assert.equal(a.state.equipFx?.empowerMul, level + 1);
+  }
+});
+test("Iron Staff cuts nearby foes' max HP by 25 / 50 / 75 %", () => {
+  for (const level of [1, 2, 3]) {
+    const a = staffArena("iron", level); castStaff(a);
+    assert.equal(a.foes[0].maxHp, 100 * (1 - .25 * level));
+    assert.ok(a.foes[0].hp <= a.foes[0].maxHp);
+    assert.ok(Number(a.foes[0].data?.metalUntil) > 4.3);
+    assert.ok(!a.state.equipFx?.empowered);
+  }
+});
+test("Stone Staff petrifies the 1 / 2 / 3 nearest foes", () => {
+  for (const level of [1, 2, 3]) {
+    const a = staffArena("bush", level); castStaff(a);
+    const stoned = a.foes.filter(f => f.data?.stoneUntil != null).map(f => f.id);
+    assert.deepEqual(stoned, a.foes.slice(0, level).map(f => f.id));
+  }
+});
+test("Primordial Waters sends one wave toward the nearest foe", () => {
+  const a = staffArena("waters", 1); castStaff(a);
+  const waves = a.spawned.filter(e => e.kind === "staffwave");
+  assert.equal(waves.length, 1);
+  assert.ok(Number(waves[0].data?.vx) > 0 && Math.abs(Number(waves[0].data?.vy)) < 1e-9);
+});
+test("Divine Light blinds the nearest foes into a brawl with a beam on each", () => {
+  const a = staffArena("light", 1); castStaff(a);
+  const brawlers = a.foes.filter(f => Number(f.data?.brawlUntil) > 4.3);
+  assert.equal(brawlers.length, 3);
+  assert.equal(a.spawned.filter(e => e.kind === "stafflight").length, 3);
+  assert.ok(a.foes.every(f => f.data?.glueUntil == null));
+});

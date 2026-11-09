@@ -16,8 +16,8 @@ import v2StaffAsset from "@/assets/moses-v2-staff.png";
 import type { Loadout } from "./loadout";
 import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
 import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
-import { staffCastPose } from './equipmentFx';
-import { groundStrikeAngle, SWORD_ART, thrustPose } from './weaponAttack';
+import { setStaffCrownPoint, staffCastPose } from './equipmentFx';
+import { DAGGER_RELEASE_PROGRESS, daggerThrowPose, groundStrikeAngle, SWORD_ART, thrustPose } from './weaponAttack';
 
 /**
  * Single switch for Moses' look. "original" = previous sprite/staff/animations
@@ -133,6 +133,23 @@ export function mosesSwingAngle(progress: number): number {
 }
 
 /** Screen position of Moses' grip (staff pivot). */
+/** Centre of each staff's top orb in staff-local pixels (before PX scaling). */
+const STAFF_CROWN: Record<string, { x: number; y: number }> = {
+  default: { x: 0, y: -49 }, moses: { x: 5, y: -47 }, bush: { x: 1, y: -48 },
+};
+/** Golden aura behind a blessed weapon (drawn in the weapon's own grip space). */
+export function drawEmpowerHalo(ctx: CanvasRenderingContext2D, phase: number, size = 26): void {
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--equip-light").trim() || "#f3d769";
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = .55 + .2 * Math.sin(phase * 3);
+  const g = ctx.createRadialGradient(0, -size * .45, 0, 0, -size * .45, size);
+  g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, -size * .45, size, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
 export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
   if (MOSES_VISUAL_VERSION === "new") {
     return { x: x + (V2.HAND.x - V2.CX) * V2.PX * flip, y: groundY - (V2.H - V2.HAND.y) * V2.PX };
@@ -215,8 +232,14 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
   } else if (pose.moving) hx = Math.round(Math.sin(pose.walkPhase) * 1.2);
   if (frontGesture) hx += frontGesture.thrust;
   if (directionalThrust) hy += thrust.y;
+  const daggerThrow = pose.equipment?.weapon.id === 'dagger' && pose.attackProgress != null;
+  if (daggerThrow) hy += daggerThrowPose(pose.attackProgress!).lift;
+  // The thrown dagger leaves the hand; a fresh one is drawn as the arm recovers.
+  const daggerInFlight = daggerThrow && pose.attackProgress! >= DAGGER_RELEASE_PROGRESS && pose.attackProgress! < .85;
 
   ctx.save();
+  const baseTransform = ctx.getTransform();
+  setStaffCrownPoint(null);
   ctx.imageSmoothingEnabled = false;
   ctx.translate(Math.round(pose.x), Math.round(pose.groundY + pose.bob));
   if (pose.flip === -1) ctx.scale(-1, 1);
@@ -239,7 +262,13 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       // Centre the original rear fist (source x=2..8, y=41..48) on
       // the grip; the arm, staff and overlay share this exact transform.
       ctx.translate(-2 * PX, (16.5 + rear.thrust) * PX);
-      if (pose.equipment.staff.id !== "none") drawCombatEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, PX);
+      if (pose.equipment.staff.id !== "none") {
+        drawCombatEquipment(ctx, "staff", pose.equipment.staff.id, pose.equipment.staff.evolution, PX);
+        // Remember where the staff's top orb is, so its charge light stays on it.
+        const c = STAFF_CROWN[pose.equipment.staff.id] ?? STAFF_CROWN.default;
+        const pt = baseTransform.inverse().multiply(ctx.getTransform()).transformPoint(new DOMPoint(c.x * PX, c.y * PX));
+        setStaffCrownPoint({ x: pt.x, y: pt.y });
+      }
       // Original hand pixels cover the shaft at its grip.
       ctx.drawImage(L.body, 2, 41, 6, 7, -3 * PX, -3.5 * PX, 6 * PX, 7 * PX);
       ctx.restore();
@@ -261,21 +290,26 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       const evolution = pose.equipment?.weapon.evolution ?? 1;
       if (id === "branch") {
         // Restore the exact original stick, its 10x80 canvas and hand pivot.
+        if (pose.empowered) drawEmpowerHalo(ctx, pose.walkPhase, 30);
         ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
         if (pose.empowered) {
-          ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = .35 + .3 * Math.sin(pose.walkPhase * 3);
-          ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX); ctx.restore();
+          ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = .75 + .25 * Math.sin(pose.walkPhase * 3);
+          ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
+          ctx.globalAlpha = .45; ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX); ctx.restore();
         }
         if (evolution > 1) {
           ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue(evolution === 3 ? "--equip-light" : "--equip-red").trim();
           ctx.fillRect(-1 * PX, -20 * PX, 2 * PX, 2 * PX);
         }
-      } else if (id !== "none" && !pose.hideHeldWeapon) {
+      } else if (id !== "none" && !pose.hideHeldWeapon && !daggerInFlight) {
+        // Staff blessing: a strong golden glow pulses on the weapon until (and during) its blessed attack.
+        if (pose.empowered) drawEmpowerHalo(ctx, pose.walkPhase);
         drawCombatEquipment(ctx, "weapon", id, evolution, PX);
-        // Staff blessing: a metallic shine pulses on the weapon until its next attack.
         if (pose.empowered) {
           ctx.save(); ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = .35 + .3 * Math.sin(pose.walkPhase * 3);
+          ctx.globalAlpha = .75 + .25 * Math.sin(pose.walkPhase * 3);
+          drawCombatEquipment(ctx, "weapon", id, evolution, PX);
+          ctx.globalAlpha = .45;
           drawCombatEquipment(ctx, "weapon", id, evolution, PX);
           ctx.restore();
         }
