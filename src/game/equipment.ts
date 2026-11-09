@@ -39,6 +39,8 @@ export const STAFF_WAVE_SPEED = 300;
 export const STAFF_WAVE_RANGE = 360;
 /** Divine Light: how long blinded foes fight each other. */
 export const LIGHT_BRAWL_SECONDS = 4;
+/** God's Power: fist falls for 0.35 s, then its ground crack lingers. */
+export const GOD_HAND_SECONDS = 1.7;
 
 function wrapDelta(a: number, b: number, size: number): number {
   let d = a - b;
@@ -149,7 +151,7 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
       // The hand of God strikes the ground in front of Moses and throws foes up.
       const t = nearestEnemies(state, p, 1, 360)[0];
       const at = t ? { ...t.pos } : { x: p.x + state.player.facing * 90, y: p.y };
-      spawn("godhand", at, 1, { r: 110 * sc, dmg: 60 * mag, impactAt: now + 0.35, hit: [] });
+      spawn("godhand", at, GOD_HAND_SECONDS, { r: 110 * sc, dmg: 60 * mag, impactAt: now + 0.35, hit: [] });
       break;
     }
   }

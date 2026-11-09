@@ -1,5 +1,6 @@
 import type { Entity, GameState } from "./types";
-import godHandUrl from "@/assets/staff-god-hand.png";
+import godFistUrl from "@/assets/staff-god-fist.png";
+import godCrackUrl from "@/assets/staff-god-crack.png";
 import ringCrystalUrl from "@/assets/combat-staff-ring-crystal.png";
 import ringDiamondUrl from "@/assets/combat-staff-ring-diamond.png";
 import ringFireUrl from "@/assets/combat-staff-ring-fire.png";
@@ -178,15 +179,28 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     const r = Number(d.r ?? 110);
     const fall = Math.min(1, (s.now - e.born) / Math.max(.01, impactAt - e.born));
     const after = Math.max(0, s.now - impactAt);
-    const img = handImage();
-    const w = r * 1.3, h = w * 4 / 3;
-    if (img) {
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, fall * 2) * (1 - Math.min(1, after / .6));
-      ctx.drawImage(img, x - w / 2, y - h * .9 - (1 - fall * fall) * 260, w, h);
+    // Ground crack appears the instant the knuckles land, then fades away.
+    const crack = fxImage(godCrackUrl);
+    if (crack && after > 0) {
+      const left = Math.max(0, e.ttl ?? 0);
+      const pop = .85 + .15 * Math.min(1, after / .1);
+      const w = r * 2.4 * pop, h = w * crack.naturalHeight / crack.naturalWidth;
+      ctx.save(); ctx.imageSmoothingEnabled = true;
+      ctx.globalAlpha = STAFF_ART_ALPHA * Math.min(1, left / .5);
+      ctx.drawImage(crack, x - w / 2, y - h / 2, w, h);
       ctx.restore();
     }
-    if (after > 0) {
+    // The fist art is pre-rotated so all four knuckles meet the ground together.
+    const img = fxImage(godFistUrl);
+    if (img) {
+      const w = r * 1.3, h = w * img.naturalHeight / img.naturalWidth;
+      const rise = Math.max(0, after - .2) / .4; // rests on the ground briefly, then lifts away
+      ctx.save(); ctx.imageSmoothingEnabled = true;
+      ctx.globalAlpha = STAFF_ART_ALPHA * Math.min(1, fall * 2) * (1 - Math.min(1, rise));
+      ctx.drawImage(img, x - w / 2, y + 4 - h * .985 - (1 - fall * fall) * 260 - Math.min(1, rise) * 30, w, h);
+      ctx.restore();
+    }
+    if (after > 0 && after < .6) {
       const u = Math.min(1, after / .6);
       glow(ctx, x, y, r * (.5 + u), v("light"), .9 * (1 - u), .45);
       ctx.save(); ctx.translate(x, y); ctx.scale(1, .45);
@@ -197,8 +211,3 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
   }
 }
 
-let hand: HTMLImageElement | null = null;
-function handImage(): HTMLImageElement | null {
-  if (!hand) { hand = new Image(); hand.src = godHandUrl; }
-  return hand.complete && hand.naturalWidth ? hand : null;
-}

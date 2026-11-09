@@ -543,6 +543,8 @@ export function updateWeaponEntities(
     // Damaging ground hazards: axeline, maceimpact, shockwave, whirlpool, toxiccloud.
     if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "windtrail", "slowprint", "waterorbit", "godhand"].includes(e.kind)) {
       if (state.now < Number(d.impactAt ?? e.born)) continue;
+      // The fist strikes once; its crack lingers only as a picture.
+      if (e.kind === "godhand" && state.now > Number(d.impactAt) + .15) continue;
       if (e.kind === "waterorbit") { e.pos.x = state.player.pos.x; e.pos.y = state.player.pos.y; }
       const hitArr = (d.hit ??= []) as number[];
       const isDot = e.kind === "waterorbit" || e.kind === "whirlpool" || e.kind === "toxiccloud" || e.kind === "windtrail" || e.kind === "slowprint";

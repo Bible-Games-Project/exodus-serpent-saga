@@ -5008,7 +5008,8 @@ function drawWeaponEntity(
       ctx.restore();
       // The supplied burst is centred on the impact point and mirrored alternately.
       ctx.save(); ctx.translate(x, y); ctx.scale(Number(d.flipX ?? 1), 1);
-      drawSuppliedFx(ctx, 'maceimpact', r * 2.4 * (.85 + .15 * Math.min(1, t * 4)), .5, .5, Math.min(1, life * 2));
+      // Drawn partly see-through at every level.
+      drawSuppliedFx(ctx, 'maceimpact', r * 2.4 * (.85 + .15 * Math.min(1, t * 4)), .5, .5, Math.min(1, life * 2) * .72);
       ctx.restore();
     }
   } else if (k === "shockwave") {
