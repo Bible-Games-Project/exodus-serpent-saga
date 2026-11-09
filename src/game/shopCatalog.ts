@@ -123,9 +123,9 @@ export const STAFFS: EquipItem[] = [
     ev(3, "Diamond Staff III", 5_000_000, "+70% magical damage", "The shards fly farthest and enemies bleed out fastest. Every 10 seconds.", { magicPct: 70 }),
   ]),
   item("bronze", "staff", "Burning Staff", "A staff that remembers the furnace.", [
-    ev(1, "Burning Staff I", 250_000, "+50% magical damage", "An expanding ring of fire (1 s) burns each enemy it touches for 2 seconds. Every 20 seconds.", { magicPct: 50 }),
-    ev(2, "Burning Staff II", 1_000_000, "+70% magical damage", "A wider ring of fire burns enemies for 2 seconds. Every 15 seconds.", { magicPct: 70 }),
-    ev(3, "Burning Staff III", 10_000_000, "+90% magical damage", "A huge ring of fire burns enemies for 2 seconds. Every 10 seconds.", { magicPct: 90 }),
+    ev(1, "Burning Staff I", 250_000, "+50% magical damage", "An expanding ring of fire (1 s) burns each enemy it touches for 4 seconds. Every 20 seconds.", { magicPct: 50 }),
+    ev(2, "Burning Staff II", 1_000_000, "+70% magical damage", "A wider ring of fire burns enemies for 4 seconds. Every 15 seconds.", { magicPct: 70 }),
+    ev(3, "Burning Staff III", 10_000_000, "+90% magical damage", "A huge ring of fire burns enemies for 4 seconds. Every 10 seconds.", { magicPct: 90 }),
   ]),
   item("fire", "staff", "Wind Staff", "The east wind that obeys Moses.", [
     ev(1, "Wind Staff I", 1_000_000, "+70% magical damage", "A gust pushes nearby enemies away while a tornado spins around Moses. Every 20 seconds.", { magicPct: 70 }),

@@ -4,8 +4,9 @@ import { CHAMPIONS, WEAPONS, STAFFS } from "./shopCatalog";
 import { championBars } from "./shopStats";
 import { equipmentArtUrl } from "./equipmentArt";
 import { testLoadout, applyTestEquipment } from "./testEquipment";
-import { createInitialState } from "./engine";
-import { updateEquipment } from "./equipment";
+import { createInitialState, update } from "./engine";
+import { makeEnemy } from "./enemies";
+import { updateEquipment, petrify } from "./equipment";
 import type { Entity } from "./types";
 import { offscreenTargets } from "./offscreenTargets";
 
@@ -136,4 +137,20 @@ test("Divine Light drops one big beam on the nearest foe", () => {
   assert.equal(beams.length, 1);
   assert.deepEqual(beams[0].pos, a.foes[0].pos);
   assert.ok(Number(beams[0].data?.h) >= 200);
+});
+test("A petrified foe stands still: no walking, no animation, no pushing", () => {
+  const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1 });
+  const foe = makeEnemy(state, "soldier", { x: state.player.pos.x + 120, y: state.player.pos.y });
+  foe.hp = foe.maxHp = 5000;
+  state.entities.set(foe.id, foe);
+  petrify(foe, state.now);
+  const pos = { ...foe.pos }, anim = foe.animT;
+  for (let i = 0; i < 60; i++) {
+    state.levelUpPending = null; state.paused = false;
+    foe.pos.x += 3; // anything that shoves it is undone
+    update(state, 1 / 60);
+  }
+  assert.ok(state.now < Number(foe.data?.stoneUntil));
+  assert.deepEqual(foe.pos, pos);
+  assert.equal(foe.animT, anim);
 });

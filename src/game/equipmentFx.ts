@@ -88,6 +88,54 @@ function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, co
   ctx.restore();
 }
 
+/** Colours sampled from the wave art: deep, mid and light blue, and foam. */
+const WAVE_BLUES = ["#1478b8", "#2f9fdc", "#a8dcef", "#f0f6f8"] as const;
+const hash01 = (n: number) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+
+/** Primordial Waters: a wet streak, splashing drops, bubbles and foam left behind
+ *  the wave. Every particle is seeded by the moment the wave passed its spot, so
+ *  the trail is stable from frame to frame without keeping any state. */
+function drawWaveTrail(ctx: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, t: number, w: number, fade: number) {
+  const sp = Math.hypot(vx, vy) || 1, ux = vx / sp, uy = vy / sp, px = -uy, py = ux;
+  const step = .025, life = .7, back = w * .3; // particles start at the back of the wave
+  ctx.save();
+  for (let k = Math.max(0, Math.floor((t - life) / step)); k * step <= t; k++) {
+    const tb = k * step, age = t - tb, u = age / life;
+    if (u >= 1) continue;
+    // Where the wave's back edge was when this particle was born, relative to now.
+    const bx = x - vx * age - ux * back, by = y - vy * age - uy * back;
+    for (let j = 0; j < 3; j++) {
+      const seed = k * 3 + j, r1 = hash01(seed), r2 = hash01(seed + .37), r3 = hash01(seed + .71);
+      const side = (r1 * 2 - 1) * w * .3;
+      const drag = sp * .22 * age * (1 - u * .5); // dragged a little after the wave
+      const qx = bx + px * side + ux * drag, qy = by + py * side * .55 + uy * drag;
+      const a = (1 - u) * fade;
+      if (j === 0) {
+        // Wet streak on the ground.
+        ctx.globalAlpha = .2 * a; ctx.fillStyle = WAVE_BLUES[1];
+        ctx.beginPath(); ctx.ellipse(qx, qy, (9 + 6 * r2) * (1 + u * .6), (4 + 2 * r2) * (1 + u * .6), 0, 0, Math.PI * 2); ctx.fill();
+      } else if (j === 1) {
+        // Splashing drop: thrown up, falling back down.
+        const hgt = (14 + 18 * r3) * Math.sin(Math.PI * Math.min(1, u * 1.4));
+        ctx.globalAlpha = .75 * a; ctx.fillStyle = WAVE_BLUES[r2 < .5 ? 0 : 1];
+        ctx.beginPath(); ctx.arc(qx, qy - 6 - hgt, 1.4 + 1.6 * r2, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = .55 * a; ctx.fillStyle = WAVE_BLUES[3];
+        ctx.beginPath(); ctx.arc(qx - .6, qy - 6.6 - hgt, .7, 0, Math.PI * 2); ctx.fill();
+      } else {
+        // Bubble rising from the foam, wobbling, popping at the end.
+        const rise = 8 + 26 * u * (.6 + .4 * r3), wob = Math.sin(age * 12 + seed) * 2.5;
+        const rr = (2 + 3.5 * r2) * (1 + u * .4);
+        ctx.globalAlpha = .7 * a; ctx.strokeStyle = WAVE_BLUES[2]; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.arc(qx + wob, qy - rise, rr, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = .18 * a; ctx.fillStyle = WAVE_BLUES[1]; ctx.fill();
+        ctx.globalAlpha = .8 * a; ctx.fillStyle = WAVE_BLUES[3];
+        ctx.beginPath(); ctx.arc(qx + wob - rr * .35, qy - rise - rr * .35, Math.max(.6, rr * .22), 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  ctx.restore();
+}
+
 /** Soft light at the staff head while charging and on the ground at the slam. */
 let staffCrown: { x: number; y: number } | null = null;
 /** Set by the Moses renderer each frame: where the staff's top orb was drawn. */
@@ -141,7 +189,7 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     const img = fxImage(tornadoUrl);
     if (!img) return;
     const ttl0 = Number(d.ttl0 ?? 1.1), age = Math.min(1, (s.now - e.born) / ttl0);
-    const alpha = Math.min(1, age / .15, (1 - age) / .3) * STAFF_ART_ALPHA * .9;
+    const alpha = Math.min(1, age / .15, (1 - age) / .3) * STAFF_ART_ALPHA * .38;
     const h = 2 * (96 + 10 * (Number(d.evo ?? 1) - 1)), w = h * img.naturalWidth / img.naturalHeight;
     const t = s.now - e.born;
     ctx.save(); ctx.translate(x, y + 3); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true;
@@ -163,6 +211,7 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     const vx = Number(d.vx ?? 1), vy = Number(d.vy ?? 0);
     const rise = Math.min(1, age / .2), sink = Math.min(1, (1 - age) / .25);
     const w = 192 * Number(d.sc ?? 1), h = w * img.naturalHeight / img.naturalWidth;
+    drawWaveTrail(ctx, x, y, vx, vy, s.now - e.born, w, sink);
     ctx.save(); ctx.translate(x, y - 10); ctx.rotate(Math.atan2(vy, vx)); if (vx < 0) ctx.scale(1, -1);
     ctx.scale(.7 + .3 * rise, .55 + .45 * rise);
     ctx.globalAlpha = .62 * Math.min(rise, sink); ctx.imageSmoothingEnabled = true;

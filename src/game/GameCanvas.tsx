@@ -1604,24 +1604,19 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   for (const e of drawList) {
     // White Leprosy: afflicted enemies are drawn into an offscreen layer and
     // blanched toward white there, so only their own pixels change colour.
-    const leper = e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
-    const ctx = leper ? beginLeprosyLayer(mainCtx) : mainCtx;
+    // Stone Staff statues and Iron Staff metal are tinted the same cheap way (an
+    // offscreen copy of the sprite), never with a per-draw canvas filter.
+    const stoneUntil = e.team === "enemy" ? Number(e.data?.stoneUntil ?? 0) : 0;
+    const stoned = stoneUntil > s.now;
+    const metal = e.team === "enemy" && !stoned && !!e.data?.metal;
+    const leper = !stoned && e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
+    const tinted = !leper && (stoned || metal);
+    const ctx = leper ? beginLeprosyLayer(mainCtx) : tinted ? beginTintLayer(mainCtx, e, camX, camY) : mainCtx;
     // Mace hit reaction: the foe hops up and falls back down (visual only).
     const liftAt = e.team === "enemy" ? (e.data?.liftAt as number | undefined) : undefined;
     const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
     const lifted = liftT >= 0 && liftT < 1;
     if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
-    // Stone Staff: petrified foes turn grey and fade out in their last moments.
-    const stoneUntil = e.team === "enemy" ? Number(e.data?.stoneUntil ?? 0) : 0;
-    const stoned = stoneUntil > s.now;
-    if (stoned) { ctx.save(); ctx.filter = 'grayscale(1) brightness(0.85) contrast(1.1)'; ctx.globalAlpha *= Math.min(1, (stoneUntil - s.now) / .8); }
-    // Iron Staff: weakened foes keep a faint cold, metallic tint until they die
-    // (a brief brighter glint when struck).
-    const metal = e.team === "enemy" && !stoned && !!e.data?.metal;
-    if (metal) {
-      const glint = Math.max(0, 1 - (s.now - Number(e.data?.metalAt ?? 0)) / .6);
-      ctx.save(); ctx.filter = `saturate(${(.6 - .2 * glint).toFixed(2)}) brightness(${(1.04 + .2 * glint).toFixed(2)}) hue-rotate(-8deg)`;
-    }
     // Divine Light brawl: a short lunge toward the foe on each blow.
     const brawlU = e.team === "enemy" ? (s.now - Number(e.data?.brawlHitAt ?? -9)) / .25 : 9;
     const lunging = brawlU >= 0 && brawlU < 1;
@@ -1720,11 +1715,18 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
         ctx.restore();
       }
       if (lunging) ctx.restore();
-      if (metal) ctx.restore();
-      if (stoned) ctx.restore();
       if (e.team === 'enemy') drawEnemyStatusMarks(ctx, e, s, camX, camY);
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
+      else if (stoned) {
+        // Stone Staff: a grey statue; plain foes crumble away in the last moments.
+        const fade = e.data?.enemyChampion ? 1 : Math.min(1, (stoneUntil - s.now) / .8);
+        endTintLayer(mainCtx, { gray: 1, color: '#6e675d', colorAlpha: .28, alpha: fade });
+      } else if (metal) {
+        // Iron Staff: a faint cold steel tint until death, a brief glint when struck.
+        const glint = Math.max(0, 1 - (s.now - Number(e.data?.metalAt ?? 0)) / .6);
+        endTintLayer(mainCtx, { gray: .45, color: glint > 0 ? '#eef4fa' : '#9fb3c6', colorAlpha: glint > 0 ? .1 + .35 * glint : .16, alpha: 1 });
+      }
     }
   }
 
@@ -2692,6 +2694,72 @@ function beginLeprosyLayer(main: CanvasRenderingContext2D): CanvasRenderingConte
   b.setTransform(main.getTransform());
   b.imageSmoothingEnabled = false;
   return b;
+}
+
+let tintBuf: HTMLCanvasElement | null = null;
+let tintBufCtx: CanvasRenderingContext2D | null = null;
+let tintMask: HTMLCanvasElement | null = null;
+let tintMaskCtx: CanvasRenderingContext2D | null = null;
+const tintRect = { x: 0, y: 0, w: 0, h: 0 };
+
+/** Starts drawing one enemy into an offscreen copy, limited to a box around it
+ *  so the later tint only touches that small area. */
+function beginTintLayer(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): CanvasRenderingContext2D {
+  const cw = main.canvas.width, ch = main.canvas.height;
+  if (!tintBuf) { tintBuf = document.createElement("canvas"); tintBufCtx = tintBuf.getContext("2d"); }
+  if (tintBuf.width !== cw || tintBuf.height !== ch) { tintBuf.width = cw; tintBuf.height = ch; }
+  const box = ENEMY_ART_BOX[e.kind]?.();
+  const half = (box ? box.W * box.PX : e.radius * 3) * .6 + 30;
+  const tall = (box ? box.H * box.PX : e.radius * 4) + 50;
+  const m = main.getTransform();
+  const sx = e.pos.x - camX, sy = e.pos.y - camY;
+  const x0 = Math.max(0, Math.floor(m.a * (sx - half) + m.e)), x1 = Math.min(cw, Math.ceil(m.a * (sx + half) + m.e));
+  const y0 = Math.max(0, Math.floor(m.d * (sy - tall) + m.f)), y1 = Math.min(ch, Math.ceil(m.d * (sy + 30) + m.f));
+  tintRect.x = x0; tintRect.y = y0; tintRect.w = Math.max(1, x1 - x0); tintRect.h = Math.max(1, y1 - y0);
+  const b = tintBufCtx!;
+  b.setTransform(1, 0, 0, 1, 0, 0);
+  b.globalAlpha = 1;
+  b.globalCompositeOperation = "source-over";
+  b.clearRect(tintRect.x, tintRect.y, tintRect.w, tintRect.h);
+  b.save();
+  b.beginPath(); b.rect(tintRect.x, tintRect.y, tintRect.w, tintRect.h); b.clip();
+  b.setTransform(m);
+  b.imageSmoothingEnabled = false;
+  return b;
+}
+
+/** Desaturates (gray 0..1) and tints the buffered enemy, then puts it on screen. */
+function endTintLayer(main: CanvasRenderingContext2D, o: { gray: number; color: string; colorAlpha: number; alpha: number }) {
+  const b = tintBufCtx!;
+  b.restore();
+  const r = tintRect;
+  b.save();
+  b.setTransform(1, 0, 0, 1, 0, 0);
+  if (o.gray > 0) {
+    if (!tintMask) { tintMask = document.createElement("canvas"); tintMaskCtx = tintMask.getContext("2d"); }
+    if (tintMask.width < r.w || tintMask.height < r.h) { tintMask.width = Math.max(tintMask.width, r.w); tintMask.height = Math.max(tintMask.height, r.h); }
+    const mk = tintMaskCtx!;
+    mk.clearRect(0, 0, r.w, r.h);
+    mk.drawImage(tintBuf!, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+    b.globalCompositeOperation = "saturation";
+    b.globalAlpha = o.gray;
+    b.fillStyle = "#808080";
+    b.fillRect(r.x, r.y, r.w, r.h);
+    // The blend also paints the empty pixels: cut back to the sprite's shape.
+    b.globalCompositeOperation = "destination-in";
+    b.globalAlpha = 1;
+    b.drawImage(tintMask, 0, 0, r.w, r.h, r.x, r.y, r.w, r.h);
+  }
+  b.globalCompositeOperation = "source-atop";
+  b.globalAlpha = o.colorAlpha;
+  b.fillStyle = o.color;
+  b.fillRect(r.x, r.y, r.w, r.h);
+  b.restore();
+  main.save();
+  main.setTransform(1, 0, 0, 1, 0, 0);
+  main.globalAlpha *= o.alpha;
+  main.drawImage(tintBuf!, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+  main.restore();
 }
 
 /** Blanches the buffered enemy toward white, composites it, adds pale motes. */
@@ -4931,14 +4999,24 @@ const ENEMY_ART_BOX: Record<string, () => { W: number; H: number; PX: number }> 
 /** Four-legged foes carry their head in front, not on top. */
 const BEAST_HEAD = new Set(['wolf', 'jackal', 'lion', 'camel']);
 
+/** Where each foe's eye sits, measured on its sprite: [screen px ahead of its
+ *  centre (in the facing direction), screen px above its position]. */
+const ENEMY_EYE: Record<string, readonly [number, number]> = {
+  soldier: [4.5, 53.5], axesoldier: [5.6, 57.5], archer: [5, 43.5], shieldsoldier: [7.4, 52.5],
+  heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5, 63.5], spearknight: [5.3, 78.5],
+  mage: [3.6, 63], chariotarcher: [-55, 97], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
+  camel: [25.6, 31.5], cobra: [2, 30.5],
+};
+
 function enemyBodyBox(e: Entity): { h: number; headX: number; headY: number } {
   const box = ENEMY_ART_BOX[e.kind]?.();
   const h = box ? box.H * box.PX : e.radius * 3;
   const w = box ? box.W * box.PX : e.radius * 2;
+  const eye = ENEMY_EYE[e.kind];
+  if (eye) return { h, headX: e.pos.x + e.facing * eye[0], headY: e.pos.y - eye[1] };
   const top = e.pos.y + 8 - h;
   if (BEAST_HEAD.has(e.kind)) return { h, headX: e.pos.x + e.facing * w * .36, headY: top + h * .28 };
-  if (e.kind === 'cobra') return { h, headX: e.pos.x + e.facing * w * .12, headY: top + h * .16 };
-  return { h, headX: e.pos.x + e.facing * 2, headY: top + h * .17 };
+  return { h, headX: e.pos.x + e.facing * 2, headY: top + h * .25 };
 }
 
 /** Divine Light blindness (light pouring from the eyes) and Diamond Staff bleeding. */
@@ -4965,12 +5043,14 @@ function drawEnemyStatusMarks(ctx: CanvasRenderingContext2D, e: Entity, s: GameS
     const a = Math.min(1, left / .4) * (.8 + .2 * Math.sin(s.now * 16 + e.id));
     const hx = b.headX - camX, hy = b.headY - camY;
     ctx.globalCompositeOperation = 'lighter';
-    const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 9);
+    const g = ctx.createRadialGradient(hx, hy, 0, hx, hy, 8);
     g.addColorStop(0, 'rgba(255,244,190,0.9)'); g.addColorStop(1, 'rgba(255,230,140,0)');
     ctx.globalAlpha = a; ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(hx, hy, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(hx, hy, 8, 0, Math.PI * 2); ctx.fill();
+    // Seen from the side: the near eye, and the far one just behind it.
     ctx.fillStyle = '#fffbe6';
-    for (const ex of [-2.5, 2.5]) { ctx.beginPath(); ctx.arc(hx + ex, hy, 1.6, 0, Math.PI * 2); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(hx, hy, 1.7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(hx - e.facing * 3, hy, 1.2, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
 }

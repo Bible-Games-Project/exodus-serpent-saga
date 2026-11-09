@@ -21,6 +21,16 @@ function nearestEnemies(state: GameState, from: Vec2, n: number, maxDist = 600):
   return list.slice(0, n).map((x) => x.e);
 }
 
+/** Stone Staff: turns a foe into a statue on the spot. It stops dead (the engine
+ *  pins it to stoneX/stoneY), its pose freezes and every pending order is dropped. */
+export function petrify(e: Entity, now: number): void {
+  const d = (e.data ??= {});
+  d.stoneAt = now; d.stoneUntil = now + STONE_SECONDS;
+  d.stoneX = e.pos.x; d.stoneY = e.pos.y;
+  e.vel.x = 0; e.vel.y = 0;
+  for (const k of ["knockUntil", "knockVx", "knockVy", "brawlUntil", "brawlFoeId", "brawlHitAt", "brawlStrikeAt", "liftAt", "tgtId", "tgtAt"]) delete d[k];
+}
+
 // ---------------------------------------------------------------- staffs
 /** Staff special cooldown per evolution (seconds). */
 export const STAFF_SPECIAL_COOLDOWN = [20, 15, 10] as const;
@@ -139,7 +149,7 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
       // They crumble after 3 s; enemy champions survive it, only losing health (see engine.ts).
       const near = nearestEnemies(state, p, 999, STONE_RADIUS * sc).filter((e) => e.kind !== "ramses" && !(Number(e.data?.stoneUntil ?? 0) > now));
       const targets = near.slice(0, Math.max(1, Math.ceil(near.length * Math.min(3, evo) / 3)));
-      for (const target of targets) { target.data ??= {}; target.data.stoneAt = now; target.data.stoneUntil = now + STONE_SECONDS; }
+      for (const target of targets) petrify(target, now);
       break;
     }
     case "waters": {

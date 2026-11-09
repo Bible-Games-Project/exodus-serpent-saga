@@ -664,7 +664,7 @@ export function updateWeaponEntities(
           if (e.kind === "godhand") { en.data ??= {}; en.data.liftAt = state.now; }
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + (d.slow as number); }
           if (d.freeze) { en.data ??= {}; en.data.axeFreezeUntil = state.now + Number(d.freeze); }
-          if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + (e.kind === 'firering' ? 2 : 3); }
+          if (d.burnHit) { en.data ??= {}; en.data.burnUntil = state.now + (e.kind === 'firering' ? 4 : 3); }
           if (e.kind === 'axeline' && !(en.kind === 'agilesoldier' && en.data?.specialDash)) {
             const dx = ctx.wrapDelta(en.pos.x, Number(d.handleX), state.worldW);
             const dy = ctx.wrapDelta(en.pos.y, Number(d.handleY), state.worldH);

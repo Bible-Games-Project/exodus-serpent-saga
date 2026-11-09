@@ -447,6 +447,13 @@ export function update(state: GameState, dt: number) {
   for (const e of state.entities.values()) {
     if (e === p) continue;
     if (e.team === "orbit") continue;
+    // Stone Staff: a petrified foe is a statue. Its animation, route, attacks
+    // and position all stop until the stone wears off (nothing can push it).
+    if (e.team === "enemy" && e.data?.stoneUntil != null && state.now < Number(e.data.stoneUntil)) {
+      e.vel.x = 0; e.vel.y = 0;
+      if (e.data.stoneX != null) { e.pos.x = Number(e.data.stoneX); e.pos.y = Number(e.data.stoneY); }
+      continue;
+    }
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
@@ -564,7 +571,7 @@ export function update(state: GameState, dt: number) {
         e.vel.x = 0; e.vel.y = 0;
         if (state.now < Number(e.data.stoneUntil)) continue;
         if (!isToughFoe(e)) { e.hp = 0; killEnemy(state, e); continue; }
-        delete e.data.stoneUntil; delete e.data.stoneAt;
+        delete e.data.stoneUntil; delete e.data.stoneAt; delete e.data.stoneX; delete e.data.stoneY;
         e.hp -= e.maxHp * STONE_TOUGH_HP_LOSS;
         if (e.hp <= 0) { killEnemy(state, e); continue; }
       }
