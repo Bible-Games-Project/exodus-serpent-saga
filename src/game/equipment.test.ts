@@ -94,10 +94,11 @@ function castStaff(a: ReturnType<typeof staffArena>) {
   a.state.now = 3; updateEquipment(a.state, a.spawn, () => {});
   a.state.now = 4.3; updateEquipment(a.state, a.spawn, () => {});
 }
-test("Staff of Moses blessing doubles, triples and quadruples the next attack", () => {
+test("Staff of Moses blesses the next attack at the staff's level", () => {
   for (const level of [1, 2, 3]) {
     const a = staffArena("moses", level); castStaff(a);
-    assert.equal(a.state.equipFx?.empowerMul, level + 1);
+    assert.equal(a.state.equipFx?.empowered, 1);
+    assert.equal(a.state.equipFx?.blessEvo, level);
   }
 });
 test("Iron Staff cuts nearby foes' max HP by 25 / 50 / 75 %", () => {
@@ -105,16 +106,23 @@ test("Iron Staff cuts nearby foes' max HP by 25 / 50 / 75 %", () => {
     const a = staffArena("iron", level); castStaff(a);
     assert.equal(a.foes[0].maxHp, 100 * (1 - .25 * level));
     assert.ok(a.foes[0].hp <= a.foes[0].maxHp);
-    assert.ok(Number(a.foes[0].data?.metalUntil) > 4.3);
+    assert.equal(a.foes[0].data?.metal, 1); // tint stays until death
     assert.ok(!a.state.equipFx?.empowered);
   }
 });
-test("Stone Staff petrifies the 1 / 2 / 3 nearest foes", () => {
-  for (const level of [1, 2, 3]) {
+test("Stone Staff petrifies a third, two thirds or all of the nearby foes, nearest first", () => {
+  for (const [level, count] of [[1, 2], [2, 3], [3, 4]] as const) {
     const a = staffArena("bush", level); castStaff(a);
     const stoned = a.foes.filter(f => f.data?.stoneUntil != null).map(f => f.id);
-    assert.deepEqual(stoned, a.foes.slice(0, level).map(f => f.id));
+    assert.deepEqual(stoned, a.foes.slice(0, count).map(f => f.id));
   }
+});
+test("Diamond Staff throws ten shards in every direction", () => {
+  const a = staffArena("diamond", 1); castStaff(a);
+  const shards = a.spawned.filter(e => e.kind === "staffshard");
+  assert.equal(shards.length, 10);
+  const angles = shards.map(e => Math.atan2(Number(e.data?.vy), Number(e.data?.vx))).sort((x, y) => x - y);
+  for (let i = 1; i < angles.length; i++) assert.ok(Math.abs(angles[i] - angles[i - 1] - Math.PI / 5) < 1e-6);
 });
 test("Primordial Waters sends one wave toward the nearest foe", () => {
   const a = staffArena("waters", 1); castStaff(a);
@@ -122,10 +130,10 @@ test("Primordial Waters sends one wave toward the nearest foe", () => {
   assert.equal(waves.length, 1);
   assert.ok(Number(waves[0].data?.vx) > 0 && Math.abs(Number(waves[0].data?.vy)) < 1e-9);
 });
-test("Divine Light blinds the nearest foes into a brawl with a beam on each", () => {
+test("Divine Light drops one big beam on the nearest foe", () => {
   const a = staffArena("light", 1); castStaff(a);
-  const brawlers = a.foes.filter(f => Number(f.data?.brawlUntil) > 4.3);
-  assert.equal(brawlers.length, 3);
-  assert.equal(a.spawned.filter(e => e.kind === "stafflight").length, 3);
-  assert.ok(a.foes.every(f => f.data?.glueUntil == null));
+  const beams = a.spawned.filter(e => e.kind === "stafflight");
+  assert.equal(beams.length, 1);
+  assert.deepEqual(beams[0].pos, a.foes[0].pos);
+  assert.ok(Number(beams[0].data?.h) >= 200);
 });

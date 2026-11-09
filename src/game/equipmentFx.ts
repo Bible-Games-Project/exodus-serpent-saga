@@ -2,11 +2,12 @@ import type { Entity, GameState } from "./types";
 import godFistUrl from "@/assets/staff-god-fist.png";
 import godCrackUrl from "@/assets/staff-god-crack.png";
 import ringCrystalUrl from "@/assets/combat-staff-ring-crystal.png";
-import ringDiamondUrl from "@/assets/combat-staff-ring-diamond.png";
 import ringFireUrl from "@/assets/combat-staff-ring-fire.png";
 import tornadoUrl from "@/assets/combat-staff-tornado.png";
 import waveUrl from "@/assets/combat-staff-wave.png";
 import lightBeamUrl from "@/assets/combat-staff-light-beam.png";
+import shardUrl from "@/assets/combat-staff-diamond-shard.png";
+import { LIGHT_BEAM_ASPECT } from "./weapons";
 
 const fxImages = new Map<string, HTMLImageElement>();
 function fxImage(url: string): HTMLImageElement | null {
@@ -15,18 +16,37 @@ function fxImage(url: string): HTMLImageElement | null {
   if (!img) { img = new Image(); img.src = url; fxImages.set(url, img); }
   return img.complete && img.naturalWidth ? img : null;
 }
-const RING_ART: Record<string, string> = { crystal: ringCrystalUrl, diamond: ringDiamondUrl, fire: ringFireUrl };
+const RING_ART: Record<string, string> = { crystal: ringCrystalUrl, fire: ringFireUrl };
 /** Supplied staff effect art is drawn see-through, as asked. */
 const STAFF_ART_ALPHA = .78;
 
+/** The art recoloured to `color` (keeping its light and shade), cached per colour. */
+const tintedImages = new Map<string, HTMLCanvasElement>();
+function tinted(img: HTMLImageElement, color: string): HTMLCanvasElement | HTMLImageElement {
+  const key = img.src + "|" + color;
+  let c = tintedImages.get(key);
+  if (c) return c;
+  c = document.createElement("canvas");
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  const g = c.getContext("2d");
+  if (!g) return img;
+  g.drawImage(img, 0, 0);
+  g.globalCompositeOperation = "color"; g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+  g.globalCompositeOperation = "destination-in"; g.drawImage(img, 0, 0);
+  tintedImages.set(key, c);
+  return c;
+}
+
 /** A supplied ring lying on the ground, slowly turning. `r` is its outer radius. */
-export function drawStaffRing(ctx: CanvasRenderingContext2D, art: string, x: number, y: number, r: number, angle: number, alpha: number): boolean {
-  const img = fxImage(RING_ART[art] ?? ringCrystalUrl);
-  if (!img || r <= 0 || alpha <= 0) return !!img;
+export function drawStaffRing(ctx: CanvasRenderingContext2D, art: string, x: number, y: number, r: number, angle: number, alpha: number, tint?: string): boolean {
+  const raw = fxImage(RING_ART[art] ?? ringCrystalUrl);
+  if (!raw || r <= 0 || alpha <= 0) return !!raw;
+  const img = tint ? tinted(raw, tint) : raw;
+  const iw = raw.naturalWidth, ih = raw.naturalHeight;
   ctx.save();
   ctx.translate(x, y); ctx.scale(1, .55); ctx.rotate(angle);
   ctx.globalAlpha = alpha * STAFF_ART_ALPHA; ctx.imageSmoothingEnabled = true;
-  const w = r * 2, h = w * img.naturalHeight / img.naturalWidth;
+  const w = r * 2, h = w * ih / iw;
   ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
   return true;
@@ -110,56 +130,66 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     }
     ctx.restore();
   } else if (e.kind === "staffring") {
-    // Crystal / Diamond rings: grow out from Moses while turning, then fade.
+    // Crystal ring: grows out from Moses (on the ground, under him) while turning, then fades.
     const ttl0 = Number(d.ttl0 ?? 1), age = Math.min(1, (s.now - e.born) / ttl0);
     const grow = 1 - (1 - Math.min(1, age / .35)) ** 3;
     const fade = Math.min(1, (1 - age) / .35);
     const cx = d.follow ? s.player.pos.x - (e.pos.x - x) : x, cy = d.follow ? s.player.pos.y - (e.pos.y - y) : y;
-    drawStaffRing(ctx, String(d.art ?? "crystal"), cx, cy, Number(d.r ?? 100) * (.25 + .75 * grow), (s.now - e.born) * 2.4, fade);
+    drawStaffRing(ctx, String(d.art ?? "crystal"), cx, cy, Number(d.r ?? 100) * (.25 + .75 * grow), (s.now - e.born) * 2.4, fade, d.tint ? v(String(d.tint)) : undefined);
   } else if (e.kind === "stafftornado") {
-    // Wind Staff: a small tornado twisting around Moses.
+    // Wind Staff: a tornado twisting around Moses, drawn in front of him.
     const img = fxImage(tornadoUrl);
     if (!img) return;
     const ttl0 = Number(d.ttl0 ?? 1.1), age = Math.min(1, (s.now - e.born) / ttl0);
     const alpha = Math.min(1, age / .15, (1 - age) / .3) * STAFF_ART_ALPHA * .9;
-    const h = 96 + 10 * (Number(d.evo ?? 1) - 1), w = h * img.naturalWidth / img.naturalHeight;
+    const h = 2 * (96 + 10 * (Number(d.evo ?? 1) - 1)), w = h * img.naturalWidth / img.naturalHeight;
     const t = s.now - e.born;
-    ctx.save(); ctx.translate(x, y + 4); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true;
+    ctx.save(); ctx.translate(x, y + 3); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true;
     // Slice the art into horizontal strips that sway out of phase, so it spins and writhes.
     const strips = 16, sh = img.naturalHeight / strips, dh = h / strips;
     for (let i = 0; i < strips; i++) {
       const k = 1 - i / strips; // 1 at the top, 0 at the base
-      const sway = Math.sin(t * 9 - i * .55) * 5 * k + Math.sin(t * 3.1) * 3 * k;
+      const sway = Math.sin(t * 9 - i * .55) * 10 * k + Math.sin(t * 3.1) * 6 * k;
       const squeeze = 1 + .06 * Math.sin(t * 14 - i * .8);
       ctx.drawImage(img, 0, i * sh, img.naturalWidth, sh, -w * squeeze / 2 + sway, -h + i * dh, w * squeeze, dh + .6);
     }
     ctx.restore();
   } else if (e.kind === "staffwave") {
-    // Primordial Waters: the wave faces its travel direction, rising in and sinking away.
+    // Primordial Waters: the wave is turned to point exactly where it travels (its curl
+    // leads), mirrored rather than upside down when heading left. See-through.
     const img = fxImage(waveUrl);
     if (!img) return;
     const ttl0 = Number(d.ttl0 ?? 1.2), age = Math.min(1, (s.now - e.born) / ttl0);
     const vx = Number(d.vx ?? 1), vy = Number(d.vy ?? 0);
-    const left = vx < 0;
-    // Top-down travel can't be drawn as a side wave, so tilt it at most 35 degrees.
-    const tilt = Math.max(-.6, Math.min(.6, Math.atan2(vy, Math.abs(vx))));
     const rise = Math.min(1, age / .2), sink = Math.min(1, (1 - age) / .25);
-    const w = 96 * Number(d.sc ?? 1), h = w * img.naturalHeight / img.naturalWidth;
-    ctx.save(); ctx.translate(x, y + 6); if (left) ctx.scale(-1, 1); ctx.rotate(tilt);
-    ctx.scale(1, .55 + .45 * rise);
-    ctx.globalAlpha = STAFF_ART_ALPHA * Math.min(rise, sink); ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(img, -w * .55, -h * .9, w, h);
+    const w = 192 * Number(d.sc ?? 1), h = w * img.naturalHeight / img.naturalWidth;
+    ctx.save(); ctx.translate(x, y - 10); ctx.rotate(Math.atan2(vy, vx)); if (vx < 0) ctx.scale(1, -1);
+    ctx.scale(.7 + .3 * rise, .55 + .45 * rise);
+    ctx.globalAlpha = .62 * Math.min(rise, sink); ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, -w * .5, -h * .55, w, h);
     ctx.restore();
   } else if (e.kind === "stafflight") {
-    // Divine Light: a blinding beam pours down on the foe.
+    // Divine Light: one great beam pours down; its cone (and the pool of light at its
+    // foot) is exactly the area that blinds (see inLightCone in weapons.ts).
     const img = fxImage(lightBeamUrl);
     if (!img) return;
-    const ttl0 = Number(d.ttl0 ?? 1.2), age = Math.min(1, (s.now - e.born) / ttl0);
-    const alpha = Math.min(1, age / .15, (1 - age) / .4) * STAFF_ART_ALPHA * (.85 + .15 * Math.sin(s.now * 20));
-    const h = 110, w = h * img.naturalWidth / img.naturalHeight;
-    ctx.save(); ctx.translate(x, y + 4); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true;
+    const ttl0 = Number(d.ttl0 ?? 1.6), age = Math.min(1, (s.now - e.born) / ttl0);
+    const fade = Math.min(1, age / .12, (1 - age) / .35);
+    const h = Number(d.h ?? 260), w = h * LIGHT_BEAM_ASPECT, foot = w * .5 * .45;
+    glow(ctx, x, y, w * .55, v("light"), .55 * fade, .45);
+    ctx.save(); ctx.translate(x, y + foot); ctx.imageSmoothingEnabled = true;
+    ctx.globalAlpha = fade * STAFF_ART_ALPHA * (.88 + .12 * Math.sin(s.now * 20));
     ctx.globalCompositeOperation = "lighter";
     ctx.drawImage(img, -w / 2, -h, w, h);
+    ctx.restore();
+  } else if (e.kind === "staffshard") {
+    // Diamond Staff: a crystal shard spinning slightly as it flies, at body height.
+    const img = fxImage(shardUrl);
+    if (!img) return;
+    const len = 30, hh = len * img.naturalHeight / img.naturalWidth;
+    ctx.save(); ctx.translate(x, y - 16); ctx.rotate(Math.atan2(Number(d.vy ?? 0), Number(d.vx ?? 1)));
+    ctx.globalAlpha = Math.min(1, (e.ttl ?? 0) / .12, (s.now - e.born) / .06); ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, -len / 2, -hh / 2, len, hh);
     ctx.restore();
   } else if (e.kind === "waterorbit") {
     const r = Number(d.r ?? 80);
@@ -195,9 +225,11 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     if (img) {
       const w = r * 1.3, h = w * img.naturalHeight / img.naturalWidth;
       const rise = Math.max(0, after - .2) / .4; // rests on the ground briefly, then lifts away
+      // It drops in from above the top of the screen, accelerating down onto the spot.
+      const drop = y + 4 + h * .015 + 20;
       ctx.save(); ctx.imageSmoothingEnabled = true;
-      ctx.globalAlpha = STAFF_ART_ALPHA * Math.min(1, fall * 2) * (1 - Math.min(1, rise));
-      ctx.drawImage(img, x - w / 2, y + 4 - h * .985 - (1 - fall * fall) * 260 - Math.min(1, rise) * 30, w, h);
+      ctx.globalAlpha = STAFF_ART_ALPHA * (1 - Math.min(1, rise));
+      ctx.drawImage(img, x - w / 2, y + 4 - h * .985 - (1 - fall * fall) * drop - Math.min(1, rise) * 30, w, h);
       ctx.restore();
     }
     if (after > 0 && after < .6) {

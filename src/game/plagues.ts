@@ -66,10 +66,10 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
       "Exodus 7:10-12 — Aaron cast down his rod before Pharaoh, and it became a serpent. It swallowed the sorcerers' serpents whole.",
     unlockLevel: 3,
     // Snake travel speed halved again (182 → 91, +3.5/level).
-    // Cooldown doubled (was 1.1 / 0.08 per level) — interval between attack sequences.
-    base: { level: 1, cooldown: 2.2, dmg: 14, count: 1, speed: 91, ttl: 1.6 },
-    scale: scale({ level: 1, cooldown: 2.2, dmg: 14, count: 1, speed: 91, ttl: 1.6 }, {
-      cooldown: 0.16,
+    // Cooldown doubled twice (was 1.1 / 0.08, then 2.2 / 0.16 per level): serpents come half as often.
+    base: { level: 1, cooldown: 4.4, dmg: 14, count: 1, speed: 91, ttl: 1.6 },
+    scale: scale({ level: 1, cooldown: 4.4, dmg: 14, count: 1, speed: 91, ttl: 1.6 }, {
+      cooldown: 0.32,
       dmg: 4,
       count: 0.25,
       speed: 3.5,

@@ -6,7 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
-import { daggerTarget, equippedWeapon, pendingEmpowerMul, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { applyBlessing, daggerTarget, isToughFoe, equippedWeapon, pendingBlessEvo, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
 import {
@@ -338,7 +338,8 @@ export function update(state: GameState, dt: number) {
   p.pos.x = wrap(p.pos.x + p.vel.x * dt, state.worldW);
   p.pos.y = wrap(p.pos.y + p.vel.y * dt, state.worldH);
   resolveObstacles(p.pos, p.radius, state);
-  if (Math.abs(p.vel.x) > 5) p.facing = p.vel.x > 0 ? 1 : -1;
+  // A directional attack keeps Moses facing his target briefly (see FACE_LOCK_SECONDS).
+  if (Math.abs(p.vel.x) > 5 && state.now >= (state.equipFx?.faceLockUntil ?? 0)) p.facing = p.vel.x > 0 ? 1 : -1;
   p.animT += dt * (Math.hypot(p.vel.x, p.vel.y) > 5 ? 6 : 0);
   updateWeaponAim(state, dt);
 
@@ -557,11 +558,15 @@ export function update(state: GameState, dt: number) {
       // White Leprosy wastes the afflicted enemy away; it dies normally.
       if (tickLeprosy(state, e, dt)) continue;
       // Axe ice is a full short stun, distinct from the existing plague slow.
-      // Stone Staff: a petrified foe stands still, then crumbles away.
+      // Stone Staff: a petrified foe stands still, then crumbles away. Enemy champions
+      // come back to life when the stone wears off, only weakened.
       if (e.data?.stoneUntil != null) {
-        if (state.now >= Number(e.data.stoneUntil)) { e.hp = 0; killEnemy(state, e); }
         e.vel.x = 0; e.vel.y = 0;
-        continue;
+        if (state.now < Number(e.data.stoneUntil)) continue;
+        if (!isToughFoe(e)) { e.hp = 0; killEnemy(state, e); continue; }
+        delete e.data.stoneUntil; delete e.data.stoneAt;
+        e.hp -= e.maxHp * STONE_TOUGH_HP_LOSS;
+        if (e.hp <= 0) { killEnemy(state, e); continue; }
       }
       if (state.now < Number(e.data?.axeFreezeUntil ?? 0)) {
         e.vel.x = 0; e.vel.y = 0;
@@ -1133,7 +1138,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   const stats = PLAGUES.staff.scale(state.plagues.get("staff") ?? 1);
   // Physical attack: scaled by the equipped weapon, not by the staff's magic.
   // A Staff of Moses blessing multiplies every hit of this one swing.
-  const dmg = stats.dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5) * Number(sw.data?.empowerMul ?? 1);
+  const dmg = stats.dmg * damageMultiplier(state) * (weaponDamage(state) / 0.5);
   const tolerance = 14; // segment thickness
   // Frontal cone: same reach as the staff, opening slightly above and below
   // Moses' facing direction so a visually connecting swing always lands.
@@ -1168,6 +1173,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // zero damage anywhere.
 
   for (const { en, px, py } of candidates) {
+    applyBlessing(en, sw.data);
     en.hp -= dmg;
     hit.add(en.id);
     weaponOnMeleeHit(state, en);
@@ -1454,7 +1460,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
         blocked: ranged || equippedWeapon(state).id === 'dagger' ? 1 : 0,
         noFx: ranged || ['dagger', 'spear'].includes(equippedWeapon(state).id) ? 1 : 0,
         // Read before weaponOnCast spends the blessing.
-        empowerMul: pendingEmpowerMul(state),
+        blessEvo: pendingBlessEvo(state), blessId: Number(state.equipFx?.blessId ?? 0),
       },
     };
     state.entities.set(sw.id, sw);
@@ -2164,7 +2170,11 @@ function tickBonusSpawns(state: GameState, dt: number) {
 
 // ---------- allied champions (common system; data in allies.ts) ----------
 /** Brawl spacing (px between the two bodies) and pace for Divine Light. */
-const BRAWL_GAP = 14, BRAWL_SPEED = 52, BRAWL_HIT_EVERY = .7;
+const BRAWL_GAP = 14, BRAWL_SPEED = 60, BRAWL_HIT_EVERY = .7;
+/** Each brawl blow also takes this share of the victim's max HP, so fights end in deaths. */
+const BRAWL_MAXHP_PER_HIT = .14;
+/** Stone Staff: share of max HP an enemy champion loses when its stone wears off. */
+const STONE_TOUGH_HP_LOSS = .4;
 function brawlTick(state: GameState, e: Entity, dt: number): void {
   const d = e.data!;
   let foe: Entity | null = null, best = Infinity;
@@ -2185,12 +2195,35 @@ function brawlTick(state: GameState, e: Entity, dt: number): void {
       e.vel.x = vx / dist * BRAWL_SPEED; e.vel.y = vy / dist * BRAWL_SPEED;
       e.pos.x += vx / dist * step; e.pos.y += vy / dist * step;
       e.animT += dt;
-    } else if (state.now >= Number(d.brawlNext ?? 0)) {
-      d.brawlNext = state.now + BRAWL_HIT_EVERY + Math.random() * .2;
-      d.brawlHitAt = state.now; d.brawlDirX = vx / dist; d.brawlDirY = vy / dist;
-      foe.hp -= Number(d.brawlDmg ?? 5);
-      spawnVisualHazard(state, "hitspark", { x: foe.pos.x, y: foe.pos.y - 14 }, .18, { seed: foe.id, small: 1, maxTtl: .18 });
-      if (foe.hp <= 0) killEnemy(state, foe);
+    } else if (d.brawlStrikeAt == null && state.now >= Number(d.brawlNext ?? 0)) {
+      // Wind up the enemy's own attack animation; the blow lands mid-swing.
+      const melee = MELEE_ATTACKS[e.kind];
+      const dur = melee?.dur ?? .3;
+      if (melee) { d[melee.key] = state.now; d.atkHitDone = true; }
+      d.brawlNext = state.now + Math.max(BRAWL_HIT_EVERY, dur) + Math.random() * .25;
+      d.brawlStrikeAt = state.now + dur * (melee ? (melee.from + melee.to) / 2 : .4);
+      d.brawlFoeId = foe.id;
+      d.brawlDirX = vx / dist; d.brawlDirY = vy / dist;
+      if (!melee) d.brawlHitAt = state.now; // no attack animation: lunge instead (see GameCanvas)
+    }
+  }
+  if (d.brawlStrikeAt != null && state.now >= Number(d.brawlStrikeAt)) {
+    delete d.brawlStrikeAt;
+    const target = state.entities.get(Number(d.brawlFoeId));
+    if (target && target.team === "enemy" && target.hp > 0) {
+      const tx = wrapDelta(target.pos.x, e.pos.x, state.worldW), ty = wrapDelta(target.pos.y, e.pos.y, state.worldH);
+      const td = Math.hypot(tx, ty) || 1;
+      if (td <= e.radius + target.radius + BRAWL_GAP + 24) {
+        target.hp -= Number(d.brawlDmg ?? 5) + (isToughFoe(target) ? 0 : target.maxHp * BRAWL_MAXHP_PER_HIT);
+        target.data ??= {};
+        target.data.knockVx = tx / td * 10 / .11; target.data.knockVy = ty / td * 10 / .11;
+        target.data.knockUntil = state.now + .22;
+        spawnVisualHazard(state, "hitspark", { x: target.pos.x, y: target.pos.y - 14 }, .18, { seed: target.id, small: 1, maxTtl: .18 });
+        spawnVisualHazard(state, "staffblood", { x: target.pos.x, y: target.pos.y - 14 }, .4, {
+          variant: Math.floor(Math.random() * 5), seed: Math.floor(Math.random() * 1000), dirX: tx >= 0 ? 1 : -1, maxTtl: .4,
+        });
+        if (target.hp <= 0) killEnemy(state, target);
+      }
     }
   }
   // Knockback still slides a brawler, eased like everywhere else.

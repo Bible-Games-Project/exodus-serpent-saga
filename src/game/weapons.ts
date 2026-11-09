@@ -3,6 +3,7 @@
 // Each weapon adds its own established projectiles, hazards and on-hit effects.
 import type { Entity, GameState, Vec2 } from "./types";
 import { weaponDamage } from "./loadout";
+import { LIGHT_BRAWL_SECONDS } from "./equipment";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
 import { MOSES_ATTACK, mosesGrip, mosesSwordTip } from './mosesGameArt';
 import { AXE_FREEZE_SECONDS, BRANCH_COOLDOWN, BRANCH_KNOCKBACK, BRANCH_WIND_PUSH, BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, DAGGER_GESTURE_SECONDS, DAGGER_RELEASE_PROGRESS, GROUND_IMPACT_DELAY, HARPOON_RELEASE_DELAY, HARPOON_RETARGET_SECONDS, HARPOON_TURN_RATE, MACE_IMPACT_RADIUS, RING_ZAP_CHANCE, SWORD_HORIZONTAL_PROGRESS, spearAttack, turnWeaponAngle } from './weaponAttack';
@@ -18,10 +19,37 @@ export function equippedWeapon(state: GameState): { id: WeaponId; evo: number } 
 export function weaponHitDamage(state: GameState, base: number): number {
   return base * (weaponDamage(state) / 0.5);
 }
-/** Staff of Moses blessing: multiplier the next attack carries (1 when not blessed). */
-export function pendingEmpowerMul(state: GameState): number {
+/** Bosses and enemy champions shrug off instant-death and %-HP staff effects.
+ * Enemy champions don't exist yet: flag them with `data.enemyChampion = 1`. */
+export function isToughFoe(en: Entity): boolean {
+  return en.kind === "ramses" || !!en.data?.enemyChampion;
+}
+/** Divine Light beam art is 300x545: its width for a given height. */
+export const LIGHT_BEAM_ASPECT = 300 / 545;
+/** Is a foe at (rx, ry) from the beam's foot inside its cone of light (as drawn)? */
+export function inLightCone(rx: number, ry: number, h: number, radius = 0): boolean {
+  const half = h * LIGHT_BEAM_ASPECT * .5;
+  if (ry >= 0) return (rx / (half + radius)) ** 2 + (ry / (half * .45 + radius)) ** 2 <= 1;
+  if (ry < -h * .85) return false;
+  return Math.abs(rx) <= half * (1 + ry / h) + radius * .6;
+}
+/** Staff of Moses blessing level the next attack carries (0 when not blessed). */
+export function pendingBlessEvo(state: GameState): number {
   const f = state.equipFx;
-  return f?.empowered ? Number(f.empowerMul ?? 1) : 1;
+  return f?.empowered ? Number(f.blessEvo ?? 1) : 0;
+}
+/** Blessed hit, once per foe per attack: level I takes 50 % of max HP, level II
+ * 75 % of the remaining HP, level III kills outright (never bosses or champions).
+ * The caller applies normal damage and the death check afterwards. */
+export function applyBlessing(en: Entity, data: Record<string, unknown> | undefined): void {
+  const evo = Number(data?.blessEvo ?? 0);
+  if (!evo || isToughFoe(en)) return;
+  en.data ??= {};
+  if (en.data.blessedBy === data!.blessId) return;
+  en.data.blessedBy = Number(data!.blessId);
+  if (evo === 1) en.hp -= en.maxHp * .5;
+  else if (evo === 2) en.hp -= Math.max(0, en.hp) * .75;
+  else en.hp = 0;
 }
 
 // ---------------------------------------------------------------- tuning
@@ -104,8 +132,16 @@ export function weaponLaunchProgress(state: GameState): number | null {
 }
 
 /** Nearest enemy direction from Moses; falls back to the last movement direction. */
+/** Aim stickiness: keep a chosen target at least this long, and only swap
+ * early when another foe is clearly closer (squared-distance ratio). */
+export const AIM_HOLD_SECONDS = .6;
+const AIM_SWITCH_D2 = .75 * .75;
+/** After a directional attack Moses keeps facing his target this long, so
+ * walking the other way between throws doesn't flip him back and forth. */
+export const FACE_LOCK_SECONDS = .9;
 export function aimDir(state: GameState): Vec2 {
   const p = state.player;
+  const fx = (state.equipFx ??= {});
   let best: Entity | null = null, bd = Infinity;
   for (const en of state.entities.values()) {
     if (en.team !== "enemy" || en.hp <= 0) continue;
@@ -113,6 +149,13 @@ export function aimDir(state: GameState): Vec2 {
     const d2 = dx * dx + dy * dy;
     if (d2 < bd) { bd = d2; best = en; }
   }
+  // Stay on the current target unless it is gone or another is clearly closer.
+  const current = fx.aimTargetId != null ? state.entities.get(fx.aimTargetId) : undefined;
+  if (best && current && current !== best && current.team === "enemy" && current.hp > 0) {
+    const cd2 = wrapD(current.pos.x, p.pos.x, state.worldW) ** 2 + wrapD(current.pos.y, p.pos.y, state.worldH) ** 2;
+    if (state.now < (fx.aimHoldUntil ?? 0) || bd >= cd2 * AIM_SWITCH_D2) { best = current; bd = cd2; }
+  }
+  if (best && best.id !== fx.aimTargetId) { fx.aimTargetId = best.id; fx.aimHoldUntil = state.now + AIM_HOLD_SECONDS; }
   if (!best) return lastMoveDir(state);
   const dx = wrapD(best.pos.x, p.pos.x, state.worldW), dy = wrapD(best.pos.y, p.pos.y, state.worldH);
   const l = Math.hypot(dx, dy) || 1;
@@ -139,20 +182,27 @@ export function weaponOnCast(
   basicDamage?: number,
 ): void {
   const { id, evo } = equippedWeapon(state);
-  // A charged Staff of Moses blessing multiplies every hit of this one attack;
-  // thrown weapons carry the multiplier (and its glow) while flying.
+  // A charged Staff of Moses blessing rides on everything this one attack spawns;
+  // thrown weapons keep its glow while flying.
   const fxs = (state.equipFx ??= {});
-  const empower = pendingEmpowerMul(state);
-  if (fxs.empowered) { fxs.empowered = 0; fxs.empowerGlowUntil = state.now + .6; }
-  const blessed = empower > 1 ? 1 : 0;
+  const blessEvo = pendingBlessEvo(state);
+  const blessed = blessEvo ? 1 : 0;
+  if (blessEvo) {
+    fxs.empowered = 0; fxs.empowerGlowUntil = state.now + .6;
+    const blessing = { blessEvo, blessId: Number(fxs.blessId ?? 0), empowered: 1 };
+    const raw = spawn;
+    spawn = (kind, pos, ttl, data, team) => raw(kind, pos, ttl, Object.assign(data, blessing), team);
+  }
   const launch = () => { (state.equipFx ??= {}).weaponVisualAt = state.now; };
   const p = state.player;
   const dir: Vec2 = aimDir(state);
-  const dmg = weaponHitDamage(state, 14) * empower;
+  const dmg = weaponHitDamage(state, 14);
   const ang = Math.atan2(dir.y, dir.x);
   if (['spear', 'harpoon', 'axe', 'mace'].includes(id)) {
     (state.equipFx ??= {}).weaponAimAngle = ang;
-    if (dir.x) p.facing = dir.x >= 0 ? 1 : -1;
+    // Nearly vertical targets keep the current facing (no flip for a foe straight above/below).
+    if (Math.abs(dir.x) > .25) p.facing = dir.x >= 0 ? 1 : -1;
+    fxs.faceLockUntil = state.now + FACE_LOCK_SECONDS;
   }
 
   switch (id) {
@@ -168,7 +218,7 @@ export function weaponOnCast(
       // Overhand throw: the dagger leaves the hand at the release beat of the gesture.
       const fireAt = state.now + daggerGestureSeconds(evo) * DAGGER_RELEASE_PROGRESS;
       spawn('daggerthrow', { ...p.pos }, fireAt - state.now + .1, {
-        fireAt, targetId: target.id, evo, facing: p.facing, dmg: (basicDamage ?? dmg / empower) * empower, empowered: blessed,
+        fireAt, targetId: target.id, evo, facing: p.facing, dmg: basicDamage ?? dmg, empowered: blessed,
       }, 'hazard');
       launch();
       break;
@@ -286,6 +336,8 @@ export function weaponDot(state: GameState, en: Entity, dt: number): void {
   if ((d.burnUntil as number) > state.now) {
     en.hp -= weaponHitDamage(state, 3) * dt;
   }
+  // Diamond Staff cut: bleeds until death (the engine's death sweep removes the foe).
+  if (Number(d.bleedDps) > 0 && !isToughFoe(en)) en.hp -= Number(d.bleedDps) * dt;
 }
 
 /** Poison spreads / leaves a toxic cloud when a poisoned enemy dies. */
@@ -350,7 +402,7 @@ export function updateWeaponEntities(
           if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id)) continue;
           const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW), ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
           if (Math.hypot(rx, ry) > en.radius + 26) continue;
-          hit.push(en.id); en.hp -= Number(d.dmg ?? 0);
+          hit.push(en.id); applyBlessing(en, d); en.hp -= Number(d.dmg ?? 0);
           if (Number(d.evo) >= 3) { en.data ??= {}; en.data.burnUntil = state.now + 2; }
           if (en.hp <= 0) ctx.killEnemy(en);
         }
@@ -363,7 +415,7 @@ export function updateWeaponEntities(
         d.fired = 1; e.ttl = 0;
         const grip = mosesGrip(p.pos.x, p.pos.y + 8, p.facing);
         const target = nearestEnemyTo(state, grip, ctx.wrapDelta);
-        ctx.spawn('wpnproj', grip, 1.4, { vx: d.vx, vy: d.vy, dmg: d.dmg, pierce: d.pierce, knock: d.knock, whirlpool: d.whirlpool, art: 'harpoon', evo: d.evo, fromHand: 1, empowered: d.empowered, homing: 1, targetId: target?.id, retargetAt: state.now }, 'projectile');
+        ctx.spawn('wpnproj', grip, 1.4, { vx: d.vx, vy: d.vy, dmg: d.dmg, pierce: d.pierce, knock: d.knock, whirlpool: d.whirlpool, art: 'harpoon', evo: d.evo, fromHand: 1, empowered: d.empowered, blessEvo: d.blessEvo, blessId: d.blessId, homing: 1, targetId: target?.id, retargetAt: state.now }, 'projectile');
       }
       continue;
     }
@@ -384,28 +436,62 @@ export function updateWeaponEntities(
         const a = Math.atan2(dy, dx);
         // Stay in the forward half-plane Moses is facing.
         const vx = p.facing * Math.abs(Math.cos(a)) * 400, vy = Math.sin(a) * 400;
-        ctx.spawn('wpnproj', from, cfg.reach / 400, { vx, vy, dmg: d.dmg, pierce: 1, art: 'dagger', evo, targetId: d.targetId, poisonEvo: evo, empowered: d.empowered, lift: from.y - grip.y }, 'projectile');
+        ctx.spawn('wpnproj', from, cfg.reach / 400, { vx, vy, dmg: d.dmg, pierce: 1, art: 'dagger', evo, targetId: d.targetId, poisonEvo: evo, empowered: d.empowered, blessEvo: d.blessEvo, blessId: d.blessId, lift: from.y - grip.y }, 'projectile');
       }
       continue;
     }
 
     if (e.kind === 'stafftornado') {
-      // Wind Staff tornado stays with Moses, just behind him.
-      e.pos.x = p.pos.x; e.pos.y = p.pos.y - 1;
+      // Wind Staff tornado stays with Moses, just in front of him.
+      e.pos.x = p.pos.x; e.pos.y = p.pos.y + 1;
       continue;
     }
     if (e.kind === 'stafflight') {
-      // Divine Light beam follows the foe it blinded.
-      const t = state.entities.get(Number(d.targetId));
-      if (t && t.hp > 0) { e.pos.x = t.pos.x; e.pos.y = t.pos.y + 1; }
+      // Divine Light: every foe the beam's cone touches is blinded and brawls (never Ramses).
+      const hit = (d.hit ??= []) as number[];
+      for (const en of state.entities.values()) {
+        if (en.team !== 'enemy' || en.hp <= 0 || en.kind === 'ramses' || hit.includes(en.id)) continue;
+        const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW), ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
+        if (!inLightCone(rx, ry, Number(d.h ?? 260), en.radius)) continue;
+        hit.push(en.id);
+        en.data ??= {};
+        en.data.blindUntil = state.now + LIGHT_BRAWL_SECONDS;
+        en.data.brawlUntil = state.now + LIGHT_BRAWL_SECONDS;
+        en.data.brawlDmg = Number(d.brawlDmg ?? 6);
+        en.data.brawlNext = state.now + .4 + Math.random() * .3;
+      }
+      continue;
+    }
+    if (e.kind === 'staffshard') {
+      // Diamond Staff shard: flies straight, cuts every foe it crosses once; cut foes bleed.
+      e.pos.x += Number(d.vx) * dt; e.pos.y += Number(d.vy) * dt;
+      const hit = (d.hit ??= []) as number[];
+      for (const en of [...state.entities.values()]) {
+        if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id)) continue;
+        const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW), ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
+        if (Math.hypot(rx, ry) > 10 + en.radius) continue;
+        hit.push(en.id);
+        en.hp -= Number(d.dmg ?? 8);
+        if (!isToughFoe(en)) {
+          en.data ??= {};
+          en.data.bleedDps = Math.max(Number(en.data.bleedDps ?? 0), en.maxHp * Number(d.bleed ?? .08));
+          en.data.bleedAt ??= state.now;
+        }
+        ctx.spawn('staffblood', { x: en.pos.x, y: en.pos.y - 14 }, .4, { variant: Math.floor(Math.random() * 5), seed: Math.floor(Math.random() * 1000), dirX: Math.sign(Number(d.vx)) || 1, maxTtl: .4, dps: 0 }, 'hazard');
+        if (en.hp <= 0) ctx.killEnemy(en);
+      }
       continue;
     }
     if (e.kind === 'staffwave') {
-      // Primordial Waters wave: hurts, slows and pushes back every foe it rolls over, once.
+      // Primordial Waters wave: hurts and slows every foe it rolls over once, then carries
+      // it along at the wave's front until the wave breaks (Ramses is too heavy to move).
       e.pos.x += Number(d.vx) * dt; e.pos.y += Number(d.vy) * dt;
-      const speed = Math.hypot(Number(d.vx), Number(d.vy)) || 1;
-      const dirX = Number(d.vx) / speed, dirY = Number(d.vy) / speed;
       const hit = (d.hit ??= []) as number[];
+      for (const id of hit) {
+        const en = state.entities.get(id);
+        if (!en || en.hp <= 0 || en.kind === 'ramses' || en.data?.stoneUntil != null) continue;
+        en.pos.x += Number(d.vx) * dt; en.pos.y += Number(d.vy) * dt;
+      }
       for (const en of [...state.entities.values()]) {
         if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id)) continue;
         const rx = ctx.wrapDelta(en.pos.x, e.pos.x, state.worldW), ry = ctx.wrapDelta(en.pos.y, e.pos.y, state.worldH);
@@ -414,10 +500,6 @@ export function updateWeaponEntities(
         en.hp -= Number(d.dmg ?? 30);
         en.data ??= {};
         en.data.slowUntil = Math.max(Number(en.data.slowUntil ?? 0), state.now + 2.5);
-        if (en.kind !== 'ramses') {
-          en.data.knockVx = dirX * Number(d.knock ?? 70) / .11; en.data.knockVy = dirY * Number(d.knock ?? 70) / .11;
-          en.data.knockUntil = state.now + .22;
-        }
         ctx.spawn('hitspark', { x: en.pos.x, y: en.pos.y - 14 }, .18, { seed: en.id, small: 1, maxTtl: .18 }, 'hazard');
         if (en.hp <= 0) ctx.killEnemy(en);
       }
@@ -494,6 +576,7 @@ export function updateWeaponEntities(
         let dmg = d.dmg as number;
         // Celestial Ring: double damage on the return trip.
         if (e.kind === "wpring" && d.returning && d.electric) dmg *= 2;
+        applyBlessing(en, d);
         en.hp -= dmg;
         if (d.poisonEvo) applyDaggerPoison(state, en, Number(d.poisonEvo));
         if (d.knock) {
@@ -576,6 +659,7 @@ export function updateWeaponEntities(
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + 0.5; }
         } else if (!hitArr.includes(en.id)) {
           hitArr.push(en.id);
+          applyBlessing(en, d);
           en.hp -= e.kind === "godhand" && en.kind === "ramses" ? Math.min(Number(d.dmg), en.maxHp * .1) : d.dmg as number;
           if (e.kind === "godhand") { en.data ??= {}; en.data.liftAt = state.now; }
           if (d.slow) { en.data ??= {}; en.data.slowUntil = state.now + (d.slow as number); }

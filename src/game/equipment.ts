@@ -29,16 +29,28 @@ export const STAFF_CHARGE_SECONDS = 1;
 export const STAFF_SLAM_SECONDS = 0.3;
 /** Power / range multiplier per evolution. */
 export const STAFF_SPECIAL_SCALE = [1, 1.3, 1.6] as const;
-/** Staff of Moses: the next attack hits x2 / x3 / x4 by level. */
-export const STAFF_EMPOWER_MUL: Record<string, readonly number[]> = { moses: [2, 3, 4] };
 /** Iron Staff: share of max HP removed from nearby foes, by level. */
 export const IRON_MAXHP_CUT = [.25, .5, .75] as const;
 export const IRON_RADIUS = 130;
 /** Primordial Waters wave: speed (px/s) and base range. */
 export const STAFF_WAVE_SPEED = 300;
 export const STAFF_WAVE_RANGE = 360;
+/** Crystal Staff: how long caught foes stay frozen. */
+export const CRYSTAL_FREEZE_SECONDS = 2;
+/** Diamond Staff: shards thrown all around, their reach and speed. */
+export const DIAMOND_SHARDS = 10;
+export const DIAMOND_SHARD_RANGE = 260;
+export const DIAMOND_SHARD_SPEED = 420;
+/** Diamond Staff: bleeding drains this share of max HP per second, by level, until death. */
+export const DIAMOND_BLEED_PCT = [.08, .12, .16] as const;
+/** Stone Staff: radius of "nearby" foes; levels petrify 1/3, 2/3 and all of them. */
+export const STONE_RADIUS = 260;
+export const STONE_SECONDS = 3;
 /** Divine Light: how long blinded foes fight each other. */
-export const LIGHT_BRAWL_SECONDS = 4;
+export const LIGHT_BRAWL_SECONDS = 8;
+/** Divine Light: the single beam's height (its cone footprint scales with it). */
+export const LIGHT_BEAM_HEIGHT = 260;
+export const LIGHT_BEAM_SECONDS = 1.6;
 /** God's Power: fist falls for 0.35 s, then its ground crack lingers. */
 export const GOD_HAND_SECONDS = 1.7;
 
@@ -68,34 +80,39 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
   const now = state.now;
   switch (id) {
     case "moses":
+      // The next attack is blessed (see applyBlessing in weapons.ts).
       f.empowered = 1;
-      f.empowerMul = STAFF_EMPOWER_MUL.moses[evo - 1] ?? 2;
+      f.blessEvo = evo;
+      f.blessId = (f.blessId ?? 0) + 1;
       break;
     case "iron": {
-      // Iron Staff: nearby foes permanently lose part of their max HP and turn metallic.
+      // Iron Staff: nearby foes permanently lose part of their max HP and keep a metal tint until they die.
       const r = IRON_RADIUS * sc, cut = IRON_MAXHP_CUT[evo - 1] ?? IRON_MAXHP_CUT[0];
       for (const en of enemiesWithin(state, p, r)) {
         en.maxHp = Math.max(1, en.maxHp * (1 - cut));
         en.hp = Math.min(en.hp, en.maxHp);
-        en.data ??= {}; en.data.metalAt = now; en.data.metalUntil = now + 1.5;
+        en.data ??= {}; en.data.metalAt = now; en.data.metal = 1;
       }
       spawn("staffburst", { ...p }, 0.6, { r, color: "iron" });
       break;
     }
     case "crystal": {
       const r = 120 * sc;
-      for (const en of enemiesWithin(state, p, r)) { en.data ??= {}; en.data.axeFreezeUntil = now + 1; }
-      spawn("staffring", { ...p }, 1, { r, art: "crystal", ttl0: 1, follow: 1 });
+      for (const en of enemiesWithin(state, p, r)) { en.data ??= {}; en.data.axeFreezeUntil = now + CRYSTAL_FREEZE_SECONDS; }
+      spawn("staffring", { ...p }, 1, { r, art: "crystal", tint: "water", ttl0: 1, follow: 1 });
       break;
     }
     case "diamond": {
-      const r = 160 * sc;
-      for (const en of enemiesWithin(state, p, r, true)) {
-        en.data ??= {};
-        en.data.slowUntil = Math.max(Number(en.data.slowUntil ?? 0), now + 2);
-        en.hp -= 8 * mag;
+      // Diamond Staff: crystal shards fly out in every direction; whoever they cut bleeds to death.
+      const range = DIAMOND_SHARD_RANGE * sc, ttl = range / DIAMOND_SHARD_SPEED;
+      const turn = Math.random() * Math.PI * 2;
+      for (let i = 0; i < DIAMOND_SHARDS; i++) {
+        const a = turn + i / DIAMOND_SHARDS * Math.PI * 2;
+        spawn("staffshard", { x: p.x + Math.cos(a) * 14, y: p.y + Math.sin(a) * 14 }, ttl, {
+          vx: Math.cos(a) * DIAMOND_SHARD_SPEED, vy: Math.sin(a) * DIAMOND_SHARD_SPEED, ttl0: ttl,
+          dmg: 8 * mag, bleed: DIAMOND_BLEED_PCT[evo - 1] ?? DIAMOND_BLEED_PCT[0], hit: [],
+        }, "hazard");
       }
-      spawn("staffring", { ...p }, 1, { r, art: "diamond", ttl0: 1, follow: 1 });
       break;
     }
     case "bronze":
@@ -113,38 +130,37 @@ export function fireStaffSpecial(state: GameState, spawn: SpawnFn, id: string, e
         en.data.knockUntil = now + 0.22;
       }
       spawn("staffburst", { ...p }, 0.6, { r, color: "ice", wind: 1 });
-      // A small tornado spins up around Moses as the gust leaves.
-      spawn("stafftornado", { x: p.x, y: p.y - 1 }, 1.1, { ttl0: 1.1, evo });
+      // A tornado spins up around Moses as the gust leaves, drawn in front of him.
+      spawn("stafftornado", { x: p.x, y: p.y + 1 }, 1.1, { ttl0: 1.1, evo });
       break;
     }
     case "bush": {
-      // Stone Staff: petrifies the 1 / 2 / 3 nearest enemies (never Ramses); they crumble after 3 s.
-      const targets = nearestEnemies(state, p, 12, 260 * sc).filter((e) => e.kind !== "ramses" && !(Number(e.data?.stoneUntil ?? 0) > now)).slice(0, evo);
-      for (const target of targets) { target.data ??= {}; target.data.stoneAt = now; target.data.stoneUntil = now + 3; }
+      // Stone Staff: petrifies 1/3, 2/3 or all of the nearby enemies (never Ramses), nearest first.
+      // They crumble after 3 s; enemy champions survive it, only losing health (see engine.ts).
+      const near = nearestEnemies(state, p, 999, STONE_RADIUS * sc).filter((e) => e.kind !== "ramses" && !(Number(e.data?.stoneUntil ?? 0) > now));
+      const targets = near.slice(0, Math.max(1, Math.ceil(near.length * Math.min(3, evo) / 3)));
+      for (const target of targets) { target.data ??= {}; target.data.stoneAt = now; target.data.stoneUntil = now + STONE_SECONDS; }
       break;
     }
     case "waters": {
-      // Primordial Waters: a wave rolls toward the nearest foe, hurting, slowing and pushing back what it crosses.
+      // Primordial Waters: a wave rolls toward the nearest foe, hurting, slowing and carrying off what it crosses.
       const t = nearestEnemies(state, p, 1, 420)[0];
       const ang = t ? Math.atan2(wrapDelta(t.pos.y, p.y, state.worldH), wrapDelta(t.pos.x, p.x, state.worldW)) : (state.player.facing === -1 ? Math.PI : 0);
       const range = STAFF_WAVE_RANGE * sc;
       spawn("staffwave", { x: p.x + Math.cos(ang) * 20, y: p.y + Math.sin(ang) * 20 }, range / STAFF_WAVE_SPEED, {
         vx: Math.cos(ang) * STAFF_WAVE_SPEED, vy: Math.sin(ang) * STAFF_WAVE_SPEED, ttl0: range / STAFF_WAVE_SPEED,
-        r: 46 * sc, dmg: 30 * mag * sc, knock: 70 * sc, sc, hit: [],
+        r: 80 * sc, dmg: 30 * mag * sc, sc, hit: [],
       }, "hazard");
       break;
     }
     case "light": {
-      // Divine Light: blinds the closest enemies, who turn on each other for a while (never Ramses).
-      const group = nearestEnemies(state, p, 2 + evo, 300 * sc).filter((e) => e.kind !== "ramses");
-      for (const en of group) {
-        en.data ??= {};
-        en.data.blindUntil = now + LIGHT_BRAWL_SECONDS;
-        en.data.brawlUntil = now + LIGHT_BRAWL_SECONDS;
-        en.data.brawlDmg = 5 * mag * sc;
-        en.data.brawlNext = now + .5;
-        spawn("stafflight", { ...en.pos }, 1.2, { targetId: en.id, ttl0: 1.2 });
-      }
+      // Divine Light: one great beam lands on the nearest foe; everyone its cone touches
+      // is blinded and turns on the others (never Ramses). See the stafflight update.
+      const t = nearestEnemies(state, p, 1, 420).find((e) => e.kind !== "ramses") ?? nearestEnemies(state, p, 1, 420)[0];
+      const at = t ? { ...t.pos } : { x: p.x + state.player.facing * 90, y: p.y };
+      spawn("stafflight", at, LIGHT_BEAM_SECONDS, {
+        ttl0: LIGHT_BEAM_SECONDS, h: LIGHT_BEAM_HEIGHT * sc, brawlDmg: 6 * mag * sc, hit: [],
+      });
       break;
     }
     case "power": {

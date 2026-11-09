@@ -137,19 +137,6 @@ export function mosesSwingAngle(progress: number): number {
 const STAFF_CROWN: Record<string, { x: number; y: number }> = {
   default: { x: 0, y: -49 }, moses: { x: 5, y: -47 }, bush: { x: 1, y: -48 },
 };
-/** Golden aura behind a blessed weapon (drawn in the weapon's own grip space). */
-export function drawEmpowerHalo(ctx: CanvasRenderingContext2D, phase: number, size = 26): void {
-  const color = getComputedStyle(document.documentElement).getPropertyValue("--equip-light").trim() || "#f3d769";
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  ctx.globalAlpha = .55 + .2 * Math.sin(phase * 3);
-  const g = ctx.createRadialGradient(0, -size * .45, 0, 0, -size * .45, size);
-  g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(0, -size * .45, size, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-}
-
 export function mosesGrip(x: number, groundY: number, flip: 1 | -1) {
   if (MOSES_VISUAL_VERSION === "new") {
     return { x: x + (V2.HAND.x - V2.CX) * V2.PX * flip, y: groundY - (V2.H - V2.HAND.y) * V2.PX };
@@ -290,7 +277,6 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
       const evolution = pose.equipment?.weapon.evolution ?? 1;
       if (id === "branch") {
         // Restore the exact original stick, its 10x80 canvas and hand pivot.
-        if (pose.empowered) drawEmpowerHalo(ctx, pose.walkPhase, 30);
         ctx.drawImage(L.staff, -S.GRIP.x * PX, -S.GRIP.y * PX, S.W * PX, S.H * PX);
         if (pose.empowered) {
           ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = .75 + .25 * Math.sin(pose.walkPhase * 3);
@@ -302,8 +288,7 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
           ctx.fillRect(-1 * PX, -20 * PX, 2 * PX, 2 * PX);
         }
       } else if (id !== "none" && !pose.hideHeldWeapon && !daggerInFlight) {
-        // Staff blessing: a strong golden glow pulses on the weapon until (and during) its blessed attack.
-        if (pose.empowered) drawEmpowerHalo(ctx, pose.walkPhase);
+        // Staff blessing: the weapon burns bright until (and during) its blessed attack.
         drawCombatEquipment(ctx, "weapon", id, evolution, PX);
         if (pose.empowered) {
           ctx.save(); ctx.globalCompositeOperation = "lighter";

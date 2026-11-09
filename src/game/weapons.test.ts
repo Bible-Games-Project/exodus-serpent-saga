@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DAGGER_CADENCE, DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerGestureSeconds, daggerTarget, updateWeaponAim, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponKnockback, weaponReachMul } from "./weapons";
+import { applyBlessing, inLightCone, weaponDot, DAGGER_CADENCE, DAGGER_POISON, DAGGER_THROW, RING_BOUNCES, daggerGestureSeconds, daggerTarget, updateWeaponAim, updateWeaponEntities, weaponLaunchProgress, weaponOnCast, weaponCooldownMul, weaponIsRangedOnly, weaponKnockback, weaponReachMul } from "./weapons";
 import type { Entity, GameState, Vec2 } from "./types";
 import { BRANCH_WIND_PUSH, BRANCH_WIND_WIDTH, DAGGER_RELEASE_PROGRESS, GROUND_IMPACT_DELAY, HARPOON_RETARGET_SECONDS, MACE_IMPACT_RADIUS, SWORD_ART, SWORD_CROSS_SCALE, groundStrikeAngle, heldHarpoonVisible, impactLife, spearAttack, thrustPose, turnWeaponAngle } from './weaponAttack';
 import { mosesSwordTip } from './mosesGameArt';
@@ -297,15 +297,40 @@ test('Branch gust pushes back each foe it crosses once, more at each level', () 
   }
   assert.deepEqual(pushes.map(p => Math.round(p)), [...BRANCH_WIND_PUSH]);
 });
-test('A blessed attack carries the Staff of Moses multiplier on its thrown weapon, once', () => {
+test('A blessed attack carries the Staff of Moses blessing on its thrown weapon, once', () => {
   const s = arena('boomerang'); s.entities.set(1, enemy(1, 1100, 1000));
-  s.equipFx = { empowered: 1, empowerMul: 3 };
+  s.equipFx = { empowered: 1, blessEvo: 2, blessId: 7 };
   const spawn = spawner(s); weaponOnCast(s, spawn);
   const b = [...s.entities.values()].find(e => e.kind === 'wpboom')!;
   assert.equal(b.data?.empowered, 1);
-  const blessedDmg = Number(b.data?.dmg);
+  assert.equal(b.data?.blessEvo, 2);
   s.entities.clear(); s.entities.set(1, enemy(1, 1100, 1000)); weaponOnCast(s, spawn);
   const plain = [...s.entities.values()].find(e => e.kind === 'wpboom')!;
-  assert.ok(Math.abs(blessedDmg / Number(plain.data?.dmg) - 3) < 1e-9);
   assert.equal(plain.data?.empowered, 0);
+  assert.ok(!plain.data?.blessEvo);
+});
+test('Blessing levels: half max HP, then 75% of what is left, then death; once per attack; never bosses', () => {
+  const foe = (hp: number, kind = 'soldier', data: Record<string, unknown> = {}) => ({ ...enemy(1, 0, 0), kind, hp, maxHp: 100, data }) as Entity;
+  const a = foe(80); applyBlessing(a, { blessEvo: 1, blessId: 1 }); assert.equal(a.hp, 30);
+  applyBlessing(a, { blessEvo: 1, blessId: 1 }); assert.equal(a.hp, 30);
+  const b = foe(80); applyBlessing(b, { blessEvo: 2, blessId: 1 }); assert.equal(b.hp, 20);
+  const c = foe(80); applyBlessing(c, { blessEvo: 3, blessId: 1 }); assert.equal(c.hp, 0);
+  for (const tough of [foe(80, 'ramses'), foe(80, 'soldier', { enemyChampion: 1 })]) {
+    applyBlessing(tough, { blessEvo: 3, blessId: 1 }); assert.equal(tough.hp, 80);
+  }
+});
+test('Diamond bleeding drains ordinary foes until death but never bosses', () => {
+  const s = arena('branch');
+  const cut = { ...enemy(1, 0, 0), hp: 100, maxHp: 100, data: { bleedDps: 10 } } as Entity;
+  const boss = { ...enemy(2, 0, 0), kind: 'ramses', hp: 100, maxHp: 100, data: { bleedDps: 10 } } as Entity;
+  weaponDot(s, cut, 1); weaponDot(s, boss, 1);
+  assert.equal(cut.hp, 90); assert.equal(boss.hp, 100);
+});
+test('Divine Light cone covers the beam foot and narrows toward the sky', () => {
+  assert.ok(inLightCone(0, 0, 260));
+  assert.ok(inLightCone(60, 0, 260));
+  assert.ok(!inLightCone(120, 0, 260));
+  assert.ok(inLightCone(0, -150, 260));
+  assert.ok(!inLightCone(60, -150, 260));
+  assert.ok(!inLightCone(0, 80, 260));
 });
