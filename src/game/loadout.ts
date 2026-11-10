@@ -3,6 +3,7 @@
 import { findItem, type Evolution } from "./shopCatalog";
 import { loadShop, ownedChampions } from "@/lib/shopSave";
 import type { GameState } from "./types";
+import { applyShieldCapacity } from "./helmets";
 
 export type Loadout = {
   weapon: { id: string; evolution: number; dmg: number };
@@ -41,10 +42,8 @@ export function applyLoadout(state: GameState): void {
   // Food: maximum health (the bar keeps its dimensions; only the number grows).
   state.player.maxHp = Math.round(state.player.maxHp * (1 + lo.food.hpPct / 100));
   state.player.hp = state.player.maxHp;
-  // Shield: capacity modifier — maxShield = base × (1 + bonus). Never a refill.
-  const base = state.maxShield ?? 50;
-  state.maxShield = Math.round(base * (1 + lo.shield.capPct / 100));
-  state.shield = Math.min(state.shield ?? base, state.maxShield);
+  // Helmet: shield capacity — maxShield = base × (1 + bonus); the run starts full.
+  applyShieldCapacity(state, true);
 }
 
 /** Magical (plague) damage multiplier from the equipped staff. */

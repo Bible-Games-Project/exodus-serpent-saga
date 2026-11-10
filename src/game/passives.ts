@@ -3,6 +3,7 @@ import { SHIELD_CONFIG } from "./bonuses";
 // companion picks. Data-driven and easy to extend.
 import type { GameState } from "./types";
 import { exodusSpeedMul, footwearMagnetMul } from "./equipment";
+import { applyShieldCapacity } from "./helmets";
 
 export type PassiveId = "maxHp" | "speed" | "damage" | "magnet" | "shield";
 
@@ -67,6 +68,8 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
       p.shield = (p.shield ?? 0) + 1;
       // Raises capacity only; current shield is not refilled.
       s.maxShield = (s.maxShield ?? SHIELD_CONFIG.initialMax) + SHIELD_CONFIG.blessingMaxIncrease;
+      // The helmet bonus scales with the new base capacity.
+      applyShieldCapacity(s);
     },
   },
 };

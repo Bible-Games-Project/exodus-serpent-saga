@@ -9,6 +9,7 @@ import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDa
 import { applyBlessing, daggerTarget, isToughFoe, equippedWeapon, pendingBlessEvo, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
+import { sealedAllies } from "./helmets";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
   resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, type ChampHelpers,
@@ -457,6 +458,8 @@ export function update(state: GameState, dt: number) {
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
+      // Light of the Covenant: a sealed foe fights for Moses until it falls.
+      if (e.data?.sealed) { sealedTick(state, e, dt); wrapPos(state, e.pos); continue; }
       // A vanished spear (for example after TTL expiry) must never leave a
       // surviving soldier permanently empty-handed.
       if (e.kind === "spearsoldier" && e.data?.spearInFlight != null && !state.entities.has(e.data.spearInFlight as number)) {
@@ -608,6 +611,10 @@ export function update(state: GameState, dt: number) {
           const d = wrapDist2(state, e.pos, n.pos);
           if (d < bestD * 0.7) { bestD = d; targetAlly = n; }
         }
+        for (const n of sealedAllies(state)) {
+          const d = wrapDist2(state, e.pos, n.pos);
+          if (d < bestD * 0.7) { bestD = d; targetAlly = n; }
+        }
         ed.tgtId = targetAlly ? targetAlly.id : p.id;
         ed.tgtAt = state.now + ROUTE_MIN_INTERVAL;
         markRouteRefresh(ed, state.now);
@@ -664,7 +671,7 @@ export function update(state: GameState, dt: number) {
         const hitRadius = e.radius + p.radius;
         if ((tx - hitX) ** 2 + (ty - hitY) ** 2 <= hitRadius * hitRadius) {
           e.data.specialDashHit = 1;
-          damagePlayer(state, ((e.data.contactDmg as number) ?? 12));
+          damagePlayer(state, ((e.data.contactDmg as number) ?? 12), false, e);
           state.damageImpactKind = "normal";
           spawnVisualHazard(state, "agileslash", { x: hitX, y: hitY - 24 }, 0.24, {
             seed: e.id, maxTtl: 0.24,
@@ -710,7 +717,7 @@ export function update(state: GameState, dt: number) {
           const prog = (state.now - (e.data[key] as number)) / melee.dur;
           if (prog >= melee.from && prog <= melee.to && dd < reach + 10) {
             const contactDmg = (e.data?.contactDmg as number) ?? 8;
-            damagePlayer(state, contactDmg * dt);
+            damagePlayer(state, contactDmg * dt, false, e);
             state.damageImpactKind = "normal";
             if (!e.data.atkHitDone) {
               e.data.atkHitDone = true;
@@ -747,7 +754,7 @@ export function update(state: GameState, dt: number) {
         // hit above; overlapping during the pass never adds contact damage.
         // Contact damage (non-melee kinds keep the original overlap behaviour).
         const contactDmg = (e.data?.contactDmg as number) ?? 8;
-        damagePlayer(state, contactDmg * dt);
+        damagePlayer(state, contactDmg * dt, false, e);
         state.damageImpactKind = e.kind === "ramses" ? "ramses" : "normal";
         resolvePlayerDefeat(state);
       }
@@ -757,7 +764,7 @@ export function update(state: GameState, dt: number) {
         const lanceReach = e.radius + p.radius + 22;
         if (dd < lanceReach) {
           e.data.lanceHit = 1;
-          damagePlayer(state, KNIGHT_LANCE_DMG);
+          damagePlayer(state, KNIGHT_LANCE_DMG, false, e);
           state.damageImpactKind = "normal";
           const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
           const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
@@ -770,10 +777,7 @@ export function update(state: GameState, dt: number) {
         }
       }
 
-      for (const npcId of state.npcs.values()) {
-        const n = state.entities.get(npcId);
-        if (!n || n.data?.downedUntil) continue;
-        if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
+      for (const n of allyBodies(state)) {
         if (wrapDist2(state, e.pos, n.pos) < (e.radius + n.radius) ** 2) {
           if (!melee) damageAlly(state, n, ((e.data?.contactDmg as number) ?? 8) * dt);
         }
@@ -871,7 +875,7 @@ export function update(state: GameState, dt: number) {
       if (e.data?.enemyOwned) {
         const hitPt = playerBodyHit(state, e, dt);
         if (!invuln && hitPt) {
-          damagePlayer(state, (e.dmg ?? 5), true);
+          damagePlayer(state, (e.dmg ?? 5), true, e);
           const owner = e.ownerId == null ? undefined : state.entities.get(e.ownerId);
           state.damageImpactKind = owner?.kind === "ramses" ? "ramses" : "normal";
           // The Sorcerer's light produces a magical smoke burst, never blood.
@@ -886,10 +890,8 @@ export function update(state: GameState, dt: number) {
         }
         if (!state.entities.has(e.id)) continue;
         // Otherwise the shot can strike a champion's visible body.
-        for (const npcId of state.npcs.values()) {
-          const n = state.entities.get(npcId);
-          if (!n || n.data?.downedUntil) continue;
-          if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
+        for (const n of allyBodies(state)) {
+          if (n.id === e.ownerId) continue;
           const bx = n.pos.x + wrapDelta(e.pos.x, n.pos.x, state.worldW) - n.pos.x;
           const by = e.pos.y - (n.pos.y - 22);
           if (Math.abs(bx) < n.radius + e.radius && Math.abs(by) < 34 + e.radius) {
@@ -2114,6 +2116,8 @@ function killEnemy(state: GameState, e: Entity) {
     return;
   }
   if (!state.entities.has(e.id)) return;
+  // Moses' own attacks never kill a sealed ally; only enemy blows do.
+  if (e.data?.sealed && !e.data.sealFall) { e.hp = Math.max(1, Number(e.data.sealHp ?? e.maxHp)); return; }
   weaponOnEnemyDeath(state, e, (kind, pos, ttl, data, team) => {
     const x: Entity = {
       id: state.nextId++, pos: { x: pos.x, y: pos.y }, vel: { x: 0, y: 0 },
@@ -2133,11 +2137,13 @@ function killEnemy(state: GameState, e: Entity) {
     for (const k of ["blindUntil", "bleedDps", "liftAt", "brawlHitAt", "axeFreezeUntil", "knockUntil"]) delete snap.data![k];
     spawnVisualHazard(state, "corpse", e.pos, DEATH_FADE_SECONDS, { snap });
   }
-  spawnVisualHazard(state, "deathpuff", e.pos, 0.7, {
+  // Mantle of the Cloud: the foe crumbles into dust in the helmet colour.
+  const dustTint = e.data?.dustTint as string | undefined;
+  spawnVisualHazard(state, "deathpuff", e.pos, dustTint ? 0.9 : 0.7, {
     variant: Math.floor(Math.random() * 6),
     seed: Math.floor(Math.random() * 100000),
     scale: Math.max(0.75, Math.min(1.35, e.radius / 16)),
-    kind: e.kind, stone: stoneDeath ? 1 : 0,
+    kind: e.kind, stone: stoneDeath ? 1 : 0, tint: dustTint,
   });
   const gem: Entity = {
     id: state.nextId++,
@@ -2194,11 +2200,12 @@ const BRAWL_GAP = 14, BRAWL_SPEED = 60, BRAWL_HIT_EVERY = .7;
 const BRAWL_MAXHP_PER_HIT = .14;
 /** Stone Staff: share of max HP an enemy champion loses when its stone wears off. */
 const STONE_TOUGH_HP_LOSS = .4;
-function brawlTick(state: GameState, e: Entity, dt: number): void {
+function brawlTick(state: GameState, e: Entity, dt: number, pick?: (o: Entity) => boolean, maxD = Infinity): Entity | null {
   const d = e.data!;
-  let foe: Entity | null = null, best = Infinity;
+  let foe: Entity | null = null, best = maxD * maxD;
   for (const o of state.entities.values()) {
-    if (o === e || o.team !== "enemy" || o.hp <= 0 || !(Number(o.data?.brawlUntil ?? 0) > state.now)) continue;
+    if (o === e || o.team !== "enemy" || o.hp <= 0) continue;
+    if (pick ? !pick(o) : !(Number(o.data?.brawlUntil ?? 0) > state.now)) continue;
     const d2 = wrapDist2(state, e.pos, o.pos);
     if (d2 < best) { best = d2; foe = o; }
   }
@@ -2242,6 +2249,7 @@ function brawlTick(state: GameState, e: Entity, dt: number): void {
           variant: Math.floor(Math.random() * 5), seed: Math.floor(Math.random() * 1000), dirX: tx >= 0 ? 1 : -1, maxTtl: .4,
         });
         if (target.hp <= 0) killEnemy(state, target);
+        if (target.data?.sealed) { target.data.sealHp = target.hp; }
       }
     }
   }
@@ -2254,6 +2262,31 @@ function brawlTick(state: GameState, e: Entity, dt: number): void {
     } else delete d.knockUntil;
   }
   resolveObstacles(e.pos, e.radius, state);
+  return foe;
+}
+
+/**
+ * Light of the Covenant: a sealed foe hunts the nearest enemy with its own
+ * attack (the Divine Light brawl), or walks back beside Moses when none is
+ * near. Damage from Moses' side is undone here: its health is `sealHp`.
+ */
+function sealedTick(state: GameState, e: Entity, dt: number): void {
+  const d = e.data!;
+  e.hp = Math.min(e.maxHp, Number(d.sealHp ?? e.hp));
+  d.sealHp = e.hp;
+  delete d.stoneUntil; delete d.stoneAt; delete d.axeFreezeUntil; delete d.brawlUntil; delete d.blindUntil;
+  const foe = brawlTick(state, e, dt, (o) => !o.data?.sealed && !(o.kind === "ramses" && (o.data?.seated || o.data?.downedUntil != null)), 520);
+  if (foe || d.brawlStrikeAt != null) return;
+  const p = state.player;
+  const vx = wrapDelta(p.pos.x, e.pos.x, state.worldW), vy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
+  const dist = Math.hypot(vx, vy) || 1;
+  if (dist > 90) {
+    const sp = 95;
+    e.vel.x = vx / dist * sp; e.vel.y = vy / dist * sp;
+    e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
+    e.facing = vx > 0 ? 1 : -1;
+    resolveObstacles(e.pos, e.radius, state);
+  }
 }
 
 function champHelpers(state: GameState): ChampHelpers {
@@ -2564,7 +2597,28 @@ function levelUp(state: GameState) {
 }
 
 /** Shared champion damage: real HP loss, hit feedback, and the death/grave path. */
+/** Champions plus sealed foes: everything enemies may strike besides Moses. */
+function allyBodies(state: GameState): Entity[] {
+  const out: Entity[] = [];
+  for (const npcId of state.npcs.values()) {
+    const n = state.entities.get(npcId);
+    if (!n || n.data?.downedUntil) continue;
+    if (n.data?.summonUntil && state.now < (n.data.summonUntil as number)) continue;
+    out.push(n);
+  }
+  for (const n of sealedAllies(state)) out.push(n);
+  return out;
+}
+
 function damageAlly(state: GameState, n: Entity, dmg: number, fxAt?: Vec2, projectile = false) {
+  if (n.data?.sealed) {
+    // A sealed foe only loses health to enemy blows (see sealedTick).
+    n.data.sealHp = Number(n.data.sealHp ?? n.hp) - dmg;
+    n.hp = n.data.sealHp as number;
+    if (fxAt) spawnVisualHazard(state, "hitspark", fxAt, 0.18, { seed: n.id, small: 1 });
+    if (n.hp <= 0) { n.data.sealFall = 1; killEnemy(state, n); }
+    return;
+  }
   if (n.data?.downedUntil) return;
   if (wardAbsorb(state, n, projectile)) return;
   n.hp -= dmg;

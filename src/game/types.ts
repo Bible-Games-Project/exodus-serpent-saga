@@ -190,6 +190,8 @@ export type GameState = {
   /** Moses' shield resource: current and maximum, kept separate from HP. */
   shield?: number;
   maxShield?: number;
+  /** Part of maxShield granted by the equipped helmet (painted apart on the bar). */
+  shieldBonus?: number;
 
   // Random world-spawn bonus timer (bonuses.ts).
   bonusSpawnCd?: number;

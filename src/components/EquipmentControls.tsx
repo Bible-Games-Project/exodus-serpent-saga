@@ -25,12 +25,13 @@ export function EquipmentControls({ value = DEFAULT_TEST_EQUIPMENT, onChange }: 
       <label>Rear staff<select aria-label="Rear staff" value={value.staff} onChange={e => update({ staff: e.target.value })}>{none}{CATEGORY_ITEMS.staff.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}</select></label>
       <label>Staff level<select aria-label="Staff level" value={value.staffLevel} onChange={e => update({ staffLevel: Number(e.target.value) })}>{[1, 2, 3].map(l => <option key={l} value={l}>Level {l}</option>)}</select></label>
       <label>Helmet<select aria-label="Helmet" value={value.helmet ?? "abel"} onChange={e => update({ helmet: e.target.value })}>{none}{CATEGORY_ITEMS.shield.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}</select></label>
+      <label>Helmet level<select aria-label="Helmet level" value={value.helmetLevel ?? 1} onChange={e => update({ helmetLevel: Number(e.target.value) })}>{[1, 2, 3].map(l => <option key={l} value={l}>Level {l}</option>)}</select></label>
       <label>Footwear<select aria-label="Footwear" value={value.footwear ?? "barefoot"} onChange={e => update({ footwear: e.target.value })}>{none}{CATEGORY_ITEMS.footwear.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}</select></label>
     </div>
     <div className="test-equipment-infos">
       <ItemInfo title="Weapon" items={CATEGORY_ITEMS.weapon} id={value.weapon} level={value.weaponLevel} />
       <ItemInfo title="Staff" items={CATEGORY_ITEMS.staff} id={value.staff} level={value.staffLevel} />
-      <ItemInfo title="Helmet" items={CATEGORY_ITEMS.shield} id={value.helmet ?? "abel"} level={1} />
+      <ItemInfo title="Helmet" items={CATEGORY_ITEMS.shield} id={value.helmet ?? "abel"} level={value.helmetLevel ?? 1} />
       <ItemInfo title="Footwear" items={CATEGORY_ITEMS.footwear} id={value.footwear ?? "barefoot"} level={1} />
     </div>
   </>;

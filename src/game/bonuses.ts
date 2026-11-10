@@ -1,8 +1,8 @@
 import { wardAbsorb } from "./championAbilities";
 // Bonus system — modular, data-driven pickups that appear randomly in the world
 // (no longer dropped by enemies). Add a new bonus by adding an entry to BONUSES.
-import type { GameState } from "./types";
-import { shieldModifyDamage, shieldOnDamageTaken } from "./equipment";
+import type { Entity, GameState } from "./types";
+import { helmetModifyDamage } from "./helmets";
 
 export type BonusKind = "heart" | "magnet" | "star" | "lightning" | "shield";
 
@@ -116,13 +116,14 @@ export function restoreShield(s: GameState, amount: number) {
 
 /** The single entry point for all damage dealt to Moses: shield absorbs first,
  * only the excess reaches HP. Neither value can go negative from here.
- * Shop shields can reduce or fully block the hit (see equipment.ts). */
-export function damagePlayer(s: GameState, amount: number, projectile = false) {
+ * Helmets can reduce or fully block the blow (see helmets.ts); `src` is the
+ * enemy or enemy projectile dealing it (none for poison). */
+export function damagePlayer(s: GameState, amount: number, projectile = false, src?: Entity) {
   if (!(amount > 0)) return;
   if (wardAbsorb(s, s.player, projectile)) return;
-  amount = shieldModifyDamage(s, amount, projectile);
+  amount = helmetModifyDamage(s, amount, projectile, src);
   if (!(amount > 0)) return;
-  shieldOnDamageTaken(s);
+  (s.equipFx ??= {}).lastDamageAt = s.now;
   const sh = Math.max(0, s.shield ?? 0);
   const absorbed = Math.min(sh, amount);
   s.shield = sh - absorbed;

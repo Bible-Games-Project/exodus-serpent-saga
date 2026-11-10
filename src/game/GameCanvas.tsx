@@ -43,6 +43,7 @@ import { BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weap
 import { weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffRing, drawStaffSpecial } from "./equipmentFx";
+import { drawHelmetAura, drawHelmetFx, drawSealedMark, drawShieldBar, isHelmetFx, shade } from "./helmetFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
 import { BONUSES, type BonusKind } from "./bonuses";
@@ -1561,6 +1562,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // 1) Ground pass — blood pools + Ramses landing telegraph + red-sea burst.
   for (const e of s.entities.values()) {
+    if (e.data?.sealed) drawSealedMark(ctx, e, s, camX, camY, "ground");
     if (e.kind === "bloodpool") {
       const canvas = e.data?.canvas as HTMLCanvasElement | undefined;
       if (!canvas) continue;
@@ -1584,7 +1586,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   let swingProgress: number | null = null;
   let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
-    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || isGroundWeaponFx(e) || e.kind === 'staffwave') continue;
+    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || isGroundWeaponFx(e) || e.kind === 'staffwave' || isHelmetFx(e.kind)) continue;
     if (e.kind === "corpse") {
       // A dead foe: its last pose is drawn fading out (see the draw loop below).
       const snap = e.data?.snap as Entity | undefined;
@@ -1674,7 +1676,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
+    if (e.kind === "moses") { drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1744,7 +1746,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
         // Iron Staff: a faint cold steel tint until death, a brief glint when struck.
         const glint = Math.max(0, 1 - (s.now - Number(e.data?.metalAt ?? 0)) / .6);
         endTintLayer(mainCtx, glint > 0 ? '#eef4fa' : '#9fb3c6', glint > 0 ? .12 + .35 * glint : .2, dyingU);
-      } else if (dyingU != null) endTintLayer(mainCtx, '#000', 0, dyingU);
+      } else if (dyingU != null) {
+        // Mantle of the Cloud: the body pales into dust of the helmet colour.
+        const dust = e.data?.dustTint as string | undefined;
+        endTintLayer(mainCtx, dust ?? '#000', dust ? .55 + .4 * Math.min(1, dyingU * 2) : 0, dyingU);
+      }
     }
   }
   // Forget statues whose foe crumbled or came back to life.
@@ -1753,6 +1759,11 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
   // Primordial Waters wave rolls over everyone, one layer above the NPCs.
   for (const e of s.entities.values()) if (e.kind === 'staffwave') drawWeaponEntity(ctx, e, s, camX, camY);
+  // Helmet effects (blocked blows, seals, healing) and the seal over sealed foes.
+  for (const e of s.entities.values()) {
+    if (isHelmetFx(e.kind)) drawHelmetFx(ctx, e, s, camX, camY);
+    else if (e.data?.sealed) drawSealedMark(ctx, e, s, camX, camY, "over");
+  }
 
   // 3) Darkness overlay
   const dEnd = s.darknessUntil ?? 0;
@@ -1871,9 +1882,9 @@ function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState
   const ratio = e.hp / e.maxHp;
   const blinkOff = ratio > 0 && ratio < MOSES_HP_BLINK_BELOW && Math.floor(s.now * MOSES_HP_BLINK_HZ * 2) % 2 === 1;
   if (!blinkOff) allyHpBar(ctx, cx, top - 24, ratio, "#4ec24e", "#1e5a1e");
-  // Shield bar sits directly above the HP bar; hidden when empty.
-  const sh = s.shield ?? 0, mx = s.maxShield ?? 0;
-  if (sh > 0 && mx > 0) allyHpBar(ctx, cx, top - 30, sh / mx, "#5fb4ff", "#1c3f66");
+  // Shield bar sits directly above the HP bar; hidden when empty. The part the
+  // helmet adds is painted in the helmet colour.
+  drawShieldBar(ctx, cx, top - 30, s);
 }
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
@@ -3060,8 +3071,9 @@ function drawDeathPuff(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
   // A foe's puff covers its body; a bare puff (projectiles) stays small.
   const bodyH = kind ? Math.min(90, box ? box.H * box.PX : 50) : 14 * scale;
   const bodyW = kind ? Math.min(70, box ? box.W * box.PX * .55 : 30) : 14 * scale;
-  const stone = !!e.data?.stone;
-  const cols = stone ? ["#c4bfb5", "#9a948a", "#746e65"] : ["#eadfca", "#c9b89b", "#9d8c76"];
+  const tint = e.data?.tint as string | undefined;
+  const stone = !!e.data?.stone || !!tint;
+  const cols = tint ? [shade(tint, .3), shade(tint, -.2), shade(tint, -.45)] : stone ? ["#c4bfb5", "#9a948a", "#746e65"] : ["#eadfca", "#c9b89b", "#9d8c76"];
   const rnd = (i: number) => { const v = Math.sin((seed + i * 43.17) * 12.9898) * 43758.5453; return v - Math.floor(v); };
   const n = kind ? 16 : 7;
   ctx.save();

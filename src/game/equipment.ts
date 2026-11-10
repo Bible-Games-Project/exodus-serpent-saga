@@ -1,8 +1,8 @@
-// Shop equipment abilities: staff specials, shield specials and footwear
+// Shop equipment abilities: staff specials and footwear (helmets: helmets.ts)
 // effects. Timed triggers and auras live here; stat multipliers live in
 // loadout.ts. All timings and targets come from the shop specification.
 import type { Entity, GameState, Vec2 } from "./types";
-import { weaponDamage } from "./loadout";
+import { updateHelmet } from "./helmets";
 
 type SpawnFn = (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>, team?: Entity["team"]) => Entity;
 
@@ -13,7 +13,7 @@ function fx(state: GameState): Record<string, number> {
 function nearestEnemies(state: GameState, from: Vec2, n: number, maxDist = 600): Entity[] {
   const list: Array<{ e: Entity; d: number }> = [];
   for (const e of state.entities.values()) {
-    if (e.team !== "enemy") continue;
+    if (e.team !== "enemy" || e.data?.sealed) continue;
     const d = Math.hypot(wrapDelta(e.pos.x, from.x, state.worldW), wrapDelta(e.pos.y, from.y, state.worldH));
     if (d <= maxDist) list.push({ e, d });
   }
@@ -24,6 +24,7 @@ function nearestEnemies(state: GameState, from: Vec2, n: number, maxDist = 600):
 /** Stone Staff: turns a foe into a statue on the spot. It stops dead (the engine
  *  pins it to stoneX/stoneY), its pose freezes and every pending order is dropped. */
 export function petrify(e: Entity, now: number): void {
+  if (e.data?.sealed) return; // a sealed foe fights for Moses
   const d = (e.data ??= {});
   d.stoneAt = now; d.stoneUntil = now + STONE_SECONDS;
   d.stoneX = e.pos.x; d.stoneY = e.pos.y;
@@ -207,101 +208,8 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
   f.staffNext = f.staffFireAt + (STAFF_SPECIAL_COOLDOWN[evo - 1] ?? 20);
 }
 
-// ---------------------------------------------------------------- shields
-/**
- * Shield modifiers to incoming damage. Returns the (possibly reduced or
- * fully blocked) amount. `projectile` marks enemy projectiles.
- */
-export function shieldModifyDamage(state: GameState, amount: number, projectile: boolean): number {
-  const lo = state.loadout;
-  if (!lo || !(amount > 0)) return amount;
-  const f = fx(state);
-  const id = lo.shield.id, evo = lo.shield.evolution;
-
-  // Protection of Noah: projectile damage reduction.
-  if (projectile && id === "noah" && evo >= 2) amount *= evo >= 3 ? 0.6 : 0.75;
-
-  // Shield of Abraham: a sphere absorbs one hit, then recharges.
-  if (id === "abraham" && evo >= 2 && state.now >= (f.absorbReadyAt ?? 0)) {
-    f.absorbReadyAt = state.now + (evo >= 3 ? 10 : 15);
-    return 0;
-  }
-  // Shield of the Promise: blocks one hit every 20 / 12 s.
-  if (id === "promise" && evo >= 2 && state.now >= (f.blockReadyAt ?? 0)) {
-    f.blockReadyAt = state.now + (evo >= 3 ? 12 : 20);
-    return 0;
-  }
-  return amount;
-}
-
-/** Shield effects that react after damage is actually taken. */
-export function shieldOnDamageTaken(state: GameState): void {
-  const lo = state.loadout;
-  if (!lo) return;
-  const f = fx(state);
-  f.lastDamageAt = state.now;
-  // Shield of Joseph: taking damage grants a speed burst.
-  if (lo.shield.id === "joseph" && lo.shield.evolution >= 2) {
-    state.speedBoostUntil = Math.max(state.speedBoostUntil ?? 0, state.now + (lo.shield.evolution >= 3 ? 3 : 2));
-  }
-}
-
-/** Shield of the God of Israel: survive one lethal hit per run. Returns the
- * health to restore, or null when not applicable. */
-export function shieldLethalSurvive(state: GameState): number | null {
-  const lo = state.loadout;
-  if (!lo || lo.shield.id !== "israel" || lo.shield.evolution < 2) return null;
-  const f = fx(state);
-  if (f.israelUsed) return null;
-  f.israelUsed = 1;
-  return Math.round(state.player.maxHp * (lo.shield.evolution >= 3 ? 0.35 : 0.2));
-}
-
-function updateShield(state: GameState, spawn: SpawnFn, killEnemy: (en: Entity) => void): void {
-  const lo = state.loadout;
-  if (!lo) return;
-  const f = fx(state);
-  const p = state.player;
-  const id = lo.shield.id, evo = lo.shield.evolution;
-
-  // Burning Bush Protection: fire aura damages nearby enemies.
-  if (id === "bushp" && evo >= 2) {
-    const r = evo >= 3 ? 110 : 75;
-    const dps = (evo >= 3 ? 14 : 8) * (weaponDamage(state) / 0.5);
-    for (const en of nearestEnemies(state, p.pos, 12, r)) {
-      en.hp -= dps * (1 / 60);
-      if (evo >= 3) { en.data ??= {}; en.data.burnUntil = state.now + 1.5; }
-      if (en.hp <= 0) killEnemy(en);
-    }
-  }
-  // Mantle of Jacob / Mantle of the Cloud: destroy incoming projectiles.
-  if ((id === "jacobm" || id === "cloud") && evo >= 2) {
-    const r = id === "cloud" ? (evo >= 3 ? 120 : 90) : (evo >= 3 ? 100 : 70);
-    const behindOnly = id === "jacobm";
-    for (const e of [...state.entities.values()]) {
-      if (e.team !== "projectile" || (e.dmg ?? 0) <= 0) continue;
-      if (["wpnproj", "wpboom", "wpring", "staffflame"].includes(e.kind)) continue; // ours
-      const dx = e.pos.x - p.pos.x, dy = e.pos.y - p.pos.y;
-      if (Math.hypot(dx, dy) > r) continue;
-      if (behindOnly && Math.sign(dx || p.facing) === p.facing) continue;
-      spawn("shieldpuff", { ...e.pos }, 0.25, { seed: e.id });
-      state.entities.delete(e.id);
-    }
-  }
-  // Light of the Covenant: repel enemies when health falls below 30%.
-  if (id === "covenant" && evo >= 2 && p.hp < p.maxHp * 0.3 && state.now >= (f.repelNext ?? 0)) {
-    f.repelNext = state.now + 10;
-    const r = evo >= 3 ? 220 : 150;
-    for (const en of nearestEnemies(state, p.pos, 20, r)) {
-      const dx = en.pos.x - p.pos.x, dy = en.pos.y - p.pos.y;
-      const dd = Math.hypot(dx, dy) || 1;
-      en.pos.x += (dx / dd) * 60;
-      en.pos.y += (dy / dd) * 60;
-      if (evo >= 3) { en.data ??= {}; en.data.slowUntil = state.now + 2; }
-    }
-    spawn("shockwave", { ...p.pos }, 0.35, { dmg: 0, r, hit: [] });
-  }
-}
+// ---------------------------------------------------------------- helmets
+// Helmet (shop "shield") abilities live in helmets.ts.
 
 // ---------------------------------------------------------------- footwear
 function updateFootwear(state: GameState, spawn: SpawnFn): void {
@@ -375,6 +283,6 @@ export function footwearMagnetMul(state: GameState): number {
 export function updateEquipment(state: GameState, spawn: SpawnFn, killEnemy: (en: Entity) => void): void {
   if (!state.loadout) return;
   updateStaff(state, spawn);
-  updateShield(state, spawn, killEnemy);
+  updateHelmet(state, killEnemy);
   updateFootwear(state, spawn);
 }

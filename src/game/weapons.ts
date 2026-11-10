@@ -144,14 +144,14 @@ export function aimDir(state: GameState): Vec2 {
   const fx = (state.equipFx ??= {});
   let best: Entity | null = null, bd = Infinity;
   for (const en of state.entities.values()) {
-    if (en.team !== "enemy" || en.hp <= 0) continue;
+    if (en.team !== "enemy" || en.hp <= 0 || en.data?.sealed) continue;
     const dx = wrapD(en.pos.x, p.pos.x, state.worldW), dy = wrapD(en.pos.y, p.pos.y, state.worldH);
     const d2 = dx * dx + dy * dy;
     if (d2 < bd) { bd = d2; best = en; }
   }
   // Stay on the current target unless it is gone or another is clearly closer.
   const current = fx.aimTargetId != null ? state.entities.get(fx.aimTargetId) : undefined;
-  if (best && current && current !== best && current.team === "enemy" && current.hp > 0) {
+  if (best && current && current !== best && current.team === "enemy" && current.hp > 0 && !current.data?.sealed) {
     const cd2 = wrapD(current.pos.x, p.pos.x, state.worldW) ** 2 + wrapD(current.pos.y, p.pos.y, state.worldH) ** 2;
     if (state.now < (fx.aimHoldUntil ?? 0) || bd >= cd2 * AIM_SWITCH_D2) { best = current; bd = cd2; }
   }
@@ -690,7 +690,7 @@ export function updateWeaponEntities(
 function nearestEnemyTo(state: GameState, from: Vec2, wrapDelta: (a: number, b: number, size: number) => number, skip?: Set<number>): Entity | null {
   let best: Entity | null = null, bd = Infinity;
   for (const en of state.entities.values()) {
-    if (en.team !== 'enemy' || en.hp <= 0 || skip?.has(en.id)) continue;
+    if (en.team !== 'enemy' || en.hp <= 0 || en.data?.sealed || skip?.has(en.id)) continue;
     const d2 = wrapDelta(en.pos.x, from.x, state.worldW) ** 2 + wrapDelta(en.pos.y, from.y, state.worldH) ** 2;
     if (d2 < bd) { bd = d2; best = en; }
   }

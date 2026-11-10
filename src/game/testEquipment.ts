@@ -1,8 +1,9 @@
 import { CATEGORY_ITEMS } from "./shopCatalog";
 import type { GameState, TestMapConfig } from "./types";
 import type { Loadout } from "./loadout";
-export type TestEquipment = { weapon: string; weaponLevel: number; staff: string; staffLevel: number; helmet?: string; footwear?: string };
-export const DEFAULT_TEST_EQUIPMENT: TestEquipment = { weapon: "branch", weaponLevel: 1, staff: "moses", staffLevel: 1, helmet: "abel", footwear: "barefoot" };
+import { applyShieldCapacity } from "./helmets";
+export type TestEquipment = { weapon: string; weaponLevel: number; staff: string; staffLevel: number; helmet?: string; helmetLevel?: number; footwear?: string };
+export const DEFAULT_TEST_EQUIPMENT: TestEquipment = { weapon: "branch", weaponLevel: 1, staff: "moses", staffLevel: 1, helmet: "abel", helmetLevel: 1, footwear: "barefoot" };
 /** Test-only "unequipped" slot id. */
 export const NONE = "none";
 export function testLoadout(input: TestEquipment = DEFAULT_TEST_EQUIPMENT): Loadout {
@@ -10,13 +11,14 @@ export function testLoadout(input: TestEquipment = DEFAULT_TEST_EQUIPMENT): Load
   const staff = CATEGORY_ITEMS.staff.find(i => i.id === input.staff) ?? CATEGORY_ITEMS.staff[0];
   const wl = Math.max(1, Math.min(3, Math.floor(input.weaponLevel)));
   const sl = Math.max(1, Math.min(3, Math.floor(input.staffLevel)));
+  const hl = Math.max(1, Math.min(3, Math.floor(input.helmetLevel ?? 1)));
   const helmet = CATEGORY_ITEMS.shield.find(i => i.id === input.helmet) ?? CATEGORY_ITEMS.shield[0];
   const footwear = CATEGORY_ITEMS.footwear.find(i => i.id === input.footwear) ?? CATEGORY_ITEMS.footwear[0];
   const lo: Loadout = {
     weapon: { id: weapon.id, evolution: wl, dmg: weapon.evolutions[wl - 1].dmg ?? .5 },
     staff: { id: staff.id, evolution: sl, magicPct: staff.evolutions[sl - 1].magicPct ?? 0 },
     food: { id: "sandwich", hpPct: 1, regen: 0, resurrect: false },
-    shield: { id: helmet.id, evolution: 1, capPct: helmet.evolutions[0].capPct ?? 1 },
+    shield: { id: helmet.id, evolution: hl, capPct: (helmet.evolutions[hl - 1] ?? helmet.evolutions[0]).capPct ?? 0 },
     footwear: { id: footwear.id, speedPct: footwear.evolutions[0].speedPct ?? 0 },
   };
   if (input.weapon === NONE) lo.weapon = { id: NONE, evolution: 1, dmg: .5 };
@@ -30,4 +32,6 @@ export function applyTestEquipment(state: GameState, config: TestMapConfig): voi
   state.loadout = testLoadout(config.equipment);
   // New staff specials are eligible immediately; no shop saves are touched.
   state.equipFx = {};
+  // Helmet capacity applies (and refills) so the bar shows the helmet part at once.
+  applyShieldCapacity(state, true);
 }
