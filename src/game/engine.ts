@@ -597,7 +597,7 @@ export function update(state: GameState, dt: number) {
       const cached = cachedId != null && cachedId !== p.id ? state.entities.get(cachedId) : undefined;
       const cachedValid = cachedId === p.id || (!!cached && !cached.data?.downedUntil &&
         !(cached.data?.summonUntil && state.now < (cached.data.summonUntil as number)));
-      // Full route refreshes are gated by the shared 400 ms scheduler; an
+      // Full route refreshes are gated by the shared 500 ms scheduler; an
       // invalid cached target just falls back to Moses until the next refresh.
       if (canRefreshRoute(ed, state.now) && (!cachedValid || state.now >= ((ed.tgtAt as number) ?? 0))) {
         let bestD = wrapDist2(state, e.pos, p.pos);
@@ -609,7 +609,7 @@ export function update(state: GameState, dt: number) {
           if (d < bestD * 0.7) { bestD = d; targetAlly = n; }
         }
         ed.tgtId = targetAlly ? targetAlly.id : p.id;
-        ed.tgtAt = state.now + ROUTE_MIN_INTERVAL + Math.random() * 0.2;
+        ed.tgtAt = state.now + ROUTE_MIN_INTERVAL;
         markRouteRefresh(ed, state.now);
       } else if (cached && cachedValid) {
         targetAlly = cached;

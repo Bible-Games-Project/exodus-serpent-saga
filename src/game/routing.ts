@@ -2,7 +2,7 @@
 // last-refresh timestamp; no code path may recompute a route (target choice +
 // heading/obstacle probing) more often than ROUTE_MIN_INTERVAL seconds of game
 // time. Per-frame steering toward the last chosen target is not a refresh.
-export const ROUTE_MIN_INTERVAL = 0.4;
+export const ROUTE_MIN_INTERVAL = 0.5;
 
 type RouteData = Record<string, unknown>;
 
@@ -22,7 +22,7 @@ export function markRouteRefresh(d: RouteData, now: number, jitter = 0): void {
     const iv = now - last;
     if (iv < routeStats.minInterval) routeStats.minInterval = iv;
   }
-  // Storing a later timestamp pushes the next allowed refresh past 400 ms.
+  // Storing a later timestamp pushes the next allowed refresh past 500 ms.
   d.routeRealAt = now;
   d.routeAt = now + jitter;
 }

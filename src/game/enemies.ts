@@ -488,12 +488,16 @@ export function enemyTick(
       move(wvx, wvy);
       e.facing = wvx > 0 ? 1 : -1;
     }
-    // Grant the speed aura to soldiers standing close by.
-    for (const other of state.entities.values()) {
-      if (other === e || other.team !== "enemy") continue;
-      if (ENEMY_DEFS[other.kind]?.category !== "human") continue;
-      if (dist2(other.pos, e.pos) < 200 * 200) {
-        if (other.data) other.data.auraUntil = state.now + 0.35;
+    // Grant the speed aura to soldiers standing close by (rechecked on the
+    // route cadence, not every frame; the aura outlasts one interval).
+    if (dn.auraScanAt == null || state.now - Number(dn.auraScanAt) >= ROUTE_MIN_INTERVAL) {
+      dn.auraScanAt = state.now;
+      for (const other of state.entities.values()) {
+        if (other === e || other.team !== "enemy") continue;
+        if (ENEMY_DEFS[other.kind]?.category !== "human") continue;
+        if (dist2(other.pos, e.pos) < 200 * 200) {
+          if (other.data) other.data.auraUntil = state.now + ROUTE_MIN_INTERVAL + 0.15;
+        }
       }
     }
     return;
