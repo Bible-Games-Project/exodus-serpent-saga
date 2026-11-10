@@ -77,7 +77,7 @@ export function drawHelmetFx(ctx: CanvasRenderingContext2D, e: Entity, s: GameSt
   const ay = (tgt?.pos.y ?? (e.kind === "helmhit" ? s.player.pos.y : e.pos.y - 2)) - camY + 8;
   ctx.save();
   if (e.kind === "helmhit") drawHit(ctx, ax, ay, u, col, d, s);
-  else if (e.kind === "helmweaken") drawWeaken(ctx, ax, ay, u, col, tgt);
+  else if (e.kind === "helmweaken") drawWeaken(ctx, s.player.pos.x - camX, s.player.pos.y - camY + 8, u, col, Number(d.left ?? 0));
   else if (e.kind === "helmheal") drawHeal(ctx, ax, ay, u, col, !!d.big, e.id);
   else if (e.kind === "helmseal") drawSeal(ctx, ax, ay, u, col, tgt);
   ctx.restore();
@@ -157,23 +157,32 @@ function drawHit(ctx: CanvasRenderingContext2D, x: number, y: number, u: number,
   }
 }
 
-/** Shield of Abraham: the attacker's blow is broken — a cracked golden mark
- *  over its head and its strength draining down out of its body. */
-function drawWeaken(ctx: CanvasRenderingContext2D, x: number, y: number, u: number, col: string, tgt?: Entity): void {
-  const h = Math.max(30, Math.min(70, (tgt?.radius ?? 14) * 3.4));
+/** Shield of Abraham, drawn on Moses: a golden ward flashes over his body, the
+ *  shield badge above his head cracks in two, and pips show the charges left. */
+function drawWeaken(ctx: CanvasRenderingContext2D, x: number, y: number, u: number, col: string, left: number): void {
+  const h = 78; // Moses' height on screen
   const fade = Math.min(1, (1 - u) * 2.2);
-  glow(ctx, x, y - h * .5, h * .7, col, .55 * fade, 1.3);
-  // Chevrons sliding down the body.
-  ctx.strokeStyle = shade(col, .25); ctx.lineWidth = 2;
-  for (let i = 0; i < 3; i++) {
-    const k = (u * 1.6 + i / 3) % 1;
-    const yy = y - h * (1 - k) - 4;
-    ctx.globalAlpha = fade * Math.sin(k * Math.PI);
-    ctx.beginPath(); ctx.moveTo(x - 7, yy - 4); ctx.lineTo(x, yy + 2); ctx.lineTo(x + 7, yy - 4); ctx.stroke();
+  glow(ctx, x, y - h * .5, 52, col, .6 * fade, 1.5);
+  // A golden outline swelling around his body.
+  ctx.globalAlpha = .8 * fade * (1 - u); ctx.strokeStyle = shade(col, .45); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(x, y - h * .5, 20 + 12 * u, h * .55 + 8 * u, 0, 0, Math.PI * 2); ctx.stroke();
+  // Golden motes rising off him: the blow's strength shed.
+  for (let i = 0; i < 9; i++) {
+    const r1 = hash(i * 4.1 + 3), r2 = hash(i * 6.3 + 1);
+    const px = x + (r1 - .5) * 34, py = y - 8 - r2 * h * .8 - 26 * u;
+    ctx.globalAlpha = fade * (.5 + .5 * r2);
+    ctx.fillStyle = shade(col, i % 2 ? .55 : -.1);
+    ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
   }
   // Cracked shield badge above the head, split in two halves drifting apart.
   const by = y - h - 14 - 6 * u, gap = 1 + 5 * u;
   ctx.globalAlpha = fade;
+  // Remaining charges under the badge.
+  for (let i = 0; i < left; i++) {
+    const px = x + (i - (left - 1) / 2) * 8, py = by + 13;
+    ctx.fillStyle = shade(col, -.45); ctx.fillRect(px - 2.5, py - 2.5, 5, 5);
+    ctx.fillStyle = shade(col, .6); ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
+  }
   for (const side of [-1, 1]) {
     ctx.save(); ctx.translate(x + side * gap, by); ctx.rotate(side * .25 * u);
     ctx.fillStyle = col; ctx.strokeStyle = shade(col, -.5); ctx.lineWidth = 1.5;
@@ -349,6 +358,7 @@ function bubble(ctx: CanvasRenderingContext2D, x: number, y: number, col: string
     const g = ctx.createRadialGradient(x, cy, rx * .3, x, cy, rx * 1.1);
     g.addColorStop(0, rgba(col, 0)); g.addColorStop(.75, rgba(col, .1 * k)); g.addColorStop(1, rgba(col, .3 * k));
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    bubbleRunes(ctx, x, cy, rx, ry, col, k, charges, now, "back");
     return;
   }
   const shimmer = .5 + .5 * Math.sin(now * 3);
@@ -357,12 +367,21 @@ function bubble(ctx: CanvasRenderingContext2D, x: number, y: number, col: string
   // highlight arc
   ctx.globalAlpha = .6 * k; ctx.strokeStyle = shade(col, .75); ctx.lineWidth = 2;
   ctx.beginPath(); ctx.ellipse(x, cy, rx * .8, ry * .82, 0, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke();
+  bubbleRunes(ctx, x, cy, rx, ry, col, k, charges, now, "front");
+}
+
+/** Jacob's runes orbit around Moses: on the upper half of the orbit they pass
+ *  behind him (drawn before him, smaller and dimmer), on the lower half in front. */
+function bubbleRunes(ctx: CanvasRenderingContext2D, x: number, cy: number, rx: number, ry: number, col: string, k: number, charges: number, now: number, layer: "back" | "front"): void {
   for (let i = 0; i < charges; i++) {
     const a = now * 1.8 + i * Math.PI * 2 / 3;
-    const px = x + Math.cos(a) * rx, py = cy + Math.sin(a) * ry * .35;
-    glow(ctx, px, py, 9, col, .7 * k);
-    ctx.globalAlpha = k; ctx.fillStyle = shade(col, -.4); ctx.fillRect(px - 3, py - 3, 6, 6);
-    ctx.fillStyle = shade(col, .6); ctx.fillRect(px - 2, py - 2, 4, 4);
+    const depth = Math.sin(a); // -1 far side, +1 near side
+    if ((layer === "back") !== (depth < 0)) continue;
+    const px = x + Math.cos(a) * rx, py = cy + depth * ry * .35;
+    const sc = .8 + .2 * depth, al = k * (.75 + .25 * depth);
+    glow(ctx, px, py, 9 * sc, col, .7 * al);
+    ctx.globalAlpha = al; ctx.fillStyle = shade(col, -.4); ctx.fillRect(px - 3 * sc, py - 3 * sc, 6 * sc, 6 * sc);
+    ctx.fillStyle = shade(col, .6); ctx.fillRect(px - 2 * sc, py - 2 * sc, 4 * sc, 4 * sc);
   }
 }
 

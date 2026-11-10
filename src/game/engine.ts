@@ -6,7 +6,7 @@ import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, 
 import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
-import { applyBlessing, daggerTarget, isToughFoe, equippedWeapon, pendingBlessEvo, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { applyBlessing, daggerTarget, inFrontOfMoses, isToughFoe, equippedWeapon, pendingBlessEvo, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
 import { sealedAllies } from "./helmets";
@@ -1156,6 +1156,8 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   for (const en of state.entities.values()) {
     if (en.team !== "enemy") continue;
     if (hit.has(en.id)) continue;
+    // Melee never reaches behind Moses' back.
+    if (!inFrontOfMoses(state, en)) continue;
     // Distance from enemy to the staff line segment (cx,cy)-(tipX,tipY)
     const vx = tipX - cx, vy = tipY - cy;
     const wx = en.pos.x - cx, wy = en.pos.y - cy;

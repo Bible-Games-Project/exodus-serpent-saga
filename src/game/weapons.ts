@@ -131,6 +131,11 @@ export function weaponLaunchProgress(state: GameState): number | null {
   return (state.now - at) / duration;
 }
 
+/** Melee only reaches what Moses faces: never a foe behind his back
+ *  (a few pixels of slack keep foes straight above/below reachable). */
+export function inFrontOfMoses(state: GameState, en: Entity): boolean {
+  return wrapD(en.pos.x, state.player.pos.x, state.worldW) * state.player.facing >= -4;
+}
 /** Nearest enemy direction from Moses; falls back to the last movement direction. */
 /** Aim stickiness: keep a chosen target at least this long, and only swap
  * early when another foe is clearly closer (squared-distance ratio). */
@@ -653,6 +658,8 @@ export function updateWeaponEntities(
           const r = e.kind === "firering" && d.grow ? Number(d.r) * Math.min(1, (state.now - e.born) / Math.max(.01, Number(d.ttl0 ?? 1))) : Number(d.r);
           inside = e.kind === "waterorbit" ? Math.abs(dist - r) < Number(d.width ?? 20) + en.radius : dist < r + en.radius;
         }
+        // Axe and mace are melee: they never strike behind Moses.
+        if (inside && (e.kind === "axeline" || e.kind === "maceimpact") && !inFrontOfMoses(state, en)) inside = false;
         if (!inside) continue;
         if (isDot) {
           en.hp -= ((d.dps as number) ?? 0) * dt;

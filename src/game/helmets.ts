@@ -185,7 +185,8 @@ export function helmetModifyDamage(state: GameState, amount: number, projectile:
         f.helmCharges -= 1;
         if (f.helmCharges <= 0) f.helmReady = now + HELMET.abrahamEvery;
         mode = Blow.Half;
-        if (attacker) spawnFx(state, "helmweaken", { x: attacker.pos.x, y: attacker.pos.y + 2 }, 0.7, { follow: attacker.id, color });
+        // Shown on Moses himself: his golden ward cracks, one charge spent.
+        spawnFx(state, "helmweaken", { ...state.player.pos }, 0.75, { color, left: f.helmCharges });
         spawnFx(state, "helmhit", hit.pos, 0.4, { dirX: hit.dirX, dirY: hit.dirY, color, style: "half" });
       }
       break;

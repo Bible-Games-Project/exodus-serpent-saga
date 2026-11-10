@@ -132,6 +132,7 @@ test('Throw gesture resets and only refreshes on another successful ring/boomera
 test('Axe displaces only struck enemies away from its recorded handle, once per impact', () => {
   for (const angle of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
     const s = arena('axe'); const hit = enemy(1, 1000 + Math.cos(angle) * 70, 1000 + Math.sin(angle) * 70);
+    s.player.facing = Math.cos(angle) < -.5 ? -1 : 1; // the cast turns Moses toward the cut
     const miss = enemy(2, 1400, 1400); s.entities.set(1, hit); s.entities.set(2, miss);
     const spawn = spawner(s); spawn('axeline', {x:1000 + Math.cos(angle) * 75,y:1000 + Math.sin(angle) * 75}, .45, {len:150,wid:22,angle,dmg:14,handleX:1000,handleY:1000,knock:18,hit:[]}, 'hazard');
     const ctx = { wrapDelta:(a:number,b:number) => a-b, killEnemy:()=>{},spawn };
