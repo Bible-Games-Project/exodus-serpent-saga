@@ -2098,6 +2098,9 @@ function pickRandomEnemy(state: GameState): Entity | undefined {
   return pool.length ? pool[Math.floor(Math.random() * pool.length)] : undefined;
 }
 
+/** How long a dead foe's body takes to fade away (see "corpse" in GameCanvas). */
+export const DEATH_FADE_SECONDS = 0.45;
+
 function killEnemy(state: GameState, e: Entity) {
   // Ramses cannot die from normal death — clamp.
   if (e.kind === "ramses") {
@@ -2122,10 +2125,19 @@ function killEnemy(state: GameState, e: Entity) {
   }, (a, b) => wrapDist2(state, a, b));
   state.entities.delete(e.id);
   state.kills++;
-  spawnVisualHazard(state, "deathpuff", e.pos, 0.48, {
+  // Death: the body fades out, sinking a little, inside a puff of dust. A statue
+  // (Stone Staff) has already faded and just crumbles into grey dust instead.
+  const stoneDeath = e.data?.stoneUntil != null;
+  if (!stoneDeath) {
+    const snap: Entity = { ...e, pos: { ...e.pos }, vel: { x: 0, y: 0 }, hp: e.maxHp, data: { ...e.data } };
+    for (const k of ["blindUntil", "bleedDps", "liftAt", "brawlHitAt", "axeFreezeUntil", "knockUntil"]) delete snap.data![k];
+    spawnVisualHazard(state, "corpse", e.pos, DEATH_FADE_SECONDS, { snap });
+  }
+  spawnVisualHazard(state, "deathpuff", e.pos, 0.7, {
     variant: Math.floor(Math.random() * 6),
     seed: Math.floor(Math.random() * 100000),
     scale: Math.max(0.75, Math.min(1.35, e.radius / 16)),
+    kind: e.kind, stone: stoneDeath ? 1 : 0,
   });
   const gem: Entity = {
     id: state.nextId++,

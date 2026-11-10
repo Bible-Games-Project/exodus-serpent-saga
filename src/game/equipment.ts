@@ -54,7 +54,7 @@ export const DIAMOND_SHARD_SPEED = 420;
 /** Diamond Staff: bleeding drains this share of max HP per second, by level, until death. */
 export const DIAMOND_BLEED_PCT = [.08, .12, .16] as const;
 /** Stone Staff: radius of "nearby" foes; levels petrify 1/3, 2/3 and all of them. */
-export const STONE_RADIUS = 260;
+export const STONE_RADIUS = 130;
 export const STONE_SECONDS = 3;
 /** Divine Light: how long blinded foes fight each other. */
 export const LIGHT_BRAWL_SECONDS = 8;

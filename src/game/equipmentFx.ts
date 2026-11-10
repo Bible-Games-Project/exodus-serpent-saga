@@ -95,41 +95,43 @@ const hash01 = (n: number) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.54
 /** Primordial Waters: a wet streak, splashing drops, bubbles and foam left behind
  *  the wave. Every particle is seeded by the moment the wave passed its spot, so
  *  the trail is stable from frame to frame without keeping any state. */
-function drawWaveTrail(ctx: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, t: number, w: number, fade: number) {
+function drawWaveTrail(ctx: CanvasRenderingContext2D, x: number, y: number, vx: number, vy: number, t: number, back: number, spread: number, fade: number) {
   const sp = Math.hypot(vx, vy) || 1, ux = vx / sp, uy = vy / sp, px = -uy, py = ux;
-  const step = .025, life = .7, back = w * .3; // particles start at the back of the wave
+  const step = .02, life = .85, per = 7; // per step: 2 streaks, 3 drops, 2 bubbles
   ctx.save();
   for (let k = Math.max(0, Math.floor((t - life) / step)); k * step <= t; k++) {
     const tb = k * step, age = t - tb, u = age / life;
     if (u >= 1) continue;
     // Where the wave's back edge was when this particle was born, relative to now.
     const bx = x - vx * age - ux * back, by = y - vy * age - uy * back;
-    for (let j = 0; j < 3; j++) {
-      const seed = k * 3 + j, r1 = hash01(seed), r2 = hash01(seed + .37), r3 = hash01(seed + .71);
-      const side = (r1 * 2 - 1) * w * .3;
+    for (let j = 0; j < per; j++) {
+      const seed = k * per + j, r1 = hash01(seed), r2 = hash01(seed + .37), r3 = hash01(seed + .71);
+      const side = (r1 * 2 - 1) * spread;
       const drag = sp * .22 * age * (1 - u * .5); // dragged a little after the wave
-      const qx = bx + px * side + ux * drag, qy = by + py * side * .55 + uy * drag;
+      const qx = bx + px * side + ux * drag, qy = by + py * side * .8 + uy * drag;
       const a = (1 - u) * fade;
-      if (j === 0) {
+      if (j < 2) {
         // Wet streak on the ground.
-        ctx.globalAlpha = .2 * a; ctx.fillStyle = WAVE_BLUES[1];
-        ctx.beginPath(); ctx.ellipse(qx, qy, (9 + 6 * r2) * (1 + u * .6), (4 + 2 * r2) * (1 + u * .6), 0, 0, Math.PI * 2); ctx.fill();
-      } else if (j === 1) {
+        const g = 1 + u * .8;
+        ctx.globalAlpha = .22 * a; ctx.fillStyle = WAVE_BLUES[1];
+        ctx.beginPath(); ctx.ellipse(qx, qy, (14 + 10 * r2) * g, (6 + 3 * r2) * g, 0, 0, Math.PI * 2); ctx.fill();
+      } else if (j < 5) {
         // Splashing drop: thrown up, falling back down.
-        const hgt = (14 + 18 * r3) * Math.sin(Math.PI * Math.min(1, u * 1.4));
-        ctx.globalAlpha = .75 * a; ctx.fillStyle = WAVE_BLUES[r2 < .5 ? 0 : 1];
-        ctx.beginPath(); ctx.arc(qx, qy - 6 - hgt, 1.4 + 1.6 * r2, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = .55 * a; ctx.fillStyle = WAVE_BLUES[3];
-        ctx.beginPath(); ctx.arc(qx - .6, qy - 6.6 - hgt, .7, 0, Math.PI * 2); ctx.fill();
+        const hgt = (18 + 30 * r3) * Math.sin(Math.PI * Math.min(1, u * 1.3));
+        const rr = 2.4 + 3 * r2;
+        ctx.globalAlpha = .8 * a; ctx.fillStyle = WAVE_BLUES[r2 < .5 ? 0 : 1];
+        ctx.beginPath(); ctx.ellipse(qx, qy - 6 - hgt, rr, rr * 1.2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = .65 * a; ctx.fillStyle = WAVE_BLUES[3];
+        ctx.beginPath(); ctx.arc(qx - rr * .35, qy - 6 - hgt - rr * .45, rr * .32, 0, Math.PI * 2); ctx.fill();
       } else {
         // Bubble rising from the foam, wobbling, popping at the end.
-        const rise = 8 + 26 * u * (.6 + .4 * r3), wob = Math.sin(age * 12 + seed) * 2.5;
-        const rr = (2 + 3.5 * r2) * (1 + u * .4);
-        ctx.globalAlpha = .7 * a; ctx.strokeStyle = WAVE_BLUES[2]; ctx.lineWidth = 1.1;
+        const rise = 10 + 40 * u * (.6 + .4 * r3), wob = Math.sin(age * 12 + seed) * 3.5;
+        const rr = (3.5 + 6 * r2) * (1 + u * .45);
+        ctx.globalAlpha = .75 * a; ctx.strokeStyle = WAVE_BLUES[2]; ctx.lineWidth = 1.6;
         ctx.beginPath(); ctx.arc(qx + wob, qy - rise, rr, 0, Math.PI * 2); ctx.stroke();
-        ctx.globalAlpha = .18 * a; ctx.fillStyle = WAVE_BLUES[1]; ctx.fill();
-        ctx.globalAlpha = .8 * a; ctx.fillStyle = WAVE_BLUES[3];
-        ctx.beginPath(); ctx.arc(qx + wob - rr * .35, qy - rise - rr * .35, Math.max(.6, rr * .22), 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = .2 * a; ctx.fillStyle = WAVE_BLUES[1]; ctx.fill();
+        ctx.globalAlpha = .85 * a; ctx.fillStyle = WAVE_BLUES[3];
+        ctx.beginPath(); ctx.arc(qx + wob - rr * .35, qy - rise - rr * .35, Math.max(.9, rr * .24), 0, Math.PI * 2); ctx.fill();
       }
     }
   }
@@ -190,7 +192,7 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     if (!img) return;
     const ttl0 = Number(d.ttl0 ?? 1.1), age = Math.min(1, (s.now - e.born) / ttl0);
     const alpha = Math.min(1, age / .15, (1 - age) / .3) * STAFF_ART_ALPHA * .38;
-    const h = 2 * (96 + 10 * (Number(d.evo ?? 1) - 1)), w = h * img.naturalWidth / img.naturalHeight;
+    const h = 192 * ([1, 1.4, 1.85][Number(d.evo ?? 1) - 1] ?? 1), w = h * img.naturalWidth / img.naturalHeight;
     const t = s.now - e.born;
     ctx.save(); ctx.translate(x, y + 3); ctx.globalAlpha = alpha; ctx.imageSmoothingEnabled = true;
     // Slice the art into horizontal strips that sway out of phase, so it spins and writhes.
@@ -203,19 +205,19 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     }
     ctx.restore();
   } else if (e.kind === "staffwave") {
-    // Primordial Waters: an upright double wave (the art is symmetrical) standing on
-    // the ground and rolling where it travels, rising up and sinking back. See-through.
+    // Primordial Waters: the double wave is turned so its crests point exactly where it
+    // travels; it rises up, rolls on and sinks back. See-through.
     const img = fxImage(waveUrl);
     if (!img) return;
     const ttl0 = Number(d.ttl0 ?? 1.2), age = Math.min(1, (s.now - e.born) / ttl0);
     const vx = Number(d.vx ?? 1), vy = Number(d.vy ?? 0);
     const rise = Math.min(1, age / .2), sink = Math.min(1, (1 - age) / .25);
     const w = 200 * Number(d.sc ?? 1), h = w * img.naturalHeight / img.naturalWidth;
-    drawWaveTrail(ctx, x, y, vx, vy, s.now - e.born, w, sink);
-    ctx.save(); ctx.translate(x, y + 6);
-    ctx.scale(.75 + .25 * rise, (.4 + .6 * rise) * (1 + .04 * Math.sin(s.now * 18)));
+    drawWaveTrail(ctx, x, y, vx, vy, s.now - e.born, h * .4, w * .38, sink);
+    ctx.save(); ctx.translate(x, y - 10); ctx.rotate(Math.atan2(vy, vx) + Math.PI / 2);
+    ctx.scale(.75 + .25 * rise, (.45 + .55 * rise) * (1 + .04 * Math.sin(s.now * 18)));
     ctx.globalAlpha = .72 * Math.min(rise, sink); ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(img, -w * .5, -h * .93, w, h);
+    ctx.drawImage(img, -w * .5, -h * .5, w, h);
     ctx.restore();
   } else if (e.kind === "stafflight") {
     // Divine Light: one great beam pours down; its cone (and the pool of light at its

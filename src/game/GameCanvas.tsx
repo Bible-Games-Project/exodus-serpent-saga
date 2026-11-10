@@ -1585,6 +1585,12 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
     if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || isGroundWeaponFx(e) || e.kind === 'staffwave') continue;
+    if (e.kind === "corpse") {
+      // A dead foe: its last pose is drawn fading out (see the draw loop below).
+      const snap = e.data?.snap as Entity | undefined;
+      if (snap) { snap.data!.dyingU = 1 - (e.ttl ?? 0) / Number(e.data?.maxTtl ?? .45); drawList.push(snap); }
+      continue;
+    }
     if (e.kind === "staffswing") {
       const dur = (e.data?.dur as number) ?? MOSES_ATTACK.DUR;
       attackProgress = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / dur));
@@ -1609,12 +1615,20 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const stoneUntil = e.team === "enemy" ? Number(e.data?.stoneUntil ?? 0) : 0;
     const stoned = stoneUntil > s.now;
     const metal = e.team === "enemy" && !stoned && !!e.data?.metal;
-    const leper = !stoned && e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
+    // Death: the body is drawn into the tint layer too, so it fades as one piece
+    // (sprites set their own globalAlpha for shadows and parts).
+    const dyingU = e.data?.dyingU as number | undefined;
+    const leper = !stoned && dyingU == null && e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
     // A statue never changes, so it is painted once and then only stamped
     // (one image per frame); plain foes crumble away in the last moments.
     const stoneFade = stoned && !e.data?.enemyChampion ? Math.min(1, (stoneUntil - s.now) / .8) : 1;
     if (stoned && drawStatue(mainCtx, e, camX, camY, stoneFade)) continue;
-    const ctx = leper ? beginLeprosyLayer(mainCtx) : stoned ? beginStatue(mainCtx, e, camX, camY) : metal ? beginTintLayer(mainCtx, e, camX, camY) : mainCtx;
+    const ctx = leper ? beginLeprosyLayer(mainCtx) : stoned ? beginStatue(mainCtx, e, camX, camY) : metal || dyingU != null ? beginTintLayer(mainCtx, e, camX, camY) : mainCtx;
+    // Death: the body fades out, sinking and squashing a little onto its feet.
+    if (dyingU != null) {
+      const u = Math.max(0, Math.min(1, dyingU)), fx = e.pos.x - camX, fy = e.pos.y - camY + 8;
+      ctx.save(); ctx.translate(fx, fy + 4 * u); ctx.scale(1 + .1 * u, 1 - .3 * u * u); ctx.translate(-fx, -fy);
+    }
     // Mace hit reaction: the foe hops up and falls back down (visual only).
     const liftAt = e.team === "enemy" && !stoned ? (e.data?.liftAt as number | undefined) : undefined;
     const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
@@ -1720,6 +1734,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       if (lunging) ctx.restore();
       if (e.team === 'enemy' && !stoned) drawEnemyStatusMarks(ctx, e, s, camX, camY);
       if (lifted) ctx.restore();
+      if (dyingU != null) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
       else if (stoned) {
         // Stone Staff: a grey statue.
@@ -1728,8 +1743,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
       } else if (metal) {
         // Iron Staff: a faint cold steel tint until death, a brief glint when struck.
         const glint = Math.max(0, 1 - (s.now - Number(e.data?.metalAt ?? 0)) / .6);
-        endTintLayer(mainCtx, glint > 0 ? '#eef4fa' : '#9fb3c6', glint > 0 ? .12 + .35 * glint : .2);
-      }
+        endTintLayer(mainCtx, glint > 0 ? '#eef4fa' : '#9fb3c6', glint > 0 ? .12 + .35 * glint : .2, dyingU);
+      } else if (dyingU != null) endTintLayer(mainCtx, '#000', 0, dyingU);
     }
   }
   // Forget statues whose foe crumbled or came back to life.
@@ -2742,19 +2757,22 @@ function beginTintLayer(main: CanvasRenderingContext2D, e: Entity, camX: number,
 }
 
 /** Tints the buffered enemy (only its own pixels) and puts it on screen. */
-function endTintLayer(main: CanvasRenderingContext2D, color: string, alpha: number) {
+function endTintLayer(main: CanvasRenderingContext2D, color: string, alpha: number, dyingU?: number) {
   const b = tintBufCtx!;
   b.restore();
   const r = tintRect;
-  b.save();
-  b.setTransform(1, 0, 0, 1, 0, 0);
-  b.globalCompositeOperation = "source-atop";
-  b.globalAlpha = alpha;
-  b.fillStyle = color;
-  b.fillRect(r.x, r.y, r.w, r.h);
-  b.restore();
+  if (alpha > 0) {
+    b.save();
+    b.setTransform(1, 0, 0, 1, 0, 0);
+    b.globalCompositeOperation = "source-atop";
+    b.globalAlpha = alpha;
+    b.fillStyle = color;
+    b.fillRect(r.x, r.y, r.w, r.h);
+    b.restore();
+  }
   main.save();
   main.setTransform(1, 0, 0, 1, 0, 0);
+  if (dyingU != null) main.globalAlpha *= (1 - Math.max(0, Math.min(1, dyingU))) ** 1.4;
   main.drawImage(tintBuf!, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
   main.restore();
 }
@@ -3032,44 +3050,44 @@ function drawDeathPuff(ctx: CanvasRenderingContext2D, e: Entity, camX: number, c
   const maxTtl = (e.data?.maxTtl as number) ?? 0.48;
   const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
   if (life <= 0) return;
-  const t = 1 - life;
-  const cx = Math.round(e.pos.x - camX);
-  const cy = Math.round(e.pos.y - camY + 4);
-  const variant = ((e.data?.variant as number) ?? 0) % 6;
+  const t = 1 - life, ease = 1 - (1 - t) ** 2;
+  const cx = e.pos.x - camX;
+  const gy = e.pos.y - camY + 8;
   const seed = (e.data?.seed as number) ?? e.id;
   const scale = (e.data?.scale as number) ?? 1;
-  const count = 6 + (variant % 3) * 2;
-  const rnd = (i: number) => {
-    const value = Math.sin((seed + i * 43.17) * 12.9898) * 43758.5453;
-    return value - Math.floor(value);
-  };
-
+  const kind = e.data?.kind as string | undefined;
+  const box = kind ? ENEMY_ART_BOX[kind]?.() : undefined;
+  // A foe's puff covers its body; a bare puff (projectiles) stays small.
+  const bodyH = kind ? Math.min(90, box ? box.H * box.PX : 50) : 14 * scale;
+  const bodyW = kind ? Math.min(70, box ? box.W * box.PX * .55 : 30) : 14 * scale;
+  const stone = !!e.data?.stone;
+  const cols = stone ? ["#c4bfb5", "#9a948a", "#746e65"] : ["#eadfca", "#c9b89b", "#9d8c76"];
+  const rnd = (i: number) => { const v = Math.sin((seed + i * 43.17) * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  const n = kind ? 16 : 7;
   ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.globalAlpha = Math.min(0.72, life * 1.35);
-  for (let i = 0; i < count; i++) {
-    const r1 = rnd(i);
-    const r2 = rnd(i + 31);
-    const angle = r1 * Math.PI * 2;
-    const sideways = variant === 1 || variant === 4;
-    const rising = variant === 2 || variant === 3;
-    const burst = variant === 5;
-    const speed = (10 + r2 * (burst ? 34 : 22)) * scale;
-    let vx = Math.cos(angle) * speed;
-    let vy = Math.sin(angle) * speed * 0.55;
-    if (sideways) vx *= 1.65;
-    if (rising) vy = -Math.abs(vy) - (10 + r1 * 18) * scale;
-    const px = Math.round(cx + vx * t);
-    const py = Math.round(cy + vy * t - (variant === 3 ? 16 * t : 5 * t));
-    const size = Math.max(2, Math.round((2 + rnd(i + 67) * (variant === 0 ? 3 : 4)) * scale));
-    ctx.fillStyle = i % 3 === 0 ? "#9c7650" : i % 3 === 1 ? "#bea176" : "#756255";
-    ctx.fillRect(px, py, size, size);
+  // Soft dust clouds billowing out of the body and rising.
+  for (let i = 0; i < n; i++) {
+    const r1 = rnd(i), r2 = rnd(i + 31), r3 = rnd(i + 67), r4 = rnd(i + 89);
+    const x = cx + (r1 - .5) * bodyW + (r1 - .5) * bodyW * .7 * ease;
+    const y = gy - 4 - r2 * bodyH * .85 - (8 + 22 * r3) * ease;
+    const rr = (kind ? 6 + 7 * r4 : (2.5 + 3 * r4) * scale) * (.55 + .85 * ease);
+    ctx.globalAlpha = .55 * Math.min(1, t / .08) * (1 - t) ** 1.3;
+    ctx.fillStyle = cols[i % 3];
+    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha *= .6; ctx.fillStyle = "#fffaf0";
+    ctx.beginPath(); ctx.arc(x - rr * .3, y - rr * .3, rr * .4, 0, Math.PI * 2); ctx.fill();
   }
-  if (t < 0.28 && variant !== 2) {
-    ctx.globalAlpha *= 0.65;
-    ctx.fillStyle = "#d2b98b";
-    const core = Math.round((8 + variant * 1.5) * scale * (1 - t));
-    ctx.fillRect(cx - core, cy - Math.round(core / 2), core * 2, Math.max(2, core));
+  // A statue breaks into falling grey chips.
+  if (stone) {
+    ctx.globalAlpha = Math.min(1, (1 - t) * 1.6);
+    for (let i = 0; i < 12; i++) {
+      const r1 = rnd(i + 120), r2 = rnd(i + 150), r3 = rnd(i + 170);
+      const x = cx + (r1 - .5) * bodyW * (1 + 1.2 * t);
+      const y0 = gy - r2 * bodyH * .9, y = Math.min(gy + 2, y0 + 140 * t * t + (r3 - .7) * 30 * t);
+      const sz = 2 + Math.round(r3 * 3);
+      ctx.fillStyle = cols[(i + 1) % 3];
+      ctx.fillRect(Math.round(x), Math.round(y), sz, sz);
+    }
   }
   ctx.restore();
 }
