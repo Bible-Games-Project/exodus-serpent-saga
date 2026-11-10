@@ -1610,10 +1610,13 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     const stoned = stoneUntil > s.now;
     const metal = e.team === "enemy" && !stoned && !!e.data?.metal;
     const leper = !stoned && e.team === "enemy" && e.kind !== "ramses" && e.data?.leprosyUntil != null;
-    const tinted = !leper && (stoned || metal);
-    const ctx = leper ? beginLeprosyLayer(mainCtx) : tinted ? beginTintLayer(mainCtx, e, camX, camY) : mainCtx;
+    // A statue never changes, so it is painted once and then only stamped
+    // (one image per frame); plain foes crumble away in the last moments.
+    const stoneFade = stoned && !e.data?.enemyChampion ? Math.min(1, (stoneUntil - s.now) / .8) : 1;
+    if (stoned && drawStatue(mainCtx, e, camX, camY, stoneFade)) continue;
+    const ctx = leper ? beginLeprosyLayer(mainCtx) : stoned ? beginStatue(mainCtx, e, camX, camY) : metal ? beginTintLayer(mainCtx, e, camX, camY) : mainCtx;
     // Mace hit reaction: the foe hops up and falls back down (visual only).
-    const liftAt = e.team === "enemy" ? (e.data?.liftAt as number | undefined) : undefined;
+    const liftAt = e.team === "enemy" && !stoned ? (e.data?.liftAt as number | undefined) : undefined;
     const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
     const lifted = liftT >= 0 && liftT < 1;
     if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
@@ -1715,20 +1718,22 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
         ctx.restore();
       }
       if (lunging) ctx.restore();
-      if (e.team === 'enemy') drawEnemyStatusMarks(ctx, e, s, camX, camY);
+      if (e.team === 'enemy' && !stoned) drawEnemyStatusMarks(ctx, e, s, camX, camY);
       if (lifted) ctx.restore();
       if (leper) endLeprosyLayer(mainCtx, e, camX, camY, s);
       else if (stoned) {
-        // Stone Staff: a grey statue; plain foes crumble away in the last moments.
-        const fade = e.data?.enemyChampion ? 1 : Math.min(1, (stoneUntil - s.now) / .8);
-        endTintLayer(mainCtx, { gray: 1, color: '#6e675d', colorAlpha: .28, alpha: fade });
+        // Stone Staff: a grey statue.
+        endStatue(e);
+        drawStatue(mainCtx, e, camX, camY, stoneFade);
       } else if (metal) {
         // Iron Staff: a faint cold steel tint until death, a brief glint when struck.
         const glint = Math.max(0, 1 - (s.now - Number(e.data?.metalAt ?? 0)) / .6);
-        endTintLayer(mainCtx, { gray: .45, color: glint > 0 ? '#eef4fa' : '#9fb3c6', colorAlpha: glint > 0 ? .1 + .35 * glint : .16, alpha: 1 });
+        endTintLayer(mainCtx, glint > 0 ? '#eef4fa' : '#9fb3c6', glint > 0 ? .12 + .35 * glint : .2);
       }
     }
   }
+  // Forget statues whose foe crumbled or came back to life.
+  for (const id of statues.keys()) if (!(Number(s.entities.get(id)?.data?.stoneUntil ?? 0) > s.now)) statues.delete(id);
 
 
   // Primordial Waters wave rolls over everyone, one layer above the NPCs.
@@ -2698,23 +2703,31 @@ function beginLeprosyLayer(main: CanvasRenderingContext2D): CanvasRenderingConte
 
 let tintBuf: HTMLCanvasElement | null = null;
 let tintBufCtx: CanvasRenderingContext2D | null = null;
-let tintMask: HTMLCanvasElement | null = null;
-let tintMaskCtx: CanvasRenderingContext2D | null = null;
 const tintRect = { x: 0, y: 0, w: 0, h: 0 };
 
-/** Starts drawing one enemy into an offscreen copy, limited to a box around it
- *  so the later tint only touches that small area. */
-function beginTintLayer(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): CanvasRenderingContext2D {
-  const cw = main.canvas.width, ch = main.canvas.height;
-  if (!tintBuf) { tintBuf = document.createElement("canvas"); tintBufCtx = tintBuf.getContext("2d"); }
-  if (tintBuf.width !== cw || tintBuf.height !== ch) { tintBuf.width = cw; tintBuf.height = ch; }
+/** Box (device pixels) that holds one enemy's whole drawing, hop included. */
+function enemyDeviceRect(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
   const box = ENEMY_ART_BOX[e.kind]?.();
   const half = (box ? box.W * box.PX : e.radius * 3) * .6 + 30;
   const tall = (box ? box.H * box.PX : e.radius * 4) + 50;
   const m = main.getTransform();
   const sx = e.pos.x - camX, sy = e.pos.y - camY;
-  const x0 = Math.max(0, Math.floor(m.a * (sx - half) + m.e)), x1 = Math.min(cw, Math.ceil(m.a * (sx + half) + m.e));
-  const y0 = Math.max(0, Math.floor(m.d * (sy - tall) + m.f)), y1 = Math.min(ch, Math.ceil(m.d * (sy + 30) + m.f));
+  return {
+    x0: Math.floor(m.a * (sx - half) + m.e), x1: Math.ceil(m.a * (sx + half) + m.e),
+    y0: Math.floor(m.d * (sy - tall) + m.f), y1: Math.ceil(m.d * (sy + 30) + m.f),
+    ox: m.a * sx + m.e, oy: m.d * sy + m.f, m,
+  };
+}
+
+/** Starts drawing one enemy into an offscreen copy, limited to a box around it
+ *  so the later tint only touches that small area. Everything stays on the GPU:
+ *  never read this buffer back into another canvas (that stalls every frame). */
+function beginTintLayer(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): CanvasRenderingContext2D {
+  const cw = main.canvas.width, ch = main.canvas.height;
+  if (!tintBuf) { tintBuf = document.createElement("canvas"); tintBufCtx = tintBuf.getContext("2d"); }
+  if (tintBuf.width !== cw || tintBuf.height !== ch) { tintBuf.width = cw; tintBuf.height = ch; }
+  const rr = enemyDeviceRect(main, e, camX, camY), m = rr.m;
+  const x0 = Math.max(0, rr.x0), x1 = Math.min(cw, rr.x1), y0 = Math.max(0, rr.y0), y1 = Math.min(ch, rr.y1);
   tintRect.x = x0; tintRect.y = y0; tintRect.w = Math.max(1, x1 - x0); tintRect.h = Math.max(1, y1 - y0);
   const b = tintBufCtx!;
   b.setTransform(1, 0, 0, 1, 0, 0);
@@ -2728,38 +2741,63 @@ function beginTintLayer(main: CanvasRenderingContext2D, e: Entity, camX: number,
   return b;
 }
 
-/** Desaturates (gray 0..1) and tints the buffered enemy, then puts it on screen. */
-function endTintLayer(main: CanvasRenderingContext2D, o: { gray: number; color: string; colorAlpha: number; alpha: number }) {
+/** Tints the buffered enemy (only its own pixels) and puts it on screen. */
+function endTintLayer(main: CanvasRenderingContext2D, color: string, alpha: number) {
   const b = tintBufCtx!;
   b.restore();
   const r = tintRect;
   b.save();
   b.setTransform(1, 0, 0, 1, 0, 0);
-  if (o.gray > 0) {
-    if (!tintMask) { tintMask = document.createElement("canvas"); tintMaskCtx = tintMask.getContext("2d"); }
-    if (tintMask.width < r.w || tintMask.height < r.h) { tintMask.width = Math.max(tintMask.width, r.w); tintMask.height = Math.max(tintMask.height, r.h); }
-    const mk = tintMaskCtx!;
-    mk.clearRect(0, 0, r.w, r.h);
-    mk.drawImage(tintBuf!, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
-    b.globalCompositeOperation = "saturation";
-    b.globalAlpha = o.gray;
-    b.fillStyle = "#808080";
-    b.fillRect(r.x, r.y, r.w, r.h);
-    // The blend also paints the empty pixels: cut back to the sprite's shape.
-    b.globalCompositeOperation = "destination-in";
-    b.globalAlpha = 1;
-    b.drawImage(tintMask, 0, 0, r.w, r.h, r.x, r.y, r.w, r.h);
-  }
   b.globalCompositeOperation = "source-atop";
-  b.globalAlpha = o.colorAlpha;
-  b.fillStyle = o.color;
+  b.globalAlpha = alpha;
+  b.fillStyle = color;
   b.fillRect(r.x, r.y, r.w, r.h);
   b.restore();
   main.save();
   main.setTransform(1, 0, 0, 1, 0, 0);
-  main.globalAlpha *= o.alpha;
   main.drawImage(tintBuf!, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
   main.restore();
+}
+
+/** Stone Staff statues: each petrified foe is painted once, grey, into its own
+ *  small canvas (its pose is frozen), then only stamped every frame. */
+type Statue = { c: HTMLCanvasElement; g: CanvasRenderingContext2D; at: number; dx: number; dy: number; scale: number; done: boolean };
+const statues = new Map<number, Statue>();
+let paintingStatue: Statue | null = null;
+
+function beginStatue(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): CanvasRenderingContext2D {
+  const r = enemyDeviceRect(main, e, camX, camY), m = r.m;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, r.x1 - r.x0); c.height = Math.max(1, r.y1 - r.y0);
+  const g = c.getContext("2d")!;
+  g.setTransform(m.a, 0, 0, m.d, m.e - r.x0, m.f - r.y0);
+  g.imageSmoothingEnabled = false;
+  paintingStatue = { c, g, at: Number(e.data?.stoneAt ?? 0), dx: r.x0 - r.ox, dy: r.y0 - r.oy, scale: m.a, done: false };
+  statues.set(e.id, paintingStatue);
+  return g;
+}
+
+function endStatue(e: Entity) {
+  const st = paintingStatue;
+  paintingStatue = null;
+  if (!st || statues.get(e.id) !== st) return;
+  const g = st.g;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = "source-atop";
+  g.globalAlpha = .74; g.fillStyle = "#8a847a"; g.fillRect(0, 0, st.c.width, st.c.height);
+  st.done = true;
+}
+
+function drawStatue(main: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, alpha: number): boolean {
+  const st = statues.get(e.id);
+  const m = main.getTransform();
+  if (!st || !st.done || st.at !== Number(e.data?.stoneAt ?? 0) || Math.abs(st.scale - m.a) > 1e-6) return false;
+  main.save();
+  main.setTransform(1, 0, 0, 1, 0, 0);
+  main.globalAlpha *= alpha;
+  main.drawImage(st.c, Math.round(m.a * (e.pos.x - camX) + m.e + st.dx), Math.round(m.d * (e.pos.y - camY) + m.f + st.dy));
+  main.restore();
+  return true;
 }
 
 /** Blanches the buffered enemy toward white, composites it, adds pale motes. */

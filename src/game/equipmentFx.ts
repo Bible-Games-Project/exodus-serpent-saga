@@ -203,19 +203,19 @@ export function drawStaffSpecial(ctx: CanvasRenderingContext2D, e: Entity, s: Ga
     }
     ctx.restore();
   } else if (e.kind === "staffwave") {
-    // Primordial Waters: the wave is turned to point exactly where it travels (its curl
-    // leads), mirrored rather than upside down when heading left. See-through.
+    // Primordial Waters: an upright double wave (the art is symmetrical) standing on
+    // the ground and rolling where it travels, rising up and sinking back. See-through.
     const img = fxImage(waveUrl);
     if (!img) return;
     const ttl0 = Number(d.ttl0 ?? 1.2), age = Math.min(1, (s.now - e.born) / ttl0);
     const vx = Number(d.vx ?? 1), vy = Number(d.vy ?? 0);
     const rise = Math.min(1, age / .2), sink = Math.min(1, (1 - age) / .25);
-    const w = 192 * Number(d.sc ?? 1), h = w * img.naturalHeight / img.naturalWidth;
+    const w = 200 * Number(d.sc ?? 1), h = w * img.naturalHeight / img.naturalWidth;
     drawWaveTrail(ctx, x, y, vx, vy, s.now - e.born, w, sink);
-    ctx.save(); ctx.translate(x, y - 10); ctx.rotate(Math.atan2(vy, vx)); if (vx < 0) ctx.scale(1, -1);
-    ctx.scale(.7 + .3 * rise, .55 + .45 * rise);
-    ctx.globalAlpha = .62 * Math.min(rise, sink); ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(img, -w * .5, -h * .55, w, h);
+    ctx.save(); ctx.translate(x, y + 6);
+    ctx.scale(.75 + .25 * rise, (.4 + .6 * rise) * (1 + .04 * Math.sin(s.now * 18)));
+    ctx.globalAlpha = .72 * Math.min(rise, sink); ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, -w * .5, -h * .93, w, h);
     ctx.restore();
   } else if (e.kind === "stafflight") {
     // Divine Light: one great beam pours down; its cone (and the pool of light at its
