@@ -136,6 +136,12 @@ export function weaponLaunchProgress(state: GameState): number | null {
 export function inFrontOfMoses(state: GameState, en: Entity): boolean {
   return wrapD(en.pos.x, state.player.pos.x, state.worldW) * state.player.facing >= -4;
 }
+/** Branch gust heading, mirrored when Moses has turned since the swing so it
+ *  always stays in front of the branch. */
+export function branchWindAngle(state: GameState, d: Record<string, unknown>): number {
+  const a = Number(d.angle ?? 0);
+  return Number(d.facing ?? state.player.facing) === state.player.facing ? a : Math.PI - a;
+}
 /** Nearest enemy direction from Moses; falls back to the last movement direction. */
 /** Aim stickiness: keep a chosen target at least this long, and only swap
  * early when another foe is clearly closer (squared-distance ratio). */
@@ -284,8 +290,13 @@ export function weaponOnCast(
     }
     case "branch": {
       // Same soft wind arc at every level, flying toward the nearest foe and pushing back what it crosses.
-      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + BRANCH_WIND_TRAVEL.duration, { angle: ang, evo, impactAt: state.now + MOSES_ATTACK.WINDUP, originX: p.pos.x, originY: p.pos.y, hit: [] }, 'hazard');
-      if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [] }, "hazard");
+      // The gust always leaves in front of the branch: it may tilt up or down
+      // toward the nearest foe, but never flies behind Moses.
+      const fwd = Math.max(Math.abs(dir.x), .4) * p.facing;
+      const windAng = Math.atan2(dir.y, fwd);
+      spawn('branchwind', { ...p.pos }, MOSES_ATTACK.WINDUP + BRANCH_WIND_TRAVEL.duration, { angle: windAng, facing: p.facing, evo, impactAt: state.now + MOSES_ATTACK.WINDUP, originX: p.pos.x, originY: p.pos.y, hit: [] }, 'hazard');
+      // Branch III: a half-ring shockwave in front of Moses only.
+      if (evo >= 3) spawn("shockwave", { ...p.pos }, 0.35, { dmg: dmg * 0.5, r: 90, hit: [], front: 1 }, "hazard");
       break;
     }
     default:
@@ -515,7 +526,7 @@ export function updateWeaponEntities(
       // The gust pushes back every foe it crosses, once, along its flight.
       const t = (state.now - Number(d.impactAt)) / BRANCH_WIND_TRAVEL.duration;
       if (t < 0 || t > 1) continue;
-      const ang = Number(d.angle ?? 0), evo = Number(d.evo ?? 1);
+      const ang = branchWindAngle(state, d), evo = Number(d.evo ?? 1);
       const along = BRANCH_WIND_TRAVEL.start + t * BRANCH_WIND_TRAVEL.distance;
       const cx = p.pos.x + Math.cos(ang) * along, cy = p.pos.y + Math.sin(ang) * along;
       const reach = (BRANCH_WIND_WIDTH[evo - 1] ?? BRANCH_WIND_WIDTH[0]) * .55;
@@ -525,7 +536,7 @@ export function updateWeaponEntities(
         if (en.team !== 'enemy' || en.hp <= 0 || hit.includes(en.id) || en.kind === 'ramses') continue;
         if (en.kind === 'agilesoldier' && en.data?.specialDash) continue;
         const rx = ctx.wrapDelta(en.pos.x, cx, state.worldW), ry = ctx.wrapDelta(en.pos.y, cy, state.worldH);
-        if (Math.hypot(rx, ry) > reach + en.radius) continue;
+        if (Math.hypot(rx, ry) > reach + en.radius || !inFrontOfMoses(state, en)) continue;
         hit.push(en.id);
         en.data ??= {};
         // Eased slide over 0.22 s (integral = 0.11 * velocity), never a teleport.
@@ -659,7 +670,7 @@ export function updateWeaponEntities(
           inside = e.kind === "waterorbit" ? Math.abs(dist - r) < Number(d.width ?? 20) + en.radius : dist < r + en.radius;
         }
         // Axe and mace are melee: they never strike behind Moses.
-        if (inside && (e.kind === "axeline" || e.kind === "maceimpact") && !inFrontOfMoses(state, en)) inside = false;
+        if (inside && (e.kind === "axeline" || e.kind === "maceimpact" || d.front) && !inFrontOfMoses(state, en)) inside = false;
         if (!inside) continue;
         if (isDot) {
           en.hp -= ((d.dps as number) ?? 0) * dt;

@@ -40,7 +40,7 @@ import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawSuppliedFx, drawWeaponImpact } from './combatWeaponPng';
 import { BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weaponAttack';
-import { weaponLaunchProgress } from './weapons';
+import { branchWindAngle, weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffRing, drawStaffSpecial } from "./equipmentFx";
 import { drawHelmetAura, drawHelmetFx, drawSealedMark, drawShieldBar, isHelmetFx, shade } from "./helmetFx";
@@ -5226,7 +5226,9 @@ function drawWeaponEntity(
     const life = 1 - Math.max(0, Math.min(1, (e.ttl ?? 0) / 0.35));
     ctx.globalAlpha = 0.5 * (1 - life);
     ctx.strokeStyle = "#f4e2c1"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(x, y, 20 + life * ((d.r as number) ?? 90), 0, Math.PI * 2); ctx.stroke();
+    // Front-only shockwaves (Branch III) draw the half ring Moses faces.
+    const a0 = d.front ? (s.player.facing === 1 ? -Math.PI / 2 : Math.PI / 2) : 0;
+    ctx.beginPath(); ctx.arc(x, y, 20 + life * ((d.r as number) ?? 90), a0, a0 + (d.front ? Math.PI : Math.PI * 2)); ctx.stroke();
     ctx.globalAlpha = 1;
   } else if (k === "whirlpool") {
     const r = Number(d.r ?? 60);
@@ -5262,7 +5264,7 @@ function drawWeaponEntity(
     const t = (s.now - Number(d.impactAt)) / BRANCH_WIND_TRAVEL.duration;
     if (t < 0 || t > 1) { ctx.restore(); return true; }
     const grip = mosesGrip(s.player.pos.x - camX, s.player.pos.y - camY + 8, s.player.facing);
-    const ang = Number(d.angle ?? 0);
+    const ang = branchWindAngle(s, d);
     const along = BRANCH_WIND_TRAVEL.start + t * BRANCH_WIND_TRAVEL.distance;
     ctx.translate(grip.x + Math.cos(ang) * along, grip.y + Math.sin(ang) * along * .8);
     ctx.rotate(ang + Math.PI);

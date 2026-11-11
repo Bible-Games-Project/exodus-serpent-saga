@@ -102,12 +102,12 @@ test('Mace keeps exact 48, 96 and 128 impact radii at every evolution', () => {
     return [...s.entities.values()].find(e=>e.kind==='maceimpact')?.data?.r;
   }),[48,96,128]);
 });
-test('Every branch level emits one aimed gust with increasing artwork size', () => {
+test('Every branch level emits one aimed gust, always in front of the branch, with increasing artwork size', () => {
   assert.ok(BRANCH_WIND_WIDTH[0]<BRANCH_WIND_WIDTH[1] && BRANCH_WIND_WIDTH[1]<BRANCH_WIND_WIDTH[2]);
   for(const evo of [1,2,3]) {
     const s=arena('branch',evo);s.entities.set(1,enemy(1,1000,900));weaponOnCast(s,spawner(s));
     const gusts=[...s.entities.values()].filter(e=>e.kind==='branchwind');
-    assert.equal(gusts.length,1);assert.equal(gusts[0].data?.evo,evo);assert.equal(gusts[0].data?.angle,-Math.PI/2);
+    assert.equal(gusts.length,1);assert.equal(gusts[0].data?.evo,evo);const a=Number(gusts[0].data?.angle);assert.ok(Math.cos(a)>0&&Math.sin(a)<-.8,"forward and upward");
   }
 });
 test('Dagger permits above/below enemies and uses nearest wrapped forward copy', () => {
