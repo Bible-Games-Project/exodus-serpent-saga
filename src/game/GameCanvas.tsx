@@ -43,6 +43,8 @@ import { BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weap
 import { branchWindAngle, weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffRing, drawStaffSpecial } from "./equipmentFx";
+import { drawFootprints, drawFootwearAura, drawFootwearTeleport } from "./footwearFx";
+import { footwearColor, footwearGlow } from "./footwear";
 import { drawHelmetAura, drawHelmetFx, drawSealedMark, drawShieldBar, isHelmetFx, shade } from "./helmetFx";
 import { PLAGUES } from "./plagues";
 import { NPCS } from "./npcs";
@@ -1561,6 +1563,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
 
 
   // 1) Ground pass — blood pools + Ramses landing telegraph + red-sea burst.
+  drawFootprints(ctx, s, camX, camY);
   for (const e of s.entities.values()) {
     if (e.data?.sealed) drawSealedMark(ctx, e, s, camX, camY, "ground");
     if (e.kind === "bloodpool") {
@@ -1676,7 +1679,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
+    if (e.kind === "moses") { drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1764,6 +1767,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (isHelmetFx(e.kind)) drawHelmetFx(ctx, e, s, camX, camY);
     else if (e.data?.sealed) drawSealedMark(ctx, e, s, camX, camY, "over");
   }
+  drawFootwearTeleport(ctx, s, camX, camY);
 
   // 3) Darkness overlay
   const dEnd = s.darknessUntil ?? 0;
@@ -1912,6 +1916,8 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     weaponAimAngle: s.equipFx?.weaponVisualAim ?? s.equipFx?.weaponAimAngle,
     castProgress: latestEquipmentCastProgress(s),
     empowered: !!s.equipFx?.empowered || s.now < (s.equipFx?.empowerGlowUntil ?? -1),
+    // Footwear ability running: the shoes glow in their own colour.
+    shoeGlow: footwearGlow(s), shoeGlowColor: footwearColor(s.loadout?.footwear.id),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });

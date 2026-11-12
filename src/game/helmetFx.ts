@@ -15,12 +15,12 @@ export function shade(hex: string, k: number): string {
   const m = (c: number) => Math.round(k >= 0 ? c + (255 - c) * k : c * (1 + k));
   return `rgb(${m(r)},${m(g)},${m(b)})`;
 }
-function rgba(hex: string, a: number): string {
+export function rgba(hex: string, a: number): string {
   const [r, g, b] = rgb(hex);
   return `rgba(${r},${g},${b},${a})`;
 }
 
-function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, hex: string, alpha: number, sy = 1): void {
+export function glow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, hex: string, alpha: number, sy = 1): void {
   if (alpha <= 0 || r <= 0) return;
   ctx.save(); ctx.translate(x, y); ctx.scale(1, sy);
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);

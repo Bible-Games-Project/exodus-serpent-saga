@@ -224,16 +224,16 @@ export const SHIELDS: EquipItem[] = [
 
 // ---------------------------------------------------------------- footwear
 export const FOOTWEAR: EquipItem[] = [
-  item("barefoot", "footwear", "Barefoot, Sacred Ground", "Put off thy shoes, for the ground is holy.", [ev(1, "Barefoot, Sacred Ground", 0, "+0% speed", "", { speedPct: 0 })]),
-  item("patriarchs", "footwear", "Sandals of the Patriarchs", "Worn on the road to Moriah.", [ev(1, "Sandals of the Patriarchs", 350, "+5% speed", "Brown glow.", { hpPct: 100, regen: 1 })]),
-  item("pilgrim", "footwear", "Pilgrim's Sandals", "For the long walk of faith.", [ev(1, "Pilgrim's Sandals", 7_000, "+10% speed", "1-second speed boost every 30 seconds; beige-gold glow.", { speedPct: 10 })]),
-  item("joshua", "footwear", "Boots of Joshua", "Every place the sole of your foot treads.", [ev(1, "Boots of Joshua", 35_000, "+20% speed", "1-second speed boost every 25 seconds; olive-green glow.", { speedPct: 20 })]),
-  item("wind", "footwear", "Sandals of the Wind", "Swift as the east wind.", [ev(1, "Sandals of the Wind", 110_000, "+25% speed", "Leaves a lightly damaging light-blue trail.", { speedPct: 25 })]),
-  item("messenger", "footwear", "Messenger's Footwear", "How beautiful upon the mountains.", [ev(1, "Messenger's Footwear", 350_000, "+30% speed", "Attracts coins from farther away; blue-white glow.", { speedPct: 30 })]),
-  item("jordan", "footwear", "Sandals of the Jordan", "The waters stood still for these steps.", [ev(1, "Sandals of the Jordan", 1_000_000, "+35% speed", "Leaves aqua footprints that briefly slow enemies.", { speedPct: 35 })]),
-  item("bushb", "footwear", "Burning Bush Boots", "Fire underfoot, harmlessly.", [ev(1, "Burning Bush Boots", 3_000_000, "+40% speed", "Repels enemies every 20 seconds without damaging them; orange flash.", { speedPct: 40 })]),
-  item("invisible", "footwear", "Sandals of the Invisible Path", "A way where there was no way.", [ev(1, "Sandals of the Invisible Path", 8_000_000, "+45% speed", "Teleports every 15 seconds to a visible area with few enemies; violet flash.", { speedPct: 45 })]),
-  item("exodus", "footwear", "Sandals of the Exodus", "Your shoes did not wear out in forty years.", [ev(1, "Sandals of the Exodus", 20_000_000, "+50% speed", "If Moses takes no damage for 5 seconds, +20% extra speed; damage removes it and restarts the wait. Intense golden glow while active.", { speedPct: 50 })]),
+  item("barefoot", "footwear", "Barefoot, Sacred Ground", "Put off thy shoes, for the ground is holy.", [ev(1, "Barefoot, Sacred Ground", 0, "+5% speed", "No ability.", { speedPct: 5 })]),
+  item("patriarchs", "footwear", "Sandals of the Patriarchs", "Worn on the road to Moriah.", [ev(1, "Sandals of the Patriarchs", 350, "+10% speed", "Every 20 seconds, a 1-second burst of +10% speed. Leaves footprints.", { speedPct: 10 })]),
+  item("pilgrim", "footwear", "Pilgrim's Sandals", "For the long walk of faith.", [ev(1, "Pilgrim's Sandals", 7_000, "+15% speed", "Every 15 seconds, a 1-second burst of +15% speed. Leaves footprints.", { speedPct: 15 })]),
+  item("joshua", "footwear", "Boots of Joshua", "Every place the sole of your foot treads.", [ev(1, "Boots of Joshua", 35_000, "+20% speed", "Every 10 seconds, a 1-second burst of +20% speed. Leaves footprints.", { speedPct: 20 })]),
+  item("wind", "footwear", "Sandals of the Wind", "Swift as the east wind.", [ev(1, "Sandals of the Wind", 110_000, "+25% speed", "After 8 seconds without being hurt, +20% speed until the next hit. Leaves footprints.", { speedPct: 25 })]),
+  item("messenger", "footwear", "Messenger's Footwear", "How beautiful upon the mountains.", [ev(1, "Messenger's Footwear", 350_000, "+30% speed", "After 6 seconds without being hurt, +25% speed until the next hit. Leaves footprints.", { speedPct: 30 })]),
+  item("jordan", "footwear", "Sandals of the Jordan", "The waters stood still for these steps.", [ev(1, "Sandals of the Jordan", 1_000_000, "+35% speed", "After 5 seconds without being hurt, +30% speed until the next hit. Leaves footprints.", { speedPct: 35 })]),
+  item("bushb", "footwear", "Burning Bush Boots", "Fire underfoot, harmlessly.", [ev(1, "Burning Bush Boots", 3_000_000, "+40% speed", "Every 20 seconds, teleports to a visible spot away from enemies, then +10% speed for 1 second. Leaves footprints.", { speedPct: 40 })]),
+  item("invisible", "footwear", "Sandals of the Invisible Path", "A way where there was no way.", [ev(1, "Sandals of the Invisible Path", 8_000_000, "+45% speed", "Every 15 seconds, teleports to a visible spot away from enemies, then +20% speed for 1 second. Leaves footprints.", { speedPct: 45 })]),
+  item("exodus", "footwear", "Sandals of the Exodus", "Your shoes did not wear out in forty years.", [ev(1, "Sandals of the Exodus", 20_000_000, "+50% speed", "Every 10 seconds, teleports to the visible spot with the fewest enemies, then +30% speed for 1 second. Leaves footprints.", { speedPct: 50 })]),
 ];
 
 // ---------------------------------------------------------------- champions

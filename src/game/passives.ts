@@ -2,7 +2,7 @@ import { SHIELD_CONFIG } from "./bonuses";
 // Passive upgrade pool — offered as blessing cards between plague and
 // companion picks. Data-driven and easy to extend.
 import type { GameState } from "./types";
-import { exodusSpeedMul, footwearMagnetMul } from "./equipment";
+import { footwearAbilityMul } from "./footwear";
 import { applyShieldCapacity } from "./helmets";
 
 export type PassiveId = "maxHp" | "speed" | "damage" | "magnet" | "shield";
@@ -82,13 +82,13 @@ export function passiveRank(state: GameState, id: PassiveId): number {
 
 export function speedMultiplier(state: GameState): number {
   const footwear = 1 + (state.loadout?.footwear.speedPct ?? 0) / 100;
-  return (1 + 0.08 * passiveRank(state, "speed") + (state.now < (state.speedBoostUntil ?? 0) ? 0.5 : 0)) * footwear * exodusSpeedMul(state);
+  return (1 + 0.08 * passiveRank(state, "speed") + (state.now < (state.speedBoostUntil ?? 0) ? 0.5 : 0)) * footwear * footwearAbilityMul(state);
 }
 export function damageMultiplier(state: GameState): number {
   return 1 + 0.1 * passiveRank(state, "damage");
 }
 export function magnetMultiplier(state: GameState): number {
-  return (1 + 0.25 * passiveRank(state, "magnet") + (state.now < (state.magnetBoostUntil ?? 0) ? 2.5 : 0)) * footwearMagnetMul(state);
+  return (1 + 0.25 * passiveRank(state, "magnet") + (state.now < (state.magnetBoostUntil ?? 0) ? 2.5 : 0));
 }
 
 // Permanent shield damage reduction from the "Shield of Faith" blessing.

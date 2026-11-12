@@ -3,6 +3,7 @@
 // loadout.ts. All timings and targets come from the shop specification.
 import type { Entity, GameState, Vec2 } from "./types";
 import { updateHelmet } from "./helmets";
+import { updateFootwear } from "./footwear";
 
 type SpawnFn = (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>, team?: Entity["team"]) => Entity;
 
@@ -212,77 +213,12 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
 // Helmet (shop "shield") abilities live in helmets.ts.
 
 // ---------------------------------------------------------------- footwear
-function updateFootwear(state: GameState, spawn: SpawnFn): void {
-  const lo = state.loadout;
-  if (!lo) return;
-  const f = fx(state);
-  const p = state.player;
-  const id = lo.footwear.id;
-  const moving = !!(state.input.x || state.input.y);
-
-  // Pilgrim / Joshua: a 1-second boost every 30 / 25 s.
-  if ((id === "pilgrim" || id === "joshua") && state.now >= (f.boostNext ?? 10)) {
-    f.boostNext = state.now + (id === "joshua" ? 25 : 30);
-    state.speedBoostUntil = Math.max(state.speedBoostUntil ?? 0, state.now + 1);
-  }
-  // Sandals of the Wind: lightly damaging trail while moving.
-  if (id === "wind" && moving && state.now >= (f.trailNext ?? 0)) {
-    f.trailNext = state.now + 0.3;
-    spawn("windtrail", { ...p.pos }, 1.2, { dps: 6, r: 22 });
-  }
-  // Sandals of the Jordan: footprints that briefly slow enemies.
-  if (id === "jordan" && moving && state.now >= (f.printNext ?? 0)) {
-    f.printNext = state.now + 0.4;
-    spawn("slowprint", { ...p.pos }, 1.6, { r: 24, slow: 1.2 });
-  }
-  // Burning Bush Boots: repel (no damage) every 20 s.
-  if (id === "bushb" && state.now >= (f.repelNext ?? 20)) {
-    f.repelNext = state.now + 20;
-    for (const en of nearestEnemies(state, p.pos, 16, 130)) {
-      const dx = en.pos.x - p.pos.x, dy = en.pos.y - p.pos.y;
-      const dd = Math.hypot(dx, dy) || 1;
-      en.pos.x += (dx / dd) * 70;
-      en.pos.y += (dy / dd) * 70;
-    }
-    spawn("shockwave", { ...p.pos }, 0.35, { dmg: 0, r: 130, hit: [] });
-  }
-  // Sandals of the Invisible Path: teleport every 15 s to a sparse area.
-  if (id === "invisible" && state.now >= (f.teleNext ?? 15)) {
-    f.teleNext = state.now + 15;
-    const vw = state.viewport?.w ?? 800, vh = state.viewport?.h ?? 600;
-    let best: Vec2 | null = null, bestCount = Infinity;
-    for (let i = 0; i < 8; i++) {
-      const c = { x: state.camera.x + (Math.random() - 0.5) * vw * 0.7, y: state.camera.y + (Math.random() - 0.5) * vh * 0.7 };
-      const n = nearestEnemies(state, c, 99, 120).length;
-      if (n < bestCount) { bestCount = n; best = c; }
-    }
-    if (best) {
-      spawn("shieldpuff", { ...p.pos }, 0.3, { seed: 1 });
-      p.pos.x = best.x; p.pos.y = best.y;
-      spawn("shieldpuff", { ...p.pos }, 0.3, { seed: 2 });
-    }
-  }
-  // Sandals of the Exodus: +20% speed after 5 s without damage.
-  if (id === "exodus") {
-    const last = f.lastDamageAt ?? -999;
-    f.exodusActive = state.now - last >= 5 ? 1 : 0;
-  }
-}
-
-/** Extra speed multiplier from the Sandals of the Exodus conditional bonus. */
-export function exodusSpeedMul(state: GameState): number {
-  return state.equipFx?.exodusActive ? 1.2 : 1;
-}
-
-/** Messenger's Footwear: coins and gems are attracted from farther away. */
-export function footwearMagnetMul(state: GameState): number {
-  return state.loadout?.footwear.id === "messenger" ? 1.5 : 1;
-}
+// Footwear abilities live in footwear.ts.
 
 // ---------------------------------------------------------------- update
 export function updateEquipment(state: GameState, spawn: SpawnFn, killEnemy: (en: Entity) => void): void {
   if (!state.loadout) return;
   updateStaff(state, spawn);
   updateHelmet(state, killEnemy);
-  updateFootwear(state, spawn);
+  updateFootwear(state);
 }

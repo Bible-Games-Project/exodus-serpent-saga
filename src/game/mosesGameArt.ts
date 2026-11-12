@@ -15,6 +15,7 @@ import v2HandAsset from "@/assets/moses-v2-hand.png";
 import v2StaffAsset from "@/assets/moses-v2-staff.png";
 import type { Loadout } from "./loadout";
 import { equipmentGesture, HELMET_EXPERIMENT, SHOES_EXPERIMENT } from "./equipmentArt";
+import { footwearColor } from "./footwear";
 import { drawCombatEquipment, drawCombatHeadwear } from "./combatEquipmentArt";
 import { setStaffCrownPoint, staffCastPose } from './equipmentFx';
 import { DAGGER_RELEASE_PROGRESS, daggerThrowPose, groundStrikeAngle, SWORD_ART, thrustPose } from './weaponAttack';
@@ -122,6 +123,9 @@ export type MosesPose = {
   empowered?: boolean;
   weaponAimAngle?: number;
   hideHeldWeapon?: boolean;
+  /** Footwear ability glow on the shoes (0..1) and its colour. */
+  shoeGlow?: number;
+  shoeGlowColor?: string;
 };
 
 /** Staff rotation (radians, around the hand) for a swing progress 0..1. */
@@ -311,8 +315,30 @@ function drawMosesNew(ctx: CanvasRenderingContext2D, pose: MosesPose): void {
     }
   };
   paint();
+  if (pose.shoeGlow && pose.shoeGlow > 0 && pose.shoeGlowColor) {
+    // Light the shoe pixels themselves in the footwear's colour.
+    const gl = tintedLayer(L.footL, pose.shoeGlowColor), gr = tintedLayer(L.footR, pose.shoeGlowColor);
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = .75 * pose.shoeGlow;
+    if (gl) stamp(gl, fL.dx, fL.dy);
+    if (gr) stamp(gr, fR.dx, fR.dy);
+    ctx.restore();
+  }
   if (pose.flash && pose.flash > 0) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = pose.flash; paint(); }
   ctx.restore();
+}
+
+const tintedLayers = new Map<string, HTMLCanvasElement>();
+/** A layer's silhouette filled with one colour (for additive glows). */
+function tintedLayer(source: HTMLImageElement, color: string): HTMLCanvasElement | null {
+  const key = `${source.src}:${color}`;
+  const cached = tintedLayers.get(key);
+  if (cached) return cached;
+  if (!source.complete || !source.naturalWidth) return null;
+  const canvas = document.createElement("canvas"); canvas.width = V2.W; canvas.height = V2.H;
+  const ctx = canvas.getContext("2d"); if (!ctx) return null;
+  ctx.imageSmoothingEnabled = false; ctx.drawImage(source, 0, 0, V2.W, V2.H);
+  ctx.globalCompositeOperation = "source-atop"; ctx.fillStyle = color; ctx.fillRect(0, 0, V2.W, V2.H);
+  tintedLayers.set(key, canvas); return canvas;
 }
 
 const shoeLayers = new Map<string, HTMLCanvasElement>();
@@ -325,9 +351,9 @@ function shoeLayer(source: HTMLImageElement, id: string): HTMLCanvasElement | nu
   const ctx = canvas.getContext("2d"); if (!ctx) return null;
   ctx.imageSmoothingEnabled = false; ctx.drawImage(source, 0, 0, V2.W, V2.H);
   const css = getComputedStyle(document.documentElement);
-  const token = ["wind", "jordan", "messenger"].includes(id) ? "water" : id === "bushb" ? "fire" : id === "invisible" ? "iron" : "wood";
   ctx.globalCompositeOperation = "source-atop";
-  ctx.fillStyle = css.getPropertyValue(`--equip-${token}`).trim();
+  // The shoe band takes the footwear's own colour (the same as its glow and footprints).
+  ctx.fillStyle = footwearColor(id);
   ctx.globalAlpha = .7; ctx.fillRect(0, 78, V2.W, 4);
   ctx.globalAlpha = 1; ctx.fillStyle = css.getPropertyValue("--equip-iron").trim(); ctx.fillRect(0, 82, V2.W, 1);
   shoeLayers.set(key, canvas); return canvas;
