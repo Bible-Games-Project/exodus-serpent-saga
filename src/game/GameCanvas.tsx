@@ -1,5 +1,6 @@
 import { drawOffscreenIndicators } from "./offscreenIndicators";
 import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
+import { BONUS_ICON, ICON_V2, PASSIVE_ICON, iconImage } from "./iconArt";
 export { BONUS_ART } from "./uiIcons";
 import { drawChampionFx, isGroundChampionFx } from "./championFx";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
@@ -454,6 +455,7 @@ const SKULL_ART: { grid: string[]; palette: Record<string, string> } = {
 /** One HUD cell: pixel icon above its value. Glows while a bonus is active. */
 function StatCell({
   art,
+  icon,
   label,
   value,
   active,
@@ -461,6 +463,8 @@ function StatCell({
   remaining,
 }: {
   art: { grid: string[]; palette: Record<string, string> };
+  /** v2 painted icon; the pixel grid stays as the fallback. */
+  icon?: string;
   label: string;
   value: string;
   active?: boolean;
@@ -477,7 +481,7 @@ function StatCell({
             : "none",
         }}
       >
-        <StatPixelIcon art={art} size={36} />
+        {icon ? <img src={icon} alt="" width={38} height={38} draggable={false} style={{ width: 38, height: 38 }} /> : <StatPixelIcon art={art} size={36} />}
       </span>
       <span
         className="font-stat whitespace-nowrap text-center text-base leading-none tabular-nums transition-colors duration-300"
@@ -529,9 +533,9 @@ function HUD({ state, tick: _tick }: { state: GameState; tick: number }) {
       <div className="absolute inset-x-0 bottom-7 flex items-end justify-center px-3">
         <div className="flex items-end gap-6" style={{ transform: `scale(${k})`, transformOrigin: "bottom center" }}>
           <div className="flex items-end gap-4">
-            <StatCell art={MEDAL_ART} label="Level" value={`${state.level}`} />
-            <StatCell art={CLOCK_ART} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
-            <StatCell art={SKULL_ART} label="Kills" value={`${state.kills}`} />
+            <StatCell art={MEDAL_ART} icon={ICON_V2.level} label="Level" value={`${state.level}`} />
+            <StatCell art={CLOCK_ART} icon={ICON_V2.clock} label="Time survived" value={`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`} />
+            <StatCell art={SKULL_ART} icon={ICON_V2.skull} label="Kills" value={`${state.kills}`} />
           </div>
         </div>
       </div>
@@ -1417,13 +1421,13 @@ function getFrogScaled(img: HTMLImageElement, w: number): HTMLCanvasElement {
 
 /** Compact upgrade-level summary shown between the level-up title and cards. */
 function LevelUpStats({ state }: { state: GameState }) {
-  const items: Array<{ key: string; label: string; value: number; art?: { grid: string[]; palette: Record<string, string> }; grid?: string[] }> = [
-    { key: "hp", label: "Health level", value: passiveRank(state, "maxHp"), art: BONUS_ART.heart },
-    { key: "shield", label: "Shield level", value: passiveRank(state, "shield"), art: BONUS_ART.shield },
+  const items: Array<{ key: string; label: string; value: number; art?: { grid: string[]; palette: Record<string, string> }; grid?: string[]; icon?: string }> = [
+    { key: "hp", label: "Health level", value: passiveRank(state, "maxHp"), art: BONUS_ART.heart, icon: ICON_V2.heart },
+    { key: "shield", label: "Shield level", value: passiveRank(state, "shield"), art: BONUS_ART.shield, icon: ICON_V2.shield },
     { key: "staff", label: "Staff level", value: state.plagues.get("staff") ?? 1, art: STAFF_ART },
     { key: "dmg", label: "Plague damage level", value: passiveRank(state, "damage"), art: SWORD_ART },
-    { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning },
-    { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet },
+    { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning, icon: ICON_V2.lightning },
+    { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet, icon: ICON_V2.magnet },
     { key: "champ", label: "Champions recruited", value: state.npcs.size, art: FLAG_ART },
     { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, art: BURNING_BUSH_ART },
   ];
@@ -1431,7 +1435,7 @@ function LevelUpStats({ state }: { state: GameState }) {
     <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-[3px] border-[#3a2412] bg-[#f6e2ad] px-2 py-1 sm:mb-3">
       {items.map((it) => (
         <div key={it.key} className="flex items-center gap-1" title={it.label}>
-          {it.art ? <StatPixelIcon art={it.art} size={18} /> : <PixelIcon grid={it.grid!} size={20} />}
+          {it.icon ? <img src={it.icon} alt="" width={22} height={22} draggable={false} style={{ width: 22, height: 22 }} /> : it.art ? <StatPixelIcon art={it.art} size={18} /> : <PixelIcon grid={it.grid!} size={20} />}
           <span className="font-stat text-sm leading-none tabular-nums text-[#4a2c10]">{it.value}</span>
         </div>
       ))}
@@ -1463,6 +1467,8 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
         <div className="flex flex-col items-center gap-2 sm:flex-row sm:items-stretch sm:gap-4">
           {choices.map((c) => {
             const grid = iconGridFor(c);
+            const passive = /^passive-([a-zA-Z]+)-/.exec(c.id)?.[1];
+            const icon = !c.npc && !c.plague && passive ? PASSIVE_ICON[passive] : undefined;
             return (
               <button
                 key={c.id}
@@ -1480,7 +1486,7 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
                 )}
                 <div className="flex shrink-0 items-center justify-center">
                   <div className="origin-center scale-[0.58] sm:scale-[0.72]">
-                    <PixelIcon grid={grid} size={72} />
+                    {icon ? <img src={icon} alt="" width={72} height={72} draggable={false} style={{ width: 72, height: 72 }} /> : <PixelIcon grid={grid} size={72} />}
                   </div>
                 </div>
                 <div className="min-w-0 flex-1 overflow-hidden sm:flex-none">
@@ -4260,9 +4266,11 @@ function drawBonus(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
   ctx.save();
   ctx.fillStyle = "rgba(0,0,0,0.28)";
   ctx.beginPath(); ctx.ellipse(x, y + 22, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-  // Half the previous pixel size (3 instead of 6) — same on-screen size,
-  // ~2× the pixel detail per icon.
-  drawBonusArt(ctx, kind, x, y, 3);
+  // v2 painted icon (same footprint as the old 14x14 grid at 3 px); the pixel
+  // grid is the fallback until the image has loaded.
+  const img = iconImage(BONUS_ICON[kind]);
+  if (img) { ctx.imageSmoothingEnabled = true; ctx.drawImage(img, x - 22, y - 22, 44, 44); }
+  else drawBonusArt(ctx, kind, x, y, 3);
   ctx.restore();
 }
 
