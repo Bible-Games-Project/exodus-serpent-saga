@@ -98,6 +98,11 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
   });
 }
 
+/** How far Zipporah's stones fly at levels I / II / III (world px). */
+export const ZIPPORAH_STONE_REACH = [300, 400, 500];
+const STONE_FLIGHT = 0.8; // seconds
+const STONE_END_SPEED = 0.3; // speed at the end, as a share of the starting speed
+
 function rot(v: Vec2, a: number): Vec2 {
   const c = Math.cos(a), s = Math.sin(a);
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
@@ -133,9 +138,12 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
   switch (def.attack) {
     case "stone": {
       // Zipporah: 1 / 2 / 3 stones by level, each flying in a straight line
-      // (they never curve or chase anyone).
+      // (they never curve or chase anyone), farther at each level. They leave
+      // the hand fast and slow down as they go.
+      const reach = ZIPPORAH_STONE_REACH[evo - 1];
+      const speed0 = (2 * reach) / (STONE_FLIGHT * (1 + STONE_END_SPEED));
       for (let i = 0; i < evo; i++) {
-        thrown(rot(delta(state, h, tgt, from), (i - (evo - 1) / 2) * 0.15), 560, 0.9, { dmg, pierce: evo >= 2 ? 3 : 1, art: "stone", liftEnd: 14 });
+        thrown(rot(delta(state, h, tgt, from), (i - (evo - 1) / 2) * 0.15), speed0, STONE_FLIGHT, { dmg, pierce: evo >= 2 ? 3 : 1, art: "stone", liftEnd: 14, slowTo: STONE_END_SPEED });
       }
       return true;
     }
@@ -499,8 +507,15 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     return;
   }
   const previous = { ...e.pos };
-  e.pos.x += (d.vx as number) * dt;
-  e.pos.y += (d.vy as number) * dt;
+  // Slowing throws: speed falls evenly from full to `slowTo` over the flight.
+  let mul = 1;
+  if (d.slowTo != null) {
+    const f = d.slowTo as number, k = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / ((d.maxTtl as number) || 1)));
+    mul = 1 - (1 - f) * k;
+    d.prog = (k - (1 - f) * k * k / 2) / ((1 + f) / 2); // share of the distance covered
+  }
+  e.pos.x += (d.vx as number) * mul * dt;
+  e.pos.y += (d.vy as number) * mul * dt;
   const movement = delta(state, h, e.pos, previous);
   const segmentDistance = (point: Vec2) => {
     const v = delta(state, h, point, previous);

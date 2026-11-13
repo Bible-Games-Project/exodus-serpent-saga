@@ -270,9 +270,9 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "zipporah", name: "Zipporah", relationship: "Moses' wife, daughter of Jethro.",
     evolutions: [
-      cev(1, 1_200, 90, 85, "Throws a fast, straight stone that does not pierce."),
-      cev(2, 800_000, 140, 100, "Throws two straight stones more frequently; they pierce enemies."),
-      cev(3, 2_000_000, 230, 120, "Throws three straight piercing stones."),
+      cev(1, 1_200, 90, 85, "Throws a straight stone at short range that does not pierce."),
+      cev(2, 800_000, 140, 100, "Throws two straight stones more often and farther; they pierce enemies."),
+      cev(3, 2_000_000, 230, 120, "Throws three straight piercing stones at long range."),
     ],
   },
   {

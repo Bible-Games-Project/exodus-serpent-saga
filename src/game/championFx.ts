@@ -52,7 +52,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       const [a, b, w, hgt] = art;
       const lift = (d.lift as number) ?? 0;
       // Straight throws (liftEnd) glide evenly from the hand to body height, so they fly in a straight line.
-      ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * life : lift * Math.max(0, 1 - (1 - life) * 3)));
+      ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * (1 - ((d.prog as number) ?? 1 - life)) : lift * Math.max(0, 1 - (1 - life) * 3)));
       if (d.art === "arrow" || d.art === "firearrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
         ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
       }

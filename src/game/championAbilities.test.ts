@@ -85,4 +85,19 @@ test('Jethro converts ordinary enemies but never Ramses', () => {
   const a = arena('jethro', 3); const boss = a.enemy(20); boss.kind = 'ramses'; const soldier = a.enemy(50); a.cast();
   assert.equal(boss.data?.convertedUntil, undefined); assert.equal(boss.data?.confusedUntil, undefined);
   assert.equal(soldier.data?.convertedUntil, 10);
+});test('Zipporah stones fly farther at each level and slow down along the way', () => {
+  const reach: number[] = [];
+  for (const evo of [1, 2, 3]) {
+    const a = arena('zipporah', evo); a.cast();
+    const s = a.spawned[0], x0 = s.pos.x, steps: number[] = [];
+    for (let i = 0; i < 48; i++) {
+      const before = s.pos.x;
+      s.ttl = (s.ttl ?? 0) - 1 / 60; updateChampionEntities(a.state, 1 / 60, a.h);
+      steps.push(Math.abs(s.pos.x - before));
+    }
+    assert.ok(steps[0] > steps[40] * 2, 'starts fast, ends slow');
+    reach.push(Math.abs(s.pos.x - x0));
+  }
+  assert.ok(reach[0] < reach[1] && reach[1] < reach[2], reach.join(','));
+  assert.ok(Math.abs(reach[0] - 300) < 30, String(reach[0]));
 });
