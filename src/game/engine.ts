@@ -7,6 +7,7 @@ import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pus
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { applyBlessing, daggerTarget, inFrontOfMoses, isToughFoe, equippedWeapon, pendingBlessEvo, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
+import { PRINT_SLOW } from "./footwear";
 import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
 import { sealedAllies } from "./helmets";
@@ -627,6 +628,8 @@ export function update(state: GameState, dt: number) {
       enemyTick(state, e, targetPos, dt, {
         baseSlow: enemySlow
           * ((e.data?.slowUntil as number) > state.now ? 0.5 : 1)
+          // Stepped on Moses' footprints (footwear.ts).
+          * ((e.data?.printSlowUntil as number) > state.now ? 1 - PRINT_SLOW.pct / 100 : 1)
           * ((e.data?.blindUntil as number) > state.now ? 0.3 : 1),
         resolveObstacles: (pos, r) => resolveObstacles(pos, r, state),
         spawnEnemyProjectile: (owner, dir, kind, spd, dmg, ttl) => spawnEnemyProjectile(state, owner, dir, kind, spd, dmg, ttl),

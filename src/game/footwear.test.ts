@@ -82,3 +82,22 @@ test("Footprints from the second footwear on, never barefoot", () => {
     assert.equal((s.footprints?.length ?? 0) > 0, expect, id);
   }
 });
+
+test("The footprint trail shows 3 prints with the Patriarchs, one more per pair, 10 at most", () => {
+  const expected = { patriarchs: 3, pilgrim: 4, joshua: 5, wind: 6, messenger: 7, jordan: 8, bushb: 9, invisible: 10, exodus: 10 };
+  for (const [id, n] of Object.entries(expected)) {
+    const s = run(id);
+    tick(s, 1.2, () => { s.input.x = 1; s.input.y = 0; });
+    assert.equal(s.footprints?.length, n, id);
+  }
+});
+
+test("A foe stepping on a footprint walks 15% slower for 1 second", () => {
+  const s = run("patriarchs");
+  tick(s, .5, () => { s.input.x = 1; s.input.y = 0; });
+  const print = s.footprints![0];
+  const e = makeEnemy(s, "soldier", { x: print.x, y: print.y - 8 });
+  s.entities.set(e.id, e);
+  tick(s, 1 / 60, () => { s.input.x = 0; });
+  assert.ok(Number(e.data?.printSlowUntil) > s.now + .9);
+});

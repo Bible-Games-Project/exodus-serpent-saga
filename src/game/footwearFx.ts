@@ -13,10 +13,12 @@ export function drawFootprints(ctx: CanvasRenderingContext2D, s: GameState, camX
   const col = footwearColor(s.loadout?.footwear.id);
   const dark = shade(col, -.35), light = shade(col, .35);
   ctx.save();
-  for (const p of prints) {
+  prints.forEach((p, i) => {
     const u = (s.now - p.at) / FOOTPRINT_LIFE;
-    if (u >= 1) continue;
-    const a = (1 - u) * .6;
+    if (u >= 1) return;
+    // The oldest print in the short trail is the faintest.
+    const rank = (i + 1) / prints.length;
+    const a = Math.min(1 - u, .35 + .65 * rank) * .6;
     ctx.save();
     ctx.translate(Math.round(p.x - camX), Math.round(p.y - camY));
     // Ground perspective: squash vertically, then turn the sole along the walk.
@@ -30,7 +32,7 @@ export function drawFootprints(ctx: CanvasRenderingContext2D, s: GameState, camX
     ctx.globalAlpha = a * .7; ctx.fillStyle = light;
     ctx.fillRect(2, -1, 2, 2);
     ctx.restore();
-  }
+  });
   ctx.restore();
 }
 
