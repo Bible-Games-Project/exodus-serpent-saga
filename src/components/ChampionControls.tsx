@@ -27,6 +27,11 @@ export function ChampionControls({ value, onChange }: { value: TestMapConfig; on
           {[1, 2, 3].map((l) => <button key={l} type="button" aria-pressed={level === l} className={`pixel-btn pixel-btn-press${level === l ? " is-active" : ""}`}
             onClick={() => onChange({ champions, championLevels: { ...levels, [id]: l } })}>{["I", "II", "III"][l - 1]}</button>)}
         </span>
+        {info.abilities.length ? <ol className="test-champion-abilities">
+          {info.abilities.map((text, i) => <li key={i} className={level === i + 1 ? "is-active" : undefined}>
+            <b>{["I", "II", "III"][i]}</b> {text}
+          </li>)}
+        </ol> : null}
       </div>;
     })}
   </div>;

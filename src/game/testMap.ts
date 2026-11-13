@@ -5,6 +5,7 @@
 import { ENEMY_DEFS, ENEMY_ORDER, enemyLabel } from "./enemies";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { ALLY_POOL, allyDef } from "./allies";
+import { CHAMPIONS } from "./shopCatalog";
 import type { PlagueId, TestMapConfig } from "./types";
 
 /**
@@ -37,9 +38,10 @@ export function testChampionIds(): string[] {
   return [...ALLY_POOL];
 }
 
-export function testChampionInfo(id: string): { name: string; url: string } {
+export function testChampionInfo(id: string): { name: string; url: string; abilities: string[] } {
   const d = allyDef(id);
-  return { name: d?.name ?? id, url: d?.sprite.url ?? "" };
+  const shop = CHAMPIONS.find((c) => c.id === id);
+  return { name: d?.name ?? id, url: d?.sprite.url ?? "", abilities: shop?.evolutions.map((e) => e.ability) ?? [] };
 }
 
 /** The ten biblical plagues in order, then the additional abilities. */

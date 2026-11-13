@@ -410,6 +410,11 @@
 .test-champion-controls .pixel-btn { background: var(--title-sand); color: var(--title-ink); padding: 3px 7px; font-size: 10px; min-width: 30px; }
 .test-champion-row.is-on > .pixel-btn, .test-champion-controls .pixel-btn.is-active { background: #e9c168; }
 .test-champion-levels { display: flex; gap: 3px; }
+.test-champion-abilities { grid-column: 2 / -1; list-style: none; margin: 0 0 4px; padding: 0; display: grid; gap: 2px; font-size: 10px; line-height: 1.3; }
+.test-champion-abilities li { opacity: .6; }
+.test-champion-abilities li { padding: 1px 4px; border-radius: 2px; }
+.test-champion-abilities li.is-active { background: rgba(233, 193, 104, .35); opacity: 1; font-weight: bold; }
+.test-champion-abilities b { display: inline-block; min-width: 18px; }
 .test-equipment-live > .test-equipment-panel { margin-top: 6px; max-height: 60dvh; overflow-y: auto; box-shadow: 0 0 0 2px var(--title-ink); }
 [role="tablist"] .shop-icon-box { background: transparent; box-shadow: none; }
 @media (max-width: 600px) {

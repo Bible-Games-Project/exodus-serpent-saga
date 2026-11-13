@@ -156,7 +156,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
   const fade = Math.max(0, Math.min(1, age / .25, left / .45));
   const grow = 1 - (1 - Math.min(1, age / .3)) ** 3;
   const t = s.now + ((d.seed as number) ?? 0);
-  const R = ((d.r as number) ?? 42) * 1.35; // ring radius on screen
+  const R = ((d.r as number) ?? 42) * 1.15; // ring radius on screen
   ctx.imageSmoothingEnabled = true;
   ctx.translate(x, y);
 
@@ -175,7 +175,8 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
     ctx.restore();
   }
 
-  const H = 140 * grow; // tornado height
+  const H = 118 * grow; // tornado height
+  const B = R * .32; // the tornado's foot sits in the near half of the ring
   // Motes spiralling up around the funnel: the far half first, behind it.
   const motes = 14;
   const mote = (front: boolean) => {
@@ -185,7 +186,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
       if ((Math.sin(ang) > 0) !== front) continue;
       const rad = (R * .45 + k * R * .55) * grow;
       const mx = Math.cos(ang) * rad + Math.sin(t * 9 - k * 5) * 8 * k;
-      const my = Math.sin(ang) * rad * .35 - k * H;
+      const my = Math.sin(ang) * rad * .35 + B * (1 - k) - k * H;
       ctx.globalAlpha = fade * (front ? .85 : .45) * Math.sin(k * Math.PI);
       ctx.fillStyle = TORNADO_TINT[i % 3];
       const sz = front ? 3 + (i % 2) : 2;
@@ -200,7 +201,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
       const rad = (R * .5 + k * R * .6) * grow;
       const a0 = t * (9 - i) + i * 1.7;
       const from = front ? a0 % (Math.PI * 2) : a0 % (Math.PI * 2) + Math.PI;
-      const cy = -k * H, sway = Math.sin(t * 9 - k * 5) * 10 * k;
+      const cy = B * (1 - k) - k * H, sway = Math.sin(t * 9 - k * 5) * 10 * k;
       ctx.globalAlpha = fade * (front ? .55 : .25);
       ctx.strokeStyle = TORNADO_TINT[front ? 2 : 0];
       ctx.lineWidth = front ? 2.5 : 1.5;
@@ -222,7 +223,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
       const k = 1 - i / strips; // 1 at the top, 0 at the base
       const sway = Math.sin(t * 9 - i * .55) * 9 * k + Math.sin(t * 3.1) * 5 * k;
       const squeeze = 1 + .07 * Math.sin(t * 14 - i * .8);
-      ctx.drawImage(img, 0, i * sh, img.naturalWidth, sh, -w * squeeze / 2 + sway, -H + i * dh + 4, w * squeeze, dh + .6);
+      ctx.drawImage(img, 0, i * sh, img.naturalWidth, sh, -w * squeeze / 2 + sway, B - H + i * dh, w * squeeze, dh + .6);
     }
   }
 
@@ -236,7 +237,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
     ctx.fillStyle = TORNADO_TINT[1];
     const rr = 4 + k * 7;
     ctx.beginPath();
-    ctx.ellipse(Math.cos(ang) * R * (.6 + k * .5) * grow, Math.sin(ang) * R * .3 * grow - k * 10, rr, rr * .6, 0, 0, Math.PI * 2);
+    ctx.ellipse(Math.cos(ang) * R * (.6 + k * .5) * grow, Math.sin(ang) * R * .3 * grow + B * .6 - k * 10, rr, rr * .6, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 }
