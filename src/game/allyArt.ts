@@ -67,14 +67,17 @@ export function barFx(ctx: CanvasRenderingContext2D, x: number, y: number, frac:
   const bw = 30, fw = Math.round(bw * Math.max(0, Math.min(1, frac)));
   const x0 = x - bw / 2 + (hit ? Math.round(Math.sin(s.now * 70) * k) : 0);
   ctx.save();
-  ctx.globalAlpha = k * (0.35 + 0.15 * Math.sin(s.now * 10));
+  // The halo only frames the bar (outside its dark border), so the empty part
+  // stays dark and the amount left is always readable.
+  ctx.globalAlpha = k * (0.55 + 0.25 * Math.sin(s.now * 10));
   ctx.fillStyle = halo;
-  ctx.fillRect(x0 - 3, y - 3, bw + 6, 9);
-  ctx.globalAlpha = k * 0.6;
-  ctx.fillRect(x0 - 2, y - 2, bw + 4, 7);
-  ctx.globalAlpha = k * (0.55 + 0.45 * Math.sin(s.now * 14));
+  ctx.fillRect(x0 - 3, y - 3, bw + 6, 2);
+  ctx.fillRect(x0 - 3, y + 4, bw + 6, 2);
+  ctx.fillRect(x0 - 3, y - 1, 2, 5);
+  ctx.fillRect(x0 + bw + 1, y - 1, 2, 5);
+  ctx.globalAlpha = k * (0.4 + 0.3 * Math.sin(s.now * 14));
   ctx.fillStyle = fill;
-  ctx.fillRect(x0, y, hit ? bw : fw, 3);
+  ctx.fillRect(x0, y, fw, 3);
   if (fw > 0) {
     const sx = x0 + ((s.now * 40) % (fw + 6)) - 3;
     ctx.globalAlpha = k;
@@ -179,21 +182,15 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   const sx = im.naturalWidth / W, sy = im.naturalHeight / H;
   const region = (x0: number, y0: number, width: number, height: number, dx: number, dy: number) =>
     ctx.drawImage(im, x0 * sx, y0 * sy, width * sx, height * sy, dx, dy, width, height);
-  // Fuller walk: feet first (so the hem covers a lifted foot), then the hem
-  // swaying as one piece (a smooth slant, no row strips), then the body; hem
-  // and body bob together so no gap ever opens between them.
+  // Fuller walk: feet first (so the hem covers a lifted foot), then the whole
+  // body in one piece, bobbing and rocking (never cut into strips, which showed
+  // as stripes on the dress).
   const walkBob = wk ? -Math.round((1 - Math.abs(sw)) * wk.bob) : bodyBob;
   if (wk) {
     const fh = H - FOOT_TOP, st = Math.round(sw * wk.stride);
     region(FOOT_X0, FOOT_TOP, FOOT_SPLIT - FOOT_X0, fh, FOOT_X0 + st, FOOT_TOP - Math.round(Math.max(0, sw) * wk.lift));
     region(FOOT_SPLIT, FOOT_TOP, FOOT_X1 - FOOT_SPLIT, fh, FOOT_SPLIT - st, FOOT_TOP - Math.round(Math.max(0, -sw) * wk.lift));
-    const hemTop = Math.round(wk.hemTop * sy) / sy;
-    ctx.save();
-    ctx.translate(0, hemTop + walkBob);
-    ctx.transform(1, 0, (sw * wk.sway) / (FOOT_TOP - hemTop), 1, 0, 0);
-    region(0, hemTop, W, FOOT_TOP - hemTop, 0, 0);
-    ctx.restore();
-    region(0, 0, W, hemTop, 0, walkBob);
+    region(0, 0, W, FOOT_TOP, 0, walkBob);
   } else if (moving) {
   // Feet band: two feet alternate lift + stride; everything else stays whole.
     const a = sw > 0 ? 1 : 0;

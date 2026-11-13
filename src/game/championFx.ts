@@ -6,6 +6,7 @@ import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
 import puahVialUrl from "@/assets/champion-puah-vial.png";
 import puahSplashUrl from "@/assets/champion-puah-splash.png";
+import gershomArrowUrl from "@/assets/champion-gershom-arrow.png";
 import shiphrahVialUrl from "@/assets/champion-shiphrah-vial.png";
 import shiphrahSplashUrl from "@/assets/champion-shiphrah-splash.png";
 
@@ -70,6 +71,33 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * (1 - ((d.prog as number) ?? 1 - life)) : lift * Math.max(0, 1 - (1 - life) * 3)));
       if (d.art === "arrow" || d.art === "firearrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
         ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
+      }
+      if (d.art === "arrow" || d.art === "firearrow") {
+        // Gershom's arrow: the supplied art; fire arrows (II+) burn at the tip and leave sparks.
+        const img = art(gershomArrowUrl);
+        if (img) {
+          const len = 26, ah = len * img.naturalHeight / img.naturalWidth;
+          if (d.art === "firearrow") {
+            for (let i = 0; i < 5; i++) {
+              const p = (e.animT * 4 + i / 5) % 1;
+              ctx.globalAlpha = 0.8 * (1 - p);
+              ctx.fillStyle = i % 2 ? "#ff6a1a" : "#ffd36a";
+              ctx.fillRect(Math.round(-len / 2 - p * 14), Math.round(Math.sin(e.animT * 30 + i * 2) * 2 * p) - 1, 3, 2);
+            }
+            ctx.globalAlpha = 0.55 + 0.25 * Math.sin(e.animT * 40);
+            ctx.fillStyle = "#ff8a2a";
+            ctx.beginPath(); ctx.ellipse(len / 2 - 3, 0, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(img, -len / 2, -ah / 2, len, ah);
+          if (d.art === "firearrow") {
+            ctx.globalAlpha = 0.7 + 0.3 * Math.sin(e.animT * 50);
+            ctx.fillStyle = "#ffd36a";
+            ctx.beginPath(); ctx.ellipse(len / 2 - 2, 0, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
+          }
+          break;
+        }
       }
       if (d.art === "heal" || d.art === "vial") {
         // Puah's / Shiphrah's vial: their supplied art, tumbling a little, bigger at each level.
