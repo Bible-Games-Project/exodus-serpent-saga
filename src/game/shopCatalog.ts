@@ -278,9 +278,9 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "puah", name: "Puah", relationship: "The midwife who feared God and spared the children.",
     evolutions: [
-      cev(1, 2_500, 0, 140, "Throws healing vials at the nearest ally, including Moses and champions, and flees enemies."),
-      cev(2, 1_000_000, 0, 180, "Throws two vials and heals twice as much."),
-      cev(3, 2_600_000, 0, 250, "Throws a vial near Moses, creating a marked healing area for 10 seconds."),
+      cev(1, 2_500, 0, 140, "Throws a healing vial at the nearest ally (Moses or a champion) and flees enemies."),
+      cev(2, 1_000_000, 0, 180, "Throws two bigger vials that heal twice as much."),
+      cev(3, 2_600_000, 0, 250, "Her vials burst into a healing ring: standing on it heals 1% of health every tenth of a second."),
     ],
   },
   {

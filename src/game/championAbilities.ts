@@ -101,6 +101,12 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
 /** How far Zipporah's stones fly at levels I / II / III (world px). */
 /** Puah's vial and splash size by level (I, II, III). */
 export const PUAH_VIAL_SIZE = [1, 1.35, 1.7];
+/** Share of the target's max health one vial heals (doubled at level II+). */
+export const PUAH_VIAL_HEAL = 0.03;
+/** Puah III healing ring left where a vial bursts: 1% max health every 0.1 s inside it. */
+export const PUAH_RING_R = 60, PUAH_RING_SECONDS = 4, PUAH_RING_HEAL = 0.1;
+/** Half-width / half-height of the ring art on the ground, as a multiple of the zone radius. */
+export const PUAH_RING_HALF_W = 1.1 * 2.3 / 2, PUAH_RING_HALF_H = PUAH_RING_HALF_W / 1.51;
 export const ZIPPORAH_STONE_REACH = [300, 400, 500];
 const STONE_FLIGHT = 1.3; // seconds
 /** Seconds a stone takes to fade out at the end of its flight or after its last hit. */
@@ -152,29 +158,21 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "heal": {
-      const hurt = alliesAndMoses(state)
-        .filter((t) => t.hp < t.maxHp)
-        .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
+      // Puah only throws at allies (Moses and the other champions), the nearest first.
+      const dist = (t: Entity) => { const v = delta(state, h, t.pos, ally.pos); return Math.hypot(v.x, v.y); };
+      const allies = alliesAndMoses(state).filter((t) => t !== ally).sort((a, b) => dist(a) - dist(b));
+      const hurt = allies.filter((t) => t.hp < t.maxHp);
       const n = evo >= 2 ? 2 : 1;
       const mul = evo >= 2 ? 2 : 1;
-      // Her vials (and their splash) get bigger at each level.
+      // Her vials (and their splash) get bigger at each level; at level III they burst into a healing ring.
       const size = PUAH_VIAL_SIZE[evo - 1];
+      const ring = evo >= 3 ? 1 : 0;
       for (let i = 0; i < Math.min(n, hurt.length); i++) {
         const t = hurt[i];
-        const v = delta(state, h, t.pos, ally.pos);
-        thrown( v, 340, 3, { heal: t.maxHp * 0.06 * mul, targetId: t.id, art: "heal", size });
+        thrown(delta(state, h, t.pos, ally.pos), 340, 3, { heal: t.maxHp * PUAH_VIAL_HEAL * mul, targetId: t.id, art: "heal", size, ring });
       }
-      // Everyone is healthy: she still throws a vial at the nearest foe (it does nothing).
-      if (!hurt.length) {
-        const foe = nearest(state, h, ally.pos, 1, def.range)[0];
-        if (foe) thrown(delta(state, h, foe.pos, ally.pos), 340, 3, { heal: 0, targetId: foe.id, art: "heal", size });
-      }
-      // Puah III: a marked healing area near Moses (re-cast every 10 s).
-      if (evo >= 3 && state.now >= ((d.zoneNext as number) ?? 0)) {
-        d.zoneNext = state.now + 10;
-        const p = state.player.pos;
-        h.spawn("chzone", { x: p.x + 30, y: p.y + 10 }, 10, { r: 80, healPct: 0.02, color: "heal", maxTtl: 10, puahRing: 1, seed: Math.random() * 6.28 });
-      }
+      // Nobody is hurt: she still throws a vial at the nearest ally (it heals nothing).
+      if (!hurt.length && allies[0]) thrown(delta(state, h, allies[0].pos, ally.pos), 340, 3, { heal: 0, targetId: allies[0].id, art: "heal", size, ring });
       return true;
     }
     case "vial": {
@@ -403,7 +401,9 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
       if (d.healPct) {
         for (const t of alliesAndMoses(state)) {
           const v = delta(state, h, t.pos, e.pos);
-          if (Math.hypot(v.x, v.y) < r) t.hp = Math.min(t.maxHp, t.hp + t.maxHp * (d.healPct as number) * dt);
+          // Puah's ring heals whoever stands on its art (an ellipse); other areas use a circle.
+          const inside = d.puahRing ? (v.x / (r * PUAH_RING_HALF_W)) ** 2 + (v.y / (r * PUAH_RING_HALF_H)) ** 2 <= 1 : Math.hypot(v.x, v.y) < r;
+          if (inside) t.hp = Math.min(t.maxHp, t.hp + t.maxHp * (d.healPct as number) * dt);
         }
       } else {
         for (const en of [...state.entities.values()]) {
@@ -511,7 +511,8 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     if (dd < 18) {
       t.hp = Math.min(t.maxHp, t.hp + (d.heal as number));
       const size = (d.size as number) ?? 1;
-      h.spawn("chaoe", t.pos, 0.55, { r: 26 * size, color: "heal", maxTtl: 0.55, splash: 1, seed: Math.random() * 6.28 });
+      if (d.ring) h.spawn("chzone", { x: t.pos.x, y: t.pos.y }, PUAH_RING_SECONDS, { r: PUAH_RING_R, healPct: PUAH_RING_HEAL, color: "heal", maxTtl: PUAH_RING_SECONDS, puahRing: 1, seed: Math.random() * 6.28 });
+      else h.spawn("chaoe", t.pos, 0.55, { r: 26 * size, color: "heal", maxTtl: 0.55, splash: 1, seed: Math.random() * 6.28 });
       e.ttl = 0;
       return;
     }

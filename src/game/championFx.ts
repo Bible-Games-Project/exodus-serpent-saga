@@ -1,6 +1,6 @@
 // Lightweight pixel-art visuals for shop champion abilities (championAbilities.ts).
 import type { Entity, GameState } from "./types";
-import { isChampionFxKind, STONE_FADE } from "./championAbilities";
+import { isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE } from "./championAbilities";
 import smokeRingUrl from "@/assets/champion-miriam-smoke-ring.png";
 import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
@@ -309,7 +309,7 @@ function drawPuahRing(ctx: CanvasRenderingContext2D, x: number, y: number, e: En
   ctx.imageSmoothingEnabled = true;
   ctx.translate(x, y);
   const ring = art(puahRingUrl);
-  const rw = R * 2.3, rh = ring ? rw * ring.naturalHeight / ring.naturalWidth : rw / 1.5;
+  const rw = (R / 1.1) * PUAH_RING_HALF_W * 2, rh = ring ? rw * ring.naturalHeight / ring.naturalWidth : rw / 1.5;
   // Middle of the ring band, for the effects that run along it.
   const ex = rw * .4, ey = rh * .39;
 
