@@ -90,14 +90,20 @@ test('Jethro converts ordinary enemies but never Ramses', () => {
   for (const evo of [1, 2, 3]) {
     const a = arena('zipporah', evo); a.cast();
     const s = a.spawned[0], x0 = s.pos.x, steps: number[] = [];
-    for (let i = 0; i < 48; i++) {
+    for (let i = 0; i < 78; i++) {
       const before = s.pos.x;
       s.ttl = (s.ttl ?? 0) - 1 / 60; updateChampionEntities(a.state, 1 / 60, a.h);
       steps.push(Math.abs(s.pos.x - before));
     }
-    assert.ok(steps[0] > steps[40] * 2, 'starts fast, ends slow');
+    assert.ok(steps[0] > steps[70] * 2, 'starts fast, ends slow');
     reach.push(Math.abs(s.pos.x - x0));
   }
   assert.ok(reach[0] < reach[1] && reach[1] < reach[2], reach.join(','));
   assert.ok(Math.abs(reach[0] - 300) < 30, String(reach[0]));
+});
+test('Puah throws a harmless vial at the nearest foe when nobody needs healing', () => {
+  const a = arena('puah', 1); const e = a.enemy(150);
+  a.cast(); assert.equal(a.spawned.length, 1); assert.equal(a.spawned[0].data?.targetId, e.id);
+  for (let i = 0; i < 60; i++) { a.spawned[0].ttl = (a.spawned[0].ttl ?? 0) - 1 / 60; updateChampionEntities(a.state, 1 / 60, a.h); }
+  assert.equal(e.hp, 1000);
 });

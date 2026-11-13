@@ -100,7 +100,9 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
 
 /** How far Zipporah's stones fly at levels I / II / III (world px). */
 export const ZIPPORAH_STONE_REACH = [300, 400, 500];
-const STONE_FLIGHT = 0.8; // seconds
+const STONE_FLIGHT = 1.3; // seconds
+/** Seconds a stone takes to fade out at the end of its flight or after its last hit. */
+export const STONE_FADE = 0.3;
 const STONE_END_SPEED = 0.3; // speed at the end, as a share of the starting speed
 
 function rot(v: Vec2, a: number): Vec2 {
@@ -158,11 +160,16 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
         const v = delta(state, h, t.pos, ally.pos);
         thrown( v, 340, 3, { heal: t.maxHp * 0.06 * mul, targetId: t.id, art: "heal" });
       }
+      // Everyone is healthy: she still throws a vial at the nearest foe (it does nothing).
+      if (!hurt.length) {
+        const foe = nearest(state, h, ally.pos, 1, def.range)[0];
+        if (foe) thrown(delta(state, h, foe.pos, ally.pos), 340, 3, { heal: 0, targetId: foe.id, art: "heal" });
+      }
       // Puah III: a marked healing area near Moses (re-cast every 10 s).
       if (evo >= 3 && state.now >= ((d.zoneNext as number) ?? 0)) {
         d.zoneNext = state.now + 10;
         const p = state.player.pos;
-        h.spawn("chzone", { x: p.x + 30, y: p.y + 10 }, 10, { r: 80, healPct: 0.02, color: "heal", maxTtl: 10 });
+        h.spawn("chzone", { x: p.x + 30, y: p.y + 10 }, 10, { r: 80, healPct: 0.02, color: "heal", maxTtl: 10, puahRing: 1, seed: Math.random() * 6.28 });
       }
       return true;
     }
@@ -492,7 +499,7 @@ function updateBird(state: GameState, e: Entity, d: Record<string, unknown>, own
 function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt: number, h: ChampHelpers) {
   if ((e.ttl ?? 1) <= 0) return;
   // Healing vial: homes in on its ally / Moses and heals on arrival.
-  if (d.heal) {
+  if (d.heal != null) {
     const t = state.entities.get(d.targetId as number) ?? (d.targetId === state.player.id ? state.player : undefined);
     if (!t || t.data?.downedUntil) { e.ttl = 0; return; }
     const v = delta(state, h, t.pos, e.pos);
@@ -509,7 +516,8 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
   const previous = { ...e.pos };
   // Slowing throws: speed falls evenly from full to `slowTo` over the flight.
   let mul = 1;
-  if (d.slowTo != null) {
+  if (d.fading) mul = 0.25;
+  else if (d.slowTo != null) {
     const f = d.slowTo as number, k = Math.max(0, Math.min(1, 1 - (e.ttl ?? 0) / ((d.maxTtl as number) || 1)));
     mul = 1 - (1 - f) * k;
     d.prog = (k - (1 - f) * k * k / 2) / ((1 + f) / 2); // share of the distance covered
@@ -554,7 +562,11 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
       e.ttl = 0; return;
     }
     d.pierce = ((d.pierce as number) ?? 1) - 1;
-    if ((d.pierce as number) <= 0) { e.ttl = 0; return; }
+    if ((d.pierce as number) <= 0) {
+      // Stones drift on a little and fade out instead of vanishing on the spot.
+      if (d.art === "stone") { d.noContact = 1; d.fading = 1; e.ttl = Math.min(e.ttl ?? 0, STONE_FADE); return; }
+      e.ttl = 0; return;
+    }
   }
 }
 
