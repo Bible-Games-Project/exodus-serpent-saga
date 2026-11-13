@@ -279,7 +279,7 @@ function drawPuahRing(ctx: CanvasRenderingContext2D, x: number, y: number, e: En
   const ring = art(puahRingUrl);
   if (ring) {
     const rw = R * 2, rh = rw * ring.naturalHeight / ring.naturalWidth;
-    ctx.save(); ctx.scale(1, .5);
+    ctx.save(); ctx.scale(1, .58);
     // Faint copy, a little larger, turning the other way.
     ctx.save(); ctx.rotate(-t * .45); ctx.globalAlpha = .28 * fade; ctx.drawImage(ring, -rw * .54, -rh * .54, rw * 1.08, rh * 1.08); ctx.restore();
     ctx.rotate(t * .7);
