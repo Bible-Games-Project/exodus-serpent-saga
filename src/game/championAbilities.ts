@@ -595,6 +595,6 @@ function explode(state: GameState, e: Entity, d: Record<string, unknown>, h: Cha
   if (d.exploded) return;
   d.exploded = 1;
   const R = d.explodeR as number;
-  if (d.art === "vial") { areaHit(state, h, e.pos, R, d.dmg as number, 0, "vial", { splash: "shiphrah", maxTtl: 0.55, seed: Math.random() * 6.28 }); return; }
+  if (d.art === "vial") { areaHit(state, h, e.pos, R, d.dmg as number, 0, "vial", { splash: "shiphrah", maxTtl: 0.7, seed: Math.random() * 6.28 }); return; }
   areaHit(state, h, e.pos, R, d.dmg as number, (d.knock as number) ?? 0, d.art === "pyramid" ? "crack" : "fire");
 }

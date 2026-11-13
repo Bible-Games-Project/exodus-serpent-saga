@@ -2354,13 +2354,19 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   // Off-screen recovery: walk back toward the player's visible area (camera
   // centre), never teleport. Normal behaviour resumes once visible again.
   if (!inViewport(state, e.pos, 0)) {
-    const dx = wrapDelta(state.camera.x, e.pos.x, state.worldW);
-    const dy = wrapDelta(state.camera.y, e.pos.y, state.worldH);
-    const dd = Math.hypot(dx, dy) || 1;
+    // The way back is worked out at most every ROUTE_MIN_INTERVAL, then followed.
+    if (canRefreshRoute(d, state.now) || !d.homeDir) {
+      markRouteRefresh(d, state.now, Math.random() * 0.1);
+      const dx = wrapDelta(state.camera.x, e.pos.x, state.worldW);
+      const dy = wrapDelta(state.camera.y, e.pos.y, state.worldH);
+      const dd = Math.hypot(dx, dy) || 1;
+      d.homeDir = { x: dx / dd, y: dy / dd };
+    }
+    const home = d.homeDir as Vec2;
     const spd = def.moveSpeed * 1.6;
-    e.vel.x = (dx / dd) * spd; e.vel.y = (dy / dd) * spd;
+    e.vel.x = home.x * spd; e.vel.y = home.y * spd;
     e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
-    e.facing = dx > 0 ? 1 : -1;
+    e.facing = home.x > 0 ? 1 : -1;
     resolveObstacles(e.pos, e.radius, state);
     wrapPos(state, e.pos);
     d.atkCd = Math.max(0, ((d.atkCd as number) ?? 0) - dt);
@@ -2384,6 +2390,12 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     target = best;
     d.targetId = best?.id;
     d.retreatDir = allyRetreatDir(state, e);
+    // The heading toward the target is fixed until the next refresh.
+    if (best) {
+      const cx = wrapDelta(best.pos.x, e.pos.x, state.worldW), cy = wrapDelta(best.pos.y, e.pos.y, state.worldH);
+      const cd = Math.hypot(cx, cy) || 1;
+      d.chaseDir = { x: cx / cd, y: cy / cd };
+    } else d.chaseDir = undefined;
   }
 
   d.atkCd = ((d.atkCd as number) ?? 0) - dt;
@@ -2420,8 +2432,11 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
       // Between attacks: back away from nearby threats instead of standing idle.
       allyRetreat(e, def, dt);
     } else {
-      e.vel.x = (dx / dd) * def.moveSpeed; e.vel.y = (dy / dd) * def.moveSpeed;
+      // Walk along the heading chosen at the last route refresh (not re-aimed every frame).
+      const c = (d.chaseDir as Vec2 | undefined) ?? (d.chaseDir = { x: dx / dd, y: dy / dd });
+      e.vel.x = c.x * def.moveSpeed; e.vel.y = c.y * def.moveSpeed;
       e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
+      e.facing = c.x > 0 ? 1 : -1;
     }
   } else {
     // No valid target until the next permitted refresh: keep moving.

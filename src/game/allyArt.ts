@@ -170,6 +170,8 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   if (sc !== 1) ctx.scale(sc, sc);
   if (e.facing === -1) ctx.scale(-1, 1);
   ctx.translate(push, 0);
+  const wk = moving ? def.sprite.walk : undefined;
+  if (wk) lean += sw * wk.rock;
   if (lean) ctx.rotate(lean);
   ctx.translate(-CX, -H);
   // Placeholder champions borrow another PNG, tinted until their own arrives.
@@ -177,8 +179,22 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   const sx = im.naturalWidth / W, sy = im.naturalHeight / H;
   const region = (x0: number, y0: number, width: number, height: number, dx: number, dy: number) =>
     ctx.drawImage(im, x0 * sx, y0 * sy, width * sx, height * sy, dx, dy, width, height);
+  // Fuller walk: feet first (so the hem covers a lifted foot), then the hem
+  // swaying in one-source-row strips, then the body bobbing on top.
+  const walkBob = wk ? -Math.round((1 - Math.abs(sw)) * wk.bob) : bodyBob;
+  if (wk) {
+    const fh = H - FOOT_TOP, st = Math.round(sw * wk.stride);
+    region(FOOT_X0, FOOT_TOP, FOOT_SPLIT - FOOT_X0, fh, FOOT_X0 + st, FOOT_TOP - Math.round(Math.max(0, sw) * wk.lift));
+    region(FOOT_SPLIT, FOOT_TOP, FOOT_X1 - FOOT_SPLIT, fh, FOOT_SPLIT - st, FOOT_TOP - Math.round(Math.max(0, -sw) * wk.lift));
+    // Strips follow the source rows exactly so none is doubled or skipped.
+    const row = 1 / sy, hemTop = Math.round(wk.hemTop * sy) / sy;
+    for (let y = hemTop; y < FOOT_TOP; y += row) {
+      const t = (y - hemTop) / (FOOT_TOP - hemTop);
+      region(0, y, W, Math.min(row, FOOT_TOP - y), Math.round(sw * wk.sway * t), y + Math.round(walkBob * (1 - t)));
+    }
+    region(0, 0, W, hemTop, 0, walkBob);
+  } else if (moving) {
   // Feet band: two feet alternate lift + stride; everything else stays whole.
-  if (moving) {
     const a = sw > 0 ? 1 : 0;
     region(0, 0, W, FOOT_TOP, 0, bodyBob);
     const fh = H - FOOT_TOP;
@@ -193,7 +209,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   if (gesture) {
     const action = load(gesture.actionUrl);
     if (action) {
-      ctx.save(); ctx.translate(gesture.pivot.x, gesture.pivot.y + bodyBob);
+      ctx.save(); ctx.translate(gesture.pivot.x, gesture.pivot.y + walkBob);
       ctx.rotate(allyGestureAngle(def, at));
       ctx.drawImage(action, 0, 0, action.naturalWidth, action.naturalHeight, -gesture.pivot.x, -gesture.pivot.y, W, H);
       ctx.restore();

@@ -130,3 +130,14 @@ test('Moses shows he is being healed when a Puah vial lands on him', () => {
   a.cast(); for (let i = 0; i < 30; i++) updateChampionEntities(a.state, 1 / 60, a.h);
   assert.ok(((a.state.player.data?.healFxUntil as number) ?? 0) > a.state.now);
 });
+test('Champions keep the heading chosen at a route refresh for half a second', () => {
+  const a = arena('miriam', 1); a.state.plagues.clear();
+  const e = a.enemy(300); a.ally.data = { ...a.ally.data, atkCd: 0, routeAt: a.state.now - 1 };
+  update(a.state, 1 / 60);
+  const first = { ...(a.ally.data?.chaseDir as { x: number; y: number }) };
+  e.pos.y += 200; // the foe moves away sideways
+  for (let i = 0; i < 20; i++) update(a.state, 1 / 60);
+  assert.deepEqual(a.ally.data?.chaseDir, first);
+  for (let i = 0; i < 25; i++) update(a.state, 1 / 60);
+  assert.notDeepEqual(a.ally.data?.chaseDir, first);
+});

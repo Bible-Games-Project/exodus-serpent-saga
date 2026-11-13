@@ -281,26 +281,62 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
   }
 }
 
+/** How see-through the vial splashes are at most (1 = solid). */
+const SPLASH_ALPHA = 0.7;
+/** Shades of Shiphrah's blue splash art, deep to bright. */
+const SHIPHRAH_TINT = ["#1f4fe0", "#2f9bff", "#7fd8ff", "#e8f8ff"];
+
 /** Shiphrah's blast: her supplied splash art opening on the ground over the whole
- *  reach and fading, with drops flying out. */
+ *  reach, half see-through, with a bright copy shimmering over it, ripples
+ *  running out, drops flying and bubbles rising in its blues. */
 function drawShiphrahSplash(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, life: number): void {
   const d = e.data ?? {};
   const r = (d.r as number) ?? 55;
+  const seed = (d.seed as number) ?? 0;
   const k = 1 - life;
+  const fade = Math.min(1, life * 2.2);
   ctx.imageSmoothingEnabled = true;
   ctx.translate(x, y);
   const img = art(shiphrahSplashUrl);
+  const open = 0.5 + 0.5 * (1 - (1 - Math.min(1, k * 3)) ** 3);
   if (img) {
-    const sw = r * 2.2 * (0.5 + 0.5 * (1 - (1 - Math.min(1, k * 3)) ** 3)), sh = sw * img.naturalHeight / img.naturalWidth;
-    ctx.globalAlpha = Math.min(1, life * 2.2);
+    const sw = r * 2.2 * open, sh = sw * img.naturalHeight / img.naturalWidth;
+    ctx.globalAlpha = fade * SPLASH_ALPHA;
+    ctx.save(); ctx.rotate(Math.sin(seed) * 0.3 + k * 0.35);
     ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
+    // A brighter copy shimmering and turning the other way.
+    ctx.globalCompositeOperation = "lighter";
+    ctx.rotate(-k * 0.7);
+    ctx.globalAlpha = fade * 0.22 * (0.5 + 0.5 * Math.sin(k * 18));
+    ctx.drawImage(img, -sw * 0.47, -sh * 0.47, sw * 0.94, sh * 0.94);
+    ctx.restore();
   }
+  // Ripples running out over the ground.
+  for (let i = 0; i < 2; i++) {
+    const p = Math.min(1, k * 1.6 - i * 0.3);
+    if (p <= 0) continue;
+    ctx.globalAlpha = (1 - p) * 0.8 * fade;
+    ctx.strokeStyle = SHIPHRAH_TINT[i ? 2 : 1]; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(0, 0, r * (0.4 + 0.75 * p), r * (0.3 + 0.55 * p), 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  // Drops flying out and falling back.
   for (let i = 0; i < 10; i++) {
-    const a = i * Math.PI / 5 + ((d.seed as number) ?? 0);
+    const a = i * Math.PI / 5 + seed;
     const dist = r * (0.4 + 0.8 * k);
     ctx.globalAlpha = Math.max(0, life * 1.4 - 0.2);
-    ctx.fillStyle = i % 2 ? "#3aa8ff" : "#c8f0ff";
+    ctx.fillStyle = SHIPHRAH_TINT[i % 2 ? 1 : 3];
     ctx.beginPath(); ctx.arc(Math.cos(a) * dist, Math.sin(a) * dist * 0.8 - Math.sin(k * Math.PI) * 10, (i % 2 ? 2.4 : 1.7) * Math.sqrt(r / 55), 0, Math.PI * 2); ctx.fill();
+  }
+  // Bubbles rising from the puddle, with a bright spot.
+  for (let i = 0; i < 8; i++) {
+    const p = (k * 1.3 + i / 8) % 1;
+    const a = seed * 3 + i * 2.4;
+    const bx = Math.cos(a) * r * 0.55 * ((i * 7) % 5 + 1) / 5 + Math.sin(k * 9 + i) * 3, by = Math.sin(a) * r * 0.35 - p * 26;
+    const br = (1.5 + (i % 3)) * Math.sqrt(r / 55);
+    ctx.globalAlpha = fade * Math.sin(p * Math.PI) * 0.9;
+    ctx.strokeStyle = SHIPHRAH_TINT[2]; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = SHIPHRAH_TINT[3]; ctx.fillRect(Math.round(bx - br * 0.4), Math.round(by - br * 0.4), 1, 1);
   }
 }
 
@@ -314,7 +350,7 @@ function drawPuahSplash(ctx: CanvasRenderingContext2D, x: number, y: number, e: 
   const img = art(puahSplashUrl);
   if (img) {
     const sw = r * 2.4 * (0.45 + 0.65 * (1 - (1 - Math.min(1, k * 2.5)) ** 3)), sh = sw * img.naturalHeight / img.naturalWidth;
-    ctx.globalAlpha = Math.min(1, life * 2);
+    ctx.globalAlpha = Math.min(1, life * 2) * SPLASH_ALPHA;
     ctx.rotate(((d.seed as number) ?? 0) + k * 0.8);
     ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
     ctx.rotate(-(((d.seed as number) ?? 0) + k * 0.8));
