@@ -58,7 +58,7 @@ function hit(state: GameState, h: ChampHelpers, en: Entity, dmg: number) {
   if (en.hp <= 0) h.killEnemy(en);
 }
 
-function areaHit(state: GameState, h: ChampHelpers, at: Vec2, r: number, dmg: number, knock = 0, color = "fire") {
+function areaHit(state: GameState, h: ChampHelpers, at: Vec2, r: number, dmg: number, knock = 0, color = "fire", fx: Record<string, unknown> = {}) {
   for (const en of [...state.entities.values()]) {
     if (!validEnemy(en, state.now)) continue;
     const v = delta(state, h, en.pos, at);
@@ -73,7 +73,8 @@ function areaHit(state: GameState, h: ChampHelpers, at: Vec2, r: number, dmg: nu
     }
     hit(state, h, en, dmg);
   }
-  h.spawn("chaoe", at, 0.45, { r, color, maxTtl: 0.45 });
+  const ttl = (fx.maxTtl as number) ?? 0.45;
+  h.spawn("chaoe", at, ttl, { r, color, maxTtl: ttl, ...fx });
 }
 
 function chainHit(state: GameState, h: ChampHelpers, first: Entity, n: number, dmg: number) {
@@ -100,6 +101,9 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
 
 /** How far Zipporah's stones fly at levels I / II / III (world px). */
 /** Puah's vial and splash size by level (I, II, III). */
+/** Shiphrah's vial size and blast reach (px) by level (I, II, III). */
+export const SHIPHRAH_VIAL_SIZE = [0.9, 1.2, 1.55];
+export const SHIPHRAH_BLAST_R = [55, 75, 100];
 export const PUAH_VIAL_SIZE = [0.6, 0.9, 1.7];
 /** Share of the target's max health one vial heals (doubled at level II+). */
 export const PUAH_VIAL_HEAL = 0.03;
@@ -182,8 +186,9 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "vial": {
-      const R = evo >= 2 ? 85 : 55;
-      thrown( delta(state, h, tgt, from), 360, 0.9, { dmg, explodeR: R, chain: evo >= 3 ? 2 : 0, art: "vial", stopAt: tgt });
+      // Shiphrah: one vial that bursts on the ground and damages every foe in reach;
+      // the vial, its splash and the reach all grow with the level.
+      thrown(delta(state, h, tgt, from), 360, 0.9, { dmg, explodeR: SHIPHRAH_BLAST_R[evo - 1], art: "vial", size: SHIPHRAH_VIAL_SIZE[evo - 1], stopAt: tgt });
       return true;
     }
     case "arrow": {
@@ -590,11 +595,6 @@ function explode(state: GameState, e: Entity, d: Record<string, unknown>, h: Cha
   if (d.exploded) return;
   d.exploded = 1;
   const R = d.explodeR as number;
-  areaHit(state, h, e.pos, R, d.dmg as number, (d.knock as number) ?? 0, d.art === "pyramid" ? "crack" : d.art === "vial" ? "vial" : "fire");
-  // Shiphrah III: chain explosions at nearby enemies.
-  if (d.chain) {
-    for (const en of nearest(state, h, e.pos, d.chain as number, 160)) {
-      areaHit(state, h, en.pos, R * 0.7, (d.dmg as number) * 0.6, 0, "vial");
-    }
-  }
+  if (d.art === "vial") { areaHit(state, h, e.pos, R, d.dmg as number, 0, "vial", { splash: "shiphrah", maxTtl: 0.55, seed: Math.random() * 6.28 }); return; }
+  areaHit(state, h, e.pos, R, d.dmg as number, (d.knock as number) ?? 0, d.art === "pyramid" ? "crack" : "fire");
 }

@@ -6,6 +6,8 @@ import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
 import puahVialUrl from "@/assets/champion-puah-vial.png";
 import puahSplashUrl from "@/assets/champion-puah-splash.png";
+import shiphrahVialUrl from "@/assets/champion-shiphrah-vial.png";
+import shiphrahSplashUrl from "@/assets/champion-shiphrah-splash.png";
 
 const images = new Map<string, HTMLImageElement>();
 function art(url: string): HTMLImageElement | null {
@@ -69,9 +71,9 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       if (d.art === "arrow" || d.art === "firearrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
         ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
       }
-      if (d.art === "heal") {
-        // Puah's vial: her supplied art, tumbling a little, bigger at each level.
-        const img = art(puahVialUrl);
+      if (d.art === "heal" || d.art === "vial") {
+        // Puah's / Shiphrah's vial: their supplied art, tumbling a little, bigger at each level.
+        const img = art(d.art === "heal" ? puahVialUrl : shiphrahVialUrl);
         if (img) {
           const vh = 20 * ((d.size as number) ?? 1), vw = vh * img.naturalWidth / img.naturalHeight;
           ctx.imageSmoothingEnabled = true;
@@ -121,6 +123,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chaoe": {
+      if (d.splash === "shiphrah") { drawShiphrahSplash(ctx, x, y, e, life); break; }
       if (d.splash) { drawPuahSplash(ctx, x, y, e, life); break; }
       const [a, b] = COLORS[(d.color as string) ?? "fire"] ?? COLORS.fire;
       const r = (d.r as number) * (0.4 + 0.6 * (1 - life));
@@ -275,6 +278,29 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
     ctx.beginPath();
     ctx.ellipse(Math.cos(ang) * R * (.6 + k * .5) * grow, Math.sin(ang) * R * .3 * grow + B * .6 - k * 10, rr, rr * .6, 0, 0, Math.PI * 2);
     ctx.fill();
+  }
+}
+
+/** Shiphrah's blast: her supplied splash art opening on the ground over the whole
+ *  reach and fading, with drops flying out. */
+function drawShiphrahSplash(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, life: number): void {
+  const d = e.data ?? {};
+  const r = (d.r as number) ?? 55;
+  const k = 1 - life;
+  ctx.imageSmoothingEnabled = true;
+  ctx.translate(x, y);
+  const img = art(shiphrahSplashUrl);
+  if (img) {
+    const sw = r * 2.2 * (0.5 + 0.5 * (1 - (1 - Math.min(1, k * 3)) ** 3)), sh = sw * img.naturalHeight / img.naturalWidth;
+    ctx.globalAlpha = Math.min(1, life * 2.2);
+    ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
+  }
+  for (let i = 0; i < 10; i++) {
+    const a = i * Math.PI / 5 + ((d.seed as number) ?? 0);
+    const dist = r * (0.4 + 0.8 * k);
+    ctx.globalAlpha = Math.max(0, life * 1.4 - 0.2);
+    ctx.fillStyle = i % 2 ? "#3aa8ff" : "#c8f0ff";
+    ctx.beginPath(); ctx.arc(Math.cos(a) * dist, Math.sin(a) * dist * 0.8 - Math.sin(k * Math.PI) * 10, (i % 2 ? 2.4 : 1.7) * Math.sqrt(r / 55), 0, Math.PI * 2); ctx.fill();
   }
 }
 

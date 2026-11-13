@@ -286,9 +286,9 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "shiphrah", name: "Shiphrah", relationship: "The midwife who stood before Pharaoh.",
     evolutions: [
-      cev(1, 4_000, 120, 90, "Throws explosive vials."),
-      cev(2, 1_300_000, 180, 110, "Larger explosions."),
-      cev(3, 3_300_000, 280, 130, "Chain explosions."),
+      cev(1, 4_000, 120, 90, "Throws vials that burst and damage nearby enemies."),
+      cev(2, 1_300_000, 180, 110, "Bigger vials with a wider blast."),
+      cev(3, 3_300_000, 280, 130, "Even bigger vials with the widest blast."),
     ],
   },
   {
