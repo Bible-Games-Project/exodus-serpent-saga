@@ -34,6 +34,7 @@ export const BONUSES: Record<BonusKind, BonusDef> = {
     weight: 3,
     apply: (s) => {
       s.player.hp = Math.min(s.player.maxHp, s.player.hp + 40);
+      boostFx(s, "heal");
       pushNotification(s, "+ Health", "#ff5060");
     },
   },
@@ -82,6 +83,7 @@ export const BONUSES: Record<BonusKind, BonusDef> = {
     weight: 2,
     apply: (s) => {
       restoreShield(s, SHIELD_CONFIG.pickupRestore);
+      boostFx(s, "shieldUp");
       pushNotification(s, "+ Shield", "#8ec8ff");
     },
   },
@@ -108,6 +110,22 @@ export const SHIELD_CONFIG = {
   blessingMaxIncrease: 25,
   pickupRestore: 25,
 } as const;
+
+/** How long a pickup / upgrade makes the matching part of Moses glow. */
+export const BOOST_FX_SECONDS = 1;
+export type BoostFx = "heal" | "shieldUp" | "shoe" | "magnet" | "weapon";
+
+/** Lights up the part of Moses an upgrade touches for a second: the health bar
+ *  (heal), the shield bar (shieldUp), the shoes, a magnet pulse, or the weapon. */
+export function boostFx(s: GameState, ...kinds: BoostFx[]) {
+  const until = s.now + BOOST_FX_SECONDS;
+  const pd = (s.player.data ??= {});
+  for (const k of kinds) {
+    if (k === "weapon") { const f = (s.equipFx ??= {}); f.empowerGlowUntil = Math.max(f.empowerGlowUntil ?? 0, until); continue; }
+    const key = k === "heal" ? "healFxUntil" : k + "FxUntil";
+    pd[key] = Math.max((pd[key] as number) ?? 0, until);
+  }
+}
 
 /** How long Moses' health / shield bar flashes after a hit. */
 export const BAR_HIT_FX_SECONDS = 0.45;

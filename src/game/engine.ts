@@ -3,7 +3,7 @@ import { PLAGUES, PLAGUE_ORDER, attackCasts, MULTI_ATTACK_STAGGER, evolutionNote
 import { angelSwordOffset, ANGEL_FADE } from "./angelArt";
 import { canRefreshRoute, markRouteRefresh, ROUTE_MIN_INTERVAL } from "./routing";
 import { ALLY_POOL, ALLY_RETARGET_SECONDS, ALLY_THREAT_RADIUS, isChampionLevel, ALLY_REVIVE_SECONDS, allyDef, CHAMPION_REFERENCE_HP, type AllyDef } from "./allies";
-import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, pushNotification, type BonusKind } from "./bonuses";
+import { BONUSES, rollBonusKind, damagePlayer, restoreShield, SHIELD_CONFIG, boostFx, pushNotification, type BonusKind } from "./bonuses";
 import { PASSIVES, PASSIVE_ORDER, damageMultiplier, magnetMultiplier, passiveRank, speedMultiplier } from "./passives";
 import { applyLoadout, foodRegen, magicMultiplier, summonableChampions, weaponDamage } from "./loadout";
 import { applyBlessing, daggerTarget, inFrontOfMoses, isToughFoe, equippedWeapon, pendingBlessEvo, updateWeaponAim, updateWeaponEntities, weaponCooldownMul, weaponDot, weaponIsRangedOnly, weaponKnockback, weaponOnCast, weaponOnEnemyDeath, weaponOnMeleeHit, weaponReachMul, weaponSwingDurMul } from "./weapons";
@@ -2617,6 +2617,7 @@ function levelUp(state: GameState) {
   state.player.maxHp += 5;
   state.player.hp = Math.min(state.player.maxHp, state.player.hp + 15);
   restoreShield(state, SHIELD_CONFIG.levelUpRestore);
+  boostFx(state, "heal", "shieldUp");
   offerUpgrades(state);
 }
 

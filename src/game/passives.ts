@@ -1,4 +1,4 @@
-import { SHIELD_CONFIG } from "./bonuses";
+import { SHIELD_CONFIG, boostFx } from "./bonuses";
 // Passive upgrade pool — offered as blessing cards between plague and
 // companion picks. Data-driven and easy to extend.
 import type { GameState } from "./types";
@@ -26,6 +26,7 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
       p.maxHp = (p.maxHp ?? 0) + 1;
       s.player.maxHp += 20;
       s.player.hp = Math.min(s.player.maxHp, s.player.hp + 20);
+      boostFx(s, "heal");
     },
   },
   speed: {
@@ -36,6 +37,7 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
     apply: (s) => {
       const p = (s.passives ??= {});
       p.speed = (p.speed ?? 0) + 1;
+      boostFx(s, "shoe");
     },
   },
   damage: {
@@ -46,6 +48,7 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
     apply: (s) => {
       const p = (s.passives ??= {});
       p.damage = (p.damage ?? 0) + 1;
+      boostFx(s, "weapon");
     },
   },
   magnet: {
@@ -56,6 +59,7 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
     apply: (s) => {
       const p = (s.passives ??= {});
       p.magnet = (p.magnet ?? 0) + 1;
+      boostFx(s, "magnet");
     },
   },
   shield: {
@@ -70,6 +74,7 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
       s.maxShield = (s.maxShield ?? SHIELD_CONFIG.initialMax) + SHIELD_CONFIG.blessingMaxIncrease;
       // The helmet bonus scales with the new base capacity.
       applyShieldCapacity(s);
+      boostFx(s, "shieldUp");
     },
   },
 };

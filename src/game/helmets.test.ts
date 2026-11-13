@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createInitialState, update } from "./engine";
 import { makeEnemy } from "./enemies";
-import { damagePlayer } from "./bonuses";
+import { damagePlayer, BONUSES } from "./bonuses";
+import { PASSIVES } from "./passives";
 import { SHIELDS } from "./shopCatalog";
 import { sealedAllies, HELMET } from "./helmets";
 import type { Entity, GameState } from "./types";
@@ -148,4 +149,16 @@ test("Moses' bars flash blue when the shield takes a hit and red when health doe
   assert.ok(!((state.player.data?.hurtFxUntil as number) > state.now));
   damagePlayer(state, 10);
   assert.ok((state.player.data?.hurtFxUntil as number) > state.now);
+});
+
+test("Pickups and upgrades light the matching part of Moses for a second", () => {
+  const state = arena("none"); state.now = 20;
+  const pd = () => state.player.data ?? {};
+  BONUSES.heart.apply(state); assert.ok((pd().healFxUntil as number) > state.now);
+  BONUSES.shield.apply(state); assert.ok((pd().shieldUpFxUntil as number) > state.now);
+  PASSIVES.speed.apply(state); assert.ok((pd().shoeFxUntil as number) > state.now);
+  PASSIVES.magnet.apply(state); assert.ok((pd().magnetFxUntil as number) > state.now);
+  PASSIVES.damage.apply(state); assert.ok((state.equipFx?.empowerGlowUntil ?? 0) > state.now);
+  state.now = 30; PASSIVES.shield.apply(state); assert.equal(pd().shieldUpFxUntil, 31);
+  PASSIVES.maxHp.apply(state); assert.equal(pd().healFxUntil, 31);
 });

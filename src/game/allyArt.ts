@@ -54,6 +54,7 @@ const BAR_FX = {
   heal: ["#9dff7c", "#c8ff9e", "#f6ffe8", "#2fa82a", "#f6fbc8"],
   hurt: ["#ff5a48", "#ff9c8c", "#fff0ec", "#8a1a14", "#ffb0a4"],
   shield: ["#5fb4ff", "#a8dcff", "#f0f8ff", "#1c4f86", "#d4ecff"],
+  shieldUp: ["#7fc8ff", "#bfe6ff", "#f4fbff", "#2f7fd0", "#e8f6ff"],
 } as const;
 
 /** Effect on a 30-px bar at (x, y): a pulsing halo, a bright fill and a shine
@@ -63,7 +64,7 @@ export function barFx(ctx: CanvasRenderingContext2D, x: number, y: number, frac:
   if (left <= 0) return;
   const [halo, fill, shine, edge, core] = BAR_FX[kind];
   const k = Math.min(1, left / 0.3);
-  const hit = kind !== "heal";
+  const hit = kind === "hurt" || kind === "shield";
   const bw = 30, fw = Math.round(bw * Math.max(0, Math.min(1, frac)));
   const x0 = x - bw / 2 + (hit ? Math.round(Math.sin(s.now * 70) * k) : 0);
   ctx.save();
@@ -78,7 +79,8 @@ export function barFx(ctx: CanvasRenderingContext2D, x: number, y: number, frac:
   ctx.globalAlpha = k * (0.4 + 0.3 * Math.sin(s.now * 14));
   ctx.fillStyle = fill;
   ctx.fillRect(x0, y, fw, 3);
-  if (fw > 0) {
+  // A shine runs along the bar only when it fills up (no white dot on hits).
+  if (fw > 0 && !hit) {
     const sx = x0 + ((s.now * 40) % (fw + 6)) - 3;
     ctx.globalAlpha = k;
     ctx.fillStyle = shine;

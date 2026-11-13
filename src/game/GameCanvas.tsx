@@ -1688,7 +1688,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
+    if (e.kind === "moses") { drawMagnetPulse(ctx, s, e, e.pos.x - camX, e.pos.y - camY + 8); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1902,6 +1902,35 @@ function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState
   // helmet adds is painted in the helmet colour. It flashes blue when hit.
   drawShieldBar(ctx, cx, top - 30, s);
   barFx(ctx, cx, top - 30, (s.shield ?? 0) / Math.max(1, s.maxShield ?? 0), ((e.data?.shieldHitFxUntil as number) ?? 0) - s.now, s, "shield");
+  // Shield pickup / Shield of Faith / level up: the shield bar shines for a second.
+  barFx(ctx, cx, top - 30, (s.shield ?? 0) / Math.max(1, s.maxShield ?? 0), ((e.data?.shieldUpFxUntil as number) ?? 0) - s.now, s, "shieldUp");
+}
+
+/** Shoe glow from boosts: steady pulse for the whole Speed bonus, a one-second
+ *  flash for Sandals of Haste. */
+function boostShoeGlow(s: GameState, e: Entity): number {
+  const speedLeft = (s.speedBoostUntil ?? 0) - s.now;
+  const speed = speedLeft > 0 ? Math.min(1, speedLeft / 0.5) * (0.65 + 0.3 * Math.sin(s.now * 7)) : 0;
+  const flash = Math.min(1, Math.max(0, (((e.data?.shoeFxUntil as number) ?? 0) - s.now) / 0.3));
+  return Math.max(speed, flash);
+}
+
+/** Magnet bonus / Voice that Calls: red rings on the ground pull inward around Moses. */
+function drawMagnetPulse(ctx: CanvasRenderingContext2D, s: GameState, e: Entity, x: number, y: number) {
+  const bonusLeft = (s.magnetBoostUntil ?? 0) - s.now;
+  const flashLeft = ((e.data?.magnetFxUntil as number) ?? 0) - s.now;
+  const k = Math.max(bonusLeft > 0 ? Math.min(1, bonusLeft / 0.5) * 0.8 : 0, Math.min(1, Math.max(0, flashLeft / 0.3)));
+  if (k <= 0) return;
+  ctx.save();
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++) {
+    const p = (s.now * 0.9 + i / 3) % 1;
+    const r = 46 * (1 - p) + 10;
+    ctx.globalAlpha = k * 0.55 * Math.sin(p * Math.PI);
+    ctx.strokeStyle = i % 2 ? "#ff8a7a" : "#e04848";
+    ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y), r, r * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {
@@ -1930,7 +1959,7 @@ function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX:
     castProgress: latestEquipmentCastProgress(s),
     empowered: !!s.equipFx?.empowered || s.now < (s.equipFx?.empowerGlowUntil ?? -1),
     // Footwear ability running: the shoes glow in their own colour.
-    shoeGlow: footwearGlow(s), shoeGlowColor: footwearColor(s.loadout?.footwear.id),
+    shoeGlow: Math.max(footwearGlow(s), boostShoeGlow(s, e)), shoeGlowColor: footwearColor(s.loadout?.footwear.id),
     // Invincibility (Star bonus): Moses flashes brighter — no ring, no overlay.
     flash: s.now < (s.invulnUntil ?? 0) ? 0.35 + 0.35 * (0.5 + 0.5 * Math.sin(s.now * 14)) : 0,
   });
