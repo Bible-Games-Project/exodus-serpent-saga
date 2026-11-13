@@ -2,7 +2,7 @@
 import type { Entity, GameState } from "./types";
 import { isChampionFxKind } from "./championAbilities";
 import smokeRingUrl from "@/assets/champion-miriam-smoke-ring.png";
-import tornadoUrl from "@/assets/combat-staff-tornado.png";
+import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 
 const images = new Map<string, HTMLImageElement>();
 function art(url: string): HTMLImageElement | null {
@@ -12,7 +12,7 @@ function art(url: string): HTMLImageElement | null {
   return img.complete && img.naturalWidth ? img : null;
 }
 /** Shades of Miriam's tornado art, used for its swirling streaks and motes. */
-const TORNADO_TINT = ["#aeb3c0", "#d6d9e2", "#f4f6fa"];
+const TORNADO_TINT = ["#a39591", "#d4c8bf", "#f5ece2"];
 
 const COLORS: Record<string, [string, string]> = {
   fire: ["#ff8a2a", "#ffd36a"],
@@ -175,7 +175,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
     ctx.restore();
   }
 
-  const H = 118 * grow; // tornado height
+  const H = 140 * grow; // tornado height
   // Motes spiralling up around the funnel: the far half first, behind it.
   const motes = 14;
   const mote = (front: boolean) => {
