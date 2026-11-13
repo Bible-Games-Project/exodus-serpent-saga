@@ -47,16 +47,17 @@ export const SHOE_BURST_SECONDS = 1;
 export function leavesFootprints(id: string | undefined): boolean {
   return !!id && id !== "barefoot" && id in FOOTWEAR_ABILITY;
 }
-/** Prints visible behind Moses: 3 with the Patriarchs, one more per pair, up to 10. */
+/** Prints visible behind Moses: 3 with the Patriarchs, one more per pair, 11 with the Exodus. */
 export function footprintCount(id: string | undefined): number {
   const i = Object.keys(FOOTWEAR_ABILITY).indexOf(id ?? "");
-  return i < 1 ? 0 : Math.min(10, i + 2);
+  return i < 1 ? 0 : i + 2;
 }
-/** A foe stepping on a print walks 15% slower for 1 second. */
-export const PRINT_SLOW = { pct: 15, seconds: 1 } as const;
+/** A foe stepping on a print walks 25% slower for 1 second. */
+export const PRINT_SLOW = { pct: 25, seconds: 1 } as const;
+/** Seconds a print takes to fade away once it leaves the trail or grows old. */
+export const PRINT_FADE = .45;
 const PRINT_STEP = 15; // world px walked between two prints
 const PRINT_LIFE = 1.6; // seconds
-export const FOOTPRINT_LIFE = PRINT_LIFE;
 
 function fx(state: GameState): Record<string, number> {
   return (state.equipFx ??= {});
@@ -166,14 +167,15 @@ export function updateFootwear(state: GameState): void {
 
   // Coloured footprints while walking.
   const prints = (state.footprints ??= []);
-  while (prints.length && now - prints[0].at > PRINT_LIFE) prints.shift();
   const keep = footprintCount(id);
-  while (prints.length > keep) prints.shift();
+  retire(prints, keep, now);
+  while (prints.length && now - (prints[0].fadeAt ?? Infinity) >= PRINT_FADE) prints.shift();
   // Foes touching a print are slowed.
   if (prints.length) {
     for (const en of state.entities.values()) {
       if (en.team !== "enemy" || en.hp <= 0 || en.data?.sealed) continue;
       for (const q of prints) {
+        if (q.fadeAt != null) continue; // fading prints no longer slow
         const d = Math.hypot(wrapD(en.pos.x, q.x, state.worldW), wrapD(en.pos.y + 8, q.y, state.worldH));
         if (d < en.radius + 6) { (en.data ??= {}).printSlowUntil = now + PRINT_SLOW.seconds; break; }
       }
@@ -191,5 +193,16 @@ export function updateFootwear(state: GameState): void {
   const side = f.shoePrintSide;
   const print: Print = { x: p.pos.x - Math.sin(a) * side * 4, y: p.pos.y + 8 + Math.cos(a) * side * 2, a, side, at: now };
   prints.push(print);
-  while (prints.length > keep) prints.shift();
+  retire(prints, keep, now);
+}
+
+/** Prints beyond the trail length, or too old, start fading instead of vanishing. */
+function retire(prints: Print[], keep: number, now: number): void {
+  let live = 0;
+  for (let i = prints.length - 1; i >= 0; i--) {
+    const q = prints[i];
+    if (q.fadeAt != null) continue;
+    if (live >= keep || now - q.at >= PRINT_LIFE) q.fadeAt = now;
+    else live++;
+  }
 }

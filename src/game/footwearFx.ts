@@ -1,7 +1,7 @@
 // Footwear visuals: coloured footprints on the ground, the shoes' glow while
 // an ability is running and the teleport flashes. Logic lives in footwear.ts.
 import type { GameState } from "./types";
-import { FOOTPRINT_LIFE, footwearColor, footwearGlow } from "./footwear";
+import { PRINT_FADE, footwearColor, footwearGlow } from "./footwear";
 import { glow, rgba, shade } from "./helmetFx";
 
 const hash = (n: number) => { const v = Math.sin(n * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
@@ -13,12 +13,11 @@ export function drawFootprints(ctx: CanvasRenderingContext2D, s: GameState, camX
   const col = footwearColor(s.loadout?.footwear.id);
   const dark = shade(col, -.35), light = shade(col, .35);
   ctx.save();
-  prints.forEach((p, i) => {
-    const u = (s.now - p.at) / FOOTPRINT_LIFE;
-    if (u >= 1) return;
-    // The oldest print in the short trail is the faintest.
-    const rank = (i + 1) / prints.length;
-    const a = Math.min(1 - u, .35 + .65 * rank) * .6;
+  prints.forEach((p) => {
+    // Full while in the trail, then a smooth fade-out once it leaves it.
+    const out = p.fadeAt == null ? 0 : (s.now - p.fadeAt) / PRINT_FADE;
+    if (out >= 1) return;
+    const a = Math.min(1, (s.now - p.at) / .08) * (1 - out) ** 1.5 * .6;
     ctx.save();
     ctx.translate(Math.round(p.x - camX), Math.round(p.y - camY));
     // Ground perspective: squash vertically, then turn the sole along the walk.

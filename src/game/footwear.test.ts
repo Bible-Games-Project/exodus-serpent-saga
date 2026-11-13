@@ -4,7 +4,7 @@ import { createInitialState, update } from "./engine";
 import { makeEnemy } from "./enemies";
 import { damagePlayer } from "./bonuses";
 import { FOOTWEAR } from "./shopCatalog";
-import { footwearAbilityMul, footwearGlow } from "./footwear";
+import { PRINT_SLOW, footwearAbilityMul, footwearGlow } from "./footwear";
 import { speedMultiplier } from "./passives";
 import type { GameState } from "./types";
 
@@ -83,16 +83,18 @@ test("Footprints from the second footwear on, never barefoot", () => {
   }
 });
 
-test("The footprint trail shows 3 prints with the Patriarchs, one more per pair, 10 at most", () => {
-  const expected = { patriarchs: 3, pilgrim: 4, joshua: 5, wind: 6, messenger: 7, jordan: 8, bushb: 9, invisible: 10, exodus: 10 };
+test("The footprint trail shows 3 prints with the Patriarchs, one more per pair, 11 with the Exodus", () => {
+  const expected = { patriarchs: 3, pilgrim: 4, joshua: 5, wind: 6, messenger: 7, jordan: 8, bushb: 9, invisible: 10, exodus: 11 };
   for (const [id, n] of Object.entries(expected)) {
     const s = run(id);
-    tick(s, 1.2, () => { s.input.x = 1; s.input.y = 0; });
-    assert.equal(s.footprints?.length, n, id);
+    tick(s, 1.6, () => { s.input.x = 1; s.input.y = 0; });
+    assert.equal(s.footprints?.filter((q) => q.fadeAt == null).length, n, id);
+    // Older prints fade out instead of vanishing at once.
+    assert.ok(s.footprints!.some((q) => q.fadeAt != null), `${id} fades`);
   }
 });
 
-test("A foe stepping on a footprint walks 15% slower for 1 second", () => {
+test("A foe stepping on a footprint walks 25% slower for 1 second", () => {
   const s = run("patriarchs");
   tick(s, .5, () => { s.input.x = 1; s.input.y = 0; });
   const print = s.footprints![0];
@@ -100,4 +102,5 @@ test("A foe stepping on a footprint walks 15% slower for 1 second", () => {
   s.entities.set(e.id, e);
   tick(s, 1 / 60, () => { s.input.x = 0; });
   assert.ok(Number(e.data?.printSlowUntil) > s.now + .9);
+  assert.equal(PRINT_SLOW.pct, 25);
 });

@@ -224,6 +224,6 @@ export type GameState = {
   /** Equipment ability timers (see game/equipment.ts). */
   equipFx?: Record<string, number>;
   /** Coloured footprints left by the equipped footwear (footwear.ts). */
-  footprints?: Array<{ x: number; y: number; a: number; side: number; at: number }>;
+  footprints?: Array<{ x: number; y: number; a: number; side: number; at: number; fadeAt?: number }>;
 };
 
