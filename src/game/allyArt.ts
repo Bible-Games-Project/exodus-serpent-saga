@@ -180,18 +180,19 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   const region = (x0: number, y0: number, width: number, height: number, dx: number, dy: number) =>
     ctx.drawImage(im, x0 * sx, y0 * sy, width * sx, height * sy, dx, dy, width, height);
   // Fuller walk: feet first (so the hem covers a lifted foot), then the hem
-  // swaying in one-source-row strips, then the body bobbing on top.
+  // swaying as one piece (a smooth slant, no row strips), then the body; hem
+  // and body bob together so no gap ever opens between them.
   const walkBob = wk ? -Math.round((1 - Math.abs(sw)) * wk.bob) : bodyBob;
   if (wk) {
     const fh = H - FOOT_TOP, st = Math.round(sw * wk.stride);
     region(FOOT_X0, FOOT_TOP, FOOT_SPLIT - FOOT_X0, fh, FOOT_X0 + st, FOOT_TOP - Math.round(Math.max(0, sw) * wk.lift));
     region(FOOT_SPLIT, FOOT_TOP, FOOT_X1 - FOOT_SPLIT, fh, FOOT_SPLIT - st, FOOT_TOP - Math.round(Math.max(0, -sw) * wk.lift));
-    // Strips follow the source rows exactly so none is doubled or skipped.
-    const row = 1 / sy, hemTop = Math.round(wk.hemTop * sy) / sy;
-    for (let y = hemTop; y < FOOT_TOP; y += row) {
-      const t = (y - hemTop) / (FOOT_TOP - hemTop);
-      region(0, y, W, Math.min(row, FOOT_TOP - y), Math.round(sw * wk.sway * t), y + Math.round(walkBob * (1 - t)));
-    }
+    const hemTop = Math.round(wk.hemTop * sy) / sy;
+    ctx.save();
+    ctx.translate(0, hemTop + walkBob);
+    ctx.transform(1, 0, (sw * wk.sway) / (FOOT_TOP - hemTop), 1, 0, 0);
+    region(0, hemTop, W, FOOT_TOP - hemTop, 0, 0);
+    ctx.restore();
     region(0, 0, W, hemTop, 0, walkBob);
   } else if (moving) {
   // Feet band: two feet alternate lift + stride; everything else stays whole.
