@@ -2631,6 +2631,42 @@ function damageAlly(state: GameState, n: Entity, dmg: number, fxAt?: Vec2, proje
   if (n.hp <= 0) downCompanion(state, n);
 }
 
+function testChampionLevel(state: GameState, npcId: string): number {
+  return Math.max(1, Math.min(3, Math.floor(Number(state.testMap?.championLevels?.[npcId] ?? 1)) || 1));
+}
+
+/** Entities a champion spawned for itself (birds, beams...), removed with it. */
+function dropChampionEntities(state: GameState, allyId: number): void {
+  for (const [id, e] of state.entities) if (e.data?.ownerId === allyId) state.entities.delete(id);
+}
+
+/** Test Map: send a recruited champion away. */
+export function dismissCompanion(state: GameState, npcId: import("./types").NpcId): void {
+  const allyId = state.npcs.get(npcId);
+  if (allyId == null) return;
+  dropChampionEntities(state, allyId);
+  state.entities.delete(allyId);
+  state.npcs.delete(npcId);
+  state.newNpcs.delete(npcId);
+}
+
+/** Test Map: switch a recruited champion to another evolution in place. */
+export function setCompanionLevel(state: GameState, npcId: import("./types").NpcId, evo: number): void {
+  const ally = state.entities.get(state.npcs.get(npcId) ?? -1);
+  if (!ally) return;
+  const d = (ally.data ??= {});
+  if (Number(d.evo ?? 1) === evo) return;
+  const ce = findChampion(npcId)?.evolutions[evo - 1];
+  const ratio = ally.maxHp > 0 ? ally.hp / ally.maxHp : 1;
+  if (ce) ally.maxHp = Math.round(CHAMPION_REFERENCE_HP * ce.healthPct / 100);
+  ally.hp = Math.max(1, Math.round(ally.maxHp * ratio));
+  d.evo = evo;
+  d.atkPct = ce?.attackPct ?? 100;
+  // Level-bound helpers (Aaron's birds...) are rebuilt for the new level.
+  dropChampionEntities(state, ally.id);
+  delete d.birdsSpawned;
+}
+
 export function summonCompanion(state: GameState, npcId: import("./types").NpcId) {
   const def = allyDef(npcId);
   if (!def || state.npcs.has(npcId)) return;
@@ -2639,8 +2675,8 @@ export function summonCompanion(state: GameState, npcId: import("./types").NpcId
   const m = 80;
   const px = state.camera.x + rand(-vw / 2 + m, vw / 2 - m);
   const py = state.camera.y + rand(-vh / 2 + m, vh / 2 - m);
-  // Stats come from the purchased (selected) shop evolution; the Test Map uses Evolution 1.
-  const evo = state.testMap ? 1 : (summonableChampions().find((c) => c.id === npcId)?.evolution ?? 1);
+  // Stats come from the purchased (selected) shop evolution; the Test Map uses its chosen level.
+  const evo = state.testMap ? testChampionLevel(state, npcId) : (summonableChampions().find((c) => c.id === npcId)?.evolution ?? 1);
   const ce = findChampion(npcId)?.evolutions[evo - 1];
   const maxHp = ce ? Math.round(CHAMPION_REFERENCE_HP * ce.healthPct / 100) : def.maxHp;
   const ally: Entity = {

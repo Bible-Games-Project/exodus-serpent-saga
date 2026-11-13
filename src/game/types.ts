@@ -112,6 +112,8 @@ export type TestMapConfig = {
   ramsesLevel: 1 | 2 | 3 | 4;
   /** champion id -> recruited at the start of this session */
   champions?: Record<string, boolean>;
+  /** champion id -> evolution (1-3) used in this session; 1 when missing */
+  championLevels?: Record<string, number>;
   equipment?: import("./testEquipment").TestEquipment;
 };
 

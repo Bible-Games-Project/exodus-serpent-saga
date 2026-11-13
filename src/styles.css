@@ -400,6 +400,16 @@
 .test-equipment-info { border-top: 2px solid var(--title-shade); padding-top: 6px; font-size: 11px; }
 .test-equipment-info p { margin: 2px 0 4px; line-height: 1.35; }
 .test-equipment-live { position: absolute; left: 65px; top: 12px; z-index: 25; max-width: min(400px, calc(100% - 135px)); }
+.test-champion-controls { border-top: 2px solid var(--title-shade); margin-top: 10px; padding-top: 8px; display: grid; gap: 4px; font-size: 11px; }
+.test-champion-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.test-champion-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; opacity: .7; }
+.test-champion-row.is-on { opacity: 1; }
+.test-champion-sprite { display: flex; height: 30px; align-items: flex-end; justify-content: center; }
+.test-champion-sprite img { max-height: 30px; width: auto; image-rendering: pixelated; }
+.test-champion-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.test-champion-controls .pixel-btn { background: var(--title-sand); color: var(--title-ink); padding: 3px 7px; font-size: 10px; min-width: 30px; }
+.test-champion-row.is-on > .pixel-btn, .test-champion-controls .pixel-btn.is-active { background: #e9c168; }
+.test-champion-levels { display: flex; gap: 3px; }
 .test-equipment-live > .test-equipment-panel { margin-top: 6px; max-height: 60dvh; overflow-y: auto; box-shadow: 0 0 0 2px var(--title-ink); }
 [role="tablist"] .shop-icon-box { background: transparent; box-shadow: none; }
 @media (max-width: 600px) {

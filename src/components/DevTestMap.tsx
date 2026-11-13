@@ -21,6 +21,7 @@ import { PLAGUES } from "@/game/plagues";
 import type { PlagueId } from "@/game/types";
 import type { TestMapConfig } from "@/game/types";
 import { EquipmentControls } from "./EquipmentControls";
+import { ChampionControls } from "./ChampionControls";
 import { Button } from "./ui/button";
 
 const RAMSES_LEVELS: Array<{ level: 1 | 2 | 3 | 4; label: string }> = [
@@ -308,7 +309,7 @@ export default function TestMapPage() {
           </div>
           {equipmentOpen && <div className="test-equipment-panel">
             <EquipmentControls value={cfg.equipment} onChange={equipment => setCfg(c => c ? { ...c, equipment } : c)} />
-            <Button variant="secondary" onClick={() => setCfg(c => c ? { ...c, champions: Object.fromEntries(testChampionIds().map(id => [id, true])) } : c)}>Select all champions</Button>
+            <ChampionControls value={cfg} onChange={patch => setCfg(c => c ? { ...c, ...patch } : c)} />
           </div>}
         </div>
 

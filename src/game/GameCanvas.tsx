@@ -35,7 +35,7 @@ import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
-import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
+import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, dismissCompanion, setCompanionLevel, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawSuppliedFx, drawWeaponImpact } from './combatWeaponPng';
@@ -161,6 +161,7 @@ type Props = {
 export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef<GameState>(null!);
+  const appliedEquipmentRef = useRef("");
   const [uiTick, setUiTick] = useState(0);
 
   useEffect(() => {
@@ -290,10 +291,16 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
   useEffect(() => {
     const state = stateRef.current;
     if (!state?.testMap || !testConfig) return;
-    applyTestEquipment(state, testConfig);
+    // Equipment is re-applied only when it changed (it restarts ability timers).
+    const eq = JSON.stringify(testConfig.equipment ?? null);
+    if (eq !== appliedEquipmentRef.current) { appliedEquipmentRef.current = eq; applyTestEquipment(state, testConfig); }
     state.testMap = testConfig;
+    // Champions: recruit, dismiss or change level live.
     for (const [id, on] of Object.entries(testConfig.champions ?? {})) {
-      if (on && !state.npcs.has(id as import("./types").NpcId)) summonCompanion(state, id as import("./types").NpcId);
+      const npc = id as import("./types").NpcId;
+      if (!on) { dismissCompanion(state, npc); continue; }
+      if (!state.npcs.has(npc)) summonCompanion(state, npc);
+      else setCompanionLevel(state, npc, Math.max(1, Math.min(3, Number(testConfig.championLevels?.[id] ?? 1))));
     }
   }, [testConfig]);
 
