@@ -1,7 +1,7 @@
 import { drawOffscreenIndicators } from "./offscreenIndicators";
 import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
 export { BONUS_ART } from "./uiIcons";
-import { drawChampionFx } from "./championFx";
+import { drawChampionFx, isGroundChampionFx } from "./championFx";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
 import frogPlagueAsset from "@/assets/frog-plague.png";
 import { useEffect, useRef, useState } from "react";
@@ -9,7 +9,7 @@ import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type
 import { drawRamsesArt, drawRamsesSeatedArt, RAMSES_VISUAL_VERSION } from "./ramsesArt";
 import { drawRamsesChariot, ensureRamsesChariotArt } from "./ramsesChariotArt";
 import { drawAngel } from "./angelArt";
-import { bar as allyHpBar, drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
+import { bar as allyHpBar, healBarGlow, drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawSpearSoldierArt, ensureSpearSoldierArt, drawFlyingSpear, SPEAR_SOLDIER_ART } from "./spearSoldierArt";
@@ -1589,6 +1589,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "pillarfire") drawPillarFire(ctx, e, camX, camY, s.now);
     if (e.kind === "corpseflame") drawCorpseFlame(ctx, e, camX, camY, s.now);
     if (isGroundWeaponFx(e)) drawWeaponEntity(ctx, e, s, camX, camY);
+    if (isGroundChampionFx(e)) drawChampionFx(ctx, e, camX, camY, s);
   }
 
   // 2) Depth-sorted pass
@@ -1596,7 +1597,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   let swingProgress: number | null = null;
   let attackProgress: number | null = null;
   for (const e of s.entities.values()) {
-    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || isGroundWeaponFx(e) || e.kind === 'staffwave' || isHelmetFx(e.kind)) continue;
+    if (e.kind === "bloodpool" || e.kind === "pillarcloud" || e.kind === "pillarfire" || e.kind === "corpseflame" || e.kind === "redseatimer" || isGroundWeaponFx(e) || isGroundChampionFx(e) || e.kind === 'staffwave' || isHelmetFx(e.kind)) continue;
     if (e.kind === "corpse") {
       // A dead foe: its last pose is drawn fading out (see the draw loop below).
       const snap = e.data?.snap as Entity | undefined;
@@ -1894,6 +1895,7 @@ function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState
   const ratio = e.hp / e.maxHp;
   const blinkOff = ratio > 0 && ratio < MOSES_HP_BLINK_BELOW && Math.floor(s.now * MOSES_HP_BLINK_HZ * 2) % 2 === 1;
   if (!blinkOff) allyHpBar(ctx, cx, top - 24, ratio, "#4ec24e", "#1e5a1e");
+  healBarGlow(ctx, cx, top - 24, ratio, e, s);
   // Shield bar sits directly above the HP bar; hidden when empty. The part the
   // helmet adds is painted in the helmet colour.
   drawShieldBar(ctx, cx, top - 30, s);

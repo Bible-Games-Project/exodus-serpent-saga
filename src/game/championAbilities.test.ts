@@ -120,3 +120,8 @@ test('Puah vials get bigger at each level', () => {
   const sizes = [1, 2, 3].map((lvl) => { const a = arena('puah', lvl); a.enemy(150); a.cast(); return a.spawned[0].data?.size as number; });
   assert.ok(sizes[0] < sizes[1] && sizes[1] < sizes[2], sizes.join(','));
 });
+test('Moses shows he is being healed when a Puah vial lands on him', () => {
+  const a = arena('puah', 1); a.state.player.hp = 10;
+  a.cast(); for (let i = 0; i < 30; i++) updateChampionEntities(a.state, 1 / 60, a.h);
+  assert.ok(((a.state.player.data?.healFxUntil as number) ?? 0) > a.state.now);
+});

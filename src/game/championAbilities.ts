@@ -100,7 +100,7 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
 
 /** How far Zipporah's stones fly at levels I / II / III (world px). */
 /** Puah's vial and splash size by level (I, II, III). */
-export const PUAH_VIAL_SIZE = [1, 1.35, 1.7];
+export const PUAH_VIAL_SIZE = [0.6, 0.9, 1.7];
 /** Share of the target's max health one vial heals (doubled at level II+). */
 export const PUAH_VIAL_HEAL = 0.03;
 /** Puah III healing ring left where a vial bursts: 1% max health every 0.1 s inside it. */
@@ -116,6 +116,12 @@ const STONE_END_SPEED = 0.3; // speed at the end, as a share of the starting spe
 function rot(v: Vec2, a: number): Vec2 {
   const c = Math.cos(a), s = Math.sin(a);
   return { x: v.x * c - v.y * s, y: v.x * s + v.y * c };
+}
+
+/** Lets the health bar show that this ally / Moses is being healed (until `until`). */
+function markHealed(t: Entity, until: number) {
+  t.data ??= {};
+  t.data.healFxUntil = Math.max((t.data.healFxUntil as number) ?? 0, until);
 }
 
 function alliesAndMoses(state: GameState): Entity[] {
@@ -403,7 +409,10 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
           const v = delta(state, h, t.pos, e.pos);
           // Puah's ring heals whoever stands on its art (an ellipse); other areas use a circle.
           const inside = d.puahRing ? (v.x / (r * PUAH_RING_HALF_W)) ** 2 + (v.y / (r * PUAH_RING_HALF_H)) ** 2 <= 1 : Math.hypot(v.x, v.y) < r;
-          if (inside) t.hp = Math.min(t.maxHp, t.hp + t.maxHp * (d.healPct as number) * dt);
+          if (inside && t.hp < t.maxHp) {
+            markHealed(t, state.now + 0.3);
+            t.hp = Math.min(t.maxHp, t.hp + t.maxHp * (d.healPct as number) * dt);
+          }
         }
       } else {
         for (const en of [...state.entities.values()]) {
@@ -509,6 +518,7 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     const v = delta(state, h, t.pos, e.pos);
     const dd = Math.hypot(v.x, v.y);
     if (dd < 18) {
+      if ((d.heal as number) > 0 && t.hp < t.maxHp) markHealed(t, state.now + 0.7);
       t.hp = Math.min(t.maxHp, t.hp + (d.heal as number));
       const size = (d.size as number) ?? 1;
       if (d.ring) h.spawn("chzone", { x: t.pos.x, y: t.pos.y }, PUAH_RING_SECONDS, { r: PUAH_RING_R, healPct: PUAH_RING_HEAL, color: "heal", maxTtl: PUAH_RING_SECONDS, puahRing: 1, seed: Math.random() * 6.28 });

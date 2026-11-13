@@ -49,6 +49,43 @@ export function bar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: n
   ctx.fillStyle = fg; ctx.fillRect(x - bw / 2, y, Math.round(bw * Math.max(0, Math.min(1, frac))), 3);
 }
 
+/** Green glow on a health bar while its owner is being healed (Puah's vials and
+ *  ring set `data.healFxUntil`): a halo, a bright pulsing fill, a shine running
+ *  along the bar and little plus signs rising from it. */
+export function healBarGlow(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, e: Entity, s: GameState) {
+  const left = ((e.data?.healFxUntil as number) ?? 0) - s.now;
+  if (left <= 0) return;
+  const k = Math.min(1, left / 0.3);
+  const bw = 30, fw = Math.round(bw * Math.max(0, Math.min(1, frac))), x0 = x - bw / 2;
+  ctx.save();
+  ctx.globalAlpha = k * (0.35 + 0.15 * Math.sin(s.now * 10));
+  ctx.fillStyle = "#9dff7c";
+  ctx.fillRect(x0 - 3, y - 3, bw + 6, 9);
+  ctx.globalAlpha = k * 0.6;
+  ctx.fillRect(x0 - 2, y - 2, bw + 4, 7);
+  ctx.globalAlpha = k * (0.55 + 0.45 * Math.sin(s.now * 14));
+  ctx.fillStyle = "#c8ff9e";
+  ctx.fillRect(x0, y, fw, 3);
+  // Shine sweeping along the filled part.
+  if (fw > 0) {
+    const sx = x0 + ((s.now * 40) % (fw + 6)) - 3;
+    ctx.globalAlpha = k;
+    ctx.fillStyle = "#f6ffe8";
+    ctx.fillRect(Math.max(x0, Math.round(sx)), y, Math.max(0, Math.min(3, x0 + fw - Math.round(sx))), 3);
+  }
+  // Plus signs rising above the bar.
+  for (let i = 0; i < 3; i++) {
+    const p = (s.now * 1.2 + i / 3) % 1;
+    const px = Math.round(x0 + 5 + i * 10 + Math.sin(s.now * 3 + i) * 2), py = Math.round(y - 3 - p * 12);
+    ctx.globalAlpha = k * Math.sin(p * Math.PI);
+    ctx.fillStyle = "#2fa82a";
+    ctx.fillRect(px - 2, py - 1, 5, 3); ctx.fillRect(px - 1, py - 2, 3, 5);
+    ctx.fillStyle = "#f6fbc8";
+    ctx.fillRect(px - 1, py, 3, 1); ctx.fillRect(px, py - 1, 1, 3);
+  }
+  ctx.restore();
+}
+
 function drawGrave(ctx: CanvasRenderingContext2D, x: number, y: number) {
   const P = 3;
   const p = (dx: number, dy: number, w: number, h: number, c: string) => { ctx.fillStyle = c; ctx.fillRect(x + dx * P, y + dy * P, w * P, h * P); };
@@ -158,6 +195,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   ctx.restore();
   ctx.globalAlpha = 1;
   bar(ctx, x, gy - Math.round(H * sc) - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
+  healBarGlow(ctx, x, gy - Math.round(H * sc) - 8, e.hp / e.maxHp, e, s);
   if (def.sprite.placeholderHue != null) {
     // Clearly identified temporary placeholder: name tag above the bar.
     ctx.font = "bold 9px monospace"; ctx.textAlign = "center";

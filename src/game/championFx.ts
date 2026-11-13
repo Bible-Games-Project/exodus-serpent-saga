@@ -43,6 +43,12 @@ const PROJ_ART: Record<string, [string, string, number, number]> = {
   pyramid: ["#e0c07a", "#8a6a3a", 14, 12],
 };
 
+/** Champion visuals that lie on the ground, drawn behind every character
+ *  (Puah's vial splash and her healing ring). */
+export function isGroundChampionFx(e: Entity): boolean {
+  return (e.kind === "chaoe" && !!e.data?.splash) || (e.kind === "chzone" && !!e.data?.puahRing);
+}
+
 /** Returns true when the entity is a champion ability visual and was drawn. */
 export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number, s: GameState): boolean {
   if (!isChampionFxKind(e.kind)) return false;
