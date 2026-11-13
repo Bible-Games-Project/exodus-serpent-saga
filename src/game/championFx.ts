@@ -4,6 +4,8 @@ import { isChampionFxKind, STONE_FADE } from "./championAbilities";
 import smokeRingUrl from "@/assets/champion-miriam-smoke-ring.png";
 import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
+import puahVialUrl from "@/assets/champion-puah-vial.png";
+import puahSplashUrl from "@/assets/champion-puah-splash.png";
 
 const images = new Map<string, HTMLImageElement>();
 function art(url: string): HTMLImageElement | null {
@@ -13,8 +15,8 @@ function art(url: string): HTMLImageElement | null {
   return img.complete && img.naturalWidth ? img : null;
 }
 /** Shades of Miriam's tornado art, used for its swirling streaks and motes. */
-/** Shades of Puah's healing ring (her dress green and its pale crosses). */
-const PUAH_TINT = ["#6c8752", "#a7bf86", "#dfe8b4", "#f4f6d2"];
+/** Shades of Puah's healing art (the greens and pale crosses of her ring, vial and splash). */
+const PUAH_TINT = ["#2fa82a", "#78e758", "#c6f78e", "#f6fbc8"];
 const TORNADO_TINT = ["#a39591", "#d4c8bf", "#f5ece2"];
 
 const COLORS: Record<string, [string, string]> = {
@@ -51,8 +53,8 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   ctx.imageSmoothingEnabled = false;
   switch (e.kind) {
     case "chproj": {
-      const art = PROJ_ART[(d.art as string) ?? "stone"] ?? PROJ_ART.stone;
-      const [a, b, w, hgt] = art;
+      const projArt = PROJ_ART[(d.art as string) ?? "stone"] ?? PROJ_ART.stone;
+      const [a, b, w, hgt] = projArt;
       const lift = (d.lift as number) ?? 0;
       // Zipporah's stones fade out at the end instead of vanishing.
       if (d.art === "stone" && d.liftEnd != null) ctx.globalAlpha = Math.min(1, (e.ttl ?? 0) / STONE_FADE);
@@ -60,6 +62,17 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * (1 - ((d.prog as number) ?? 1 - life)) : lift * Math.max(0, 1 - (1 - life) * 3)));
       if (d.art === "arrow" || d.art === "firearrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
         ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
+      }
+      if (d.art === "heal") {
+        // Puah's vial: her supplied art, tumbling a little, bigger at each level.
+        const img = art(puahVialUrl);
+        if (img) {
+          const vh = 20 * ((d.size as number) ?? 1), vw = vh * img.naturalWidth / img.naturalHeight;
+          ctx.imageSmoothingEnabled = true;
+          ctx.rotate(Math.sin(e.animT * 9) * 0.45);
+          ctx.drawImage(img, -vw / 2, -vh / 2, vw, vh);
+          break;
+        }
       }
       if (d.art === "pyramid") {
         ctx.fillStyle = b;
@@ -102,6 +115,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chaoe": {
+      if (d.splash) { drawPuahSplash(ctx, x, y, e, life); break; }
       const [a, b] = COLORS[(d.color as string) ?? "fire"] ?? COLORS.fire;
       const r = (d.r as number) * (0.4 + 0.6 * (1 - life));
       ctx.globalAlpha = life;
@@ -258,8 +272,32 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
   }
 }
 
-/** Puah's healing area: her ring of light turning slowly on the ground, a fainter
- *  copy turning the other way, a soft glow, and crosses and motes rising in the ring's colours. */
+/** Puah's vial splash: her supplied splash art bursting open and fading, with drops flying out. */
+function drawPuahSplash(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, life: number): void {
+  const d = e.data ?? {};
+  const r = (d.r as number) ?? 26;
+  const k = 1 - life;
+  ctx.imageSmoothingEnabled = true;
+  ctx.translate(x, y - 14);
+  const img = art(puahSplashUrl);
+  if (img) {
+    const sw = r * 2.4 * (0.45 + 0.65 * (1 - (1 - Math.min(1, k * 2.5)) ** 3)), sh = sw * img.naturalHeight / img.naturalWidth;
+    ctx.globalAlpha = Math.min(1, life * 2);
+    ctx.rotate(((d.seed as number) ?? 0) + k * 0.8);
+    ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
+    ctx.rotate(-(((d.seed as number) ?? 0) + k * 0.8));
+  }
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4 + ((d.seed as number) ?? 0);
+    const dist = r * (0.5 + 1.1 * k);
+    ctx.globalAlpha = Math.max(0, life * 1.4 - 0.2);
+    ctx.fillStyle = PUAH_TINT[i % 2 ? 1 : 3];
+    ctx.beginPath(); ctx.arc(Math.cos(a) * dist, Math.sin(a) * dist * 0.6 + k * k * 10, (i % 2 ? 2.2 : 1.6) * (r / 26), 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+/** Puah's healing area: her supplied ring exactly as drawn, breathing, with waves of
+ *  light rippling out of it, a soft glow, twinkles and crosses rising in the ring's greens. */
 function drawPuahRing(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, s: GameState, life: number): void {
   const d = e.data ?? {};
   const maxTtl = (d.maxTtl as number) || 10;
@@ -270,43 +308,54 @@ function drawPuahRing(ctx: CanvasRenderingContext2D, x: number, y: number, e: En
   const R = ((d.r as number) ?? 80) * 1.1 * grow * (1 + .03 * Math.sin(t * 3));
   ctx.imageSmoothingEnabled = true;
   ctx.translate(x, y);
-
-  // Soft glow filling the area, breathing.
-  ctx.globalAlpha = fade * (.16 + .06 * Math.sin(t * 2.4));
-  ctx.fillStyle = PUAH_TINT[1];
-  ctx.beginPath(); ctx.ellipse(0, 0, R * .82, R * .41, 0, 0, Math.PI * 2); ctx.fill();
-
   const ring = art(puahRingUrl);
+  const rw = R * 2.3, rh = ring ? rw * ring.naturalHeight / ring.naturalWidth : rw / 1.5;
+  // Middle of the ring band, for the effects that run along it.
+  const ex = rw * .4, ey = rh * .39;
+
+  // Soft green glow filling the area, breathing.
+  ctx.globalAlpha = fade * (.22 + .08 * Math.sin(t * 2.4));
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, ex);
+  g.addColorStop(0, PUAH_TINT[2]); g.addColorStop(.7, PUAH_TINT[1]); g.addColorStop(1, "rgba(120,231,88,0)");
+  ctx.save(); ctx.scale(1, ey / ex); ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, ex, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+
   if (ring) {
-    const rw = R * 2, rh = rw * ring.naturalHeight / ring.naturalWidth;
-    ctx.save(); ctx.scale(1, .58);
-    // Faint copy, a little larger, turning the other way.
-    ctx.save(); ctx.rotate(-t * .45); ctx.globalAlpha = .28 * fade; ctx.drawImage(ring, -rw * .54, -rh * .54, rw * 1.08, rh * 1.08); ctx.restore();
-    ctx.rotate(t * .7);
-    ctx.globalAlpha = .85 * fade;
+    ctx.globalAlpha = fade;
     ctx.drawImage(ring, -rw / 2, -rh / 2, rw, rh);
-    ctx.restore();
+    // Two waves of light leaving the ring outwards, one after the other.
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 2; i++) {
+      const k = (t * .55 + i * .5) % 1;
+      const sc = 1 + k * .18;
+      ctx.globalAlpha = fade * .32 * Math.sin(k * Math.PI);
+      ctx.drawImage(ring, -rw * sc / 2, -rh * sc / 2, rw * sc, rh * sc);
+    }
+    // The ring itself shimmers.
+    ctx.globalAlpha = fade * .18 * (.5 + .5 * Math.sin(t * 3.3));
+    ctx.drawImage(ring, -rw / 2, -rh / 2, rw, rh);
+    ctx.globalCompositeOperation = "source-over";
   }
 
-  // Twinkles running around the ring.
+  // Twinkles running around the ring band.
   for (let i = 0; i < 10; i++) {
     const a = t * .7 + i * Math.PI / 5;
     const tw = Math.max(0, Math.sin(t * 5 + i * 1.9));
     ctx.globalAlpha = fade * tw;
     ctx.fillStyle = PUAH_TINT[3];
-    const px = Math.cos(a) * R * .82, py = Math.sin(a) * R * .41;
+    const px = Math.cos(a) * ex, py = Math.sin(a) * ey;
     ctx.fillRect(Math.round(px) - 1, Math.round(py) - 3, 2, 6);
     ctx.fillRect(Math.round(px) - 3, Math.round(py) - 1, 6, 2);
   }
   // Crosses and motes rising from the area and fading as they go.
-  for (let i = 0; i < 12; i++) {
-    const k = (t * .35 + i / 12) % 1;
-    const a = i * 2.39 + Math.floor(t * .35 + i / 12) * 1.3;
-    const rr = R * (.25 + .55 * ((i * 37) % 10) / 10);
-    const px = Math.cos(a) * rr + Math.sin(t * 2 + i) * 4, py = Math.sin(a) * rr * .5 - k * 56;
-    ctx.globalAlpha = fade * Math.sin(k * Math.PI) * .9;
+  for (let i = 0; i < 14; i++) {
+    const k = (t * .35 + i / 14) % 1;
+    const a = i * 2.39 + Math.floor(t * .35 + i / 14) * 1.3;
+    const rr = .25 + .75 * ((i * 37) % 10) / 10;
+    const px = Math.cos(a) * ex * rr + Math.sin(t * 2 + i) * 4, py = Math.sin(a) * ey * rr - k * 60;
+    ctx.globalAlpha = fade * Math.sin(k * Math.PI) * .95;
     if (i % 3 === 0) {
-      // A small plus, outlined in the dress green like the ones on the ring.
+      // A small plus outlined in green, like the ones on the ring.
       ctx.fillStyle = PUAH_TINT[0];
       ctx.fillRect(Math.round(px) - 4, Math.round(py) - 2, 8, 4); ctx.fillRect(Math.round(px) - 2, Math.round(py) - 4, 4, 8);
       ctx.fillStyle = PUAH_TINT[3];

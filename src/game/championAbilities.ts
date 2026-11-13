@@ -99,6 +99,8 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
 }
 
 /** How far Zipporah's stones fly at levels I / II / III (world px). */
+/** Puah's vial and splash size by level (I, II, III). */
+export const PUAH_VIAL_SIZE = [1, 1.35, 1.7];
 export const ZIPPORAH_STONE_REACH = [300, 400, 500];
 const STONE_FLIGHT = 1.3; // seconds
 /** Seconds a stone takes to fade out at the end of its flight or after its last hit. */
@@ -155,15 +157,17 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
         .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp);
       const n = evo >= 2 ? 2 : 1;
       const mul = evo >= 2 ? 2 : 1;
+      // Her vials (and their splash) get bigger at each level.
+      const size = PUAH_VIAL_SIZE[evo - 1];
       for (let i = 0; i < Math.min(n, hurt.length); i++) {
         const t = hurt[i];
         const v = delta(state, h, t.pos, ally.pos);
-        thrown( v, 340, 3, { heal: t.maxHp * 0.06 * mul, targetId: t.id, art: "heal" });
+        thrown( v, 340, 3, { heal: t.maxHp * 0.06 * mul, targetId: t.id, art: "heal", size });
       }
       // Everyone is healthy: she still throws a vial at the nearest foe (it does nothing).
       if (!hurt.length) {
         const foe = nearest(state, h, ally.pos, 1, def.range)[0];
-        if (foe) thrown(delta(state, h, foe.pos, ally.pos), 340, 3, { heal: 0, targetId: foe.id, art: "heal" });
+        if (foe) thrown(delta(state, h, foe.pos, ally.pos), 340, 3, { heal: 0, targetId: foe.id, art: "heal", size });
       }
       // Puah III: a marked healing area near Moses (re-cast every 10 s).
       if (evo >= 3 && state.now >= ((d.zoneNext as number) ?? 0)) {
@@ -506,7 +510,8 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     const dd = Math.hypot(v.x, v.y);
     if (dd < 18) {
       t.hp = Math.min(t.maxHp, t.hp + (d.heal as number));
-      h.spawn("chaoe", t.pos, 0.45, { r: 26, color: "heal", maxTtl: 0.45 });
+      const size = (d.size as number) ?? 1;
+      h.spawn("chaoe", t.pos, 0.55, { r: 26 * size, color: "heal", maxTtl: 0.55, splash: 1, seed: Math.random() * 6.28 });
       e.ttl = 0;
       return;
     }

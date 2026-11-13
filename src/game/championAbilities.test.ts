@@ -107,3 +107,7 @@ test('Puah throws a harmless vial at the nearest foe when nobody needs healing',
   for (let i = 0; i < 60; i++) { a.spawned[0].ttl = (a.spawned[0].ttl ?? 0) - 1 / 60; updateChampionEntities(a.state, 1 / 60, a.h); }
   assert.equal(e.hp, 1000);
 });
+test('Puah vials get bigger at each level', () => {
+  const sizes = [1, 2, 3].map((lvl) => { const a = arena('puah', lvl); a.enemy(150); a.cast(); return a.spawned[0].data?.size as number; });
+  assert.ok(sizes[0] < sizes[1] && sizes[1] < sizes[2], sizes.join(','));
+});
