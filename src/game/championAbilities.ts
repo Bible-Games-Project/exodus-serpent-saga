@@ -261,12 +261,12 @@ export function classicChampionExtras(state: GameState, ally: Entity, def: AllyD
   const evo = champEvo(ally);
   const d = (ally.data ??= {});
   d.atkCount = ((d.atkCount as number) ?? 0) + 1;
-  if (ally.kind === "miriam" && evo >= 3) {
-    // Miriam III: damaging whirlwinds drifting from the broom's contact point.
+  if (ally.kind === "miriam" && evo >= 2) {
+    // Miriam II: one damaging tornado drifting from the broom's contact point; III: two.
     const dir = (d.attackDir as Vec2) ?? { x: ally.facing, y: 0 };
-    for (const s of [-0.6, 0.6]) {
+    for (const s of evo >= 3 ? [-0.6, 0.6] : [0]) {
       const v = rot(dir, s);
-      h.spawn("chzone", contact, 2.5, { r: 42, dps: dmg * 0.8, color: "whirl", vx: v.x * 60, vy: v.y * 60, maxTtl: 2.5 });
+      h.spawn("chzone", contact, 2.5, { r: 42, dps: dmg * 0.8, color: "whirl", tornado: 1, seed: Math.random() * 6.28, vx: v.x * 60, vy: v.y * 60, maxTtl: 2.5 });
     }
   }
   if (ally.kind === "jochebed" && evo >= 3 && (d.atkCount as number) % 3 === 0) {

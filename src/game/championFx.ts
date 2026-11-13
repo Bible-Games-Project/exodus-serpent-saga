@@ -1,6 +1,18 @@
 // Lightweight pixel-art visuals for shop champion abilities (championAbilities.ts).
 import type { Entity, GameState } from "./types";
 import { isChampionFxKind } from "./championAbilities";
+import smokeRingUrl from "@/assets/champion-miriam-smoke-ring.png";
+import tornadoUrl from "@/assets/combat-staff-tornado.png";
+
+const images = new Map<string, HTMLImageElement>();
+function art(url: string): HTMLImageElement | null {
+  if (typeof Image === "undefined") return null;
+  let img = images.get(url);
+  if (!img) { img = new Image(); img.src = url; images.set(url, img); }
+  return img.complete && img.naturalWidth ? img : null;
+}
+/** Shades of Miriam's tornado art, used for its swirling streaks and motes. */
+const TORNADO_TINT = ["#aeb3c0", "#d6d9e2", "#f4f6fa"];
 
 const COLORS: Record<string, [string, string]> = {
   fire: ["#ff8a2a", "#ffd36a"],
@@ -57,6 +69,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chzone": {
+      if (d.tornado) { drawMiriamTornado(ctx, x, y, e, s, life); break; }
       const [a, b] = COLORS[(d.color as string) ?? "fire"] ?? COLORS.fire;
       const r = d.r as number;
       ctx.globalAlpha = 0.25 + 0.25 * Math.min(1, life * 3);
@@ -132,4 +145,98 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   }
   ctx.restore();
   return true;
+}
+
+/** Miriam's tornado: a smoke ring spinning flat on the ground as its base, the
+ *  tornado art writhing above it, and streaks and motes in the tornado's colours. */
+function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, s: GameState, life: number): void {
+  const d = e.data ?? {};
+  const maxTtl = (d.maxTtl as number) || 2.5;
+  const age = (1 - life) * maxTtl, left = life * maxTtl;
+  const fade = Math.max(0, Math.min(1, age / .25, left / .45));
+  const grow = 1 - (1 - Math.min(1, age / .3)) ** 3;
+  const t = s.now + ((d.seed as number) ?? 0);
+  const R = ((d.r as number) ?? 42) * 1.35; // ring radius on screen
+  ctx.imageSmoothingEnabled = true;
+  ctx.translate(x, y);
+
+  // Ground: soft shadow, then the ring turning around its centre (seen in perspective).
+  ctx.globalAlpha = .22 * fade;
+  ctx.fillStyle = "#3a3632";
+  ctx.beginPath(); ctx.ellipse(0, 0, R * .9 * grow, R * .4 * grow, 0, 0, Math.PI * 2); ctx.fill();
+  const ring = art(smokeRingUrl);
+  if (ring) {
+    ctx.save();
+    ctx.scale(1, .5);
+    ctx.rotate(t * 3.2);
+    ctx.globalAlpha = .62 * fade;
+    const rw = R * 2 * grow, rh = rw * ring.naturalHeight / ring.naturalWidth;
+    ctx.drawImage(ring, -rw / 2, -rh / 2, rw, rh);
+    ctx.restore();
+  }
+
+  const H = 118 * grow; // tornado height
+  // Motes spiralling up around the funnel: the far half first, behind it.
+  const motes = 14;
+  const mote = (front: boolean) => {
+    for (let i = 0; i < motes; i++) {
+      const k = ((t * .55 + i / motes) % 1); // 0 at the base, 1 at the top
+      const ang = t * 7 + i * 2.4 + k * 5;
+      if ((Math.sin(ang) > 0) !== front) continue;
+      const rad = (R * .45 + k * R * .55) * grow;
+      const mx = Math.cos(ang) * rad + Math.sin(t * 9 - k * 5) * 8 * k;
+      const my = Math.sin(ang) * rad * .35 - k * H;
+      ctx.globalAlpha = fade * (front ? .85 : .45) * Math.sin(k * Math.PI);
+      ctx.fillStyle = TORNADO_TINT[i % 3];
+      const sz = front ? 3 + (i % 2) : 2;
+      ctx.fillRect(Math.round(mx - sz / 2), Math.round(my - sz / 2), sz, sz);
+    }
+  };
+  // Wind streaks: short arcs whipping around the funnel at a few heights.
+  const streaks = (front: boolean) => {
+    ctx.lineCap = "round";
+    for (let i = 0; i < 5; i++) {
+      const k = .12 + i * .19;
+      const rad = (R * .5 + k * R * .6) * grow;
+      const a0 = t * (9 - i) + i * 1.7;
+      const from = front ? a0 % (Math.PI * 2) : a0 % (Math.PI * 2) + Math.PI;
+      const cy = -k * H, sway = Math.sin(t * 9 - k * 5) * 10 * k;
+      ctx.globalAlpha = fade * (front ? .55 : .25);
+      ctx.strokeStyle = TORNADO_TINT[front ? 2 : 0];
+      ctx.lineWidth = front ? 2.5 : 1.5;
+      ctx.beginPath();
+      ctx.ellipse(sway, cy, rad, rad * .3, 0, from, from + 1.4);
+      ctx.stroke();
+    }
+  };
+  streaks(false);
+  mote(false);
+
+  // The tornado, sliced into strips that sway out of phase so it twists and writhes.
+  const img = art(tornadoUrl);
+  if (img) {
+    const w = H * img.naturalWidth / img.naturalHeight;
+    const strips = 14, sh = img.naturalHeight / strips, dh = H / strips;
+    ctx.globalAlpha = .85 * fade;
+    for (let i = 0; i < strips; i++) {
+      const k = 1 - i / strips; // 1 at the top, 0 at the base
+      const sway = Math.sin(t * 9 - i * .55) * 9 * k + Math.sin(t * 3.1) * 5 * k;
+      const squeeze = 1 + .07 * Math.sin(t * 14 - i * .8);
+      ctx.drawImage(img, 0, i * sh, img.naturalWidth, sh, -w * squeeze / 2 + sway, -H + i * dh + 4, w * squeeze, dh + .6);
+    }
+  }
+
+  streaks(true);
+  mote(true);
+  // Dust kicked up at the base.
+  for (let i = 0; i < 6; i++) {
+    const k = (t * 1.3 + i / 6) % 1;
+    const ang = i * 1.05 + t * 4;
+    ctx.globalAlpha = fade * .5 * (1 - k);
+    ctx.fillStyle = TORNADO_TINT[1];
+    const rr = 4 + k * 7;
+    ctx.beginPath();
+    ctx.ellipse(Math.cos(ang) * R * (.6 + k * .5) * grow, Math.sin(ang) * R * .3 * grow - k * 10, rr, rr * .6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
