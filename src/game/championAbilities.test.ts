@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, update } from './engine';
 import { ALLIES } from './allies';
-import { resolveChampionAttack, updateChampionEntities, wardAbsorb, championCooldownMul } from './championAbilities';
+import { resolveChampionAttack, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE } from './championAbilities';
 import type { ChampHelpers } from './championAbilities';
 import type { Entity } from './types';
 
@@ -74,11 +74,15 @@ test('Shiphrah vials, splash and reach grow by level', () => {
   assert.ok(reach[0][0] < reach[1][0] && reach[1][0] < reach[2][0]);
   assert.ok(reach[0][1] < reach[1][1] && reach[1][1] < reach[2][1]);
 });
-test('Gershom fires one arrow then fire arrows then three explosive fire arrows', () => {
-  for (const [evo, count, art] of [[1, 1, 'arrow'], [2, 1, 'firearrow'], [3, 3, 'firearrow']] as const) {
+test('Gershom fires 1 / 2 / 3 plain arrows that fly farther at each level', () => {
+  const reach: number[] = [];
+  for (const [evo, count] of [[1, 1], [2, 2], [3, 3]] as const) {
     const a = arena('gershom', evo); const e = a.enemy(120); a.cast(); assert.equal(a.spawned.length, count);
-    assert.equal(a.spawned[0].data?.art, art); updateChampionEntities(a.state, .3, a.h); assert.ok(e.hp < 1000);
+    for (const s of a.spawned) { assert.equal(s.data?.art, 'arrow'); assert.ok(!s.data?.burn && !s.data?.explodeR); }
+    reach.push(a.spawned[0].ttl!); assert.equal(championRange(a.ally, ALLIES.gershom), GERSHOM_RANGE[evo - 1]);
+    updateChampionEntities(a.state, .3, a.h); assert.ok(e.hp < 1000);
   }
+  assert.ok(reach[0] < reach[1] && reach[1] < reach[2]);
 });
 test('Eliezer evolution chains use seven and fifteen additional targets', () => {
   for (const [evo, chains] of [[1, 0], [2, 7], [3, 15]]) { const a = arena('eliezer', evo); a.cast(); assert.equal(a.spawned[0].data?.chainN, chains); }

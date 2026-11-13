@@ -112,6 +112,15 @@ export const PUAH_RING_R = 60, PUAH_RING_SECONDS = 4, PUAH_RING_HEAL = 0.1;
 /** Half-width / half-height of the ring art on the ground, as a multiple of the zone radius. */
 export const PUAH_RING_HALF_W = 1.1 * 2.3 / 2, PUAH_RING_HALF_H = PUAH_RING_HALF_W / 1.51;
 export const ZIPPORAH_STONE_REACH = [300, 400, 500];
+/** Gershom: arrows per shot and how far he shoots (aim range), by level. */
+export const GERSHOM_ARROWS = [1, 2, 3];
+export const GERSHOM_RANGE = [320, 420, 540];
+const ARROW_SPEED = 640;
+
+/** How far a champion attacks from; Gershom shoots farther at each level. */
+export function championRange(ally: Entity, def: AllyDef): number {
+  return def.attack === "arrow" ? GERSHOM_RANGE[champEvo(ally) - 1] : def.range;
+}
 const STONE_FLIGHT = 1.3; // seconds
 /** Seconds a stone takes to fade out at the end of its flight or after its last hit. */
 export const STONE_FADE = 0.3;
@@ -192,12 +201,11 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "arrow": {
-      const n = evo >= 3 ? 3 : 1;
+      // Gershom: plain arrows (no fire): 1 / 2 / 3 per shot, flying farther at each level.
+      const n = GERSHOM_ARROWS[evo - 1];
+      const ttl = (GERSHOM_RANGE[evo - 1] + 120) / ARROW_SPEED;
       for (let i = 0; i < n; i++) {
-        thrown( rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.18), 640, 0.8, {
-          dmg, pierce: 1, art: evo >= 2 ? "firearrow" : "arrow",
-          burn: evo >= 2 ? 3 : 0, explodeR: evo >= 3 ? 45 : 0,
-        });
+        thrown(rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.12), ARROW_SPEED, ttl, { dmg, pierce: 1, art: "arrow" });
       }
       return true;
     }

@@ -35,7 +35,6 @@ const COLORS: Record<string, [string, string]> = {
 const PROJ_ART: Record<string, [string, string, number, number]> = {
   stone: ["#8f8b80", "#5b5850", 6, 6],
   arrow: ["#d8c294", "#6b4a2a", 14, 3],
-  firearrow: ["#ffb347", "#ff6a1a", 14, 3],
   spear: ["#c9c2b0", "#6b4a2a", 20, 3],
   espear: ["#bfe8ff", "#4aa8ff", 20, 3],
   vial: ["#7fdc6a", "#3b6a2a", 7, 9],
@@ -69,33 +68,16 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       if (d.art === "stone" && d.liftEnd != null) ctx.globalAlpha = Math.min(1, (e.ttl ?? 0) / STONE_FADE);
       // Straight throws (liftEnd) glide evenly from the hand to body height, so they fly in a straight line.
       ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * (1 - ((d.prog as number) ?? 1 - life)) : lift * Math.max(0, 1 - (1 - life) * 3)));
-      if (d.art === "arrow" || d.art === "firearrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
+      if (d.art === "arrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
         ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
       }
-      if (d.art === "arrow" || d.art === "firearrow") {
-        // Gershom's arrow: the supplied art; fire arrows (II+) burn at the tip and leave sparks.
+      if (d.art === "arrow") {
+        // Gershom's arrow: the supplied art, pointing where it flies.
         const img = art(gershomArrowUrl);
         if (img) {
-          const len = 26, ah = len * img.naturalHeight / img.naturalWidth;
-          if (d.art === "firearrow") {
-            for (let i = 0; i < 5; i++) {
-              const p = (e.animT * 4 + i / 5) % 1;
-              ctx.globalAlpha = 0.8 * (1 - p);
-              ctx.fillStyle = i % 2 ? "#ff6a1a" : "#ffd36a";
-              ctx.fillRect(Math.round(-len / 2 - p * 14), Math.round(Math.sin(e.animT * 30 + i * 2) * 2 * p) - 1, 3, 2);
-            }
-            ctx.globalAlpha = 0.55 + 0.25 * Math.sin(e.animT * 40);
-            ctx.fillStyle = "#ff8a2a";
-            ctx.beginPath(); ctx.ellipse(len / 2 - 3, 0, 6, 3.5, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 1;
-          }
+          const len = 28, ah = len * img.naturalHeight / img.naturalWidth;
           ctx.imageSmoothingEnabled = true;
           ctx.drawImage(img, -len / 2, -ah / 2, len, ah);
-          if (d.art === "firearrow") {
-            ctx.globalAlpha = 0.7 + 0.3 * Math.sin(e.animT * 50);
-            ctx.fillStyle = "#ffd36a";
-            ctx.beginPath(); ctx.ellipse(len / 2 - 2, 0, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
-          }
           break;
         }
       }

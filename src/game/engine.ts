@@ -13,7 +13,7 @@ import { updateEquipment } from "./equipment";
 import { sealedAllies } from "./helmets";
 import {
   broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
-  resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, type ChampHelpers,
+  resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, championRange, type ChampHelpers,
 } from "./championAbilities";
 import { findChampion } from "./shopCatalog";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
@@ -2412,7 +2412,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     const dy = wrapDelta(target.pos.y, e.pos.y, state.worldH);
     const dd = Math.hypot(dx, dy) || 1;
     e.facing = dx > 0 ? 1 : -1;
-    const reach = def.range + target.radius;
+    const reach = championRange(e, def) + target.radius;
     if (dd <= reach) {
       if ((d.atkCd as number) <= 0) {
         d.attackT = def.windup + def.action;

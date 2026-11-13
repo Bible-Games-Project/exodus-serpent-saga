@@ -295,8 +295,8 @@ export const CHAMPIONS: ChampionDef[] = [
     id: "gershom", name: "Gershom", relationship: "Moses' firstborn son, a stranger in a strange land.",
     evolutions: [
       cev(1, 9_000, 130, 100, "Archer."),
-      cev(2, 1_700_000, 190, 120, "Fire archer."),
-      cev(3, 4_200_000, 300, 140, "Fires three explosive fire arrows."),
+      cev(2, 1_700_000, 220, 120, "Shoots two arrows, farther and harder."),
+      cev(3, 4_200_000, 360, 140, "Shoots three arrows, even farther and harder."),
     ],
   },
   {
