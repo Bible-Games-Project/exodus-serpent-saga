@@ -691,8 +691,9 @@ export function updateWeaponEntities(
             en.pos.x += (length ? dx / length : Math.cos(angle)) * Number(d.knock ?? 18);
             en.pos.y += (length ? dy / length : Math.sin(angle)) * Number(d.knock ?? 18);
           }
-          // Mace hit reaction: a brief rise, not a knockback launch.
-          if (e.kind === "maceimpact") { en.data ??= {}; en.data.liftAt = state.now; }
+          // Mace hit reaction: a brief rise, not a knockback launch. One hop per
+          // attack: the Mace of Judgment's second blow does not hop it again.
+          if (e.kind === "maceimpact" && !d.secondDone && !(state.now - Number(en.data?.liftAt ?? -9) < MACE_HOP_SECONDS)) { en.data ??= {}; en.data.liftAt = state.now; }
         }
         if (en.hp <= 0) ctx.killEnemy(en);
       }
@@ -704,6 +705,9 @@ export function updateWeaponEntities(
     }
   }
 }
+
+/** How long a mace hop lasts (GameCanvas draws it over the same time). */
+export const MACE_HOP_SECONDS = 0.5;
 
 function nearestEnemyTo(state: GameState, from: Vec2, wrapDelta: (a: number, b: number, size: number) => number, skip?: Set<number>): Entity | null {
   let best: Entity | null = null, bd = Infinity;

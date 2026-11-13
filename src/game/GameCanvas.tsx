@@ -40,7 +40,7 @@ import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
 import { drawSuppliedFx, drawWeaponImpact } from './combatWeaponPng';
 import { BRANCH_WIND_TRAVEL, BRANCH_WIND_WIDTH, SWORD_CROSS_SCALE } from './weaponAttack';
-import { branchWindAngle, weaponLaunchProgress } from './weapons';
+import { branchWindAngle, MACE_HOP_SECONDS, weaponLaunchProgress } from './weapons';
 import { impactLife } from './weaponAttack';
 import { latestEquipmentCastProgress, drawEquipmentPower, drawStaffRing, drawStaffSpecial } from "./equipmentFx";
 import { drawFootprints, drawFootwearAura, drawFootwearTeleport } from "./footwearFx";
@@ -1615,7 +1615,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     swingProgress = null;
   }
   // Thrones are furniture: always behind whoever sits on them, even at equal depth.
-  const depthOf = (e: Entity) => e.pos.y - (e.kind === "throne" ? 1 : 0);
+  // Aaron's birds carry their own depth so they pass in front of / behind him.
+  const depthOf = (e: Entity) => (typeof e.data?.depthY === "number" ? e.data.depthY : e.pos.y) - (e.kind === "throne" ? 1 : 0);
   drawList.sort((a, b) => depthOf(a) - depthOf(b));
 
   const mainCtx = ctx;
@@ -1643,7 +1644,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     // Mace hit reaction: the foe hops up and falls back down (visual only).
     const liftAt = e.team === "enemy" && !stoned ? (e.data?.liftAt as number | undefined) : undefined;
-    const liftT = liftAt == null ? -1 : (s.now - liftAt) / 0.5;
+    const liftT = liftAt == null ? -1 : (s.now - liftAt) / MACE_HOP_SECONDS;
     const lifted = liftT >= 0 && liftT < 1;
     if (lifted) { ctx.save(); ctx.translate(0, -Math.sin(Math.PI * liftT) * 22); }
     // Divine Light brawl: a short lunge toward the foe on each blow.

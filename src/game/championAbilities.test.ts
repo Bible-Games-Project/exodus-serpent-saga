@@ -39,9 +39,12 @@ test('Zipporah II throws two piercing stones with the established faster cooldow
   assert.deepEqual(a.spawned.map(e => e.data?.pierce), [3, 3]);
   updateChampionEntities(a.state, .4, a.h); assert.deepEqual(enemies.map(e => e.hp), [800, 800, 800]);
 });
-test('Zipporah III releases eight directional stones on every third attack', () => {
-  const a = arena('zipporah', 3); a.ally.data = { ...a.ally.data, atkCount: 2 }; const e = a.enemy(100);
-  a.cast(); assert.equal(a.spawned.length, 8); updateChampionEntities(a.state, .25, a.h); assert.equal(e.hp, 900);
+test('Zipporah throws one, two and three straight stones by level, on every attack', () => {
+  for (const evo of [1, 2, 3]) {
+    const a = arena('zipporah', evo); a.ally.data = { ...a.ally.data, atkCount: 2 };
+    a.cast(); assert.equal(a.spawned.length, evo);
+    for (const s of a.spawned) assert.equal(s.data?.liftEnd, 14);
+  }
 });
 test('Puah heals Moses through the real attack timeline without enemies', () => {
   const a = arena('puah', 1); a.state.player.hp = 40; a.state.plagues.clear();

@@ -132,11 +132,10 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
 
   switch (def.attack) {
     case "stone": {
-      if (evo >= 3 && count % 3 === 0) {
-        for (let i = 0; i < 8; i++) thrown( rot({ x: 1, y: 0 }, (i / 8) * Math.PI * 2), 520, 0.9, { dmg, pierce: 3, art: "stone" });
-      } else {
-        const n = evo >= 2 ? 2 : 1;
-        for (let i = 0; i < n; i++) thrown( rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.15), 560, 0.9, { dmg, pierce: evo >= 2 ? 3 : 1, art: "stone" });
+      // Zipporah: 1 / 2 / 3 stones by level, each flying in a straight line
+      // (they never curve or chase anyone).
+      for (let i = 0; i < evo; i++) {
+        thrown(rot(delta(state, h, tgt, from), (i - (evo - 1) / 2) * 0.15), 560, 0.9, { dmg, pierce: evo >= 2 ? 3 : 1, art: "stone", liftEnd: 14 });
       }
       return true;
     }
@@ -432,6 +431,9 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
       if (o.data?.downedUntil) { e.pos.x = o.pos.x; e.pos.y = o.pos.y - 30; d.hidden = 1; continue; }
       d.hidden = 0;
       updateBird(state, e, d, o, { x: o.pos.x + Math.cos(ang) * 46, y: o.pos.y - 40 + Math.sin(ang) * 16 }, dt, h);
+      // Draw order: the near half of the circle (lower on screen) in front of Aaron,
+      // the far half behind him, so they look like they fly around him.
+      if (d.tgt == null) d.depthY = o.pos.y + (Math.sin(ang) >= 0 ? 1 : -1);
     }
   }
 }
@@ -456,6 +458,7 @@ function updateBird(state: GameState, e: Entity, d: Record<string, unknown>, own
   const threats = birdThreats(state, h, owner);
   const t = threats.find((x) => x.id === d.tgt) ?? threats[(d.idx as number) % Math.max(1, threats.length)];
   d.tgt = t?.id;
+  if (t) d.depthY = t.pos.y + 2; // pecking: in front of the foe
   const ready = !!t && state.now >= ((d.next as number) ?? 0);
   let goal = home;
   if (t && ready) goal = { x: t.pos.x, y: t.pos.y - 16 };
