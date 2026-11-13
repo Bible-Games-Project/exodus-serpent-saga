@@ -2534,7 +2534,11 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
     classicChampionExtras(state, ally, def, dmg, c, H);
   } else if (def.attack === "water") {
     // Water leaves the basket and travels to the target as a real projectile.
+    const evo = champEvo(ally);
     const spd = 300;
+    // Each level throws farther (I 1.5 s, II 1.75 s, III 2 s of flight) and hits harder.
+    const flight = 1.25 + 0.25 * evo;
+    const jetDmg = dmg * (1.3 + 0.2 * evo);
     // Spawn exactly at the basket in the sprite (scaled, mirrored by facing);
     // `lift` is the basket's height above the ground point for the renderer.
     const sc = def.sprite.scale ?? 1;
@@ -2548,9 +2552,9 @@ function resolveAllyAttack(state: GameState, ally: Entity, def: AllyDef) {
       hp: 1, maxHp: 1,
       team: "projectile", facing: ally.facing,
       animT: 0, born: state.now,
-      ttl: 1.2, dmg,
+      ttl: flight, dmg: jetDmg,
       kind: "bolt",
-      data: { hit: new Set<number>(), boltKind: "allywater", lift0, seed, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius * (champEvo(ally) >= 2 ? 1.4 : 1), push: champEvo(ally) >= 2 ? 1 : 0 },
+      data: { hit: new Set<number>(), boltKind: "allywater", lift0, seed, ttl0: flight, len: 8 + 3 * evo, angle: Math.atan2(dir.y, dir.x), splashR: def.hitRadius * (champEvo(ally) >= 2 ? 1.4 : 1), push: champEvo(ally) >= 2 ? 1 : 0 },
     };
     state.entities.set(w.id, w);
     classicChampionExtras(state, ally, def, dmg, origin, H);

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createInitialState, dismissCompanion, setCompanionLevel, summonCompanion } from "./engine";
+import { createInitialState, dismissCompanion, setCompanionLevel, summonCompanion, update } from "./engine";
 import type { NpcId } from "./types";
 
 test("Test Map champions join at their chosen level, change level live and can be dismissed", () => {
@@ -18,4 +18,36 @@ test("Test Map champions join at their chosen level, change level live and can b
   dismissCompanion(state, id);
   assert.ok(!state.npcs.has(id));
   assert.ok(!state.entities.has(ally.id) && !state.entities.has(9999));
+});
+
+test("Aaron's birds peck only foes near him that are going for him", async () => {
+  const { makeEnemy } = await import("./enemies");
+  const state = createInitialState({ maxAttackIndex: -1, enemies: {}, ramses: false, ramsesLevel: 1, champions: {}, championLevels: { aaron: 2 } });
+  const id = "aaron" as NpcId;
+  summonCompanion(state, id);
+  const aaron = state.entities.get(state.npcs.get(id)!)!;
+  aaron.data!.summonUntil = 0;
+  aaron.data!.lastDmg = 10;
+  const foe = makeEnemy(state, "soldier", { x: aaron.pos.x + 120, y: aaron.pos.y });
+  state.entities.set(foe.id, foe);
+  foe.maxHp = foe.hp = 1e6;
+  let pecks = 0;
+  const run = (frames: number) => {
+    for (let i = 0; i < frames; i++) {
+      if ([...state.entities.values()].some((e) => e.kind === "chpeck")) pecks++;
+      state.levelUpPending = null; state.paused = false;
+      // Hold the foe in place with its target fixed.
+      foe.pos.x = aaron.pos.x + 120; foe.pos.y = aaron.pos.y;
+      update(state, 1 / 60);
+    }
+  };
+  // Going for Moses: the birds stay with Aaron.
+  const watch = () => { foe.data = { ...(foe.data ?? {}), tgtId: state.player.id, tgtAt: 1e9 }; };
+  for (let i = 0; i < 120; i++) { watch(); run(1); }
+  const birds = [...state.entities.values()].filter((e) => e.kind === "chbird");
+  assert.equal(birds.length, 3);
+  assert.equal(pecks, 0);
+  // Going for Aaron: the birds fly at it and peck.
+  for (let i = 0; i < 180; i++) { foe.data = { ...(foe.data ?? {}), tgtId: aaron.id, tgtAt: 1e9 }; run(1); }
+  assert.ok(pecks > 0);
 });

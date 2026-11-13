@@ -367,8 +367,8 @@ export const CHAMPIONS: ChampionDef[] = [
     id: "aaron", name: "Aaron", relationship: "Moses' brother and spokesman, the high priest.",
     evolutions: [
       cev(1, 500_000, 300, 220, "Blows a horn that pushes enemies away."),
-      cev(2, 13_000_000, 450, 280, "Adds three pixel-art birds that assist him."),
-      cev(3, 32_000_000, 700, 350, "Stronger knockback and nine assisting birds."),
+      cev(2, 13_000_000, 450, 280, "Three birds circle him and fly down to peck foes that go for him."),
+      cev(3, 32_000_000, 700, 350, "Stronger knockback and nine birds that peck foes going for him."),
     ],
   },
 ];

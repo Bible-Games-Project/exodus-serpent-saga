@@ -246,17 +246,18 @@ export function drawAllyFx(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
 export function drawAllyWater(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): void {
   // Starts at the basket height, settles to body height as it flies.
   const lift0 = (e.data?.lift0 as number) ?? 14;
-  const k = Math.min(1, Math.max(0, 1.2 - (e.ttl ?? 0)) / 0.35);
+  const k = Math.min(1, Math.max(0, ((e.data?.ttl0 as number) ?? 1.2) - (e.ttl ?? 0)) / 0.35);
   const x = e.pos.x - camX, y = e.pos.y - camY - (lift0 + (14 - lift0) * k);
   const seed = (e.data?.seed as number) ?? 1;
   const vx = e.vel.x, vy = e.vel.y;
   const sp = Math.hypot(vx, vy) || 1;
   const P = 3;
-  for (let i = 0; i < 7; i++) {
+  const n = (e.data?.len as number) ?? 7;
+  for (let i = 0; i < n; i++) {
     const back = i * 4;
     const jx = (rnd(seed + Math.floor(e.animT * 20), i) - 0.5) * 4;
     const px = x - (vx / sp) * back + jx, py = y - (vy / sp) * back + jx;
-    ctx.fillStyle = i === 0 ? "#c8ecff" : i < 3 ? "#5fa8d8" : "#3d7fb0";
+    ctx.fillStyle = i === 0 ? "#c8ecff" : i < 3 ? "#5fa8d8" : i < n - 3 ? "#3d7fb0" : "#2f6a96";
     const sz = i < 2 ? P * 2 : P;
     ctx.fillRect(Math.round(px / P) * P, Math.round(py / P) * P, sz, sz);
   }

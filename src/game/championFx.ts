@@ -127,19 +127,27 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     }
     case "chbird": {
       if (d.hidden) break;
-      const flap = Math.sin(s.now * 18 + (d.idx as number)) > 0;
+      const f = (d.face as number) === -1 ? -1 : 1;
       ctx.fillStyle = "#f2efe6";
       ctx.fillRect(x - 2, y - 2, 4, 4);
       ctx.fillStyle = "#cfc8b4";
-      if (flap) { ctx.fillRect(x - 6, y - 4, 4, 2); ctx.fillRect(x + 2, y - 4, 4, 2); }
+      if (d.diving) {
+        // Diving at a foe: wings swept back.
+        ctx.fillRect(x - f * 5 - 2, y - 3, 4, 2); ctx.fillRect(x - f * 5 - 2, y + 1, 4, 2);
+      } else if (Math.sin(s.now * 18 + (d.idx as number)) > 0) { ctx.fillRect(x - 6, y - 4, 4, 2); ctx.fillRect(x + 2, y - 4, 4, 2); }
       else { ctx.fillRect(x - 6, y, 4, 2); ctx.fillRect(x + 2, y, 4, 2); }
-      ctx.fillStyle = "#e0a030"; ctx.fillRect(x + 2, y - 1, 2, 2);
+      ctx.fillStyle = "#e0a030"; ctx.fillRect(f > 0 ? x + 2 : x - 4, y - 1, 2, 2);
       break;
     }
     case "chpeck": {
+      // A peck: a few feathers bursting from the struck foe.
       ctx.globalAlpha = life;
-      ctx.strokeStyle = "#f2efe6"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo((d.fx as number) - camX, (d.fy as number) - camY); ctx.lineTo(x, y - 16); ctx.stroke();
+      const k = 1 - life, seed = (d.seed as number) ?? 0;
+      for (let i = 0; i < 5; i++) {
+        const a = seed + i * 1.26;
+        ctx.fillStyle = i % 2 ? "#cfc8b4" : "#f2efe6";
+        ctx.fillRect(Math.round(x + Math.cos(a) * 14 * k) - 1, Math.round(y - 16 + Math.sin(a) * 8 * k + k * 6) - 1, 3, 2);
+      }
       break;
     }
   }
@@ -176,7 +184,7 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
   }
 
   const H = 118 * grow; // tornado height
-  const B = R * .32; // the tornado's foot sits in the near half of the ring
+  const B = H * .075; // the dust at the tornado's foot sits right on the ring's centre
   // Motes spiralling up around the funnel: the far half first, behind it.
   const motes = 14;
   const mote = (front: boolean) => {

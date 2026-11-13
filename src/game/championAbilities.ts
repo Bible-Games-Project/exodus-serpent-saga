@@ -292,7 +292,7 @@ export function updateChampionAlly(state: GameState, ally: Entity, dt: number, h
   if (d.downedUntil || (d.summonUntil && state.now < (d.summonUntil as number))) return;
   const evo = champEvo(ally);
   const dmg = (d.lastDmg as number) ?? 0;
-  // Aaron II/III: 3 / 9 assisting birds orbiting him and pecking enemies.
+  // Aaron II/III: 3 / 9 birds circling him that peck foes going for him.
   if (ally.kind === "aaron" && evo >= 2) {
     const want = evo >= 3 ? 9 : 3;
     if (!d.birdsSpawned) {
@@ -431,18 +431,50 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
       const ang = state.now * 2.2 + ((d.idx as number) / (d.n as number)) * Math.PI * 2;
       if (o.data?.downedUntil) { e.pos.x = o.pos.x; e.pos.y = o.pos.y - 30; d.hidden = 1; continue; }
       d.hidden = 0;
-      e.pos.x = o.pos.x + Math.cos(ang) * 46;
-      e.pos.y = o.pos.y - 40 + Math.sin(ang) * 16;
-      if (state.now >= (d.next as number)) {
-        d.next = state.now + 0.9;
-        const t = nearest(state, h, o.pos, 3, 260);
-        const pick = t[Math.floor(Math.random() * t.length)];
-        if (pick) {
-          hit(state, h, pick, ((o.data?.lastDmg as number) ?? 10) * 0.25);
-          h.spawn("chpeck", pick.pos, 0.25, { maxTtl: 0.25, fx: e.pos.x, fy: e.pos.y });
-        }
-      }
+      updateBird(state, e, d, o, { x: o.pos.x + Math.cos(ang) * 46, y: o.pos.y - 40 + Math.sin(ang) * 16 }, dt, h);
     }
+  }
+}
+
+/** Foes this close to Aaron that are going for him draw his birds. */
+export const BIRD_GUARD_RADIUS = 220;
+const BIRD_SPEED = 300;
+const birdThreatCache = new Map<number, { at: number; list: Entity[] }>();
+
+/** Live foes near Aaron whose current target is Aaron, nearest first (computed once per frame). */
+function birdThreats(state: GameState, h: ChampHelpers, owner: Entity): Entity[] {
+  const c = birdThreatCache.get(owner.id);
+  if (c && c.at === state.now) return c.list;
+  const list = nearest(state, h, owner.pos, 99, BIRD_GUARD_RADIUS).filter((en) => en.data?.tgtId === owner.id);
+  birdThreatCache.set(owner.id, { at: state.now, list });
+  return list;
+}
+
+/** Aaron's birds circle him; when a foe nearby goes for Aaron they fly at it and
+ *  peck it in close, hovering around it between pecks, then fly back. */
+function updateBird(state: GameState, e: Entity, d: Record<string, unknown>, owner: Entity, home: Vec2, dt: number, h: ChampHelpers) {
+  const threats = birdThreats(state, h, owner);
+  const t = threats.find((x) => x.id === d.tgt) ?? threats[(d.idx as number) % Math.max(1, threats.length)];
+  d.tgt = t?.id;
+  const ready = !!t && state.now >= ((d.next as number) ?? 0);
+  let goal = home;
+  if (t && ready) goal = { x: t.pos.x, y: t.pos.y - 16 };
+  else if (t) {
+    const a = state.now * 5 + (d.idx as number) * 2.1;
+    goal = { x: t.pos.x + Math.cos(a) * 24, y: t.pos.y - 36 + Math.sin(a) * 8 };
+  }
+  const v = delta(state, h, goal, e.pos);
+  const dd = Math.hypot(v.x, v.y);
+  if (dd > 0.01) {
+    const k = Math.min(dd, BIRD_SPEED * dt) / dd;
+    e.pos.x = goal.x - v.x * (1 - k); e.pos.y = goal.y - v.y * (1 - k);
+  }
+  if (Math.abs(v.x) > 1) d.face = v.x > 0 ? 1 : -1;
+  d.diving = ready ? 1 : 0;
+  if (t && ready && dd < 14) {
+    hit(state, h, t, ((owner.data?.lastDmg as number) ?? 10) * 0.3);
+    h.spawn("chpeck", { x: t.pos.x, y: t.pos.y }, 0.3, { maxTtl: 0.3, seed: Math.floor(Math.random() * 999) });
+    d.next = state.now + 0.6 + Math.random() * 0.2;
   }
 }
 
