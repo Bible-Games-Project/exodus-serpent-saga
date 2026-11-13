@@ -49,41 +49,61 @@ export function bar(ctx: CanvasRenderingContext2D, x: number, y: number, frac: n
   ctx.fillStyle = fg; ctx.fillRect(x - bw / 2, y, Math.round(bw * Math.max(0, Math.min(1, frac))), 3);
 }
 
-/** Green glow on a health bar while its owner is being healed (Puah's vials and
- *  ring set `data.healFxUntil`): a halo, a bright pulsing fill, a shine running
- *  along the bar and little plus signs rising from it. */
-export function healBarGlow(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, e: Entity, s: GameState) {
-  const left = ((e.data?.healFxUntil as number) ?? 0) - s.now;
+/** Colours of the bar effects: halo, bright fill, shine, particle outline, particle core. */
+const BAR_FX = {
+  heal: ["#9dff7c", "#c8ff9e", "#f6ffe8", "#2fa82a", "#f6fbc8"],
+  hurt: ["#ff5a48", "#ff9c8c", "#fff0ec", "#8a1a14", "#ffb0a4"],
+  shield: ["#5fb4ff", "#a8dcff", "#f0f8ff", "#1c4f86", "#d4ecff"],
+} as const;
+
+/** Effect on a 30-px bar at (x, y): a pulsing halo, a bright fill and a shine
+ *  running along it, plus particles. Healing (green) sends plus signs up; losing
+ *  health (red) or shield (blue) makes chips fall off the bar and shakes it. */
+export function barFx(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, left: number, s: GameState, kind: keyof typeof BAR_FX) {
   if (left <= 0) return;
+  const [halo, fill, shine, edge, core] = BAR_FX[kind];
   const k = Math.min(1, left / 0.3);
-  const bw = 30, fw = Math.round(bw * Math.max(0, Math.min(1, frac))), x0 = x - bw / 2;
+  const hit = kind !== "heal";
+  const bw = 30, fw = Math.round(bw * Math.max(0, Math.min(1, frac)));
+  const x0 = x - bw / 2 + (hit ? Math.round(Math.sin(s.now * 70) * k) : 0);
   ctx.save();
   ctx.globalAlpha = k * (0.35 + 0.15 * Math.sin(s.now * 10));
-  ctx.fillStyle = "#9dff7c";
+  ctx.fillStyle = halo;
   ctx.fillRect(x0 - 3, y - 3, bw + 6, 9);
   ctx.globalAlpha = k * 0.6;
   ctx.fillRect(x0 - 2, y - 2, bw + 4, 7);
   ctx.globalAlpha = k * (0.55 + 0.45 * Math.sin(s.now * 14));
-  ctx.fillStyle = "#c8ff9e";
-  ctx.fillRect(x0, y, fw, 3);
-  // Shine sweeping along the filled part.
+  ctx.fillStyle = fill;
+  ctx.fillRect(x0, y, hit ? bw : fw, 3);
   if (fw > 0) {
     const sx = x0 + ((s.now * 40) % (fw + 6)) - 3;
     ctx.globalAlpha = k;
-    ctx.fillStyle = "#f6ffe8";
+    ctx.fillStyle = shine;
     ctx.fillRect(Math.max(x0, Math.round(sx)), y, Math.max(0, Math.min(3, x0 + fw - Math.round(sx))), 3);
   }
-  // Plus signs rising above the bar.
   for (let i = 0; i < 3; i++) {
     const p = (s.now * 1.2 + i / 3) % 1;
-    const px = Math.round(x0 + 5 + i * 10 + Math.sin(s.now * 3 + i) * 2), py = Math.round(y - 3 - p * 12);
-    ctx.globalAlpha = k * Math.sin(p * Math.PI);
-    ctx.fillStyle = "#2fa82a";
-    ctx.fillRect(px - 2, py - 1, 5, 3); ctx.fillRect(px - 1, py - 2, 3, 5);
-    ctx.fillStyle = "#f6fbc8";
-    ctx.fillRect(px - 1, py, 3, 1); ctx.fillRect(px, py - 1, 1, 3);
+    if (hit) {
+      // Chips breaking off the end of the bar and falling.
+      const px = Math.round(x0 + Math.max(2, fw) - 2 + (i - 1) * 4 + p * (i - 1) * 6), py = Math.round(y + 4 + p * p * 12);
+      ctx.globalAlpha = k * (1 - p);
+      ctx.fillStyle = edge; ctx.fillRect(px - 1, py - 1, 3, 3);
+      ctx.fillStyle = core; ctx.fillRect(px, py, 1, 1);
+    } else {
+      const px = Math.round(x0 + 5 + i * 10 + Math.sin(s.now * 3 + i) * 2), py = Math.round(y - 3 - p * 12);
+      ctx.globalAlpha = k * Math.sin(p * Math.PI);
+      ctx.fillStyle = edge;
+      ctx.fillRect(px - 2, py - 1, 5, 3); ctx.fillRect(px - 1, py - 2, 3, 5);
+      ctx.fillStyle = core;
+      ctx.fillRect(px - 1, py, 3, 1); ctx.fillRect(px, py - 1, 1, 3);
+    }
   }
   ctx.restore();
+}
+
+/** Green glow on a health bar while its owner is being healed (Puah's vials and ring set `data.healFxUntil`). */
+export function healBarGlow(ctx: CanvasRenderingContext2D, x: number, y: number, frac: number, e: Entity, s: GameState) {
+  barFx(ctx, x, y, frac, ((e.data?.healFxUntil as number) ?? 0) - s.now, s, "heal");
 }
 
 function drawGrave(ctx: CanvasRenderingContext2D, x: number, y: number) {

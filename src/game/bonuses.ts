@@ -109,6 +109,9 @@ export const SHIELD_CONFIG = {
   pickupRestore: 25,
 } as const;
 
+/** How long Moses' health / shield bar flashes after a hit. */
+export const BAR_HIT_FX_SECONDS = 0.45;
+
 export function restoreShield(s: GameState, amount: number) {
   const max = s.maxShield ?? SHIELD_CONFIG.initialMax;
   s.shield = Math.min(max, Math.max(0, (s.shield ?? 0) + amount));
@@ -128,5 +131,9 @@ export function damagePlayer(s: GameState, amount: number, projectile = false, s
   const absorbed = Math.min(sh, amount);
   s.shield = sh - absorbed;
   const rest = amount - absorbed;
+  // Lets the bars above Moses flash: blue when the shield takes it, red for health.
+  const pd = (s.player.data ??= {});
+  if (absorbed > 0) pd.shieldHitFxUntil = s.now + BAR_HIT_FX_SECONDS;
+  if (rest > 0) pd.hurtFxUntil = s.now + BAR_HIT_FX_SECONDS;
   if (rest > 0) s.player.hp = Math.max(0, s.player.hp - rest);
 }

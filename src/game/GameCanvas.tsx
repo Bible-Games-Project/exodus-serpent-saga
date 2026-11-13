@@ -9,7 +9,7 @@ import { AARON, FLY, FROG, GEM, PALM, PYRAMID, ROCK, SOLDIER, renderSprite, type
 import { drawRamsesArt, drawRamsesSeatedArt, RAMSES_VISUAL_VERSION } from "./ramsesArt";
 import { drawRamsesChariot, ensureRamsesChariotArt } from "./ramsesChariotArt";
 import { drawAngel } from "./angelArt";
-import { bar as allyHpBar, healBarGlow, drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
+import { bar as allyHpBar, barFx, healBarGlow, drawAlly, drawAllyFx, drawAllyWater } from "./allyArt";
 import { drawSoldierArt, ensureSoldierArt, SOLDIER_ART } from "./soldierArt";
 import { drawArcherArt, ensureArcherArt, ARCHER_ART } from "./archerArt";
 import { drawSpearSoldierArt, ensureSpearSoldierArt, drawFlyingSpear, SPEAR_SOLDIER_ART } from "./spearSoldierArt";
@@ -1895,10 +1895,13 @@ function drawMosesHpLabel(ctx: CanvasRenderingContext2D, e: Entity, s: GameState
   const ratio = e.hp / e.maxHp;
   const blinkOff = ratio > 0 && ratio < MOSES_HP_BLINK_BELOW && Math.floor(s.now * MOSES_HP_BLINK_HZ * 2) % 2 === 1;
   if (!blinkOff) allyHpBar(ctx, cx, top - 24, ratio, "#4ec24e", "#1e5a1e");
+  // Red while losing health; green while being healed (drawn last, on top).
+  barFx(ctx, cx, top - 24, ratio, ((e.data?.hurtFxUntil as number) ?? 0) - s.now, s, "hurt");
   healBarGlow(ctx, cx, top - 24, ratio, e, s);
   // Shield bar sits directly above the HP bar; hidden when empty. The part the
-  // helmet adds is painted in the helmet colour.
+  // helmet adds is painted in the helmet colour. It flashes blue when hit.
   drawShieldBar(ctx, cx, top - 30, s);
+  barFx(ctx, cx, top - 30, (s.shield ?? 0) / Math.max(1, s.maxShield ?? 0), ((e.data?.shieldHitFxUntil as number) ?? 0) - s.now, s, "shield");
 }
 
 function drawMoses(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number, swingProgress: number | null, attackProgress: number | null) {

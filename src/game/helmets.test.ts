@@ -139,3 +139,13 @@ test("Shield of the God of Israel: angels take every blow for 1 second", () => {
   assert.equal(state.player.hp, state.player.maxHp);
   assert.equal(blow(state, b), 10);
 });
+
+test("Moses' bars flash blue when the shield takes a hit and red when health does", () => {
+  const state = arena("none");
+  state.shield = 5; state.maxShield = 50; state.now = 10;
+  damagePlayer(state, 3);
+  assert.ok((state.player.data?.shieldHitFxUntil as number) > state.now);
+  assert.ok(!((state.player.data?.hurtFxUntil as number) > state.now));
+  damagePlayer(state, 10);
+  assert.ok((state.player.data?.hurtFxUntil as number) > state.now);
+});
