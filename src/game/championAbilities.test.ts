@@ -87,6 +87,17 @@ test('Gershom fires 1 / 2 / 3 plain arrows that fly farther at each level', () =
 test('Eliezer evolution chains use seven and fifteen additional targets', () => {
   for (const [evo, chains] of [[1, 0], [2, 7], [3, 15]]) { const a = arena('eliezer', evo); a.cast(); assert.equal(a.spawned[0].data?.chainN, chains); }
 });
+test('Eliezer throws the spear he holds, and arrows and spears fly straight', () => {
+  for (const evo of [1, 2, 3]) {
+    const a = arena('eliezer', evo); a.cast(); const s = a.spawned[0];
+    assert.equal(s.data?.art, 'spear'); assert.equal(s.data?.lvl, evo); assert.ok(s.data?.liftEnd != null);
+    assert.ok((a.ally.data?.heldGoneUntil as number) > a.state.now);
+  }
+  const g = arena('gershom', 1); g.cast(); assert.ok(g.spawned[0].data?.liftEnd != null);
+  const e = arena('eliezer', 3); const first = e.enemy(100); const near = e.enemy(100, 150); e.cast();
+  updateChampionEntities(e.state, .3, e.h); assert.ok(first.hp < 1000 && near.hp < 1000);
+  assert.ok(e.spawned.some((s) => s.kind === 'chbolt' && s.data?.lvl === 3));
+});
 test('Amram casts one, two and three ground-cracking impacts', () => {
   for (const evo of [1, 2, 3]) { const a = arena('amram', evo); const e = a.enemy(120); a.cast(); assert.equal(a.spawned.length, evo); updateChampionEntities(a.state, .7, a.h); assert.ok(e.hp < 1000); }
 });

@@ -188,6 +188,26 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   // body in one piece, bobbing and rocking (never cut into strips, which showed
   // as stripes on the dress).
   const walkBob = wk ? -Math.round((1 - Math.abs(sw)) * wk.bob) : bodyBob;
+  // Held weapon of a gesture (Eliezer's spear): behind the body, moving with the arm;
+  // gone while it flies, then fading back into the hand.
+  const held = def.gesture?.held;
+  const heldImg = held ? load(held.url) : null;
+  if (held && heldImg) {
+    const back = s.now - ((d.heldGoneUntil as number | undefined) ?? -1);
+    if (back > 0) {
+      const g = def.gesture!;
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, back / 0.2);
+      ctx.translate(g.pivot.x, g.pivot.y + walkBob);
+      ctx.rotate(allyGestureAngle(def, at));
+      ctx.translate(held.grip.x - g.pivot.x, held.grip.y - g.pivot.y);
+      ctx.rotate(held.angle);
+      const th = held.len * heldImg.naturalHeight / heldImg.naturalWidth;
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(heldImg, -held.len * held.gripFrac, -th / 2, held.len, th);
+      ctx.restore();
+    }
+  }
   if (wk) {
     const fh = H - FOOT_TOP, st = Math.round(sw * wk.stride);
     region(FOOT_X0, FOOT_TOP, FOOT_SPLIT - FOOT_X0, fh, FOOT_X0 + st, FOOT_TOP - Math.round(Math.max(0, sw) * wk.lift));

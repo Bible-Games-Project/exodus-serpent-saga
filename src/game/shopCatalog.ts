@@ -303,8 +303,8 @@ export const CHAMPIONS: ChampionDef[] = [
     id: "eliezer", name: "Eliezer", relationship: "Moses' second son — my God is my help.",
     evolutions: [
       cev(1, 18_000, 150, 90, "Throws a piercing spear."),
-      cev(2, 2_200_000, 220, 110, "Electric spear chains damage between seven nearby enemies."),
-      cev(3, 5_400_000, 350, 130, "Electric spear chains damage between fifteen nearby enemies."),
+      cev(2, 2_200_000, 220, 110, "His spear crackles with yellow lightning that jumps to seven nearby enemies."),
+      cev(3, 5_400_000, 350, 130, "Stronger lightning that jumps farther, to fifteen nearby enemies."),
     ],
   },
   {

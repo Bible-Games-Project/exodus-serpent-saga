@@ -77,19 +77,21 @@ function areaHit(state: GameState, h: ChampHelpers, at: Vec2, r: number, dmg: nu
   h.spawn("chaoe", at, ttl, { r, color, maxTtl: ttl, ...fx });
 }
 
-function chainHit(state: GameState, h: ChampHelpers, first: Entity, n: number, dmg: number) {
+function chainHit(state: GameState, h: ChampHelpers, first: Entity, n: number, dmg: number, lvl = 2) {
+  const reach = lvl >= 3 ? 200 : 160;
   const hitSet = new Set<number>([first.id]);
   const pts: Vec2[] = [{ ...first.pos }];
   let cur = first;
   for (let i = 0; i < n; i++) {
-    const next = nearest(state, h, cur.pos, 1, 160, hitSet)[0];
+    const next = nearest(state, h, cur.pos, 1, reach, hitSet)[0];
     if (!next) break;
     hitSet.add(next.id);
     pts.push({ ...next.pos });
     hit(state, h, next, dmg);
     cur = next;
   }
-  if (pts.length > 1) h.spawn("chbolt", first.pos, 0.3, { pts, maxTtl: 0.3 });
+  const ttl = lvl >= 3 ? 0.45 : 0.32;
+  if (pts.length > 1) h.spawn("chbolt", first.pos, ttl, { pts, maxTtl: ttl, lvl });
 }
 
 function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number, data: Record<string, unknown>) {
@@ -205,12 +207,15 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       const n = GERSHOM_ARROWS[evo - 1];
       const ttl = (GERSHOM_RANGE[evo - 1] + 120) / ARROW_SPEED;
       for (let i = 0; i < n; i++) {
-        thrown(rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.12), ARROW_SPEED, ttl, { dmg, pierce: 1, art: "arrow" });
+        thrown(rot(delta(state, h, tgt, from), (i - (n - 1) / 2) * 0.12), ARROW_SPEED, ttl, { dmg, pierce: 1, art: "arrow", liftEnd: 14 });
       }
       return true;
     }
     case "spear": {
-      thrown( delta(state, h, tgt, from), 500, 0.9, { dmg, pierce: 4, art: evo >= 2 ? "espear" : "spear", chainN: evo >= 3 ? 15 : evo >= 2 ? 7 : 0 });
+      // Eliezer throws the spear he holds (it leaves his hand until the throw is over).
+      // Level 2 charges it with yellow lightning that jumps to nearby enemies; level 3 even more.
+      d.heldGoneUntil = state.now + def.action * (1 - (def.impactFrac ?? 0)) + 0.35;
+      thrown(delta(state, h, tgt, from), 500, 0.9, { dmg, pierce: 4, art: "spear", lvl: evo, liftEnd: 14, chainN: evo >= 3 ? 15 : evo >= 2 ? 7 : 0 });
       return true;
     }
     case "pyramid": {
@@ -576,7 +581,7 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     }
     hit(state, h, en, d.dmg as number);
     if (d.burn) { en.data ??= {}; en.data.burnUntil = state.now + (d.burn as number); }
-    if (d.chainN && !d.chained) { d.chained = 1; chainHit(state, h, en, d.chainN as number, (d.dmg as number) * 0.5); }
+    if (d.chainN && !d.chained) { d.chained = 1; chainHit(state, h, en, d.chainN as number, (d.dmg as number) * 0.5, (d.lvl as number) ?? 2); }
     if (d.rebound && (d.rebound as number) > 0) {
       d.rebound = (d.rebound as number) - 1;
       const next = nearest(state, h, e.pos, 1, 260, new Set(hitArr))[0];

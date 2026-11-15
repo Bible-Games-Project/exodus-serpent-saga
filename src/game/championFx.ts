@@ -7,6 +7,7 @@ import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
 import puahVialUrl from "@/assets/champion-puah-vial.png";
 import puahSplashUrl from "@/assets/champion-puah-splash.png";
 import gershomArrowUrl from "@/assets/champion-gershom-arrow.png";
+import eliezerSpearUrl from "@/assets/champion-eliezer-spear.png";
 import shiphrahVialUrl from "@/assets/champion-shiphrah-vial.png";
 import shiphrahSplashUrl from "@/assets/champion-shiphrah-splash.png";
 
@@ -36,7 +37,6 @@ const PROJ_ART: Record<string, [string, string, number, number]> = {
   stone: ["#8f8b80", "#5b5850", 6, 6],
   arrow: ["#d8c294", "#6b4a2a", 14, 3],
   spear: ["#c9c2b0", "#6b4a2a", 20, 3],
-  espear: ["#bfe8ff", "#4aa8ff", 20, 3],
   vial: ["#7fdc6a", "#3b6a2a", 7, 9],
   heal: ["#5fe08a", "#ffffff", 7, 9],
   fireball: ["#ffd36a", "#ff6a1a", 10, 10],
@@ -68,8 +68,23 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       if (d.art === "stone" && d.liftEnd != null) ctx.globalAlpha = Math.min(1, (e.ttl ?? 0) / STONE_FADE);
       // Straight throws (liftEnd) glide evenly from the hand to body height, so they fly in a straight line.
       ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * (1 - ((d.prog as number) ?? 1 - life)) : lift * Math.max(0, 1 - (1 - life) * 3)));
-      if (d.art === "arrow" || d.art === "spear" || d.art === "espear" || d.art === "flameline") {
-        ctx.rotate(Math.atan2((d.vy as number) ?? 0, (d.vx as number) ?? 1));
+      if (d.art === "arrow" || d.art === "spear" || d.art === "flameline") {
+        // Point along the path seen on screen (ground motion plus the even descent of a straight throw).
+        const drop = d.liftEnd != null && d.prog == null ? (lift - (d.liftEnd as number)) / ((d.maxTtl as number) || 1) : 0;
+        ctx.rotate(Math.atan2(((d.vy as number) ?? 0) + drop, (d.vx as number) ?? 1));
+      }
+      if (d.art === "spear") {
+        // Eliezer's spear: the supplied art; from level 2 it crackles with yellow lightning.
+        const img = art(eliezerSpearUrl);
+        if (img) {
+          const lvl = (d.lvl as number) ?? 1;
+          const len = 52, th = len * img.naturalHeight / img.naturalWidth;
+          if (lvl >= 2) drawSpearSparks(ctx, len, lvl, true);
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(img, -len / 2, -th / 2, len, th);
+          if (lvl >= 2) drawSpearSparks(ctx, len, lvl, false);
+          break;
+        }
       }
       if (d.art === "arrow") {
         // Gershom's arrow: the supplied art, pointing where it flies.
@@ -145,15 +160,26 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chbolt": {
-      const pts = (d.pts as Array<{ x: number; y: number }>) ?? [];
+      // Eliezer's chain lightning: jagged yellow bolts jumping between the enemies it struck.
+      const pts = ((d.pts as Array<{ x: number; y: number }>) ?? []).map((p) => ({ x: p.x - camX, y: p.y - camY - 16 }));
+      const strong = ((d.lvl as number) ?? 2) >= 3;
+      ctx.globalCompositeOperation = "lighter";
+      ctx.lineJoin = "round"; ctx.lineCap = "round";
+      for (let pass = 0; pass < (strong ? 2 : 1); pass++) {
+        const path = jagged(pts, strong ? 9 : 6);
+        strokePath(ctx, path, "#ffb020", (strong ? 8 : 5), 0.35 * life);
+        strokePath(ctx, path, "#ffe23a", (strong ? 3.5 : 2.5), 0.9 * life);
+        strokePath(ctx, path, "#fffbe0", 1, life);
+      }
       ctx.globalAlpha = life;
-      ctx.strokeStyle = "#bfe8ff"; ctx.lineWidth = 3;
-      ctx.beginPath();
-      pts.forEach((p, i) => {
-        const px = p.x - camX, py = p.y - camY - 16;
-        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      });
-      ctx.stroke();
+      for (const p of pts.slice(1)) {
+        ctx.fillStyle = "#ffe23a";
+        const n = strong ? 6 : 4;
+        for (let i = 0; i < n; i++) {
+          const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * (strong ? 12 : 8);
+          ctx.fillRect(Math.round(p.x + Math.cos(a) * r) - 1, Math.round(p.y + Math.sin(a) * r) - 1, 2, 2);
+        }
+      }
       break;
     }
     case "chward": {
@@ -443,4 +469,64 @@ function drawPuahRing(ctx: CanvasRenderingContext2D, x: number, y: number, e: En
       ctx.beginPath(); ctx.arc(px, py, i % 2 ? 2 : 1.5, 0, Math.PI * 2); ctx.fill();
     }
   }
+}
+
+/** Random zig-zag through the given points (fresh every frame, so it flickers like lightning). */
+function jagged(pts: Array<{ x: number; y: number }>, amp: number): Array<{ x: number; y: number }> {
+  const out: Array<{ x: number; y: number }> = [];
+  pts.forEach((p, i) => {
+    if (i === 0) { out.push(p); return; }
+    const q = pts[i - 1], dx = p.x - q.x, dy = p.y - q.y, l = Math.hypot(dx, dy) || 1;
+    const steps = Math.max(2, Math.round(l / 14));
+    for (let k = 1; k < steps; k++) {
+      const t = k / steps, off = (Math.random() * 2 - 1) * amp;
+      out.push({ x: q.x + dx * t - (dy / l) * off, y: q.y + dy * t + (dx / l) * off });
+    }
+    out.push(p);
+  });
+  return out;
+}
+
+function strokePath(ctx: CanvasRenderingContext2D, path: Array<{ x: number; y: number }>, color: string, width: number, alpha: number) {
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+  ctx.strokeStyle = color; ctx.lineWidth = width;
+  ctx.beginPath();
+  path.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+  ctx.stroke();
+}
+
+/** Yellow electricity around Eliezer's flying spear (drawn in the spear's frame, the spear along +x).
+ *  The glow goes behind the spear, the crackling arcs over it; level 3 is bigger and busier. */
+function drawSpearSparks(ctx: CanvasRenderingContext2D, len: number, lvl: number, behind: boolean) {
+  const strong = lvl >= 3;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  const alpha = ctx.globalAlpha;
+  if (behind) {
+    const r = strong ? 16 : 10;
+    const g = ctx.createRadialGradient(len * 0.3, 0, 0, len * 0.3, 0, len * 0.5 + r);
+    g.addColorStop(0, `rgba(255,226,58,${strong ? 0.55 : 0.35})`);
+    g.addColorStop(1, "rgba(255,176,32,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(len * 0.1, 0, len * 0.6 + r * 0.4, r, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    const arcs = strong ? 4 : 2, amp = strong ? 7 : 4.5;
+    for (let i = 0; i < arcs; i++) {
+      const x0 = -len / 2 + Math.random() * len * 0.4, x1 = len / 2 - Math.random() * len * 0.15;
+      const path = jagged([{ x: x0, y: 0 }, { x: x1, y: 0 }], amp);
+      ctx.globalAlpha = alpha;
+      strokePath(ctx, path, "#ffb020", strong ? 3.5 : 2.5, alpha * 0.45);
+      strokePath(ctx, path, "#ffe86a", 1.2, alpha);
+    }
+    // Sparks crackling off the tip (and trailing behind at level 3).
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#fff6b0";
+    const n = strong ? 7 : 3;
+    for (let i = 0; i < n; i++) {
+      const x = len / 2 - Math.random() * (strong ? len : len * 0.3), y = (Math.random() * 2 - 1) * (strong ? 10 : 6);
+      ctx.fillRect(Math.round(x), Math.round(y), 2, 2);
+    }
+  }
+  ctx.restore();
 }
