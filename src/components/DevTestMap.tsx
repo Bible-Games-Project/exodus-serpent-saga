@@ -22,6 +22,7 @@ import type { PlagueId } from "@/game/types";
 import type { TestMapConfig } from "@/game/types";
 import { EquipmentControls } from "./EquipmentControls";
 import { ChampionControls } from "./ChampionControls";
+import { IconInventory } from "./IconInventory";
 import { Button } from "./ui/button";
 
 const RAMSES_LEVELS: Array<{ level: 1 | 2 | 3 | 4; label: string }> = [
@@ -254,11 +255,13 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
           )}
         </section>
 
-        <div className="mx-auto max-w-xs space-y-3">
+        <div className="mx-auto mb-6 max-w-xs space-y-3">
           <PixelActionButton variant="primary" onClick={() => onStart(cfg)}>
             Start test map
           </PixelActionButton>
         </div>
+
+        <IconInventory />
       </div>
     </main>
   );

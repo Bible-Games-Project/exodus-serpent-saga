@@ -355,7 +355,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
   );
 }
 
-function StatPixelIcon({
+export function StatPixelIcon({
   art,
   size,
 }: {
@@ -392,7 +392,7 @@ function StatPixelIcon({
 }
 
 // Run-info pixel icons (14x14) — medal, hourglass clock, skull.
-const MEDAL_ART: { grid: string[]; palette: Record<string, string> } = {
+export const MEDAL_ART: { grid: string[]; palette: Record<string, string> } = {
   palette: { K: "#2b1d14", r: "#a12b2b", R: "#e05a48", o: "#e6c261", O: "#b48836", W: "#f6efdc" },
   grid: [
     "..KK......KK..",
@@ -412,7 +412,7 @@ const MEDAL_ART: { grid: string[]; palette: Record<string, string> } = {
   ],
 };
 
-const CLOCK_ART: { grid: string[]; palette: Record<string, string> } = {
+export const CLOCK_ART: { grid: string[]; palette: Record<string, string> } = {
   palette: { K: "#2b1d14", t: "#c9b090", T: "#9a7f5c", W: "#f6efdc", o: "#e6c261" },
   grid: [
     "....KKKKKK....",
@@ -432,7 +432,7 @@ const CLOCK_ART: { grid: string[]; palette: Record<string, string> } = {
   ],
 };
 
-const SKULL_ART: { grid: string[]; palette: Record<string, string> } = {
+export const SKULL_ART: { grid: string[]; palette: Record<string, string> } = {
   palette: { K: "#2b1d14", W: "#f6efdc", L: "#d8b98a" },
   grid: [
     "...KKKKKKKK...",
@@ -1030,7 +1030,7 @@ const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
   ],
 };
 
-const ICON_PASSIVE: Record<string, string[]> = {
+export const ICON_PASSIVE: Record<string, string[]> = {
   // Shield of Faith — kite shield with a golden cross boss.
   shield: [
     "....................",
@@ -1348,7 +1348,7 @@ function drawPixelIcon(cnv: HTMLCanvasElement, grid: string[], scale: number) {
   }
 }
 
-function PixelIcon({ grid, size = 64 }: { grid: string[]; size?: number }) {
+export function PixelIcon({ grid, size = 64 }: { grid: string[]; size?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     if (ref.current) drawPixelIcon(ref.current, grid, Math.floor(size / grid.length));
