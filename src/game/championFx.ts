@@ -78,7 +78,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
         const img = art(eliezerSpearUrl);
         if (img) {
           const lvl = (d.lvl as number) ?? 1;
-          const len = 52, th = len * img.naturalHeight / img.naturalWidth;
+          const len = 60, th = len * img.naturalHeight / img.naturalWidth;
           if (lvl >= 2) drawSpearSparks(ctx, len, lvl, true);
           ctx.imageSmoothingEnabled = true;
           ctx.drawImage(img, -len / 2, -th / 2, len, th);
