@@ -588,7 +588,7 @@ export function update(state: GameState, dt: number) {
         // still take contact damage handled in tickRamses; skip here.
         continue;
       }
-      // Jethro: converted enemies fight for Moses; confused ones wander harmlessly.
+      // Jethro: converted enemies fight for Moses.
       if (championControlsEnemy(state, e, dt, champHelpers(state))) { wrapPos(state, e.pos); continue; }
       // Divine Light: blinded foes walk toward each other and trade blows at arm's length.
       if (Number(e.data?.brawlUntil ?? 0) > state.now) { brawlTick(state, e, dt); wrapPos(state, e.pos); continue; }

@@ -17,6 +17,17 @@ export function isChampionFxKind(kind: string): boolean {
   return CH_KINDS.has(kind);
 }
 
+/** Seconds Jethro needs to turn one enemy, per evolution. */
+export const JETHRO_CONVERT_SECONDS = [12, 8, 4];
+/** How long a turned enemy fights for Moses. */
+export const JETHRO_CONVERT_DURATION = 10;
+const JETHRO_REACH = 260;
+
+/** True for an enemy currently fighting for Moses (Jethro's convert, sealed foes). */
+export function isAllyFoe(e: Entity): boolean {
+  return ((e.data?.convertedUntil as number) ?? 0) > 0;
+}
+
 export function champEvo(ally: Entity): number {
   return Math.max(1, Math.min(3, (ally.data?.evo as number) ?? 1));
 }
@@ -233,31 +244,9 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       thrown(v, AMRAM_STONE_SPEED, ttl, { dmg: dmg * grow, explodeR: AMRAM_BLAST_R[evo - 1], knock: 90, art: "boulder", grow, lob: 36, stopAt: tgt, crack: 1, noContact: 1 });
       return true;
     }
-    case "convert": {
-      // Jethro I: convert one nearby enemy (never Ramses) for 10 s every 12 s.
-      if (state.now >= ((d.convertNext as number) ?? 0)) {
-        const c = nearest(state, h, ally.pos, 6, 260).find((e) => e.kind !== "ramses");
-        if (c) {
-          d.convertNext = state.now + 12;
-          c.data ??= {};
-          c.data.convertedUntil = state.now + 10;
-          c.data.convDps = dmg;
-          h.spawn("chaoe", c.pos, 0.5, { r: 30, color: "convert", maxTtl: 0.5 });
-        }
-      }
-      // Jethro II/III: confuse nearby enemies every 8 s / 4 s.
-      if (evo >= 2 && state.now >= ((d.confuseNext as number) ?? 0)) {
-        d.confuseNext = state.now + (evo >= 3 ? 4 : 8);
-        const dur = evo >= 3 ? 10 : 4;
-        for (const en of nearest(state, h, ally.pos, 12, 200)) {
-          if (en.kind === "ramses") continue;
-          en.data ??= {};
-          en.data.confusedUntil = state.now + dur;
-        }
-        h.spawn("chaoe", ally.pos, 0.6, { r: 200, color: "convert", maxTtl: 0.6 });
-      }
+    case "convert":
+      // Jethro never strikes: his staff channels the conversion every frame (updateChampionAlly).
       return true;
-    }
     case "ward": {
       // Ithamar never attacks: he wards himself and the nearest ally / Moses.
       const hits = evo >= 3 ? 8 : evo >= 2 ? 5 : 2;
@@ -335,7 +324,7 @@ export function hornKnockMul(ally: Entity): number {
 /** Called every frame for every live champion before the common ally update. */
 export function updateChampionAlly(state: GameState, ally: Entity, dt: number, h: ChampHelpers) {
   const d = (ally.data ??= {});
-  if (d.downedUntil || (d.summonUntil && state.now < (d.summonUntil as number))) return;
+  if (d.downedUntil || (d.summonUntil && state.now < (d.summonUntil as number))) { delete d.convTarget; return; }
   const evo = champEvo(ally);
   const dmg = (d.lastDmg as number) ?? 0;
   // Aaron II/III: 3 / 9 birds circling him that peck foes going for him.
@@ -351,7 +340,34 @@ export function updateChampionAlly(state: GameState, ally: Entity, dt: number, h
     d.trailNext = state.now + 0.35;
     h.spawn("chzone", ally.pos, 2, { r: evo >= 3 ? 28 : 22, dps: dmg * 0.5, color: "fire", maxTtl: 2 });
   }
-  void dt;
+  if (ally.kind === "jethro") channelConversion(state, ally, dt, h, evo, dmg);
+}
+
+/**
+ * Jethro: his staff works on the nearest enemy (never Ramses) until it turns.
+ * One enemy every 12 / 8 / 4 s; the built-up progress carries over when the
+ * target dies or walks away, so the rate holds in a crowd.
+ */
+function channelConversion(state: GameState, ally: Entity, dt: number, h: ChampHelpers, evo: number, dmg: number) {
+  const d = ally.data!;
+  const need = JETHRO_CONVERT_SECONDS[evo - 1];
+  let t = d.convTarget != null ? state.entities.get(d.convTarget as number) : undefined;
+  if (t) {
+    const v = delta(state, h, t.pos, ally.pos);
+    if (!validEnemy(t, state.now) || isAllyFoe(t) || Math.hypot(v.x, v.y) > JETHRO_REACH + 60) t = undefined;
+  }
+  if (!t) t = nearest(state, h, ally.pos, 6, JETHRO_REACH).find((e) => e.kind !== "ramses" && !isAllyFoe(e));
+  if (!t) { delete d.convTarget; return; }
+  if (d.convTarget !== t.id) { d.convTarget = t.id; d.convSince = state.now; }
+  d.convProg = Math.min(need, ((d.convProg as number) ?? 0) + dt);
+  d.convNeed = need;
+  if ((d.convProg as number) < need) return;
+  t.data ??= {};
+  t.data.convertedUntil = state.now + JETHRO_CONVERT_DURATION;
+  t.data.convDps = dmg || 10;
+  h.spawn("chaoe", t.pos, 0.9, { r: 46, burst: "convert", targetId: t.id, maxTtl: 0.9 });
+  d.convProg = 0;
+  delete d.convTarget;
 }
 
 // ---------------------------------------------------------------- wards
@@ -371,7 +387,7 @@ export function wardAbsorb(state: GameState, target: Entity, projectile: boolean
 
 // ---------------------------------------------------------------- enemy control
 /**
- * Jethro's converted / confused enemies. Returns true when the enemy's normal
+ * Jethro's converted enemies. Returns true when the enemy's normal
  * AI (and its damage to Moses and champions) must be skipped this frame.
  */
 export function championControlsEnemy(state: GameState, e: Entity, dt: number, h: ChampHelpers): boolean {
@@ -399,19 +415,6 @@ export function championControlsEnemy(state: GameState, e: Entity, dt: number, h
     return true;
   }
   if (d.convertedUntil) delete d.convertedUntil;
-  if ((d.confusedUntil as number) > state.now) {
-    // Wanders aimlessly and harms no one.
-    if (state.now >= ((d.confAt as number) ?? 0)) {
-      d.confAt = state.now + 0.6 + Math.random() * 0.6;
-      d.confAng = Math.random() * Math.PI * 2;
-    }
-    const a = d.confAng as number;
-    e.vel.x = Math.cos(a) * 40; e.vel.y = Math.sin(a) * 40;
-    e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
-    e.facing = e.vel.x > 0 ? 1 : -1;
-    return true;
-  }
-  if (d.confusedUntil) delete d.confusedUntil;
   return false;
 }
 

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, update } from './engine';
 import { ALLIES } from './allies';
-import { resolveChampionAttack, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE, AMRAM_STONE_GROW } from './championAbilities';
+import { resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE, AMRAM_STONE_GROW, JETHRO_CONVERT_SECONDS, isAllyFoe } from './championAbilities';
 import type { ChampHelpers } from './championAbilities';
 import type { Entity } from './types';
 
@@ -109,10 +109,18 @@ test('Amram throws one stone that grows (and hits harder) at each level', () => 
   }
   assert.ok(hits[0] < hits[1] && hits[1] < hits[2]);
 });
-test('Jethro converts ordinary enemies but never Ramses', () => {
-  const a = arena('jethro', 3); const boss = a.enemy(20); boss.kind = 'ramses'; const soldier = a.enemy(50); a.cast();
-  assert.equal(boss.data?.convertedUntil, undefined); assert.equal(boss.data?.confusedUntil, undefined);
-  assert.equal(soldier.data?.convertedUntil, 10);
+test('Jethro turns one enemy every 12 / 8 / 4 s, never Ramses', () => {
+  for (const evo of [1, 2, 3]) {
+    const a = arena('jethro', evo); const boss = a.enemy(20); boss.kind = 'ramses'; const soldier = a.enemy(50);
+    const need = JETHRO_CONVERT_SECONDS[evo - 1];
+    const tick = (secs: number) => { for (let t = 0; t < secs - 1e-9; t += 0.1) { a.state.now += 0.1; updateChampionAlly(a.state, a.ally, 0.1, a.h); } };
+    tick(need - 0.5);
+    assert.equal(a.ally.data?.convTarget, soldier.id); assert.equal(isAllyFoe(soldier), false);
+    tick(0.6);
+    assert.ok(isAllyFoe(soldier)); assert.equal(isAllyFoe(boss), false);
+    assert.ok(a.spawned.some((s) => s.kind === 'chaoe' && s.data?.burst === 'convert'));
+  }
+  assert.deepEqual(JETHRO_CONVERT_SECONDS, [12, 8, 4]);
 });test('Zipporah stones fly farther at each level and slow down along the way', () => {
   const reach: number[] = [];
   for (const evo of [1, 2, 3]) {

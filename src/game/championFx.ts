@@ -152,6 +152,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     }
     case "chaoe": {
       if (d.impact === "amram" && drawAmramImpact(ctx, x, y, e, d, life)) break;
+      if (d.burst === "convert") { drawConversionBurst(ctx, e, d, camX, camY, s, life); break; }
       if (d.splash === "shiphrah") { drawShiphrahSplash(ctx, x, y, e, life); break; }
       if (d.splash) { drawPuahSplash(ctx, x, y, e, life); break; }
       const [a, b] = COLORS[(d.color as string) ?? "fire"] ?? COLORS.fire;
@@ -557,6 +558,61 @@ function drawAmramStone(ctx: CanvasRenderingContext2D, x: number, y: number, e: 
 }
 
 /** Amram's impact: the supplied cracked-ground burst, popping open and then fading away. */
+/**
+ * Jethro turns an enemy: a flash of light on it, a golden pillar rising from
+ * its feet, a ring that spreads and turns green, and sparkles floating up.
+ * Follows the converted enemy while it plays.
+ */
+function drawConversionBurst(ctx: CanvasRenderingContext2D, e: Entity, d: Record<string, unknown>, camX: number, camY: number, s: GameState, life: number) {
+  const t = d.targetId != null ? s.entities.get(d.targetId as number) : undefined;
+  let fx = e.pos.x, fy = e.pos.y;
+  if (t && t.hp > 0) {
+    fx += t.pos.x - e.pos.x - Math.round((t.pos.x - e.pos.x) / s.worldW) * s.worldW;
+    fy += t.pos.y - e.pos.y - Math.round((t.pos.y - e.pos.y) / s.worldH) * s.worldH;
+  }
+  const x = Math.round(fx - camX), gy = Math.round(fy - camY + 8);
+  const g = 1 - life; // 0 → 1 over the burst
+  const R = (d.r as number) ?? 46;
+  const h01 = (i: number) => { const v = Math.sin((e.id * 7.13 + i) * 12.9898) * 43758.5453; return v - Math.floor(v); };
+  // Flash on the body.
+  if (g < 0.35) {
+    const k = 1 - g / 0.35;
+    const fl = ctx.createRadialGradient(x, gy - 18, 0, x, gy - 18, 26);
+    fl.addColorStop(0, `rgba(255,252,230,${0.9 * k})`);
+    fl.addColorStop(1, "rgba(255,240,170,0)");
+    ctx.fillStyle = fl;
+    ctx.beginPath(); ctx.arc(x, gy - 18, 26, 0, Math.PI * 2); ctx.fill();
+  }
+  // Pillar of light.
+  const ph = 70 * Math.min(1, g * 3), pw = 16 * (1 - g * 0.6);
+  const pil = ctx.createLinearGradient(0, gy, 0, gy - ph);
+  pil.addColorStop(0, `rgba(255,228,138,${0.65 * life})`);
+  pil.addColorStop(1, "rgba(255,246,208,0)");
+  ctx.fillStyle = pil;
+  ctx.fillRect(Math.round(x - pw / 2), Math.round(gy - ph), Math.round(pw), Math.round(ph));
+  // Spreading ring: gold, then green (now on Moses' side).
+  const r = R * (0.25 + 0.75 * Math.sin(Math.min(1, g * 1.4) * Math.PI / 2));
+  ctx.globalAlpha = life;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = g < 0.45 ? "#ffd75a" : "#8fe05a";
+  ctx.beginPath(); ctx.ellipse(x, gy, r, r * 0.38, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#fff6d0";
+  ctx.beginPath(); ctx.ellipse(x, gy, r * 0.72, r * 0.27, 0, 0, Math.PI * 2); ctx.stroke();
+  // Sparkles floating up (little crosses).
+  for (let i = 0; i < 14; i++) {
+    const a = h01(i) * Math.PI * 2;
+    const rr = 6 + h01(i + 30) * 16;
+    const px = Math.round(x + Math.cos(a) * rr * (0.6 + g));
+    const py = Math.round(gy - 6 - h01(i + 60) * 20 - g * (26 + h01(i + 90) * 22));
+    ctx.globalAlpha = Math.min(1, life * 1.6) * (0.6 + 0.4 * Math.sin((g * 6 + i) * 2));
+    ctx.fillStyle = i % 3 === 0 ? "#b8f27a" : i % 2 ? "#fff6d0" : "#ffd75a";
+    ctx.fillRect(px, py, 2, 2);
+    if (i % 4 === 0) { ctx.fillRect(px - 2, py, 6, 2); ctx.fillRect(px, py - 2, 2, 6); }
+  }
+  ctx.globalAlpha = 1;
+}
+
 function drawAmramImpact(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, life: number): boolean {
   const img = art(amramImpactUrl);
   if (!img) return false;

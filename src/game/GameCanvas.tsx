@@ -3,6 +3,7 @@ import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
 import { BONUS_ICON, ICON_V2, PASSIVE_ICON, iconImage } from "./iconArt";
 export { BONUS_ART } from "./uiIcons";
 import { drawChampionFx, isGroundChampionFx } from "./championFx";
+import { isAllyFoe } from "./championAbilities";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
 import frogPlagueAsset from "@/assets/frog-plague.png";
 import { useEffect, useRef, useState } from "react";
@@ -2042,12 +2043,12 @@ function drawSpriteEntity(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     ctx.fillStyle = "#1e5a1e"; ctx.fillRect(bx, by, bw, 3);
     ctx.fillStyle = "#4ec24e"; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
-  if (e.team === "enemy" && e.hp < e.maxHp) {
+  if (e.team === "enemy" && (e.hp < e.maxHp || isAllyFoe(e))) {
     const bw = 22;
     const bx = sx + drawW / 2 - bw / 2;
     const by = sy - 5;
     ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(bx, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(bx, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
 }
 
@@ -2070,12 +2071,12 @@ function drawSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, cam
   });
 
 
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 26;
     const by = groundY - SOLDIER_ART.H * SOLDIER_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2096,12 +2097,12 @@ function drawAxeSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, 
     moving: swing == null,
     swing,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 26;
     const by = groundY - AXE_ART.H * AXE_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2122,12 +2123,12 @@ function drawShieldSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
     moving: true,
     block,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 28;
     const by = groundY - SHIELD_ART.H * SHIELD_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2187,12 +2188,12 @@ function drawHeavySoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     moving: swing == null,
     swing,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 30;
     const by = groundY - HEAVY_ART.H * HEAVY_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2263,12 +2264,12 @@ function drawWolf(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
     running: awake && leap == null,
     leap,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 24;
     const by = groundY - WOLF_ART.H * WOLF_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2290,12 +2291,12 @@ function drawAgileSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     dashing: e.data?.dashing ? true : false,
     phase: e.animT,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 24;
     const by = groundY - AGILE_ART.H * AGILE_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2315,12 +2316,12 @@ function drawCobra(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
     moving: e.data?.strikeAt == null,
     strike: (e.data?.strikeProgress as number | undefined) ?? null,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 22;
     const by = groundY - COBRA_ART.H * COBRA_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2397,12 +2398,12 @@ function drawSpearSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
     throwP,
     holdingSpear: e.data?.spearInFlight == null,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 26;
     const by = groundY - SPEAR_SOLDIER_ART.H * SPEAR_SOLDIER_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2423,12 +2424,12 @@ function drawCamel(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY:
     moving,
     now: s.now,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 30;
     const by = groundY - CAMEL_ART.H * CAMEL_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2450,12 +2451,12 @@ function drawLion(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
     moving,
     maul,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 30;
     const by = groundY - LION_ART.H * LION_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2476,12 +2477,12 @@ function drawSpearKnight(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
     moving: true,
     charging,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 32;
     const by = groundY - SPEAR_KNIGHT_ART.H * SPEAR_KNIGHT_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2512,12 +2513,12 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   });
   const tip = mageStaffTip(pose);
   drawMageStaffLight(ctx, tip.x, tip.y, s.now, charge);
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 26;
     const by = groundY - MAGE_ART.H * MAGE_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2537,12 +2538,12 @@ function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
     wheelAngle: (e.data?.wheelAngle as number | undefined) ?? 0,
     shoot: (e.data?.shootProgress as number | undefined) ?? null,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 44;
     const by = groundY - CHARIOT_ART.H * CHARIOT_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2564,12 +2565,12 @@ function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
     moving: shoot == null,
     shoot,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 26;
     const by = groundY - ARCHER_ART.H * ARCHER_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -2590,12 +2591,12 @@ function drawDog(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: n
     moving: true,
     pounce: (e.data?.pounceProgress as number | undefined) ?? null,
   });
-  if (e.hp < e.maxHp) {
+  if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 24;
     const by = groundY - DOG_ART.H * DOG_ART.PX - 5;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
-    ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+    ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
   return true;
 }
@@ -3226,11 +3227,11 @@ function drawProceduralEnemy(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   };
 
   const hpBar = () => {
-    if (e.hp < e.maxHp) {
+    if (e.hp < e.maxHp || isAllyFoe(e)) {
       const bw = 26;
       ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, y - 20 * PX - 1, bw + 2, 5);
-      ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw, 3);
-      ctx.fillStyle = "#e05a48"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw * Math.max(0, e.hp / e.maxHp), 3);
+      ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw, 3);
+      ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, y - 20 * PX, bw * Math.max(0, e.hp / e.maxHp), 3);
     }
   };
 
@@ -3781,7 +3782,7 @@ function drawRamses(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   if (d.active) {
     const bw = 80;
     ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(x - bw / 2 - 1, y - 162 - 1, bw + 2, 6);
-    ctx.fillStyle = "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 162, bw, 4);
+    ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, y - 162, bw, 4);
     ctx.fillStyle = "#e04030"; ctx.fillRect(x - bw / 2, y - 162, bw * Math.max(0, e.hp / e.maxHp), 4);
   }
 
