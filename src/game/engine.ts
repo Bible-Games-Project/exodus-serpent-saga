@@ -459,8 +459,6 @@ export function update(state: GameState, dt: number) {
     e.animT += dt * 6;
 
     if (e.team === "enemy") {
-      // Light of the Covenant: a sealed foe fights for Moses until it falls.
-      if (e.data?.sealed) { sealedTick(state, e, dt); wrapPos(state, e.pos); continue; }
       // A vanished spear (for example after TTL expiry) must never leave a
       // surviving soldier permanently empty-handed.
       if (e.kind === "spearsoldier" && e.data?.spearInFlight != null && !state.entities.has(e.data.spearInFlight as number)) {
@@ -566,6 +564,9 @@ export function update(state: GameState, dt: number) {
         else e.data.pounceProgress = pp;
       }
 
+      // Light of the Covenant / Jethro: a sealed foe fights for Moses until it falls
+      // (after the attack animations above have advanced, so its blows play out).
+      if (e.data?.sealed) { sealedTick(state, e, dt); wrapPos(state, e.pos); continue; }
       // White Leprosy wastes the afflicted enemy away; it dies normally.
       if (tickLeprosy(state, e, dt)) continue;
       // Axe ice is a full short stun, distinct from the existing plague slow.
