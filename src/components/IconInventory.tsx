@@ -3,7 +3,7 @@
 // pickup on the ground, run HUD), new painted v2 icon next to the old pixel one.
 import type { ReactNode } from "react";
 import { ICON_V2 } from "@/game/iconArt";
-import { BONUS_ART } from "@/game/uiIcons";
+import { BONUS_ART, STAFF_ART } from "@/game/uiIcons";
 import {
   CLOCK_ART,
   ICON_PASSIVE,
@@ -36,6 +36,8 @@ const ROWS: Row[] = [
   { name: "Level", icon: ICON_V2.level, hud: MEDAL_ART },
   { name: "Clock (time)", icon: ICON_V2.clock, hud: CLOCK_ART },
   { name: "Skull (kills)", icon: ICON_V2.skull, hud: SKULL_ART },
+  { name: "Staff (staff level)", icon: ICON_V2.staff, stats: STAFF_ART },
+  { name: "Champions (recruited)", icon: ICON_V2.champions },
 ];
 
 const COLS = [

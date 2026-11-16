@@ -1425,11 +1425,11 @@ function LevelUpStats({ state }: { state: GameState }) {
   const items: Array<{ key: string; label: string; value: number; art?: { grid: string[]; palette: Record<string, string> }; grid?: string[]; icon?: string }> = [
     { key: "hp", label: "Health level", value: passiveRank(state, "maxHp"), art: BONUS_ART.heart, icon: ICON_V2.heart },
     { key: "shield", label: "Shield level", value: passiveRank(state, "shield"), art: BONUS_ART.shield, icon: ICON_V2.shield },
-    { key: "staff", label: "Staff level", value: state.plagues.get("staff") ?? 1, art: STAFF_ART },
+    { key: "staff", label: "Staff level", value: state.plagues.get("staff") ?? 1, art: STAFF_ART, icon: ICON_V2.staff },
     { key: "dmg", label: "Plague damage level", value: passiveRank(state, "damage"), art: SWORD_ART },
     { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning, icon: ICON_V2.lightning },
     { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet, icon: ICON_V2.magnet },
-    { key: "champ", label: "Champions recruited", value: state.npcs.size, art: FLAG_ART },
+    { key: "champ", label: "Champions recruited", value: state.npcs.size, art: FLAG_ART, icon: ICON_V2.champions },
     { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, art: BURNING_BUSH_ART },
   ];
   return (
@@ -1469,7 +1469,7 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
           {choices.map((c) => {
             const grid = iconGridFor(c);
             const passive = /^passive-([a-zA-Z]+)-/.exec(c.id)?.[1];
-            const icon = !c.npc && !c.plague && passive ? PASSIVE_ICON[passive] : undefined;
+            const icon = c.plague === "staff" ? ICON_V2.staff : !c.npc && !c.plague && passive ? PASSIVE_ICON[passive] : undefined;
             return (
               <button
                 key={c.id}
