@@ -10,16 +10,21 @@ import clock from "@/assets/icon-v2-clock.png";
 import skull from "@/assets/icon-v2-skull.png";
 import staff from "@/assets/icon-v2-staff.png";
 import champions from "@/assets/icon-v2-champions.png";
+import serpent from "@/assets/icon-v2-serpent.png";
+import sword from "@/assets/icon-v2-sword.png";
 import type { BonusKind } from "./bonuses";
 
-export const ICON_V2 = { lightning, heart, star, magnet, shield, level, clock, skull, staff, champions } as const;
+export const ICON_V2 = { lightning, heart, star, magnet, shield, level, clock, skull, staff, champions, serpent, sword } as const;
 export type IconV2 = keyof typeof ICON_V2;
 
 /** Bonus pickup → its v2 icon (all five bonuses have one). */
 export const BONUS_ICON: Record<BonusKind, string> = { heart, magnet, star, lightning, shield };
 
 /** Level-up blessing (passive id) → v2 icon, when it has one. */
-export const PASSIVE_ICON: Record<string, string> = { maxHp: heart, shield, speed: lightning, magnet };
+export const PASSIVE_ICON: Record<string, string> = { maxHp: heart, shield, speed: lightning, magnet, damage: sword };
+
+/** Plague (level-up card) → v2 icon, when it has one. */
+export const PLAGUE_ICON: Partial<Record<string, string>> = { staff, serpent };
 
 const cache = new Map<string, HTMLImageElement>();
 /** Loaded image for canvas drawing (null until it has loaded). */

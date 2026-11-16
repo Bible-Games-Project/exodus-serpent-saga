@@ -3,7 +3,9 @@
 // pickup on the ground, run HUD), new painted v2 icon next to the old pixel one.
 import type { ReactNode } from "react";
 import { ICON_V2 } from "@/game/iconArt";
-import { BONUS_ART, STAFF_ART } from "@/game/uiIcons";
+import { BONUS_ART, STAFF_ART, SWORD_ART } from "@/game/uiIcons";
+import plaguesBar from "@/assets/ui-plagues-bar.png";
+import commandmentsBar from "@/assets/ui-commandments-bar.png";
 import {
   CLOCK_ART,
   ICON_PASSIVE,
@@ -25,9 +27,13 @@ type Row = {
   pickup?: Art;
   /** run HUD (38 px) — old art */
   hud?: Art;
+  /** places the new icon is used that have no old art */
+  alsoIn?: Array<"card" | "stats" | "pickup" | "hud">;
 };
 
 const ROWS: Row[] = [
+  { name: "Sword (plague damage)", icon: ICON_V2.sword, card: ICON_PASSIVE.damage, stats: SWORD_ART },
+  { name: "Serpent (staff becomes serpent)", icon: ICON_V2.serpent, alsoIn: ["card"] },
   { name: "Lightning (speed)", icon: ICON_V2.lightning, card: ICON_PASSIVE.speed, stats: BONUS_ART.lightning, pickup: BONUS_ART.lightning },
   { name: "Heart (health)", icon: ICON_V2.heart, card: ICON_PASSIVE.maxHp, stats: BONUS_ART.heart, pickup: BONUS_ART.heart },
   { name: "Shield", icon: ICON_V2.shield, card: ICON_PASSIVE.shield, stats: BONUS_ART.shield, pickup: BONUS_ART.shield },
@@ -36,8 +42,8 @@ const ROWS: Row[] = [
   { name: "Level", icon: ICON_V2.level, hud: MEDAL_ART },
   { name: "Clock (time)", icon: ICON_V2.clock, hud: CLOCK_ART },
   { name: "Skull (kills)", icon: ICON_V2.skull, hud: SKULL_ART },
-  { name: "Staff (staff level)", icon: ICON_V2.staff, stats: STAFF_ART },
-  { name: "Champions (recruited)", icon: ICON_V2.champions },
+  { name: "Staff (staff level)", icon: ICON_V2.staff, stats: STAFF_ART, alsoIn: ["card"] },
+  { name: "Champions (recruited)", icon: ICON_V2.champions, alsoIn: ["stats"] },
 ];
 
 const COLS = [
@@ -80,18 +86,27 @@ export function IconInventory() {
           <div key={row.name} className="border-t-2 border-[#d8b878] pt-3">
             <h3 className="font-pixel mb-2 text-[11px] uppercase tracking-[0.18em] text-[#4a2f16]">{row.name}</h3>
             <div className="flex flex-wrap gap-4">
-              {COLS.filter((col) => (col.key === "card" ? row.card : row[col.key])).map((col) => (
+              {COLS.filter((col) => row[col.key] || row.alsoIn?.includes(col.key)).map((col) => (
                 <div key={col.key} className="flex flex-col items-center gap-1">
                   <span className="font-display text-[10px] uppercase tracking-[0.14em] text-[#7a5a30]">{col.title}</span>
                   <div className="flex gap-2">
                     <Tile bg={col.bg} label="New"><Img src={row.icon} size={col.size} /></Tile>
-                    <Tile bg={col.bg} label="Old"><Old row={row} col={col} /></Tile>
+                    {row[col.key] && <Tile bg={col.bg} label="Old"><Old row={row} col={col} /></Tile>}
                   </div>
                 </div>
               ))}
             </div>
           </div>
         ))}
+        <div className="border-t-2 border-[#d8b878] pt-3">
+          <h3 className="font-pixel mb-2 text-[11px] uppercase tracking-[0.18em] text-[#4a2f16]">Bars</h3>
+          <div className="flex flex-col gap-3">
+            <span className="font-display text-[10px] uppercase tracking-[0.14em] text-[#7a5a30]">Ten plagues (level up)</span>
+            <img src={plaguesBar} alt="Ten plagues bar" draggable={false} className="w-full max-w-[480px]" />
+            <span className="font-display text-[10px] uppercase tracking-[0.14em] text-[#7a5a30]">Ten commandments (not in the game yet)</span>
+            <img src={commandmentsBar} alt="Ten commandments bar" draggable={false} className="w-full max-w-[480px]" />
+          </div>
+        </div>
       </div>
     </section>
   );
