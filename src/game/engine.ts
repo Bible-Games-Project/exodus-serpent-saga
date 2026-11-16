@@ -12,7 +12,7 @@ import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
 import { sealedAllies } from "./helmets";
 import {
-  broomRadiusMul, championControlsEnemy, isAllyFoe, championCooldownMul, classicChampionExtras, hornKnockMul,
+  broomRadiusMul, isAllyFoe, championCooldownMul, classicChampionExtras, hornKnockMul,
   resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, championRange, type ChampHelpers,
 } from "./championAbilities";
 import { findChampion } from "./shopCatalog";
@@ -588,8 +588,6 @@ export function update(state: GameState, dt: number) {
         // still take contact damage handled in tickRamses; skip here.
         continue;
       }
-      // Jethro: converted enemies fight for Moses.
-      if (championControlsEnemy(state, e, dt, champHelpers(state))) { wrapPos(state, e.pos); continue; }
       // Divine Light: blinded foes walk toward each other and trade blows at arm's length.
       if (Number(e.data?.brawlUntil ?? 0) > state.now) { brawlTick(state, e, dt); wrapPos(state, e.pos); continue; }
       // Target selection is refreshed every ~0.3-0.5s (staggered per enemy)
@@ -599,7 +597,8 @@ export function update(state: GameState, dt: number) {
       let targetAlly: Entity | undefined;
       const cachedId = ed.tgtId as number | undefined;
       const cached = cachedId != null && cachedId !== p.id ? state.entities.get(cachedId) : undefined;
-      const cachedValid = cachedId === p.id || (!!cached && !cached.data?.downedUntil &&
+      // A cached target must still be on Moses' side (a turned foe may have turned back).
+      const cachedValid = cachedId === p.id || (!!cached && (cached.team === "ally" || !!cached.data?.sealed) && !cached.data?.downedUntil &&
         !(cached.data?.summonUntil && state.now < (cached.data.summonUntil as number)));
       // Full route refreshes are gated by the shared 500 ms scheduler; an
       // invalid cached target just falls back to Moses until the next refresh.
@@ -2277,6 +2276,11 @@ function brawlTick(state: GameState, e: Entity, dt: number, pick?: (o: Entity) =
  */
 function sealedTick(state: GameState, e: Entity, dt: number): void {
   const d = e.data!;
+  if (d.sealUntil != null && state.now >= Number(d.sealUntil)) {
+    // Jethro's conversion wore off: an enemy again, with the health it has left.
+    for (const k of ["sealed", "sealUntil", "sealAt", "sealHp", "convertedUntil", "brawlStrikeAt", "brawlFoeId", "brawlHitAt", "tgtId", "tgtAt"]) delete d[k];
+    return;
+  }
   e.hp = Math.min(e.maxHp, Number(d.sealHp ?? e.hp));
   d.sealHp = e.hp;
   delete d.stoneUntil; delete d.stoneAt; delete d.axeFreezeUntil; delete d.brawlUntil; delete d.blindUntil;

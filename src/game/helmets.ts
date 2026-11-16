@@ -118,19 +118,24 @@ export function sealedAllies(state: GameState): Entity[] {
   return out;
 }
 
-/** Light of the Covenant: the foe becomes Moses' ally for the rest of its life. */
-export function sealEnemy(state: GameState, e: Entity): void {
+/**
+ * Light of the Covenant: the foe becomes Moses' ally for the rest of its life.
+ * Jethro's conversion uses the same alliance for `seconds` only, without the seal glow.
+ */
+export function sealEnemy(state: GameState, e: Entity, seconds?: number): void {
   const d = (e.data ??= {});
   d.sealed = 1;
   d.sealAt = state.now;
   d.sealHp = e.hp;
-  // Champions already ignore converted foes; this one stays converted for good.
-  d.convertedUntil = 1e12;
+  // Champions ignore converted foes; the Covenant keeps this one for good.
+  d.convertedUntil = seconds != null ? state.now + seconds : 1e12;
+  if (seconds != null) d.sealUntil = state.now + seconds;
   d.brawlDmg = Math.max(8, Number(d.contactDmg ?? 8));
   for (const k of ["brawlUntil", "blindUntil", "brawlStrikeAt", "tgtId", "tgtAt", "cageUntil", "knockUntil", "specialDash", "charging"]) delete d[k];
   let set = sealedSets.get(state);
   if (!set) { set = new Set(); sealedSets.set(state, set); }
   set.add(e.id);
+  if (seconds != null) return;
   spawnFx(state, "helmseal", { x: e.pos.x, y: e.pos.y + 2 }, 0.9, { follow: e.id, color: helmetColor("covenant") });
 }
 

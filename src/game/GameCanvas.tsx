@@ -1579,7 +1579,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // 1) Ground pass — blood pools + Ramses landing telegraph + red-sea burst.
   drawFootprints(ctx, s, camX, camY);
   for (const e of s.entities.values()) {
-    if (e.data?.sealed) drawSealedMark(ctx, e, s, camX, camY, "ground");
+    if (e.data?.sealed && e.data.sealUntil == null) drawSealedMark(ctx, e, s, camX, camY, "ground");
     if (e.kind === "bloodpool") {
       const canvas = e.data?.canvas as HTMLCanvasElement | undefined;
       if (!canvas) continue;
@@ -1781,7 +1781,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
   // Helmet effects (blocked blows, seals, healing) and the seal over sealed foes.
   for (const e of s.entities.values()) {
     if (isHelmetFx(e.kind)) drawHelmetFx(ctx, e, s, camX, camY);
-    else if (e.data?.sealed) drawSealedMark(ctx, e, s, camX, camY, "over");
+    else if (e.data?.sealed && e.data.sealUntil == null) drawSealedMark(ctx, e, s, camX, camY, "over");
   }
   drawFootwearTeleport(ctx, s, camX, camY);
 

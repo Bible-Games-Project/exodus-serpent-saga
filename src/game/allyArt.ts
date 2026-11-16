@@ -282,9 +282,9 @@ function drawStaffCast(ctx: CanvasRenderingContext2D, e: Entity, def: AllyDef, x
   const gr = 6 + 8 * charge;
   const ga = after > 0 ? 0.9 * (1 - after) : 0.35 + 0.55 * charge;
   const orb = ctx.createRadialGradient(sx, sy, 0, sx, sy, gr);
-  orb.addColorStop(0, `rgba(236,255,200,${ga})`);
-  orb.addColorStop(0.4, `rgba(140,214,80,${ga * 0.7})`);
-  orb.addColorStop(1, "rgba(110,190,60,0)");
+  orb.addColorStop(0, `rgba(240,250,120,${ga})`);
+  orb.addColorStop(0.4, `rgba(150,235,20,${ga * 0.7})`);
+  orb.addColorStop(1, "rgba(60,170,16,0)");
   ctx.fillStyle = orb;
   ctx.beginPath(); ctx.arc(sx, sy, gr, 0, Math.PI * 2); ctx.fill();
   if (after === 0) {
@@ -294,7 +294,7 @@ function drawStaffCast(ctx: CanvasRenderingContext2D, e: Entity, def: AllyDef, x
       const r = 18 * (1 - k) + 2;
       const ang = i * 0.785 + k * 4 * e.facing;
       ctx.globalAlpha = Math.sin(k * Math.PI) * 0.85;
-      ctx.fillStyle = i % 3 === 0 ? "#d8f5a0" : i % 2 ? "#8fd05a" : "#5fa83c";
+      ctx.fillStyle = i % 3 === 0 ? "#f0f878" : i % 2 ? "#b0f010" : "#50b010";
       const z = i % 2 ? 3 : 2;
       ctx.fillRect(Math.round(sx + Math.cos(ang) * r - z / 2), Math.round(sy + Math.sin(ang) * r * 0.8 - z / 2), z, z);
     }
@@ -302,7 +302,7 @@ function drawStaffCast(ctx: CanvasRenderingContext2D, e: Entity, def: AllyDef, x
     // Puff leaving the staff.
     const r = 5 + after * 16;
     ctx.globalAlpha = (1 - after) * 0.8;
-    ctx.strokeStyle = "#a8e070"; ctx.lineWidth = 2;
+    ctx.strokeStyle = "#b0f010"; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke();
   }
   ctx.restore();

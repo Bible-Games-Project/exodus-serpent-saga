@@ -120,6 +120,8 @@ test('Jethro sends green mist every 12 / 8 / 4 s that turns one enemy on arrival
     for (let i = 0; i < 10; i++) updateChampionEntities(a.state, 0.05, a.h);
     assert.ok(isAllyFoe(soldier)); assert.equal(isAllyFoe(boss), false);
     assert.ok(a.spawned.some((s) => s.kind === 'chaoe' && s.data?.burst === 'convert'));
+    // It joins Moses' side (fights and is fought) for 10 s.
+    assert.equal(soldier.data?.sealed, 1); assert.ok(Math.abs((soldier.data?.sealUntil as number) - a.state.now - 10) < 1e-6);
   }
   assert.deepEqual(JETHRO_CONVERT_SECONDS, [12, 8, 4]);
 });test('Zipporah stones fly farther at each level and slow down along the way', () => {

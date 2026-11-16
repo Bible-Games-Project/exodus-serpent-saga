@@ -5,6 +5,7 @@
 // Visuals for these entities are drawn by drawChampionFx (championFx.ts).
 import type { Entity, GameState, Vec2 } from "./types";
 import type { AllyDef } from "./allies";
+import { sealEnemy } from "./helmets";
 
 export type ChampHelpers = {
   spawn: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>) => Entity;
@@ -28,11 +29,13 @@ export function convertible(en: Entity, now: number): boolean {
   return validEnemy(en, now) && en.kind !== "ramses" && !isAllyFoe(en);
 }
 
-/** Turns an enemy to Moses' side at once, with Jethro's green burst on it. */
-function convertEnemy(state: GameState, en: Entity, dps: number, h: ChampHelpers) {
-  en.data ??= {};
-  en.data.convertedUntil = state.now + JETHRO_CONVERT_DURATION;
-  en.data.convDps = dps || 10;
+/**
+ * Turns an enemy to Moses' side at once, with Jethro's green burst on it. It
+ * joins the sealed-ally system: it attacks nearby enemies with its own blows,
+ * enemies attack it back, and it turns back after 10 s if it survives.
+ */
+function convertEnemy(state: GameState, en: Entity, h: ChampHelpers) {
+  sealEnemy(state, en, JETHRO_CONVERT_DURATION);
   h.spawn("chaoe", en.pos, 0.8, { r: 44, burst: "convert", targetId: en.id, maxTtl: 0.8 });
 }
 
@@ -264,7 +267,7 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       let t = state.entities.get(d.attackNearestId as number);
       if (!t || !convertible(t, state.now)) t = nearest(state, h, ally.pos, 8, def.range + 60).find((en) => convertible(en, state.now));
       if (!t) return true;
-      thrown(delta(state, h, t.pos, from), JETHRO_MIST_SPEED, 2, { art: "mist", convertId: t.id, dps: dmg, noContact: 1 });
+      thrown(delta(state, h, t.pos, from), JETHRO_MIST_SPEED, 2, { art: "mist", convertId: t.id, noContact: 1 });
       return true;
     }
     case "ward": {
@@ -376,39 +379,6 @@ export function wardAbsorb(state: GameState, target: Entity, projectile: boolean
   d.wardGate = state.now + 0.4;
   d.wardHits = (d.wardHits as number) - 1;
   return true;
-}
-
-// ---------------------------------------------------------------- enemy control
-/**
- * Jethro's converted enemies. Returns true when the enemy's normal
- * AI (and its damage to Moses and champions) must be skipped this frame.
- */
-export function championControlsEnemy(state: GameState, e: Entity, dt: number, h: ChampHelpers): boolean {
-  const d = e.data;
-  if (!d) return false;
-  if ((d.convertedUntil as number) > state.now) {
-    // Fights for Moses: walks to the nearest enemy and damages it on contact.
-    const t = nearest(state, h, e.pos, 1, 500)[0];
-    if (t) {
-      const v = delta(state, h, t.pos, e.pos);
-      const dd = Math.hypot(v.x, v.y) || 1;
-      if (dd > e.radius + t.radius) {
-        e.vel.x = (v.x / dd) * 90; e.vel.y = (v.y / dd) * 90;
-        e.pos.x += e.vel.x * dt; e.pos.y += e.vel.y * dt;
-        e.facing = v.x > 0 ? 1 : -1;
-      } else {
-        t.hp -= ((d.convDps as number) ?? 10) * dt;
-        if (state.now >= ((d.convFx as number) ?? 0)) {
-          d.convFx = state.now + 0.3;
-          h.spawn("hitspark", { x: t.pos.x, y: t.pos.y - 14 }, 0.18, { seed: t.id, small: 1, maxTtl: 0.18 });
-        }
-        if (t.hp <= 0) h.killEnemy(t);
-      }
-    }
-    return true;
-  }
-  if (d.convertedUntil) delete d.convertedUntil;
-  return false;
 }
 
 // ---------------------------------------------------------------- entities
@@ -557,7 +527,7 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
     const dd = Math.hypot(v.x, v.y) || 1;
     d.d0 ??= dd;
     d.prog = Math.max(0, Math.min(1, 1 - dd / (d.d0 as number)));
-    if (dd < 16) { convertEnemy(state, t, (d.dps as number) ?? 10, h); e.ttl = 0; return; }
+    if (dd < 16) { convertEnemy(state, t, h); e.ttl = 0; return; }
     d.vx = (v.x / dd) * JETHRO_MIST_SPEED; d.vy = (v.y / dd) * JETHRO_MIST_SPEED;
     e.pos.x += (d.vx as number) * dt; e.pos.y += (d.vy as number) * dt;
     return;

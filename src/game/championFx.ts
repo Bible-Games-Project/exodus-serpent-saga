@@ -3,6 +3,7 @@ import type { Entity, GameState } from "./types";
 import { AMRAM_GROW_SECONDS, isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE } from "./championAbilities";
 import amramStoneUrl from "@/assets/champion-amram-stone.png";
 import amramImpactUrl from "@/assets/champion-amram-impact.png";
+import jethroImpactUrl from "@/assets/champion-jethro-impact.png";
 import smokeRingUrl from "@/assets/champion-miriam-smoke-ring.png";
 import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
@@ -577,7 +578,7 @@ function drawJethroMist(ctx: CanvasRenderingContext2D, x: number, y: number, e: 
     const k = i / 6;
     const wob = Math.sin(t * 9 + i * 1.7) * 3;
     ctx.globalAlpha = fade * (1 - k) * 0.55;
-    ctx.fillStyle = i % 2 ? "#8fd05a" : "#5fa83c";
+    ctx.fillStyle = i % 2 ? "#b0f010" : "#50b010";
     const z = i < 3 ? 3 : 2;
     ctx.fillRect(Math.round(x - ux * i * 6 - uy * wob), Math.round(cy - uy * i * 6 + ux * wob * 0.6), z, z);
   }
@@ -587,8 +588,8 @@ function drawJethroMist(ctx: CanvasRenderingContext2D, x: number, y: number, e: 
     const ox = Math.cos(ang) * 5, oy = Math.sin(ang) * 3;
     const r = 6 + (i % 2) * 2;
     const g = ctx.createRadialGradient(x + ox, cy + oy, 0, x + ox, cy + oy, r);
-    g.addColorStop(0, i === 0 ? "rgba(220,250,170,0.85)" : "rgba(130,200,80,0.7)");
-    g.addColorStop(1, "rgba(80,150,50,0)");
+    g.addColorStop(0, i === 0 ? "rgba(240,250,120,0.9)" : "rgba(150,235,20,0.75)");
+    g.addColorStop(1, "rgba(60,170,16,0)");
     ctx.globalAlpha = fade;
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(x + ox, cy + oy, r, 0, Math.PI * 2); ctx.fill();
@@ -597,16 +598,16 @@ function drawJethroMist(ctx: CanvasRenderingContext2D, x: number, y: number, e: 
   for (let i = 0; i < 4; i++) {
     const ang = -t * 5 + i * 1.57;
     ctx.globalAlpha = fade * (0.6 + 0.4 * Math.sin(t * 12 + i));
-    ctx.fillStyle = "#eaffc0";
+    ctx.fillStyle = "#f0f878";
     ctx.fillRect(Math.round(x + Math.cos(ang) * 6), Math.round(cy + Math.sin(ang) * 4), 2, 2);
   }
   ctx.globalAlpha = 1;
 }
 
 /**
- * Jethro turns an enemy: the green mist bursts over it in a soft cloud, a
- * green ring spreads at its feet and sparkles float up.
- * Follows the converted enemy while it plays.
+ * Jethro turns an enemy: the supplied green blast pops on its chest, turns a
+ * little and swells as it fades, over a soft green glow, with green sparks
+ * flying out and wisps of mist rising. Follows the converted enemy.
  */
 function drawConversionBurst(ctx: CanvasRenderingContext2D, e: Entity, d: Record<string, unknown>, camX: number, camY: number, s: GameState, life: number) {
   const t = d.targetId != null ? s.entities.get(d.targetId as number) : undefined;
@@ -615,42 +616,53 @@ function drawConversionBurst(ctx: CanvasRenderingContext2D, e: Entity, d: Record
     fx += t.pos.x - e.pos.x - Math.round((t.pos.x - e.pos.x) / s.worldW) * s.worldW;
     fy += t.pos.y - e.pos.y - Math.round((t.pos.y - e.pos.y) / s.worldH) * s.worldH;
   }
-  const x = Math.round(fx - camX), gy = Math.round(fy - camY + 8);
+  const x = Math.round(fx - camX), cy = Math.round(fy - camY - 10);
   const g = 1 - life; // 0 → 1 over the burst
-  const R = (d.r as number) ?? 46;
+  const R = (d.r as number) ?? 44;
   const h01 = (i: number) => { const v = Math.sin((e.id * 7.13 + i) * 12.9898) * 43758.5453; return v - Math.floor(v); };
-  // The mist bursts over the body in soft green puffs that swell and thin out.
-  for (let i = 0; i < 7; i++) {
-    const a = h01(i + 120) * Math.PI * 2;
-    const rr = (4 + h01(i + 140) * 10) * (0.5 + g);
-    const px = x + Math.cos(a) * rr, py = gy - 18 + Math.sin(a) * rr * 0.8 - g * 6;
-    const pr = (7 + h01(i + 160) * 6) * (0.6 + g * 0.8);
-    const pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
-    pg.addColorStop(0, i === 0 ? "rgba(225,252,180,0.85)" : "rgba(130,200,80,0.7)");
-    pg.addColorStop(1, "rgba(80,150,50,0)");
-    ctx.globalAlpha = life;
-    ctx.fillStyle = pg;
-    ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+  const fade = g < 0.55 ? 1 : 1 - (g - 0.55) / 0.45;
+  // Soft green glow under the blast.
+  const gl = ctx.createRadialGradient(x, cy, 0, x, cy, R * (0.8 + g * 0.6));
+  gl.addColorStop(0, `rgba(176,240,16,${0.45 * fade})`);
+  gl.addColorStop(1, "rgba(60,170,16,0)");
+  ctx.fillStyle = gl;
+  ctx.beginPath(); ctx.arc(x, cy, R * (0.8 + g * 0.6), 0, Math.PI * 2); ctx.fill();
+  // The blast itself: pops in, overshoots, then slowly swells and turns while fading.
+  const img = art(jethroImpactUrl);
+  if (img) {
+    const pop = g < 0.1 ? 0.35 + 0.8 * (g / 0.1) : g < 0.2 ? 1.15 - 0.15 * ((g - 0.1) / 0.1) : 1 + 0.18 * (g - 0.2);
+    const w = R * 1.7 * pop, hgt = w * img.naturalHeight / img.naturalWidth;
+    ctx.save();
+    ctx.translate(x, cy);
+    ctx.rotate((h01(1) < 0.5 ? -1 : 1) * 0.35 * g);
+    ctx.globalAlpha = fade;
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, -w / 2, -hgt / 2, w, hgt);
+    ctx.restore();
   }
-  // Green ring spreading at its feet (now on Moses' side).
-  const r = R * (0.25 + 0.75 * Math.sin(Math.min(1, g * 1.4) * Math.PI / 2));
-  ctx.globalAlpha = life;
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "#7fd04e";
-  ctx.beginPath(); ctx.ellipse(x, gy, r, r * 0.38, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = "#dcf7b0";
-  ctx.beginPath(); ctx.ellipse(x, gy, r * 0.72, r * 0.27, 0, 0, Math.PI * 2); ctx.stroke();
-  // Sparkles floating up (little crosses).
-  for (let i = 0; i < 14; i++) {
+  // Green sparks flying out and falling.
+  for (let i = 0; i < 12; i++) {
     const a = h01(i) * Math.PI * 2;
-    const rr = 6 + h01(i + 30) * 16;
-    const px = Math.round(x + Math.cos(a) * rr * (0.6 + g));
-    const py = Math.round(gy - 6 - h01(i + 60) * 20 - g * (26 + h01(i + 90) * 22));
-    ctx.globalAlpha = Math.min(1, life * 1.6) * (0.6 + 0.4 * Math.sin((g * 6 + i) * 2));
-    ctx.fillStyle = i % 3 === 0 ? "#b8f27a" : i % 2 ? "#eaffc0" : "#8fd05a";
-    ctx.fillRect(px, py, 2, 2);
-    if (i % 4 === 0) { ctx.fillRect(px - 2, py, 6, 2); ctx.fillRect(px, py - 2, 2, 6); }
+    const sp = R * (0.6 + h01(i + 30) * 0.7);
+    const px = Math.round(x + Math.cos(a) * sp * Math.sqrt(g));
+    const py = Math.round(cy + Math.sin(a) * sp * 0.7 * Math.sqrt(g) + g * g * 18);
+    ctx.globalAlpha = fade * (0.7 + 0.3 * Math.sin((g * 8 + i) * 2));
+    ctx.fillStyle = i % 3 === 0 ? "#f0f878" : i % 2 ? "#b0f010" : "#50b010";
+    ctx.fillRect(px, py, i % 4 === 0 ? 3 : 2, i % 4 === 0 ? 3 : 2);
+  }
+  // Wisps of green mist rising after the pop.
+  for (let i = 0; i < 6; i++) {
+    const k = Math.max(0, g - 0.15 - h01(i + 60) * 0.2);
+    if (k <= 0) continue;
+    const px = x + (h01(i + 80) - 0.5) * R * 1.1 + Math.sin(k * 10 + i) * 3;
+    const py = cy + 6 - k * 46;
+    const pr = 4 + k * 6;
+    const wg = ctx.createRadialGradient(px, py, 0, px, py, pr);
+    wg.addColorStop(0, `rgba(150,235,20,${0.55 * fade})`);
+    wg.addColorStop(1, "rgba(60,170,16,0)");
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = wg;
+    ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalAlpha = 1;
 }
