@@ -12,7 +12,7 @@ import { GROUND_IMPACT_DELAY, spearAttack } from './weaponAttack';
 import { updateEquipment } from "./equipment";
 import { sealedAllies } from "./helmets";
 import {
-  broomRadiusMul, championControlsEnemy, championCooldownMul, classicChampionExtras, hornKnockMul,
+  broomRadiusMul, championControlsEnemy, isAllyFoe, championCooldownMul, classicChampionExtras, hornKnockMul,
   resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, championRange, type ChampHelpers,
 } from "./championAbilities";
 import { findChampion } from "./shopCatalog";
@@ -2315,6 +2315,7 @@ function allyTargetValid(state: GameState, id: number | undefined): Entity | und
   const t = state.entities.get(id);
   if (!t || t.team !== "enemy" || t.hp <= 0) return undefined;
   if (t.kind === "ramses" && (t.data?.seated || t.data?.downedUntil != null)) return undefined;
+  if (isAllyFoe(t)) return undefined; // turned by Jethro: on Moses' side now
   return t;
 }
 
@@ -2384,6 +2385,8 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     for (const en of state.entities.values()) {
       if (en.team !== "enemy" || en.hp <= 0) continue;
       if (en.kind === "ramses" && (en.data?.seated || en.data?.downedUntil != null)) continue;
+      // Enemies Jethro turned fight for Moses: no champion goes after them, and Jethro skips Ramses.
+      if (isAllyFoe(en) || (def.attack === "convert" && en.kind === "ramses")) continue;
       const d2 = wrapDist2(state, en.pos, e.pos);
       if (d2 < bestD) { bestD = d2; best = en; }
     }

@@ -326,7 +326,7 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "jethro", name: "Jethro", relationship: "Midianite priest, Moses' father-in-law and counselor.",
     evolutions: [
-      cev(1, 70_000, 100, 180, "His staff turns one nearby enemy every 12 seconds; it fights for Moses for 10 seconds. Cannot affect Ramses."),
+      cev(1, 70_000, 100, 180, "Every 12 seconds his staff sends a green mist that instantly turns one enemy; it fights for Moses for 10 seconds. Cannot affect Ramses."),
       cev(2, 4_500_000, 170, 230, "Turns one enemy every 8 seconds."),
       cev(3, 11_000_000, 280, 300, "Turns one enemy every 4 seconds."),
     ],

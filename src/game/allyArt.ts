@@ -168,7 +168,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
     if (def.attack === "horn") { lean *= -0.5; push *= 0.3; } // blowing: chest back
     if (def.gesture) { lean *= 0.15; push *= 0.25; }
     if (def.weapon) { lean = 0; push *= 0.25; } // the weapon strikes, not the body
-    if (def.attack === "convert") { lean = 0; push = 0; } // Jethro channels in place, no lunge
+    if (def.attack === "convert") { lean = 0; push = 0; } // Jethro casts in place, no lunge
   }
 
   ctx.save();
@@ -252,7 +252,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   }
   ctx.restore();
   ctx.globalAlpha = 1;
-  if (def.attack === "convert" && d.convTarget != null) drawConversionChannel(ctx, e, def, x, gy, s);
+  if (def.attack === "convert" && at != null) drawStaffCast(ctx, e, def, x, gy, at);
   bar(ctx, x, gy - Math.round(H * sc) - 8, e.hp / e.maxHp, "#4ec24e", "#1e5a1e");
   healBarGlow(ctx, x, gy - Math.round(H * sc) - 8, e.hp / e.maxHp, e, s);
   if (def.sprite.placeholderHue != null) {
@@ -265,85 +265,46 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
 }
 
 /**
- * Jethro at work: his staff's orb glows, a wavy ribbon of golden light carries
- * motes to the enemy he is turning, and a ring at its feet fills as the
- * conversion builds up (sparkles around it grow with the progress).
+ * Jethro's staff at work: green mist swirls into the orb and it glows while he
+ * prepares, then a puff bursts out as the cloud leaves for its enemy.
  */
-function drawConversionChannel(ctx: CanvasRenderingContext2D, e: Entity, def: AllyDef, x: number, gy: number, s: GameState) {
-  const d = e.data!;
-  const t = s.entities.get(d.convTarget as number);
-  if (!t || t.hp <= 0) return;
-  const prog = Math.max(0, Math.min(1, ((d.convProg as number) ?? 0) / ((d.convNeed as number) || 1)));
+function drawStaffCast(ctx: CanvasRenderingContext2D, e: Entity, def: AllyDef, x: number, gy: number, at: number) {
   const sc = def.sprite.scale ?? 1;
   const { FX, CX, H } = def.sprite;
   const sx = x + (FX.x - CX) * sc * e.facing;
   const sy = gy - (H - FX.y - (def.sprite.sink ?? 0)) * sc;
-  let dx = t.pos.x - e.pos.x; dx -= Math.round(dx / s.worldW) * s.worldW;
-  let dy = t.pos.y - e.pos.y; dy -= Math.round(dy / s.worldH) * s.worldH;
-  const tx = x + dx, tfy = gy + dy - 2, ty = tfy - 18;
-  const now = s.now;
-  const pulse = 0.5 + 0.5 * Math.sin(now * 7);
+  const el = def.windup + def.action - at;
+  const release = def.windup + def.action * (def.impactFrac ?? 0.35);
+  const charge = Math.min(1, el / release);
+  const after = Math.max(0, (el - release) / (def.windup + def.action - release));
   ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  // Target: faint ring on the ground, bright arc for the progress.
-  ctx.lineWidth = 2;
-  ctx.globalAlpha = 0.35;
-  ctx.strokeStyle = "#fff1b8";
-  ctx.beginPath(); ctx.ellipse(tx, tfy, 17, 6, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.globalAlpha = 0.9;
-  ctx.strokeStyle = prog > 0.85 ? "#b8f27a" : "#ffd75a";
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.ellipse(tx, tfy, 17, 6, 0, -Math.PI / 2, -Math.PI / 2 + prog * Math.PI * 2); ctx.stroke();
-  // Warm glow on the target, stronger as it is about to turn.
-  const glow = ctx.createRadialGradient(tx, ty, 0, tx, ty, 20);
-  glow.addColorStop(0, `rgba(255,236,150,${0.15 + 0.35 * prog * (0.7 + 0.3 * pulse)})`);
-  glow.addColorStop(1, "rgba(255,236,150,0)");
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = glow;
-  ctx.beginPath(); ctx.arc(tx, ty, 20, 0, Math.PI * 2); ctx.fill();
-  // Sparkles rising around the target.
-  const nSp = 3 + Math.round(prog * 7);
-  for (let i = 0; i < nSp; i++) {
-    const k = (now * 0.9 + rnd(e.id, i)) % 1;
-    const a = rnd(e.id, i + 20) * Math.PI * 2;
-    ctx.globalAlpha = Math.sin(k * Math.PI) * 0.9;
-    ctx.fillStyle = i % 3 === 0 ? "#b8f27a" : i % 2 ? "#fff6d0" : "#ffd75a";
-    ctx.fillRect(Math.round(tx + Math.cos(a) * 13), Math.round(tfy + Math.sin(a) * 5 - k * 30), 2, 2);
-  }
-  // Ribbon of light from the staff, arching over to the target.
-  const mx = (sx + tx) / 2, my = Math.min(sy, ty) - 22;
-  const at = (u: number) => {
-    const ix = (1 - u) * (1 - u) * sx + 2 * u * (1 - u) * mx + u * u * tx;
-    const iy = (1 - u) * (1 - u) * sy + 2 * u * (1 - u) * my + u * u * ty;
-    return { x: ix, y: iy + Math.sin(u * 9 - now * 8) * 3 * Math.sin(u * Math.PI) };
-  };
-  ctx.globalAlpha = 0.28 + 0.12 * pulse;
-  ctx.strokeStyle = "#ffe48a";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  for (let i = 0; i <= 24; i++) { const p = at(i / 24); if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); }
-  ctx.stroke();
-  ctx.globalAlpha = 0.6;
-  ctx.strokeStyle = "#fff8de";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-  // Motes flowing along it towards the enemy.
-  for (let i = 0; i < 7; i++) {
-    const u = (now * 0.7 + i / 7) % 1;
-    const p = at(u);
-    ctx.globalAlpha = Math.sin(u * Math.PI);
-    ctx.fillStyle = i % 2 ? "#fff6d0" : "#ffd75a";
-    const z = i % 3 === 0 ? 3 : 2;
-    ctx.fillRect(Math.round(p.x - z / 2), Math.round(p.y - z / 2), z, z);
-  }
-  // The staff's orb shines while it works.
-  const orb = ctx.createRadialGradient(sx, sy, 0, sx, sy, 9 + 2 * pulse);
-  orb.addColorStop(0, "rgba(255,250,220,0.95)");
-  orb.addColorStop(0.35, "rgba(214,242,140,0.6)");
-  orb.addColorStop(1, "rgba(214,242,140,0)");
-  ctx.globalAlpha = 1;
+  // Orb glow: grows while charging, fades after the release.
+  const gr = 6 + 8 * charge;
+  const ga = after > 0 ? 0.9 * (1 - after) : 0.35 + 0.55 * charge;
+  const orb = ctx.createRadialGradient(sx, sy, 0, sx, sy, gr);
+  orb.addColorStop(0, `rgba(236,255,200,${ga})`);
+  orb.addColorStop(0.4, `rgba(140,214,80,${ga * 0.7})`);
+  orb.addColorStop(1, "rgba(110,190,60,0)");
   ctx.fillStyle = orb;
-  ctx.beginPath(); ctx.arc(sx, sy, 11 + 2 * pulse, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(sx, sy, gr, 0, Math.PI * 2); ctx.fill();
+  if (after === 0) {
+    // Wisps of mist spiralling into the orb.
+    for (let i = 0; i < 8; i++) {
+      const k = (charge * 1.6 + i / 8) % 1;
+      const r = 18 * (1 - k) + 2;
+      const ang = i * 0.785 + k * 4 * e.facing;
+      ctx.globalAlpha = Math.sin(k * Math.PI) * 0.85;
+      ctx.fillStyle = i % 3 === 0 ? "#d8f5a0" : i % 2 ? "#8fd05a" : "#5fa83c";
+      const z = i % 2 ? 3 : 2;
+      ctx.fillRect(Math.round(sx + Math.cos(ang) * r - z / 2), Math.round(sy + Math.sin(ang) * r * 0.8 - z / 2), z, z);
+    }
+  } else {
+    // Puff leaving the staff.
+    const r = 5 + after * 16;
+    ctx.globalAlpha = (1 - after) * 0.8;
+    ctx.strokeStyle = "#a8e070"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke();
+  }
   ctx.restore();
 }
 

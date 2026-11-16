@@ -64,6 +64,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   switch (e.kind) {
     case "chproj": {
       if (d.art === "boulder" && drawAmramStone(ctx, x, y, e, d, life)) break;
+      if (d.art === "mist") { drawJethroMist(ctx, x, y, e, d, s); break; }
       const projArt = PROJ_ART[(d.art as string) ?? "stone"] ?? PROJ_ART.stone;
       const [a, b, w, hgt] = projArt;
       const lift = (d.lift as number) ?? 0;
@@ -559,8 +560,52 @@ function drawAmramStone(ctx: CanvasRenderingContext2D, x: number, y: number, e: 
 
 /** Amram's impact: the supplied cracked-ground burst, popping open and then fading away. */
 /**
- * Jethro turns an enemy: a flash of light on it, a golden pillar rising from
- * its feet, a ring that spreads and turns green, and sparkles floating up.
+ * Jethro's cloud of green mist: a few soft, churning green puffs that drift
+ * from the staff down to the enemy's chest, leaving a thin trail of wisps.
+ */
+function drawJethroMist(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, s: GameState) {
+  const p = (d.prog as number) ?? 0;
+  const h = ((d.lift as number) ?? 40) * (1 - p) + 18 * p;
+  const cy = y - h;
+  const vx = (d.vx as number) ?? 0, vy = (d.vy as number) ?? 0;
+  const vl = Math.hypot(vx, vy) || 1;
+  const ux = vx / vl, uy = vy / vl;
+  const fade = d.fading ? Math.max(0, (e.ttl ?? 0) / 0.25) : Math.min(1, p * 6 + 0.4);
+  const t = s.now;
+  // Trail of wisps behind the cloud.
+  for (let i = 1; i <= 6; i++) {
+    const k = i / 6;
+    const wob = Math.sin(t * 9 + i * 1.7) * 3;
+    ctx.globalAlpha = fade * (1 - k) * 0.55;
+    ctx.fillStyle = i % 2 ? "#8fd05a" : "#5fa83c";
+    const z = i < 3 ? 3 : 2;
+    ctx.fillRect(Math.round(x - ux * i * 6 - uy * wob), Math.round(cy - uy * i * 6 + ux * wob * 0.6), z, z);
+  }
+  // Churning puffs.
+  for (let i = 0; i < 5; i++) {
+    const ang = t * 3 + i * 1.257;
+    const ox = Math.cos(ang) * 5, oy = Math.sin(ang) * 3;
+    const r = 6 + (i % 2) * 2;
+    const g = ctx.createRadialGradient(x + ox, cy + oy, 0, x + ox, cy + oy, r);
+    g.addColorStop(0, i === 0 ? "rgba(220,250,170,0.85)" : "rgba(130,200,80,0.7)");
+    g.addColorStop(1, "rgba(80,150,50,0)");
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x + ox, cy + oy, r, 0, Math.PI * 2); ctx.fill();
+  }
+  // Specks glinting inside the mist.
+  for (let i = 0; i < 4; i++) {
+    const ang = -t * 5 + i * 1.57;
+    ctx.globalAlpha = fade * (0.6 + 0.4 * Math.sin(t * 12 + i));
+    ctx.fillStyle = "#eaffc0";
+    ctx.fillRect(Math.round(x + Math.cos(ang) * 6), Math.round(cy + Math.sin(ang) * 4), 2, 2);
+  }
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Jethro turns an enemy: the green mist bursts over it in a soft cloud, a
+ * green ring spreads at its feet and sparkles float up.
  * Follows the converted enemy while it plays.
  */
 function drawConversionBurst(ctx: CanvasRenderingContext2D, e: Entity, d: Record<string, unknown>, camX: number, camY: number, s: GameState, life: number) {
@@ -574,30 +619,27 @@ function drawConversionBurst(ctx: CanvasRenderingContext2D, e: Entity, d: Record
   const g = 1 - life; // 0 → 1 over the burst
   const R = (d.r as number) ?? 46;
   const h01 = (i: number) => { const v = Math.sin((e.id * 7.13 + i) * 12.9898) * 43758.5453; return v - Math.floor(v); };
-  // Flash on the body.
-  if (g < 0.35) {
-    const k = 1 - g / 0.35;
-    const fl = ctx.createRadialGradient(x, gy - 18, 0, x, gy - 18, 26);
-    fl.addColorStop(0, `rgba(255,252,230,${0.9 * k})`);
-    fl.addColorStop(1, "rgba(255,240,170,0)");
-    ctx.fillStyle = fl;
-    ctx.beginPath(); ctx.arc(x, gy - 18, 26, 0, Math.PI * 2); ctx.fill();
+  // The mist bursts over the body in soft green puffs that swell and thin out.
+  for (let i = 0; i < 7; i++) {
+    const a = h01(i + 120) * Math.PI * 2;
+    const rr = (4 + h01(i + 140) * 10) * (0.5 + g);
+    const px = x + Math.cos(a) * rr, py = gy - 18 + Math.sin(a) * rr * 0.8 - g * 6;
+    const pr = (7 + h01(i + 160) * 6) * (0.6 + g * 0.8);
+    const pg = ctx.createRadialGradient(px, py, 0, px, py, pr);
+    pg.addColorStop(0, i === 0 ? "rgba(225,252,180,0.85)" : "rgba(130,200,80,0.7)");
+    pg.addColorStop(1, "rgba(80,150,50,0)");
+    ctx.globalAlpha = life;
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
   }
-  // Pillar of light.
-  const ph = 70 * Math.min(1, g * 3), pw = 16 * (1 - g * 0.6);
-  const pil = ctx.createLinearGradient(0, gy, 0, gy - ph);
-  pil.addColorStop(0, `rgba(255,228,138,${0.65 * life})`);
-  pil.addColorStop(1, "rgba(255,246,208,0)");
-  ctx.fillStyle = pil;
-  ctx.fillRect(Math.round(x - pw / 2), Math.round(gy - ph), Math.round(pw), Math.round(ph));
-  // Spreading ring: gold, then green (now on Moses' side).
+  // Green ring spreading at its feet (now on Moses' side).
   const r = R * (0.25 + 0.75 * Math.sin(Math.min(1, g * 1.4) * Math.PI / 2));
   ctx.globalAlpha = life;
   ctx.lineWidth = 3;
-  ctx.strokeStyle = g < 0.45 ? "#ffd75a" : "#8fe05a";
+  ctx.strokeStyle = "#7fd04e";
   ctx.beginPath(); ctx.ellipse(x, gy, r, r * 0.38, 0, 0, Math.PI * 2); ctx.stroke();
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "#fff6d0";
+  ctx.strokeStyle = "#dcf7b0";
   ctx.beginPath(); ctx.ellipse(x, gy, r * 0.72, r * 0.27, 0, 0, Math.PI * 2); ctx.stroke();
   // Sparkles floating up (little crosses).
   for (let i = 0; i < 14; i++) {
@@ -606,7 +648,7 @@ function drawConversionBurst(ctx: CanvasRenderingContext2D, e: Entity, d: Record
     const px = Math.round(x + Math.cos(a) * rr * (0.6 + g));
     const py = Math.round(gy - 6 - h01(i + 60) * 20 - g * (26 + h01(i + 90) * 22));
     ctx.globalAlpha = Math.min(1, life * 1.6) * (0.6 + 0.4 * Math.sin((g * 6 + i) * 2));
-    ctx.fillStyle = i % 3 === 0 ? "#b8f27a" : i % 2 ? "#fff6d0" : "#ffd75a";
+    ctx.fillStyle = i % 3 === 0 ? "#b8f27a" : i % 2 ? "#eaffc0" : "#8fd05a";
     ctx.fillRect(px, py, 2, 2);
     if (i % 4 === 0) { ctx.fillRect(px - 2, py, 6, 2); ctx.fillRect(px, py - 2, 2, 6); }
   }
