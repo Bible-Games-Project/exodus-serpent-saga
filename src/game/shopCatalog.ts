@@ -318,9 +318,9 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "amram", name: "Amram", relationship: "Moses' father, of the house of Levi.",
     evolutions: [
-      cev(1, 45_000, 160, 140, "Throws a pyramid stone that cracks the ground and launches affected enemies away."),
-      cev(2, 3_600_000, 240, 180, "Throws two stones."),
-      cev(3, 8_800_000, 380, 230, "Throws three stones and creates a larger impact area."),
+      cev(1, 45_000, 160, 140, "Throws the great stone he holds; it cracks the ground and launches enemies away."),
+      cev(2, 3_600_000, 240, 180, "The stone grows 50% as it flies, with more damage and a wider impact."),
+      cev(3, 8_800_000, 380, 230, "The stone doubles in size as it flies, with even more damage and a larger impact."),
     ],
   },
   {

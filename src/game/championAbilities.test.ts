@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, update } from './engine';
 import { ALLIES } from './allies';
-import { resolveChampionAttack, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE } from './championAbilities';
+import { resolveChampionAttack, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE, AMRAM_STONE_GROW } from './championAbilities';
 import type { ChampHelpers } from './championAbilities';
 import type { Entity } from './types';
 
@@ -98,8 +98,16 @@ test('Eliezer throws the spear he holds, and arrows and spears fly straight', ()
   updateChampionEntities(e.state, .3, e.h); assert.ok(first.hp < 1000 && near.hp < 1000);
   assert.ok(e.spawned.some((s) => s.kind === 'chbolt' && s.data?.lvl === 3));
 });
-test('Amram casts one, two and three ground-cracking impacts', () => {
-  for (const evo of [1, 2, 3]) { const a = arena('amram', evo); const e = a.enemy(120); a.cast(); assert.equal(a.spawned.length, evo); updateChampionEntities(a.state, .7, a.h); assert.ok(e.hp < 1000); }
+test('Amram throws one stone that grows (and hits harder) at each level', () => {
+  const hits: number[] = [];
+  for (const evo of [1, 2, 3]) {
+    const a = arena('amram', evo); const e = a.enemy(120); a.cast();
+    assert.equal(a.spawned.length, 1); assert.equal(a.spawned[0].data?.art, 'boulder'); assert.equal(a.spawned[0].data?.grow, AMRAM_STONE_GROW[evo - 1]);
+    assert.ok((a.ally.data?.heldGoneUntil as number) > a.state.now);
+    updateChampionEntities(a.state, .7, a.h); assert.ok(e.hp < 1000); hits.push(1000 - e.hp);
+    assert.ok(a.spawned.some((s) => s.kind === 'chaoe' && s.data?.impact === 'amram'));
+  }
+  assert.ok(hits[0] < hits[1] && hits[1] < hits[2]);
 });
 test('Jethro converts ordinary enemies but never Ramses', () => {
   const a = arena('jethro', 3); const boss = a.enemy(20); boss.kind = 'ramses'; const soldier = a.enemy(50); a.cast();

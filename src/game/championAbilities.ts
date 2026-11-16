@@ -116,6 +116,11 @@ export const PUAH_RING_HALF_W = 1.1 * 2.3 / 2, PUAH_RING_HALF_H = PUAH_RING_HALF
 export const ZIPPORAH_STONE_REACH = [300, 400, 500];
 /** Gershom: arrows per shot and how far he shoots (aim range), by level. */
 export const GERSHOM_ARROWS = [1, 2, 3];
+/** Amram's stone: size (and damage) multiplier reached 0.2 s after the throw, per level. */
+export const AMRAM_STONE_GROW = [1, 1.5, 2];
+export const AMRAM_BLAST_R = [70, 90, 110];
+export const AMRAM_GROW_SECONDS = 0.2;
+const AMRAM_STONE_SPEED = 300;
 export const GERSHOM_RANGE = [320, 420, 540];
 const ARROW_SPEED = 640;
 
@@ -219,12 +224,13 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "pyramid": {
-      const R = evo >= 3 ? 105 : 70;
-      for (let i = 0; i < evo; i++) {
-        const off = i === 0 ? { x: 0, y: 0 } : rot({ x: 55, y: 0 }, (i / evo) * Math.PI * 2 + Math.random());
-        const at = { x: tgt.x + off.x, y: tgt.y + off.y };
-        thrown( delta(state, h, at, from), 300, 1.2, { dmg, explodeR: R, knock: 90, art: "pyramid", stopAt: at, crack: 1, noContact: 1 });
-      }
+      // Amram: one great stone — the one he holds, which leaves his hands — lobbed onto the target.
+      // Level 2 grows it 50% within 0.2 s of the throw, level 3 doubles it; damage and blast grow with it.
+      const grow = AMRAM_STONE_GROW[evo - 1];
+      const v = delta(state, h, tgt, from);
+      const ttl = Math.max(0.25, Math.hypot(v.x, v.y) / AMRAM_STONE_SPEED);
+      d.heldGoneUntil = state.now + def.action * (1 - (def.impactFrac ?? 0)) + 0.45;
+      thrown(v, AMRAM_STONE_SPEED, ttl, { dmg: dmg * grow, explodeR: AMRAM_BLAST_R[evo - 1], knock: 90, art: "boulder", grow, lob: 36, stopAt: tgt, crack: 1, noContact: 1 });
       return true;
     }
     case "convert": {
@@ -609,5 +615,6 @@ function explode(state: GameState, e: Entity, d: Record<string, unknown>, h: Cha
   d.exploded = 1;
   const R = d.explodeR as number;
   if (d.art === "vial") { areaHit(state, h, e.pos, R, d.dmg as number, 0, "vial", { splash: "shiphrah", maxTtl: 0.7, seed: Math.random() * 6.28 }); return; }
-  areaHit(state, h, e.pos, R, d.dmg as number, (d.knock as number) ?? 0, d.art === "pyramid" ? "crack" : "fire");
+  if (d.art === "boulder") { areaHit(state, h, e.pos, R, d.dmg as number, (d.knock as number) ?? 0, "crack", { impact: "amram", maxTtl: 1.1 }); return; }
+  areaHit(state, h, e.pos, R, d.dmg as number, (d.knock as number) ?? 0, "fire");
 }

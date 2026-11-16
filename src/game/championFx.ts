@@ -1,6 +1,8 @@
 // Lightweight pixel-art visuals for shop champion abilities (championAbilities.ts).
 import type { Entity, GameState } from "./types";
-import { isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE } from "./championAbilities";
+import { AMRAM_GROW_SECONDS, isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE } from "./championAbilities";
+import amramStoneUrl from "@/assets/champion-amram-stone.png";
+import amramImpactUrl from "@/assets/champion-amram-impact.png";
 import smokeRingUrl from "@/assets/champion-miriam-smoke-ring.png";
 import tornadoUrl from "@/assets/champion-miriam-tornado.png";
 import puahRingUrl from "@/assets/champion-puah-heal-ring.png";
@@ -48,7 +50,7 @@ const PROJ_ART: Record<string, [string, string, number, number]> = {
 /** Champion visuals that lie on the ground, drawn behind every character
  *  (Puah's vial splash and her healing ring). */
 export function isGroundChampionFx(e: Entity): boolean {
-  return (e.kind === "chaoe" && !!e.data?.splash) || (e.kind === "chzone" && !!e.data?.puahRing);
+  return (e.kind === "chaoe" && (!!e.data?.splash || !!e.data?.impact)) || (e.kind === "chzone" && !!e.data?.puahRing);
 }
 
 /** Returns true when the entity is a champion ability visual and was drawn. */
@@ -61,6 +63,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
   ctx.imageSmoothingEnabled = false;
   switch (e.kind) {
     case "chproj": {
+      if (d.art === "boulder" && drawAmramStone(ctx, x, y, e, d, life)) break;
       const projArt = PROJ_ART[(d.art as string) ?? "stone"] ?? PROJ_ART.stone;
       const [a, b, w, hgt] = projArt;
       const lift = (d.lift as number) ?? 0;
@@ -78,7 +81,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
         const img = art(eliezerSpearUrl);
         if (img) {
           const lvl = (d.lvl as number) ?? 1;
-          const len = 60, th = len * img.naturalHeight / img.naturalWidth;
+          const len = 72, th = len * img.naturalHeight / img.naturalWidth;
           if (lvl >= 2) drawSpearSparks(ctx, len, lvl, true);
           ctx.imageSmoothingEnabled = true;
           ctx.drawImage(img, -len / 2, -th / 2, len, th);
@@ -148,6 +151,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chaoe": {
+      if (d.impact === "amram" && drawAmramImpact(ctx, x, y, e, d, life)) break;
       if (d.splash === "shiphrah") { drawShiphrahSplash(ctx, x, y, e, life); break; }
       if (d.splash) { drawPuahSplash(ctx, x, y, e, life); break; }
       const [a, b] = COLORS[(d.color as string) ?? "fire"] ?? COLORS.fire;
@@ -529,4 +533,38 @@ function drawSpearSparks(ctx: CanvasRenderingContext2D, len: number, lvl: number
     }
   }
   ctx.restore();
+}
+
+/** Amram's stone in flight: his held stone, lobbed in an arc onto the target with a shadow
+ *  on the ground; at levels 2 and 3 it swells to its final size in the first 0.2 s. */
+function drawAmramStone(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, life: number): boolean {
+  const img = art(amramStoneUrl);
+  if (!img) return false;
+  const maxTtl = (d.maxTtl as number) || 1, p = 1 - life;
+  const grow = (d.grow as number) ?? 1;
+  const k = 1 + (grow - 1) * Math.min(1, (maxTtl - (e.ttl ?? 0)) / AMRAM_GROW_SECONDS);
+  const w = 25 * k, hgt = w * img.naturalHeight / img.naturalWidth;
+  const height = ((d.lift as number) ?? 0) * (1 - p) + ((d.lob as number) ?? 0) * 4 * p * (1 - p);
+  ctx.globalAlpha = 0.18 + 0.12 * p;
+  ctx.fillStyle = "#28190a";
+  ctx.beginPath(); ctx.ellipse(x, y, w * 0.45, w * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.translate(x, y - height);
+  ctx.rotate(p * 1.6 * Math.sign((d.vx as number) || 1));
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, -w / 2, -hgt / 2, w, hgt);
+  return true;
+}
+
+/** Amram's impact: the supplied cracked-ground burst, popping open and then fading away. */
+function drawAmramImpact(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, life: number): boolean {
+  const img = art(amramImpactUrl);
+  if (!img) return false;
+  const t = 1 - life;
+  const pop = t < 0.12 ? 0.55 + 0.45 * (t / 0.12) : 1;
+  const w = (d.r as number) * 2.3 * pop, hgt = w * img.naturalHeight / img.naturalWidth * 0.8;
+  ctx.globalAlpha = Math.min(1, life / 0.4);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, x - w / 2, y - hgt * 0.55, w, hgt);
+  return true;
 }

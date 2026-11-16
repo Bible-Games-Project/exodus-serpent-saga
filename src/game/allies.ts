@@ -27,6 +27,7 @@ import eliezerSpear from "@/assets/champion-eliezer-spear.png";
 import amramAsset from "@/assets/ally-amram-clean-supplied.png";
 import amramBody from "@/assets/ally-amram-clean-body.png";
 import amramAction from "@/assets/ally-amram-clean-action.png";
+import amramStone from "@/assets/champion-amram-stone.png";
 import jethroAsset from "@/assets/ally-jethro-v2.png";
 import ithamarAsset from "@/assets/ally-ithamar-v2.png";
 import nadabAsset from "@/assets/ally-nadab-supplied.png";
@@ -69,6 +70,8 @@ export type AllyDef = {
     /** Fuller walk for long-dress sprites: feet stride and lift under the hem,
      *  the body bobs and rocks as one piece (sprite units). */
     walk?: { stride: number; lift: number; bob: number; rock: number };
+    /** units the art is moved down so its feet stand on the ground shadow */
+    sink?: number;
   };
   /**
    * Optional held weapon drawn as its own complete layer (never sliced by the
@@ -211,8 +214,8 @@ export const ALLIES: Record<string, AllyDef> = {
   puah: suppliedChampion(champ("puah", "Puah", "Midwife. Heals Moses and champions with vials and keeps her distance.", "Exodus 1:15-17 — The midwives feared God.", suppliedSprite(puahAsset, 38, 116, 29, 49, 40, { x: 79, y: 33 }), { cooldown: 4.4, range: 320, hitRadius: 60, moveSpeed: 90, attack: "heal" }), puahBody, puahAction, { x: 55, y: 37 }, -0.35),
   shiphrah: suppliedChampion(champ("shiphrah", "Shiphrah", "Midwife. Throws explosive vials.", "Exodus 1:15-17 — The midwives feared God.", { ...suppliedSprite(shiphrahAsset, 39, 116, 20, 66, 43, { x: 11, y: 16 }), walk: { stride: 3, lift: 4, bob: 2, rock: 0.035 } }, { cooldown: 1.6, range: 240, hitRadius: 60, moveSpeed: 85, attack: "vial" }), shiphrahBody, shiphrahAction, { x: 26, y: 36 }, -0.85),
   gershom: suppliedChampion(champ("gershom", "Gershom", "Moses' firstborn. An archer.", "Exodus 2:22 — I have been a stranger in a strange land.", suppliedSprite(gershomAsset, 33, 115, 16, 56, 35, { x: 77, y: 32 }), { cooldown: 1.1, range: 320, hitRadius: 12, moveSpeed: 88, attack: "arrow" }), gershomBody, gershomAction, { x: 61, y: 35 }, -0.08),
-  eliezer: suppliedChampion(champ("eliezer", "Eliezer", "Moses' second son. Throws a piercing spear.", "Exodus 18:4 — The God of my father was mine help.", { ...suppliedSprite(eliezerAsset, 41, 109, 20, 62, 41, { x: 40, y: 38 }), scale: 0.8 }, { cooldown: 1.5, range: 280, hitRadius: 12, moveSpeed: 86, attack: "spear" }), eliezerBody, eliezerAction, { x: 17, y: 48 }, 0.45, { url: eliezerSpear, grip: { x: 10.4, y: 40.4 }, angle: -0.307, len: 74, gripFrac: 0.055 }),
-  amram: suppliedChampion(champ("amram", "Amram", "Moses' father. Hurls pyramid stones that crack the ground.", "Exodus 6:20 — Amram took Jochebed to wife.", suppliedSprite(amramAsset, 42, 114, 35, 51, 43, { x: 43, y: 12 }), { cooldown: 2.4, range: 260, hitRadius: 70, moveSpeed: 72, attack: "pyramid" }), amramBody, amramAction, { x: 43, y: 49 }, 0.25),
+  eliezer: suppliedChampion(champ("eliezer", "Eliezer", "Moses' second son. Throws a piercing spear.", "Exodus 18:4 — The God of my father was mine help.", { ...suppliedSprite(eliezerAsset, 41, 109, 20, 62, 41, { x: 40, y: 38 }), scale: 0.8, sink: 5.5 }, { cooldown: 1.5, range: 280, hitRadius: 12, moveSpeed: 86, attack: "spear" }), eliezerBody, eliezerAction, { x: 17, y: 48 }, 0.45, { url: eliezerSpear, grip: { x: 10.4, y: 40.4 }, angle: -0.307, len: 89, gripFrac: 0.055 }),
+  amram: suppliedChampion(champ("amram", "Amram", "Moses' father. Hurls a great stone that cracks the ground.", "Exodus 6:20 — Amram took Jochebed to wife.", { ...suppliedSprite(amramAsset, 42, 114, 35, 51, 43, { x: 39, y: 14 }), scale: 0.8 }, { cooldown: 2.4, range: 260, hitRadius: 70, moveSpeed: 72, attack: "pyramid" }), amramBody, amramAction, { x: 43, y: 49 }, 0.25, { url: amramStone, grip: { x: 38.7, y: 14.1 }, angle: 0, len: 31, gripFrac: 0.5 }),
   jethro: champ("jethro", "Jethro", "Priest of Midian. Turns and confuses enemies.", "Exodus 18:1 — Jethro, the priest of Midian, Moses' father in law.", suppliedSprite(jethroAsset, 42, 116, 30, 54, 42, { x: 78, y: 15 }), { cooldown: 1.0, range: 260, hitRadius: 200, moveSpeed: 78, attack: "convert" }),
   ithamar: champ("ithamar", "Ithamar", "Aaron's son. Raises protective wards instead of attacking.", "Exodus 38:21 — By the hand of Ithamar.", suppliedSprite(ithamarAsset, 44, 116, 34, 56, 45, { x: 12, y: 15 }), { cooldown: 1.0, range: 400, hitRadius: 46, moveSpeed: 82, attack: "ward" }),
   nadab: champ("nadab", "Nadab", "Aaron's firstborn. Throws exploding fireballs.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(nadabAsset, 40, 116, 28, 52, 40, { x: 77, y: 37 }), { cooldown: 1.5, range: 280, hitRadius: 60, moveSpeed: 84, attack: "fireball" }),

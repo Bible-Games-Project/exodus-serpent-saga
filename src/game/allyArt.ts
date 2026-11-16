@@ -142,8 +142,9 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
     return true;
   }
   // Ground shadow
-  ctx.fillStyle = "rgba(40,25,10,0.25)";
-  ctx.fillRect(x - 15, gy - 2, 30, 3); ctx.fillRect(x - 11, gy - 3, 22, 5);
+  // Ground shadow: one soft, light ellipse right under the feet.
+  ctx.fillStyle = "rgba(40,25,10,0.16)";
+  ctx.beginPath(); ctx.ellipse(x, gy - 1, 14, 3.5, 0, 0, Math.PI * 2); ctx.fill();
 
   const summonUntil = d.summonUntil as number | undefined;
   if (summonUntil && s.now < summonUntil) ctx.globalAlpha = 0.4 + 0.6 * (1 - (summonUntil - s.now));
@@ -178,7 +179,7 @@ export function drawAlly(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   const wk = moving ? def.sprite.walk : undefined;
   if (wk) lean += sw * wk.rock;
   if (lean) ctx.rotate(lean);
-  ctx.translate(-CX, -H);
+  ctx.translate(-CX, -H + (def.sprite.sink ?? 0));
   // Placeholder champions borrow another PNG, tinted until their own arrives.
   if (def.sprite.placeholderHue != null) ctx.filter = `hue-rotate(${def.sprite.placeholderHue}deg) saturate(0.85)`;
   const sx = im.naturalWidth / W, sy = im.naturalHeight / H;
