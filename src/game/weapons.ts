@@ -2,6 +2,7 @@
 // Combat cadence is unchanged; equipmentArt handles per-item visual gestures.
 // Each weapon adds its own established projectiles, hazards and on-hit effects.
 import type { Entity, GameState, Vec2 } from "./types";
+import { snd } from "./audio/gameSound";
 import { weaponDamage } from "./loadout";
 import { LIGHT_BRAWL_SECONDS } from "./equipment";
 import { WEAPON_COOLDOWN_MUL } from "./shopStats";
@@ -329,6 +330,7 @@ export function weaponOnMeleeHit(state: GameState, en: Entity): void {
       const every = evo >= 2 ? 8 : 10;
       if ((d.atkCount as number) % every === 0) {
         en.hp -= weaponHitDamage(state, 20); // critical hit
+        snd(state, "weapon.sword.crit", en.pos);
       }
       if (evo >= 3) en.data.burnUntil = state.now + 2;
       break;
@@ -557,7 +559,7 @@ export function updateWeaponEntities(
           const dd = Math.hypot(dx, dy) || 1;
           d.vx = (dx / dd) * 380;
           d.vy = (dy / dd) * 380;
-          if (dd < 20) { e.ttl = 0; continue; }
+          if (dd < 20) { e.ttl = 0; snd(state, "weapon.boomerang.catch"); continue; }
         }
       }
       // Ring: rebounds between enemies, then returns at lightning speed.
@@ -594,6 +596,7 @@ export function updateWeaponEntities(
         if (e.kind === "wpring" && d.returning && d.electric) dmg *= 2;
         applyBlessing(en, d);
         en.hp -= dmg;
+        snd(state, "weapon.projectile.hit", en.pos);
         if (d.poisonEvo) applyDaggerPoison(state, en, Number(d.poisonEvo));
         if (d.knock) {
           const kd = Math.hypot(rx, ry) || 1;
@@ -601,6 +604,7 @@ export function updateWeaponEntities(
           en.pos.y += (ry / kd) * (d.knock as number);
         }
         if (d.whirlpool) {
+          snd(state, "weapon.harpoon.whirlpool", en.pos);
           ctx.spawn("whirlpool", { ...en.pos }, 1.6, {
             dps: dmg * 0.25, r: 60 * (d.whirlpool as number), slow: (d.whirlpool as number) >= 1.6 ? 1 : 0,
           }, "hazard");
@@ -617,6 +621,7 @@ export function updateWeaponEntities(
           if ((d.bounces as number) <= 0) {
             d.returning = 1;
           } else {
+            snd(state, "weapon.ring.ricochet", en.pos);
             // Rebound toward the nearest other enemy.
             let best: Entity | null = null, bd = Infinity;
             for (const o of state.entities.values()) {
@@ -756,6 +761,7 @@ function ringZap(state: GameState, ring: Entity, ctx: { killEnemy: (en: Entity) 
     points.push({ x: en.pos.x, y: en.pos.y });
     if (en.hp <= 0) ctx.killEnemy(en);
   }
+  if (points.length) snd(state, "weapon.ring.zap", ring.pos);
   if (points.length) ctx.spawn('ringzap', { ...ring.pos }, .45, { points }, 'hazard');
 }
 

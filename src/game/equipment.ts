@@ -2,6 +2,7 @@
 // effects. Timed triggers and auras live here; stat multipliers live in
 // loadout.ts. All timings and targets come from the shop specification.
 import type { Entity, GameState, Vec2 } from "./types";
+import { snd } from "./audio/gameSound";
 import { updateHelmet } from "./helmets";
 import { updateFootwear } from "./footwear";
 
@@ -196,6 +197,12 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
     if (state.now >= f.staffFireAt) {
       delete f.staffFireAt;
       fireStaffSpecial(state, spawn, id, evo);
+      const SPECIAL_SOUND: Record<string, string> = {
+        moses: "magic.special.light", iron: "magic.special.burst", crystal: "magic.special.ring", diamond: "magic.special.shard",
+        bronze: "magic.special.burst", fire: "magic.special.firering", bush: "magic.special.tornado", waters: "magic.special.wave",
+        light: "magic.special.light", power: "magic.special.godhand",
+      };
+      snd(state, SPECIAL_SOUND[id] ?? "magic.special.burst");
     }
     return;
   }
@@ -205,6 +212,7 @@ function updateStaff(state: GameState, spawn: SpawnFn): void {
   if (id !== "moses" && !nearestEnemies(state, state.player.pos, 1, 420).length) return;
   if (id === "moses" && f.empowered) return;
   f.staffVisualAt = state.now;
+  snd(state, "magic.special.charge");
   f.staffFireAt = state.now + STAFF_CHARGE_SECONDS + STAFF_SLAM_SECONDS;
   f.staffNext = f.staffFireAt + (STAFF_SPECIAL_COOLDOWN[evo - 1] ?? 20);
 }

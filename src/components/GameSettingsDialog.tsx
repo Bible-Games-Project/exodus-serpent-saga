@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { useSettings } from "@/hooks/useSettings";
+import { sfx } from "@/game/audio/audioManager";
 
 
 /** Square-cornered pixel-art modal shell used by the in-game overlays. */
@@ -13,6 +15,11 @@ export function PixelModal({
   title: string;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    if (!open) return;
+    sfx("ui.menu.open");
+    return () => sfx("ui.menu.close");
+  }, [open]);
   if (!open) return null;
   return (
     <div
@@ -78,22 +85,27 @@ export function GameSettingsDialog({ open, onClose }: { open: boolean; onClose: 
           </button>
         </div>
 
-        {settings.volume && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs uppercase tracking-wider">
-              <span>Volume</span>
-              <span className="tabular-nums">{settings.volumeLevel}</span>
+        {settings.volume &&
+          ([
+            ["Volume", "volumeLevel"],
+            ["Sound effects", "sfxVolume"],
+            ["Music", "musicVolume"],
+          ] as const).map(([label, key]) => (
+            <div key={key} className="space-y-2">
+              <div className="flex items-center justify-between text-xs uppercase tracking-wider">
+                <span>{label}</span>
+                <span className="tabular-nums">{settings[key]}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                value={settings[key]}
+                onChange={(e) => update({ [key]: Number(e.target.value) })}
+                className="h-2 w-full appearance-none border-[3px] border-[#3a2412] bg-[#f6e2ad] accent-[#b5731f]"
+              />
             </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={settings.volumeLevel}
-              onChange={(e) => update({ volumeLevel: Number(e.target.value) })}
-              className="h-2 w-full appearance-none border-[3px] border-[#3a2412] bg-[#f6e2ad] accent-[#b5731f]"
-            />
-          </div>
-        )}
+          ))}
 
 
 

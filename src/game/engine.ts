@@ -36,6 +36,8 @@ import { weaponMuzzle } from "./muzzles";
 import { offscreenEnemySpawn } from "./enemySpawn";
 
 import { playShieldBlock } from "./sfx";
+import { snd } from "./audio/gameSound";
+import { chosenAlternative } from "./audio/soundChoices";
 import type { TestMapConfig } from "./types";
 import { TEST_ATTACK_ORDER } from "./testMap";
 import { applyTestEquipment } from "./testEquipment";
@@ -697,6 +699,7 @@ export function update(state: GameState, dt: number) {
         if (e.data?.[key] == null && da < reach && state.now >= ((e.data?.atkGate as number) ?? 0)) {
           e.data!.atkGate = state.now + melee.dur + 0.3;
           e.data![key] = state.now;
+          snd(state, "enemy.melee", e.pos);
           e.data!.atkHitDone = false;
         }
         if (e.data?.[key] != null) {
@@ -714,6 +717,7 @@ export function update(state: GameState, dt: number) {
         if (!invuln && !active && dd < reach && state.now >= ((e.data?.atkGate as number) ?? 0)) {
           e.data!.atkGate = state.now + melee.dur + 0.3;
           e.data![key] = state.now;
+          snd(state, "enemy.melee", e.pos);
           e.data!.atkHitDone = false;
         }
         if (!invuln && e.data?.[key] != null) {
@@ -811,6 +815,7 @@ export function update(state: GameState, dt: number) {
             }
           }
           spawnVisualHazard(state, "fireexplosion", e.pos, 0.55, { radius: R });
+          snd(state, "plague.fire.explode", e.pos);
           state.screenShake = Math.max(state.screenShake ?? 0, 10);
         } else if (e.kind === "hailstone") {
           const R = (e.data?.radius as number) ?? 60;
@@ -825,6 +830,7 @@ export function update(state: GameState, dt: number) {
             }
           }
           spawnVisualHazard(state, "hailimpact", e.pos, 0.45, { radius: R });
+          snd(state, "plague.hail.impact", e.pos);
         }
         removeProjectile(state, e);
         continue;
@@ -931,6 +937,8 @@ export function update(state: GameState, dt: number) {
         }
         en.hp -= e.dmg ?? 0;
         if (hit) hit.add(en.id);
+        if (e.kind === "serpent") snd(state, "plague.serpent.hit", en.pos);
+        else if (e.kind === "frog" && (e.dmg ?? 0) > 0) snd(state, "plague.frogs.hit", en.pos);
         if ((e.kind === "frog" || e.kind === "locust") && (e.dmg ?? 0) > 0) {
           // Frog and locust blood bursts stay at the damaging contact point.
           // Only on a real damaging hit.
@@ -1012,6 +1020,7 @@ export function update(state: GameState, dt: number) {
           if (wrapDist2(state, en.pos, e.pos) < (en.radius + e.radius) ** 2) {
             en.hp -= (d.dmg as number) ?? 0;
             spawnVisualHazard(state, "boilpop", e.pos, 0.3, { seed: e.id });
+            snd(state, "plague.boils.pop", e.pos);
             state.entities.delete(e.id);
             if (en.hp <= 0) killEnemy(state, en);
             break;
@@ -1081,16 +1090,19 @@ export function update(state: GameState, dt: number) {
       const d = Math.hypot(dx, dy);
       if (d < magnetR && d > 0.001) {
         const s = 260;
+        if (!e.data?.pulled && (state.magnetBoostUntil ?? 0) > state.now) { (e.data ??= {}).pulled = 1; snd(state, "pickup.magnet"); }
         e.pos.x = wrap(e.pos.x + (dx / d) * s * dt, state.worldW);
         e.pos.y = wrap(e.pos.y + (dy / d) * s * dt, state.worldH);
       }
       if (d < 16 || (e.kind?.startsWith("bonus_") && d < 34)) {
         if (e.kind === "gem") {
+          snd(state, "pickup.xp");
           state.xp += (e.data?.xp as number) ?? 1;
           while (state.xp >= state.xpToNext) levelUp(state);
         } else if (e.kind?.startsWith("bonus_")) {
           const kind = (e.data?.bonusKind as BonusKind) ?? "heart";
           BONUSES[kind].apply(state);
+          snd(state, `bonus.${kind}`);
         }
         state.entities.delete(e.id);
       }
@@ -1186,6 +1198,7 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // A shield soldier in the swing's path stops it dead: metallic clang, sparks,
   // zero damage anywhere.
 
+  if (candidates.length) snd(state, "weapon.staff.hit", candidates[0].en.pos);
   for (const { en, px, py } of candidates) {
     applyBlessing(en, sw.data);
     en.hp -= dmg;
@@ -1232,7 +1245,8 @@ function triggerShieldBlock(state: GameState, shield: Entity, source: Vec2) {
     seed: Math.floor(Math.random() * 1000),
     maxTtl: 0.24,
   });
-  playShieldBlock();
+  if (chosenAlternative("weapon.shield.block") != null) snd(state, "weapon.shield.block", shield.pos);
+  else playShieldBlock();
 }
 
 
@@ -1347,6 +1361,7 @@ function playerBodyHit(state: GameState, e: Entity, dt: number): Vec2 | null {
 }
 
 function spawnEnemyProjectile(state: GameState, owner: Entity, dir: Vec2, kind: string, speed: number, dmg: number, ttl: number) {
+  snd(state, kind === "flamingspear" ? "boss.spear" : owner.kind === "chariotarcher" ? "enemy.chariot.shoot" : kind === "magelight" ? "enemy.mage.cast" : kind === "spear_e" ? "enemy.spear.throw" : "enemy.arrow", owner.pos);
   // Every shot leaves the weapon itself — bow string, spear tip, staff crystal —
   // never the middle of the shooter's body.
   const origin = weaponMuzzle(owner);
@@ -1444,8 +1459,16 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
 
   if (id === "leprosy") {
     castLeprosy(state, stats.ttl);
+    snd(state, "plague.leprosy.cast");
     return;
   }
+  const CAST_SOUND: Partial<Record<PlagueId, string>> = {
+    serpent: "plague.serpent.cast", frogs: "plague.frogs.cast", gnats: "plague.gnats.cast", livestock: "plague.livestock.cast",
+    locusts: "plague.locusts.cast", firstborn: "plague.firstborn.cast", darkness: "plague.darkness.cast", pillar: "plague.pillar.cast",
+    fire: "plague.fire.cast",
+  };
+  const castSound = id === "hail" ? (state.hailFirePhase ? "plague.fire.cast" : null) : CAST_SOUND[id];
+  if (castSound) snd(state, castSound);
 
   if (id === "staff") {
     // Damage handled per-frame in applyStaffSwingHits — spawn hazard only.
@@ -1478,6 +1501,19 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       },
     };
     state.entities.set(sw.id, sw);
+    {
+      // Attack sound, timed to the moment the blow / throw actually happens.
+      const wid = equippedWeapon(state).id;
+      const swingAt = sw.data!.windup as number;
+      const ATTACK_SOUND: Record<string, [string, number]> = {
+        branch: ["weapon.staff.swing", swingAt], spear: ["weapon.spear.thrust", swingAt], sword: ["weapon.sword.slash", swingAt],
+        axe: ["weapon.axe.cut", swingAt], mace: ["weapon.mace.impact", swingAt], dagger: ["weapon.dagger.throw", 0.12],
+        harpoon: ["weapon.harpoon.throw", 0.12], boomerang: ["weapon.boomerang.throw", 0], ring: ["weapon.ring.throw", 0],
+      };
+      const [sid, delay] = ATTACK_SOUND[wid] ?? ["weapon.staff.swing", swingAt];
+      snd(state, sid, null, { delay });
+      if (wid === "branch") snd(state, "weapon.branch.gust", null, { delay: swingAt });
+    }
     // The equipped shop weapon adds its own projectiles / hazards / shockwaves.
     weaponOnCast(state, (kind, pos, ttl, data, team) => {
       const e: Entity = {
@@ -1577,6 +1613,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     const target = pickRandomEnemy(state);
     if (!target) return;
     const px = target.pos.x, py = target.pos.y;
+    snd(state, "plague.blood.cast", target.pos);
     const e: Entity = {
       id: state.nextId++,
       pos: { x: px, y: py },
@@ -1625,6 +1662,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     state.darknessDur = stats.ttl;
   } else if (id === "redsea") {
     // Moses first raises and strikes his staff; the walls start at the strike.
+    snd(state, "magic.special.charge");
     state.redSeaCast = { start: state.now, slamAt: state.now + RED_SEA_RAISE + RED_SEA_STRIKE, end: state.now + RED_SEA_RAISE + RED_SEA_STRIKE + RED_SEA_HOLD, stats, dmul };
   } else if (id === "pillar") {
     castPillars(state, stats, (def.base.extra?.radius ?? 80) * plagueAreaMul(id, level), dmul);
@@ -1667,6 +1705,7 @@ function castRedSea(state: GameState, stats: { dmg: number; speed: number; ttl: 
 
 function redSeaBurst(state: GameState, timer: Entity) {
   const d = timer.data!;
+  snd(state, "plague.redsea.crash");
   const cx = timer.pos.x, cy = timer.pos.y;
   const height = d.height as number;
   const lv = state.plagues.get("redsea") ?? 1;
@@ -1838,6 +1877,7 @@ function tickRedSeaCast(state: GameState) {
   if (!rc.spawned && state.now >= rc.slamAt) {
     rc.spawned = true;
     castRedSea(state, rc.stats, rc.dmul);
+    snd(state, "plague.redsea.slam");
     state.screenShake = Math.max(state.screenShake ?? 0, 8);
     const p = state.player;
     spawnVisualHazard(state, "agiledust", { x: p.pos.x + p.facing * 22, y: p.pos.y + 6 }, 0.4, { seed: p.id, scale: 1.4 });
@@ -1971,6 +2011,7 @@ function tickFirstbornBolt(state: GameState, e: Entity, dt: number) {
     e.ttl = Math.min(e.ttl ?? 0, 0.3);
     d.fadeFrom = e.ttl;
     spawnVisualHazard(state, "firstbornhit", { x: tgt.pos.x, y: tgt.pos.y - 14 }, 0.35, { seed: tgt.id });
+    snd(state, "plague.firstborn.strike", tgt.pos);
     if (tgt.kind === "ramses") {
       tgt.hp -= d.ramsesDmg as number;
       if (tgt.hp <= 0) killEnemy(state, tgt);
@@ -2085,6 +2126,7 @@ function syncOrbitFlies(state: GameState, dt: number) {
       if (!f) continue;
       if (wrapDist2(state, pr.pos, f.pos) < (pr.radius + FLY_INTERCEPT_RADIUS) ** 2) {
         spawnVisualHazard(state, "deathpuff", pr.pos, 0.36, { variant: Math.floor(Math.random() * 6), seed: pr.id, scale: 0.55 });
+        snd(state, "plague.flies.block", pr.pos);
         removeProjectile(state, pr);
         break;
       }
@@ -2114,6 +2156,7 @@ function killEnemy(state: GameState, e: Entity) {
     // Ramses falls into a pyramid tomb and revives after the champion revive time.
     if (e.data && e.data.downedUntil == null) {
       e.hp = 0;
+      snd(state, "boss.defeated");
       e.data.downedUntil = state.now + ALLY_REVIVE_SECONDS;
       e.data.downedAt = state.now;
       e.data.leapPhase = "idle"; e.data.atkPhase = "idle";
@@ -2134,6 +2177,7 @@ function killEnemy(state: GameState, e: Entity) {
   }, (a, b) => wrapDist2(state, a, b));
   state.entities.delete(e.id);
   state.kills++;
+  snd(state, e.kind === "chariotarcher" ? "enemy.death.elite" : e.radius >= 24 ? "enemy.death.large" : e.radius >= 13 ? "enemy.death.medium" : "enemy.death.small", e.pos);
   // Death: the body fades out, sinking a little, inside a puff of dust. A statue
   // (Stone Staff) has already faded and just crumbles into grey dust instead.
   const stoneDeath = e.data?.stoneUntil != null;
@@ -2180,6 +2224,7 @@ function tickBonusSpawns(state: GameState, dt: number) {
       const ang = Math.random() * Math.PI * 2;
       const r = 260 + Math.random() * 260;
       const kind = rollBonusKind();
+      snd(state, "pickup.bonus.appear");
       const b: Entity = {
         id: state.nextId++,
         pos: { x: wrap(p.x + Math.cos(ang) * r, state.worldW), y: wrap(p.y + Math.sin(ang) * r, state.worldH) },
@@ -2335,6 +2380,7 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   if (d.downedUntil) {
     if (state.now < (d.downedUntil as number)) return;
     d.downedUntil = undefined;
+    snd(state, "event.champion.revive", e.pos);
     d.standupUntil = state.now + 0.6;
     e.hp = e.maxHp;
     d.targetId = undefined;
@@ -2613,6 +2659,7 @@ function downCompanion(state: GameState, n: Entity) {
   if (n.data?.downedUntil) return;
   n.hp = 0;
   if (!n.data) n.data = {};
+  snd(state, "event.champion.down", n.pos);
   n.data.downedUntil = state.now + ALLY_REVIVE_SECONDS;
   delete n.data.attackT;
 }
@@ -2627,6 +2674,7 @@ function levelUp(state: GameState) {
   restoreShield(state, SHIELD_CONFIG.levelUpRestore);
   boostFx(state, "heal", "shieldUp");
   offerUpgrades(state);
+  snd(state, "event.levelup");
 }
 
 /** Shared champion damage: real HP loss, hit feedback, and the death/grave path. */
@@ -2731,6 +2779,7 @@ export function summonCompanion(state: GameState, npcId: import("./types").NpcId
   }
   spawnVisualHazard(state, "allyinvoke", ally.pos, 0.8, { seed: Math.floor(Math.random() * 99999), radius: def.invokeRadius });
   pushNotification(state, `+ ${def.name}`, "#ffd070");
+  snd(state, "event.champion.summon");
 }
 
 function offerUpgrades(state: GameState) {
@@ -2841,6 +2890,8 @@ function offerUpgrades(state: GameState) {
 
 export function applyUpgrade(state: GameState, choice: UpgradeChoice) {
   choice.apply(state);
+  // Champion picks play their arrival from summonCompanion.
+  if (!choice.npc) snd(state, choice.isUnlock ? "event.plague.unlock" : choice.plague ? "event.plague.evolve" : "event.blessing");
   state.levelUpPending = null;
 }
 

@@ -38,6 +38,7 @@ import { drawSerpentArt, SERPENT_ART } from "./serpentArt";
 export { mosesSwingAngle };
 import { drawPixelShadow } from "./shadow";
 
+import { preloadChosenSounds, sfx } from "./audio/audioManager";
 import { applyUpgrade, createInitialState, dismissNewNpc, dismissNewPlague, update, summonCompanion, dismissCompanion, setCompanionLevel, RED_SEA_RAISE, RED_SEA_STRIKE } from "./engine";
 import { applyTestEquipment } from "./testEquipment";
 import { drawCombatEquipment } from "./combatEquipmentArt";
@@ -166,9 +167,15 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
   const stateRef = useRef<GameState>(null!);
   const appliedEquipmentRef = useRef("");
   const [uiTick, setUiTick] = useState(0);
+  const pausedOnce = useRef(false);
+  useEffect(() => {
+    if (!pausedOnce.current) { pausedOnce.current = true; return; }
+    sfx(paused ? "ui.pause" : "ui.resume");
+  }, [paused]);
 
   useEffect(() => {
     stateRef.current = createInitialState(testConfig ?? null);
+    preloadChosenSounds();
 
     // A new run starts with a clean renderer baseline, so the first frame is
     // never mistaken for a damage event from a previous session.
@@ -343,6 +350,7 @@ export function GameCanvas({ onGameOver, paused, onTogglePause, testConfig }: Pr
               >
                 <h2 className="font-display mb-5 text-lg uppercase tracking-[0.14em] text-[#4a2c10]">Paused</h2>
                 <button
+                  data-sfx="none"
                   onClick={onTogglePause}
                   className="pixel-btn pixel-btn-press font-display bg-[#e9c168] px-6 py-2 text-xs uppercase tracking-[0.14em] text-[#3a2412]"
                 >
@@ -1460,6 +1468,8 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
             return (
               <button
                 key={c.id}
+                data-sfx="none"
+                data-sfx-hover="ui.card"
                 onClick={() => onPick(c)}
                 className={`pixel-panel-sm group relative flex ${CARD} shrink-0 items-center gap-3 bg-[#f6e2ad] p-2 text-left transition-transform duration-100 hover:bg-[#f0d795] sm:flex-col sm:items-center sm:justify-start sm:gap-2 sm:p-3 sm:text-center sm:hover:-translate-y-1`}
                 style={{ boxShadow: "0 5px 0 0 rgba(58,36,18,0.6)" }}

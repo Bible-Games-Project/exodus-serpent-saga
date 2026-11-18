@@ -2,6 +2,7 @@
 // level 10, then activates and pursues Moses. Leap attack only unlocks after
 // the player learns the Death of the Firstborn plague.
 import type { Entity, GameState, Vec2 } from "./types";
+import { snd } from "./audio/gameSound";
 import { damagePlayer } from "./bonuses";
 import { resolvePlayerDefeat } from "./playerDefeat";
 import { offscreenEnemySpawn } from "./enemySpawn";
@@ -82,6 +83,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     d.downedUntil = undefined;
     d.downedAt = undefined;
     r.hp = r.maxHp;
+    snd(state, "boss.revive", r.pos);
     d.atkCd = 1.5;
     d.leapCd = 5;
   }
@@ -94,6 +96,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     const shouldBeActive = lvl >= 2;
     if (shouldBeActive && !d.active) {
       d.active = true;
+      snd(state, "boss.appear"); snd(state, "boss.wake", r.pos);
       d.seated = false;
       d.leapCd = 5;
       d.atkPhase = "idle";
@@ -111,6 +114,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     // Activation trigger — player reaches level 18: Ramses leaves his throne.
     if (!d.active && state.level >= 18) {
       d.active = true;
+      snd(state, "boss.appear"); snd(state, "boss.wake", r.pos);
       d.seated = false;
       d.leapCd = 5;
       d.atkPhase = "idle";
@@ -155,6 +159,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
         d.atkT = 0.12;
         d.crackT = 0.55;
         d.crackSeed = 1 + Math.random() * 999;
+        snd(state, "boss.smash", r.pos);
         if (dist2(r.pos, p.pos) < SMASH_R * SMASH_R && !isInvuln(state)) {
           damagePlayer(state, 38, false, r);
           state.damageImpactKind = "ramses";
@@ -235,6 +240,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
     if ((d.leapT as number) <= 0) {
       d.leapPhase = "airborne";
       d.leapT = 0.75;
+      snd(state, "boss.leap", r.pos);
       d.leapFrom = { x: r.pos.x, y: r.pos.y };
     }
   } else if (phase === "airborne") {
@@ -249,6 +255,7 @@ export function tickRamses(state: GameState, dt: number, helpers: { resolveObsta
       d.leapPhase = "land";
       d.leapT = 0.4;
       r.pos.x = to.x; r.pos.y = to.y;
+      snd(state, "boss.land", r.pos);
       const R = d.landRadius as number;
       if (dist2(r.pos, p.pos) < R * R && !isInvuln(state)) {
         damagePlayer(state, (d.landDmg as number), false, r);

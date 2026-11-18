@@ -2,6 +2,7 @@ import { wardAbsorb } from "./championAbilities";
 // Bonus system — modular, data-driven pickups that appear randomly in the world
 // (no longer dropped by enemies). Add a new bonus by adding an entry to BONUSES.
 import type { Entity, GameState } from "./types";
+import { snd } from "./audio/gameSound";
 import { helmetModifyDamage } from "./helmets";
 
 export type BonusKind = "heart" | "magnet" | "star" | "lightning" | "shield";
@@ -143,7 +144,7 @@ export function damagePlayer(s: GameState, amount: number, projectile = false, s
   if (!(amount > 0)) return;
   if (wardAbsorb(s, s.player, projectile)) return;
   amount = helmetModifyDamage(s, amount, projectile, src);
-  if (!(amount > 0)) return;
+  if (!(amount > 0)) { snd(s, "player.helmet.block"); return; }
   (s.equipFx ??= {}).lastDamageAt = s.now;
   const sh = Math.max(0, s.shield ?? 0);
   const absorbed = Math.min(sh, amount);
@@ -154,4 +155,5 @@ export function damagePlayer(s: GameState, amount: number, projectile = false, s
   if (absorbed > 0) pd.shieldHitFxUntil = s.now + BAR_HIT_FX_SECONDS;
   if (rest > 0) pd.hurtFxUntil = s.now + BAR_HIT_FX_SECONDS;
   if (rest > 0) s.player.hp = Math.max(0, s.player.hp - rest);
+  snd(s, rest > 0 ? "player.hurt" : "player.shield.absorb");
 }

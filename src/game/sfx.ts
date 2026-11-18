@@ -1,22 +1,15 @@
-// Tiny WebAudio sound bank. Sounds are synthesised on the fly (no assets), so a
-// hit never waits on a download. Respects the game's sound settings.
-import { loadSettings } from "@/hooks/useSettings";
-
-let ctxRef: AudioContext | null = null;
+// Synthesised fallback sounds (no assets). The shield clank plays only while
+// no generated alternative has been chosen for "weapon.shield.block" in
+// Test Map → Sound testing. Goes through the audio manager's SFX bus, so the
+// master and SFX volumes apply.
+import { audioContext, sfxOutput } from "./audio/audioManager";
 
 function audio(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctor) return null;
-  if (!ctxRef) ctxRef = new Ctor();
-  if (ctxRef.state === "suspended") void ctxRef.resume();
-  return ctxRef;
+  return audioContext();
 }
 
 function gainLevel(): number {
-  const s = loadSettings();
-  if (!s.volume) return 0;
-  return Math.max(0, Math.min(1, s.volumeLevel / 100));
+  return 1;
 }
 
 let noiseBuf: AudioBuffer | null = null;
@@ -42,7 +35,7 @@ function metalHit(variant: number, master: number): void {
 
   const out = ac.createGain();
   out.gain.value = 0.35 * master;
-  out.connect(ac.destination);
+  out.connect(sfxOutput() ?? ac.destination);
 
   // transient: filtered noise burst = staff wood striking metal
   const src = ac.createBufferSource();

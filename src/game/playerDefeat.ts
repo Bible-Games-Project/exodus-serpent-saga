@@ -1,4 +1,5 @@
 import type { GameState } from "./types";
+import { snd } from "./audio/gameSound";
 
 /** Applies the one intentional Test Map exception without touching run state. */
 export function resolvePlayerDefeat(state: GameState): void {
@@ -12,8 +13,11 @@ export function resolvePlayerDefeat(state: GameState): void {
     state.resurrectUsed = true;
     state.player.hp = Math.round(state.player.maxHp / 2);
     state.shield = 0;
+    snd(state, "player.revive");
     return;
   }
   state.gameOver = true;
   state.running = false;
+  snd(state, "player.death");
+  snd(state, "event.gameover", null, { delay: 1.2 });
 }

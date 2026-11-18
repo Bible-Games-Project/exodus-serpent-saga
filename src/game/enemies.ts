@@ -2,6 +2,7 @@ import { ROUTE_MIN_INTERVAL } from "./routing";
 // Modular enemy registry. Each entry defines stats + behaviour hook.
 // New enemies can be added purely as data; engine dispatches by `behavior`.
 import type { Entity, GameState, Vec2 } from "./types";
+import { snd } from "./audio/gameSound";
 import { ARCHER_SHOOT_DUR } from "./archerArt";
 import { SPEAR_THROW_DUR } from "./spearSoldierArt";
 import { MAGE_CAST_DUR } from "./mageArt";
@@ -364,7 +365,7 @@ export function enemyTick(
     // then commits and sprints straight at him for good.
     const dw = e.data!;
     const TRIGGER = 260;
-    if (!dw.awake && d < TRIGGER) dw.awake = 1;
+    if (!dw.awake && d < TRIGGER) { dw.awake = 1; if (e.kind === "wolf") snd(state, "enemy.wolf.howl", e.pos); }
     if (dw.awake) {
       // Plant the paws for the whole leap animation.
       const leaping = dw.leapAt != null;
@@ -433,6 +434,7 @@ export function enemyTick(
           // the gap to Moses plus a clear overshoot beyond him. Moses' position
           // is never a destination; the wrapping world never blocks the ray.
           ds.specialDash = 1;
+          snd(state, "enemy.agile.dash", e.pos);
           ds.specialDashVx = dashVx;
           ds.specialDashVy = dashVy;
           ds.specialDashRemaining = pd + AGILE_DASH_OVERSHOOT;
@@ -589,6 +591,7 @@ export function enemyTick(
       const cd = ((dl.burstCd as number) ?? 0) - dt;
       if (cd <= 0 && d < 430) {
         dl.burstUntil = state.now + (def.chargeDuration ?? 1.1) * (0.7 + Math.random() * 0.6);
+        if (e.kind === "lion") snd(state, "enemy.lion.roar", e.pos);
         dl.burstCd = (def.chargeCooldown ?? 3.2) * (0.75 + Math.random() * 0.9);
       } else {
         dl.burstCd = cd;
@@ -644,6 +647,7 @@ export function enemyTick(
         dk.chargeVy = ny;
         dk.lanceHit = 0;
         dk.chargeWindupUntil = state.now + 0.3;
+        snd(state, "enemy.knight.charge", e.pos);
         dk.chargingUntil = state.now + 0.3 + (def.chargeDuration ?? 1.5);
         dk.chargeCd = def.chargeCooldown ?? 2.2;
       } else {

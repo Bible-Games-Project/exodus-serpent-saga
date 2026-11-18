@@ -306,6 +306,7 @@ function ItemDetail({
           {!isOwned && (
             <Button variant="ghost" size="sm"
               disabled={!canBuy}
+              data-sfx="ui.buy"
               onClick={() => onBuy(item, shown)}
               className="cover-button cover-button-primary pixel-btn-press font-display uppercase disabled:opacity-50"
             >
@@ -314,6 +315,7 @@ function ItemDetail({
           )}
           {isOwned && !isEquipped && (
             <Button variant="ghost" size="sm"
+              data-sfx="ui.equip"
               onClick={() => onEquip(item.id, shown)}
               className="cover-button pixel-btn-press font-display uppercase"
             >
@@ -389,6 +391,7 @@ function ChampionDetail({
           {!isOwned && (
             <Button variant="ghost" size="sm"
               disabled={!canBuy}
+              data-sfx="ui.buy"
               onClick={() => onBuy(champ, shown)}
               className="cover-button cover-button-primary pixel-btn-press font-display uppercase disabled:opacity-50"
             >
@@ -397,6 +400,7 @@ function ChampionDetail({
           )}
           {isOwned && !isSelected && (
             <Button variant="ghost" size="sm"
+              data-sfx="ui.equip"
               onClick={() => onSelect(champ.id, shown)}
               className="cover-button pixel-btn-press font-display uppercase"
             >

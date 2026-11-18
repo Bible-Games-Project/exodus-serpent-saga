@@ -23,6 +23,7 @@ import type { TestMapConfig } from "@/game/types";
 import { EquipmentControls } from "./EquipmentControls";
 import { ChampionControls } from "./ChampionControls";
 import { IconInventory } from "./IconInventory";
+import { SoundTesting } from "./SoundTesting";
 import { Button } from "./ui/button";
 
 const RAMSES_LEVELS: Array<{ level: 1 | 2 | 3 | 4; label: string }> = [
@@ -260,6 +261,8 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
             Start test map
           </PixelActionButton>
         </div>
+
+        <SoundTesting />
 
         <IconInventory />
       </div>
