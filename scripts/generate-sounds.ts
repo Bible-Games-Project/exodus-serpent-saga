@@ -1,6 +1,6 @@
 // Generates the five alternatives of every sound event in
 // src/game/audio/soundCatalog.ts with the ElevenLabs Sound Effects API and
-// writes public/audio/manifest.json.
+// writes public/audio/manifest.json (--manifest only rewrites the manifest).
 //
 //   ELEVENLABS_API_KEY=... bun scripts/generate-sounds.ts [--only id,id] [--force]
 //
@@ -8,8 +8,9 @@
 // to fill in anything missing. The key is read from the environment only.
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { SOUND_EVENTS, ALTERNATIVES, soundPath, type SoundEvent } from "../src/game/audio/soundCatalog";
-import { COMMITTED_CHOICES } from "../src/game/audio/soundChoices";
+import { SOUND_ACTIONS, SOUND_EVENTS, ALTERNATIVES, soundPath, type SoundEvent } from "../src/game/audio/soundCatalog";
+import { DEFAULT_SOUNDS } from "../src/game/audio/soundChoices";
+import { SOUND_LIBRARY } from "../src/game/audio/soundLibrary";
 
 const KEY = process.env.ELEVENLABS_API_KEY;
 const PUBLIC = join(import.meta.dir, "..", "public");
@@ -50,6 +51,7 @@ async function main() {
   const jobs: Array<[SoundEvent, number]> = [];
   for (const ev of SOUND_EVENTS) {
     if (only && !only.has(ev.id)) continue;
+    if (ev.noFiles) continue;
     for (let n = 1; n <= ALTERNATIVES; n++) jobs.push([ev, n]);
   }
   let done = 0;
@@ -72,16 +74,9 @@ async function main() {
 
 function writeManifest() {
   const manifest = {
-    note: "Sound events and their five generated alternatives (ElevenLabs Sound Effects). 'selected' is the alternative committed to the game (null = not chosen yet).",
-    events: SOUND_EVENTS.map((ev) => ({
-      id: ev.id,
-      category: ev.category,
-      label: ev.label,
-      prompt: ev.prompt,
-      files: Array.from({ length: ALTERNATIVES }, (_, i) => soundPath(ev, i + 1)),
-      missing: Array.from({ length: ALTERNATIVES }, (_, i) => soundPath(ev, i + 1)).filter((f) => !existsSync(join(PUBLIC, f))),
-      selected: COMMITTED_CHOICES[ev.id] ?? null,
-    })),
+    note: "Game sound actions with their default sound, and the sound library (see src/game/audio). Rebuild the library first: bun scripts/build-sound-library.ts",
+    actions: SOUND_ACTIONS.map((ev) => ({ id: ev.id, category: ev.category, label: ev.label, sound: DEFAULT_SOUNDS[ev.id] ?? null })),
+    library: SOUND_LIBRARY,
   };
   writeFileSync(join(PUBLIC, "audio", "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 }

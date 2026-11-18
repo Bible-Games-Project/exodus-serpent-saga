@@ -1,7 +1,9 @@
-// Every sound event in the game. Each event has five generated alternatives
-// (ElevenLabs Sound Effects, see scripts/generate-sounds.ts) stored in
-// public/audio/<folder>/<id>-<n>.mp3. The player picks one per event in
-// Test Map → Sound testing (soundChoices.ts).
+// Every sound event (action) in the game, with its playback rules.
+//
+// Any sound of the library (soundLibrary.ts) can be assigned to any action in
+// Test Map → Sound testing (soundChoices.ts). Most events also have five
+// ElevenLabs alternatives (scripts/generate-sounds.ts) stored in
+// public/audio/<folder>/<id>-<n>.mp3; those files are part of the library.
 
 export const ALTERNATIVES = 5;
 
@@ -46,6 +48,10 @@ export type SoundEvent = {
   restart?: boolean;
   /** consecutive plays within 0.5 s rise in pitch (pickup streaks) */
   streak?: boolean;
+  /** no longer played by the game; its generated files stay in the library */
+  retired?: boolean;
+  /** action without generated files of its own (library sounds only) */
+  noFiles?: boolean;
 };
 
 // Style directions per kind of sound: five clearly different takes.
@@ -95,24 +101,33 @@ function group(category: SoundCategory, folder: string, takes: string[], default
 export const SOUND_EVENTS: SoundEvent[] = [
   // ---------------- Weapons ----------------
   ...group("weapons", "Player/Weapons", ACTION_TAKES, { priority: 2 }, [
-    { id: "weapon.staff.swing", label: "Staff swing (basic attack)", prompt: "Wooden shepherd's staff swung fast through the air, whoosh", duration: 0.5, maxVoices: 2, cooldown: 0.08, volume: 0.55 },
+    // Only impacts: swings, thrusts and throws are silent (the maintainer's call).
     { id: "weapon.staff.hit", label: "Staff hits an enemy", prompt: "Wooden staff striking a body, blunt thud impact", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5 },
-    { id: "weapon.spear.thrust", label: "Spear thrust", prompt: "Spear thrust forward, quick piercing swoosh with a metal tip", duration: 0.5, volume: 0.6 },
-    { id: "weapon.sword.slash", label: "Sword slash", prompt: "Bronze sword slash through the air, sharp blade swish", duration: 0.5, volume: 0.6 },
+    { id: "weapon.spear.hit", label: "Spear hits an enemy", prompt: "", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5, noFiles: true },
+    { id: "weapon.sword.hit", label: "Sword hits an enemy", prompt: "", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5, noFiles: true },
     { id: "weapon.sword.crit", label: "Sword critical hit", prompt: "Critical sword hit, sharp metallic slice with a satisfying ring", duration: 0.6, cooldown: 0.12 },
-    { id: "weapon.dagger.throw", label: "Dagger throw", prompt: "Small dagger thrown, fast spinning whistle", duration: 0.5, volume: 0.6 },
-    { id: "weapon.harpoon.throw", label: "Harpoon throw", prompt: "Harpoon launched with a rope trailing, whooshing throw", duration: 0.6, volume: 0.65 },
+    { id: "weapon.axe.impact", label: "Axe hits the ground", prompt: "", duration: 0.7, volume: 0.7, noFiles: true },
+    { id: "weapon.mace.impact", label: "Mace hits the ground", prompt: "Heavy mace slamming the ground, crushing thump with debris", duration: 0.7, volume: 0.75 },
+    { id: "weapon.dagger.hit", label: "Dagger hits an enemy", prompt: "", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5, noFiles: true },
+    { id: "weapon.harpoon.hit", label: "Harpoon hits an enemy", prompt: "", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.55, noFiles: true },
     { id: "weapon.harpoon.whirlpool", label: "Harpoon whirlpool", prompt: "Swirling water whirlpool forming, splashing vortex", duration: 1.2, cooldown: 0.3 },
-    { id: "weapon.boomerang.throw", label: "Boomerang throw", prompt: "Wooden boomerang spinning through the air, rhythmic whirring", duration: 0.8, volume: 0.6 },
+    { id: "weapon.boomerang.hit", label: "Boomerang hits an enemy", prompt: "", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5, noFiles: true },
     { id: "weapon.boomerang.catch", label: "Boomerang caught", prompt: "Wooden boomerang caught in hand, soft slap", duration: 0.5, volume: 0.5 },
-    { id: "weapon.ring.throw", label: "Ring throw", prompt: "Metal ring thrown, spinning metallic hum", duration: 0.6, volume: 0.6 },
+    { id: "weapon.ring.hit", label: "Ring hits an enemy", prompt: "", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5, noFiles: true },
     { id: "weapon.ring.ricochet", label: "Ring ricochet", prompt: "Metal ring ricocheting off a target, bright ping", duration: 0.5, maxVoices: 2, cooldown: 0.08, volume: 0.5 },
     { id: "weapon.ring.zap", label: "Ring lightning zap", prompt: "Short electric lightning zap, crackle", duration: 0.5, cooldown: 0.1, volume: 0.55 },
-    { id: "weapon.axe.cut", label: "Axe ground cut", prompt: "Heavy axe chopping into the ground, cracking earth line", duration: 0.7, volume: 0.7 },
-    { id: "weapon.mace.impact", label: "Mace ground impact", prompt: "Heavy mace slamming the ground, crushing thump with debris", duration: 0.7, volume: 0.75 },
-    { id: "weapon.branch.gust", label: "Branch wind gust", prompt: "Leafy branch swung creating a strong gust of wind, rustling leaves", duration: 0.7, volume: 0.6 },
-    { id: "weapon.projectile.hit", label: "Thrown weapon hits", prompt: "Thrown blade hitting a body, short stab impact", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5 },
+    { id: "weapon.projectile.hit", label: "Fire staff bolt hits", prompt: "Thrown blade hitting a body, short stab impact", duration: 0.5, priority: 7, group: "hit", maxVoices: 3, cooldown: 0.06, volume: 0.5 },
     { id: "weapon.shield.block", label: "Weapon hits a shield", prompt: "Weapon clanging off a metal shield, metallic clank", duration: 0.5, maxVoices: 2, cooldown: 0.06, volume: 0.55 },
+    // Retired (not played): kept so their files stay in the library.
+    { id: "weapon.staff.swing", label: "Staff swing", prompt: "Wooden shepherd's staff swung fast through the air, whoosh", duration: 0.5, retired: true },
+    { id: "weapon.spear.thrust", label: "Spear thrust", prompt: "Spear thrust forward, quick piercing swoosh with a metal tip", duration: 0.5, retired: true },
+    { id: "weapon.sword.slash", label: "Sword slash", prompt: "Bronze sword slash through the air, sharp blade swish", duration: 0.5, retired: true },
+    { id: "weapon.dagger.throw", label: "Dagger throw", prompt: "Small dagger thrown, fast spinning whistle", duration: 0.5, retired: true },
+    { id: "weapon.harpoon.throw", label: "Harpoon throw", prompt: "Harpoon launched with a rope trailing, whooshing throw", duration: 0.6, retired: true },
+    { id: "weapon.boomerang.throw", label: "Boomerang throw", prompt: "Wooden boomerang spinning through the air, rhythmic whirring", duration: 0.8, retired: true },
+    { id: "weapon.ring.throw", label: "Ring throw", prompt: "Metal ring thrown, spinning metallic hum", duration: 0.6, retired: true },
+    { id: "weapon.axe.cut", label: "Axe ground cut", prompt: "Heavy axe chopping into the ground, cracking earth line", duration: 0.7, retired: true },
+    { id: "weapon.branch.gust", label: "Branch wind gust", prompt: "Leafy branch swung creating a strong gust of wind, rustling leaves", duration: 0.7, retired: true },
   ]),
 
   // ---------------- Magic: staff specials ----------------
@@ -234,13 +249,17 @@ export const SOUND_EVENTS: SoundEvent[] = [
   ]),
 ];
 
-export const SOUND_BY_ID: Record<string, SoundEvent> = Object.fromEntries(SOUND_EVENTS.map((e) => [e.id, e]));
+/** The events the game plays (the rows of Test Map → Sound testing). */
+export const SOUND_ACTIONS: SoundEvent[] = SOUND_EVENTS.filter((e) => !e.retired);
+
+export const SOUND_BY_ID: Record<string, SoundEvent> = Object.fromEntries(SOUND_ACTIONS.map((e) => [e.id, e]));
 
 /** Path under public/ of alternative n (1-5) of an event. */
 export function soundPath(ev: SoundEvent, n: number): string {
   return `audio/${ev.folder}/${ev.id.replace(/\./g, "-")}-${n}.mp3`;
 }
 
-export function soundUrl(ev: SoundEvent, n: number): string {
-  return `${import.meta.env?.BASE_URL ?? "/"}${soundPath(ev, n)}`;
+/** URL of a library sound (path under public/). */
+export function libraryUrl(path: string): string {
+  return `${import.meta.env?.BASE_URL ?? "/"}${path}`;
 }

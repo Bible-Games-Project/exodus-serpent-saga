@@ -596,7 +596,7 @@ export function updateWeaponEntities(
         if (e.kind === "wpring" && d.returning && d.electric) dmg *= 2;
         applyBlessing(en, d);
         en.hp -= dmg;
-        snd(state, "weapon.projectile.hit", en.pos);
+        snd(state, e.kind === "wpboom" ? "weapon.boomerang.hit" : e.kind === "wpring" ? "weapon.ring.hit" : d.art === "harpoon" ? "weapon.harpoon.hit" : d.art === "dagger" ? "weapon.dagger.hit" : "weapon.projectile.hit", en.pos);
         if (d.poisonEvo) applyDaggerPoison(state, en, Number(d.poisonEvo));
         if (d.knock) {
           const kd = Math.hypot(rx, ry) || 1;
@@ -647,6 +647,10 @@ export function updateWeaponEntities(
     // Damaging ground hazards: axeline, maceimpact, shockwave, whirlpool, toxiccloud.
     if (["axeline", "maceimpact", "shockwave", "whirlpool", "toxiccloud", "firering", "slowwave", "windtrail", "slowprint", "waterorbit", "godhand"].includes(e.kind)) {
       if (state.now < Number(d.impactAt ?? e.born)) continue;
+      if ((e.kind === "axeline" || e.kind === "maceimpact") && !d.impactSound) {
+        d.impactSound = 1;
+        snd(state, e.kind === "axeline" ? "weapon.axe.impact" : "weapon.mace.impact", e.pos);
+      }
       // The fist strikes once; its crack lingers only as a picture.
       if (e.kind === "godhand" && state.now > Number(d.impactAt) + .15) continue;
       if (e.kind === "waterorbit") { e.pos.x = state.player.pos.x; e.pos.y = state.player.pos.y; }

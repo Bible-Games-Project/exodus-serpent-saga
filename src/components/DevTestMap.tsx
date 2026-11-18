@@ -262,9 +262,10 @@ function ConfigScreen({ onStart }: { onStart: (cfg: TestMapConfig) => void }) {
           </PixelActionButton>
         </div>
 
-        <SoundTesting />
-
         <IconInventory />
+      </div>
+      <div className="mx-auto mt-2 w-full max-w-7xl">
+        <SoundTesting />
       </div>
     </main>
   );

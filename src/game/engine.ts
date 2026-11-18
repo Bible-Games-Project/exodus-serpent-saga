@@ -37,7 +37,7 @@ import { offscreenEnemySpawn } from "./enemySpawn";
 
 import { playShieldBlock } from "./sfx";
 import { snd } from "./audio/gameSound";
-import { chosenAlternative } from "./audio/soundChoices";
+import { assignedSound } from "./audio/soundChoices";
 import type { TestMapConfig } from "./types";
 import { TEST_ATTACK_ORDER } from "./testMap";
 import { applyTestEquipment } from "./testEquipment";
@@ -1198,7 +1198,12 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // A shield soldier in the swing's path stops it dead: metallic clang, sparks,
   // zero damage anywhere.
 
-  if (candidates.length) snd(state, "weapon.staff.hit", candidates[0].en.pos);
+  // Weapons only sound on impact. Axe and mace sound when they hit the ground (weapons.ts).
+  if (candidates.length) {
+    const wid = equippedWeapon(state).id;
+    const hitSound = wid === "spear" ? "weapon.spear.hit" : wid === "sword" ? "weapon.sword.hit" : wid === "axe" || wid === "mace" ? null : "weapon.staff.hit";
+    if (hitSound) snd(state, hitSound, candidates[0].en.pos);
+  }
   for (const { en, px, py } of candidates) {
     applyBlessing(en, sw.data);
     en.hp -= dmg;
@@ -1245,7 +1250,7 @@ function triggerShieldBlock(state: GameState, shield: Entity, source: Vec2) {
     seed: Math.floor(Math.random() * 1000),
     maxTtl: 0.24,
   });
-  if (chosenAlternative("weapon.shield.block") != null) snd(state, "weapon.shield.block", shield.pos);
+  if (assignedSound("weapon.shield.block")) snd(state, "weapon.shield.block", shield.pos);
   else playShieldBlock();
 }
 
@@ -1501,19 +1506,6 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
       },
     };
     state.entities.set(sw.id, sw);
-    {
-      // Attack sound, timed to the moment the blow / throw actually happens.
-      const wid = equippedWeapon(state).id;
-      const swingAt = sw.data!.windup as number;
-      const ATTACK_SOUND: Record<string, [string, number]> = {
-        branch: ["weapon.staff.swing", swingAt], spear: ["weapon.spear.thrust", swingAt], sword: ["weapon.sword.slash", swingAt],
-        axe: ["weapon.axe.cut", swingAt], mace: ["weapon.mace.impact", swingAt], dagger: ["weapon.dagger.throw", 0.12],
-        harpoon: ["weapon.harpoon.throw", 0.12], boomerang: ["weapon.boomerang.throw", 0], ring: ["weapon.ring.throw", 0],
-      };
-      const [sid, delay] = ATTACK_SOUND[wid] ?? ["weapon.staff.swing", swingAt];
-      snd(state, sid, null, { delay });
-      if (wid === "branch") snd(state, "weapon.branch.gust", null, { delay: swingAt });
-    }
     // The equipped shop weapon adds its own projectiles / hazards / shockwaves.
     weaponOnCast(state, (kind, pos, ttl, data, team) => {
       const e: Entity = {

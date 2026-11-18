@@ -1,0 +1,341 @@
+{
+  "source": "Synth",
+  "license": "Made for this game (no third-party audio)",
+  "sounds": [
+    {
+      "file": "ui-soft-tick.wav",
+      "name": "Soft tick",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-glass-tick.wav",
+      "name": "Glass tick",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-bubble-blip.wav",
+      "name": "Bubble blip",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-tiny-pip.wav",
+      "name": "Tiny pip",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-velvet-tap.wav",
+      "name": "Velvet tap",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-wood-click.wav",
+      "name": "Wood click",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-wood-tap.wav",
+      "name": "Wood tap",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-pop.wav",
+      "name": "Pop",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-soft-click.wav",
+      "name": "Soft click",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-retro-blip.wav",
+      "name": "Retro blip",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-stone-click.wav",
+      "name": "Stone click",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-chime-up.wav",
+      "name": "Two-note chime up",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-bright-confirm.wav",
+      "name": "Bright confirm",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-harp-confirm.wav",
+      "name": "Harp pluck confirm",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-chime-down.wav",
+      "name": "Two-note chime down",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-soft-cancel.wav",
+      "name": "Soft cancel",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-wood-back.wav",
+      "name": "Wooden back",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-rising-swoosh.wav",
+      "name": "Rising swoosh",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-falling-swoosh.wav",
+      "name": "Falling swoosh",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-scroll-open.wav",
+      "name": "Scroll unroll",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-scroll-close.wav",
+      "name": "Scroll roll up",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-paper-flick.wav",
+      "name": "Paper flick",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-card-flip.wav",
+      "name": "Card flip",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-page-turn.wav",
+      "name": "Page turn",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-double-tick.wav",
+      "name": "Double tick",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-pause-tones.wav",
+      "name": "Pause tones",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-resume-tones.wav",
+      "name": "Resume tones",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-hush.wav",
+      "name": "Hush (muffled drop)",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-toggle-on.wav",
+      "name": "Toggle on",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-toggle-off.wav",
+      "name": "Toggle off",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-switch-click.wav",
+      "name": "Switch click",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-slider-tick.wav",
+      "name": "Slider tick",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-ratchet-tick.wav",
+      "name": "Ratchet tick",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-error-buzz.wav",
+      "name": "Error buzz",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-soft-error.wav",
+      "name": "Soft error",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-wood-thunk.wav",
+      "name": "Wooden thunk (denied)",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-coin-chime.wav",
+      "name": "Coin chime",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-coins-jingle.wav",
+      "name": "Coins jingle",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-purchase-sparkle.wav",
+      "name": "Purchase sparkle",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-metal-clink.wav",
+      "name": "Metal clink",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-leather-buckle.wav",
+      "name": "Leather and buckle",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "ui-heavy-equip.wav",
+      "name": "Heavy equip",
+      "group": "UI (synth)"
+    },
+    {
+      "file": "pickup-gem-chime.wav",
+      "name": "Gem chime",
+      "group": "Pickups (synth)"
+    },
+    {
+      "file": "pickup-glass-gem.wav",
+      "name": "Glass gem",
+      "group": "Pickups (synth)"
+    },
+    {
+      "file": "pickup-marimba-blip.wav",
+      "name": "Marimba blip",
+      "group": "Pickups (synth)"
+    },
+    {
+      "file": "pickup-twinkle.wav",
+      "name": "Sparkle twinkle",
+      "group": "Pickups (synth)"
+    },
+    {
+      "file": "pickup-soft-pluck.wav",
+      "name": "Soft pluck",
+      "group": "Pickups (synth)"
+    },
+    {
+      "file": "power-arpeggio.wav",
+      "name": "Power-up arpeggio",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-magic-rise.wav",
+      "name": "Magic rise",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-heal-chord.wav",
+      "name": "Heal chord",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-shield-shimmer.wav",
+      "name": "Shield shimmer",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-speed-zip.wav",
+      "name": "Speed zip",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-magnet-hum.wav",
+      "name": "Magnet hum rise",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-star-fanfare.wav",
+      "name": "Star fanfare",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-retro.wav",
+      "name": "Retro power-up",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-holy-chord.wav",
+      "name": "Holy chord",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "power-bonus-pop.wav",
+      "name": "Bonus pop",
+      "group": "Power-ups (synth)"
+    },
+    {
+      "file": "hit-thud.wav",
+      "name": "Thud",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-heavy-thud.wav",
+      "name": "Heavy thud",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-punch.wav",
+      "name": "Punch",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-stab.wav",
+      "name": "Stab",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-slice.wav",
+      "name": "Slice",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-metal.wav",
+      "name": "Metal hit",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-crunch.wav",
+      "name": "Crunch",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-wood-knock.wav",
+      "name": "Wood knock",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-ground-slam.wav",
+      "name": "Ground slam",
+      "group": "Impacts (synth)"
+    },
+    {
+      "file": "hit-soft-splat.wav",
+      "name": "Soft splat",
+      "group": "Impacts (synth)"
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 // Central audio manager. Every game / UI sound goes through `sfx(id)`.
 //
-// - Sounds are the five generated alternatives per event in public/audio/
-//   (see soundCatalog.ts). Gameplay only plays the alternative the player
-//   chose in Test Map → Sound testing; an event with no choice stays silent.
+// - Each event plays the library sound assigned to it (soundChoices.ts:
+//   game defaults, overridden in Test Map → Sound testing). Silence at the
+//   start of a file is skipped so hits land on the frame they happen.
 // - Buses: master → { sfx, music, preview }. Volumes come from the settings.
 // - Overload control: global voice cap with priority stealing, a per-event
 //   (or per-group) voice cap and a per-event cooldown, so 20 enemies dying in
@@ -11,8 +11,8 @@
 // - Buffers load lazily and are cached; selected sounds are preloaded when a
 //   run starts so the first hit never waits on a download.
 import { SETTINGS_EVENT, loadSettings, type Settings } from "@/hooks/useSettings";
-import { SOUND_BY_ID, soundUrl, type SoundEvent } from "./soundCatalog";
-import { chosenAlternative } from "./soundChoices";
+import { SOUND_ACTIONS, SOUND_BY_ID, libraryUrl, type SoundEvent } from "./soundCatalog";
+import { assignedSound } from "./soundChoices";
 
 const MAX_VOICES = 24;
 
@@ -72,6 +72,18 @@ if (typeof window !== "undefined") window.addEventListener(SETTINGS_EVENT, () =>
 
 // ---------- buffers ----------
 const buffers = new Map<string, AudioBuffer | null>();
+/** seconds of near-silence at the start of each loaded buffer */
+const leadIn = new WeakMap<AudioBuffer, number>();
+
+function measureLeadIn(buf: AudioBuffer): number {
+  const ch = buf.getChannelData(0);
+  let peak = 0;
+  for (let i = 0; i < ch.length; i++) peak = Math.max(peak, Math.abs(ch[i]));
+  const thr = Math.max(0.01, peak * 0.06);
+  let i = 0;
+  while (i < ch.length && Math.abs(ch[i]) < thr) i++;
+  return Math.max(0, i / buf.sampleRate - 0.004);
+}
 const loading = new Map<string, Promise<AudioBuffer | null>>();
 
 function loadBuffer(url: string): Promise<AudioBuffer | null> {
@@ -86,6 +98,7 @@ function loadBuffer(url: string): Promise<AudioBuffer | null> {
       .then((b) => c.decodeAudioData(b))
       .catch(() => null)
       .then((buf) => {
+        if (buf) leadIn.set(buf, measureLeadIn(buf));
         buffers.set(url, buf);
         loading.delete(url);
         return buf;
@@ -95,12 +108,12 @@ function loadBuffer(url: string): Promise<AudioBuffer | null> {
   return p;
 }
 
-/** Preload the chosen alternative of every event (call when a run starts). */
+/** Preload the assigned sound of every event (call when a run starts). */
 export function preloadChosenSounds() {
   if (!context()) return;
-  for (const ev of Object.values(SOUND_BY_ID)) {
-    const n = chosenAlternative(ev.id);
-    if (n != null) void loadBuffer(soundUrl(ev, n));
+  for (const ev of SOUND_ACTIONS) {
+    const path = assignedSound(ev.id);
+    if (path) void loadBuffer(libraryUrl(path));
   }
 }
 
@@ -132,8 +145,8 @@ export type SfxOptions = {
 export function sfx(id: string, opts: SfxOptions = {}) {
   const ev = SOUND_BY_ID[id];
   if (!ev) return;
-  const n = chosenAlternative(id);
-  if (n == null) return;
+  const path = assignedSound(id);
+  if (!path) return;
   const s = settings();
   if (!s.volume || s.volumeLevel <= 0 || s.sfxVolume <= 0) return;
   const c = context();
@@ -141,7 +154,7 @@ export function sfx(id: string, opts: SfxOptions = {}) {
   const now = c.currentTime;
   const key = ev.group ?? ev.id;
   if (now - (lastPlayed.get(key) ?? -1e9) < ev.cooldown) return;
-  const url = soundUrl(ev, n);
+  const url = libraryUrl(path);
   const buf = buffers.get(url);
   if (!buf) {
     // Not loaded yet: start loading, skip this one play.
@@ -182,7 +195,7 @@ function startVoice(c: AudioContext, bus: AudioNode, buf: AudioBuffer, ev: Sound
   const v: Voice = { key, priority: ev.priority, src, started: c.currentTime };
   voices.push(v);
   src.onended = () => dropVoice(v);
-  src.start(c.currentTime + Math.max(0, opts.delay ?? 0));
+  src.start(c.currentTime + Math.max(0, opts.delay ?? 0), leadIn.get(buf) ?? 0);
 }
 
 function stopVoice(v: Voice) {
@@ -200,23 +213,23 @@ export function stopPreview() {
   }
 }
 
-/** Play alternative `n` (1-5) of an event on the preview bus. Resolves false if the file is missing. */
-export async function previewSound(id: string, n: number): Promise<boolean> {
-  const ev = SOUND_BY_ID[id];
+/** Play a library sound on the preview bus (at the volume `id` plays in game). Resolves false if it can't load. */
+export async function previewSound(path: string, id?: string): Promise<boolean> {
+  const ev = id ? SOUND_BY_ID[id] : undefined;
   const c = context();
-  if (!ev || !c || !previewBus) return false;
+  if (!c || !previewBus) return false;
   stopPreview();
-  const buf = await loadBuffer(soundUrl(ev, n));
+  const buf = await loadBuffer(libraryUrl(path));
   if (!buf) return false;
   stopPreview();
   const src = c.createBufferSource();
   src.buffer = buf;
   const g = c.createGain();
-  g.gain.value = ev.volume;
+  g.gain.value = ev?.volume ?? 0.8;
   src.connect(g).connect(previewBus);
   src.onended = () => { if (previewSrc === src) previewSrc = null; };
   previewSrc = src;
-  src.start();
+  src.start(0, leadIn.get(buf) ?? 0);
   return true;
 }
 

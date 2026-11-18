@@ -1,1663 +1,3655 @@
 {
-  "note": "Sound events and their five generated alternatives (ElevenLabs Sound Effects). 'selected' is the alternative committed to the game (null = not chosen yet).",
-  "events": [
-    {
-      "id": "weapon.staff.swing",
-      "category": "weapons",
-      "label": "Staff swing (basic attack)",
-      "prompt": "Wooden shepherd's staff swung fast through the air, whoosh",
-      "files": [
-        "audio/Player/Weapons/weapon-staff-swing-1.mp3",
-        "audio/Player/Weapons/weapon-staff-swing-2.mp3",
-        "audio/Player/Weapons/weapon-staff-swing-3.mp3",
-        "audio/Player/Weapons/weapon-staff-swing-4.mp3",
-        "audio/Player/Weapons/weapon-staff-swing-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
-    },
+  "note": "Game sound actions with their default sound, and the sound library (see src/game/audio). Rebuild the library first: bun scripts/build-sound-library.ts",
+  "actions": [
     {
       "id": "weapon.staff.hit",
       "category": "weapons",
       "label": "Staff hits an enemy",
-      "prompt": "Wooden staff striking a body, blunt thud impact",
-      "files": [
-        "audio/Player/Weapons/weapon-staff-hit-1.mp3",
-        "audio/Player/Weapons/weapon-staff-hit-2.mp3",
-        "audio/Player/Weapons/weapon-staff-hit-3.mp3",
-        "audio/Player/Weapons/weapon-staff-hit-4.mp3",
-        "audio/Player/Weapons/weapon-staff-hit-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/hit-wood-knock.wav"
     },
     {
-      "id": "weapon.spear.thrust",
+      "id": "weapon.spear.hit",
       "category": "weapons",
-      "label": "Spear thrust",
-      "prompt": "Spear thrust forward, quick piercing swoosh with a metal tip",
-      "files": [
-        "audio/Player/Weapons/weapon-spear-thrust-1.mp3",
-        "audio/Player/Weapons/weapon-spear-thrust-2.mp3",
-        "audio/Player/Weapons/weapon-spear-thrust-3.mp3",
-        "audio/Player/Weapons/weapon-spear-thrust-4.mp3",
-        "audio/Player/Weapons/weapon-spear-thrust-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Spear hits an enemy",
+      "sound": "audio/Library/Synth/hit-stab.wav"
     },
     {
-      "id": "weapon.sword.slash",
+      "id": "weapon.sword.hit",
       "category": "weapons",
-      "label": "Sword slash",
-      "prompt": "Bronze sword slash through the air, sharp blade swish",
-      "files": [
-        "audio/Player/Weapons/weapon-sword-slash-1.mp3",
-        "audio/Player/Weapons/weapon-sword-slash-2.mp3",
-        "audio/Player/Weapons/weapon-sword-slash-3.mp3",
-        "audio/Player/Weapons/weapon-sword-slash-4.mp3",
-        "audio/Player/Weapons/weapon-sword-slash-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Sword hits an enemy",
+      "sound": "audio/Library/Synth/hit-slice.wav"
     },
     {
       "id": "weapon.sword.crit",
       "category": "weapons",
       "label": "Sword critical hit",
-      "prompt": "Critical sword hit, sharp metallic slice with a satisfying ring",
-      "files": [
-        "audio/Player/Weapons/weapon-sword-crit-1.mp3",
-        "audio/Player/Weapons/weapon-sword-crit-2.mp3",
-        "audio/Player/Weapons/weapon-sword-crit-3.mp3",
-        "audio/Player/Weapons/weapon-sword-crit-4.mp3",
-        "audio/Player/Weapons/weapon-sword-crit-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Weapons/weapon-sword-crit-2.mp3"
     },
     {
-      "id": "weapon.dagger.throw",
+      "id": "weapon.axe.impact",
       "category": "weapons",
-      "label": "Dagger throw",
-      "prompt": "Small dagger thrown, fast spinning whistle",
-      "files": [
-        "audio/Player/Weapons/weapon-dagger-throw-1.mp3",
-        "audio/Player/Weapons/weapon-dagger-throw-2.mp3",
-        "audio/Player/Weapons/weapon-dagger-throw-3.mp3",
-        "audio/Player/Weapons/weapon-dagger-throw-4.mp3",
-        "audio/Player/Weapons/weapon-dagger-throw-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Axe hits the ground",
+      "sound": "audio/Library/Synth/hit-heavy-thud.wav"
     },
     {
-      "id": "weapon.harpoon.throw",
+      "id": "weapon.mace.impact",
       "category": "weapons",
-      "label": "Harpoon throw",
-      "prompt": "Harpoon launched with a rope trailing, whooshing throw",
-      "files": [
-        "audio/Player/Weapons/weapon-harpoon-throw-1.mp3",
-        "audio/Player/Weapons/weapon-harpoon-throw-2.mp3",
-        "audio/Player/Weapons/weapon-harpoon-throw-3.mp3",
-        "audio/Player/Weapons/weapon-harpoon-throw-4.mp3",
-        "audio/Player/Weapons/weapon-harpoon-throw-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Mace hits the ground",
+      "sound": "audio/Player/Weapons/weapon-mace-impact-4.mp3"
+    },
+    {
+      "id": "weapon.dagger.hit",
+      "category": "weapons",
+      "label": "Dagger hits an enemy",
+      "sound": "audio/Library/Synth/hit-stab.wav"
+    },
+    {
+      "id": "weapon.harpoon.hit",
+      "category": "weapons",
+      "label": "Harpoon hits an enemy",
+      "sound": "audio/Library/Synth/hit-punch.wav"
     },
     {
       "id": "weapon.harpoon.whirlpool",
       "category": "weapons",
       "label": "Harpoon whirlpool",
-      "prompt": "Swirling water whirlpool forming, splashing vortex",
-      "files": [
-        "audio/Player/Weapons/weapon-harpoon-whirlpool-1.mp3",
-        "audio/Player/Weapons/weapon-harpoon-whirlpool-2.mp3",
-        "audio/Player/Weapons/weapon-harpoon-whirlpool-3.mp3",
-        "audio/Player/Weapons/weapon-harpoon-whirlpool-4.mp3",
-        "audio/Player/Weapons/weapon-harpoon-whirlpool-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Weapons/weapon-harpoon-whirlpool-1.mp3"
     },
     {
-      "id": "weapon.boomerang.throw",
+      "id": "weapon.boomerang.hit",
       "category": "weapons",
-      "label": "Boomerang throw",
-      "prompt": "Wooden boomerang spinning through the air, rhythmic whirring",
-      "files": [
-        "audio/Player/Weapons/weapon-boomerang-throw-1.mp3",
-        "audio/Player/Weapons/weapon-boomerang-throw-2.mp3",
-        "audio/Player/Weapons/weapon-boomerang-throw-3.mp3",
-        "audio/Player/Weapons/weapon-boomerang-throw-4.mp3",
-        "audio/Player/Weapons/weapon-boomerang-throw-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Boomerang hits an enemy",
+      "sound": "audio/Library/Synth/hit-thud.wav"
     },
     {
       "id": "weapon.boomerang.catch",
       "category": "weapons",
       "label": "Boomerang caught",
-      "prompt": "Wooden boomerang caught in hand, soft slap",
-      "files": [
-        "audio/Player/Weapons/weapon-boomerang-catch-1.mp3",
-        "audio/Player/Weapons/weapon-boomerang-catch-2.mp3",
-        "audio/Player/Weapons/weapon-boomerang-catch-3.mp3",
-        "audio/Player/Weapons/weapon-boomerang-catch-4.mp3",
-        "audio/Player/Weapons/weapon-boomerang-catch-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/hit-wood-knock.wav"
     },
     {
-      "id": "weapon.ring.throw",
+      "id": "weapon.ring.hit",
       "category": "weapons",
-      "label": "Ring throw",
-      "prompt": "Metal ring thrown, spinning metallic hum",
-      "files": [
-        "audio/Player/Weapons/weapon-ring-throw-1.mp3",
-        "audio/Player/Weapons/weapon-ring-throw-2.mp3",
-        "audio/Player/Weapons/weapon-ring-throw-3.mp3",
-        "audio/Player/Weapons/weapon-ring-throw-4.mp3",
-        "audio/Player/Weapons/weapon-ring-throw-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Ring hits an enemy",
+      "sound": "audio/Library/Synth/hit-metal.wav"
     },
     {
       "id": "weapon.ring.ricochet",
       "category": "weapons",
       "label": "Ring ricochet",
-      "prompt": "Metal ring ricocheting off a target, bright ping",
-      "files": [
-        "audio/Player/Weapons/weapon-ring-ricochet-1.mp3",
-        "audio/Player/Weapons/weapon-ring-ricochet-2.mp3",
-        "audio/Player/Weapons/weapon-ring-ricochet-3.mp3",
-        "audio/Player/Weapons/weapon-ring-ricochet-4.mp3",
-        "audio/Player/Weapons/weapon-ring-ricochet-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Weapons/weapon-ring-ricochet-2.mp3"
     },
     {
       "id": "weapon.ring.zap",
       "category": "weapons",
       "label": "Ring lightning zap",
-      "prompt": "Short electric lightning zap, crackle",
-      "files": [
-        "audio/Player/Weapons/weapon-ring-zap-1.mp3",
-        "audio/Player/Weapons/weapon-ring-zap-2.mp3",
-        "audio/Player/Weapons/weapon-ring-zap-3.mp3",
-        "audio/Player/Weapons/weapon-ring-zap-4.mp3",
-        "audio/Player/Weapons/weapon-ring-zap-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
-    },
-    {
-      "id": "weapon.axe.cut",
-      "category": "weapons",
-      "label": "Axe ground cut",
-      "prompt": "Heavy axe chopping into the ground, cracking earth line",
-      "files": [
-        "audio/Player/Weapons/weapon-axe-cut-1.mp3",
-        "audio/Player/Weapons/weapon-axe-cut-2.mp3",
-        "audio/Player/Weapons/weapon-axe-cut-3.mp3",
-        "audio/Player/Weapons/weapon-axe-cut-4.mp3",
-        "audio/Player/Weapons/weapon-axe-cut-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
-    },
-    {
-      "id": "weapon.mace.impact",
-      "category": "weapons",
-      "label": "Mace ground impact",
-      "prompt": "Heavy mace slamming the ground, crushing thump with debris",
-      "files": [
-        "audio/Player/Weapons/weapon-mace-impact-1.mp3",
-        "audio/Player/Weapons/weapon-mace-impact-2.mp3",
-        "audio/Player/Weapons/weapon-mace-impact-3.mp3",
-        "audio/Player/Weapons/weapon-mace-impact-4.mp3",
-        "audio/Player/Weapons/weapon-mace-impact-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
-    },
-    {
-      "id": "weapon.branch.gust",
-      "category": "weapons",
-      "label": "Branch wind gust",
-      "prompt": "Leafy branch swung creating a strong gust of wind, rustling leaves",
-      "files": [
-        "audio/Player/Weapons/weapon-branch-gust-1.mp3",
-        "audio/Player/Weapons/weapon-branch-gust-2.mp3",
-        "audio/Player/Weapons/weapon-branch-gust-3.mp3",
-        "audio/Player/Weapons/weapon-branch-gust-4.mp3",
-        "audio/Player/Weapons/weapon-branch-gust-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Weapons/weapon-ring-zap-2.mp3"
     },
     {
       "id": "weapon.projectile.hit",
       "category": "weapons",
-      "label": "Thrown weapon hits",
-      "prompt": "Thrown blade hitting a body, short stab impact",
-      "files": [
-        "audio/Player/Weapons/weapon-projectile-hit-1.mp3",
-        "audio/Player/Weapons/weapon-projectile-hit-2.mp3",
-        "audio/Player/Weapons/weapon-projectile-hit-3.mp3",
-        "audio/Player/Weapons/weapon-projectile-hit-4.mp3",
-        "audio/Player/Weapons/weapon-projectile-hit-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "label": "Fire staff bolt hits",
+      "sound": "audio/Library/Synth/hit-punch.wav"
     },
     {
       "id": "weapon.shield.block",
       "category": "weapons",
       "label": "Weapon hits a shield",
-      "prompt": "Weapon clanging off a metal shield, metallic clank",
-      "files": [
-        "audio/Player/Weapons/weapon-shield-block-1.mp3",
-        "audio/Player/Weapons/weapon-shield-block-2.mp3",
-        "audio/Player/Weapons/weapon-shield-block-3.mp3",
-        "audio/Player/Weapons/weapon-shield-block-4.mp3",
-        "audio/Player/Weapons/weapon-shield-block-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Weapons/weapon-shield-block-2.mp3"
     },
     {
       "id": "magic.special.charge",
       "category": "magic",
       "label": "Staff special charging",
-      "prompt": "Magical energy gathering into a staff, rising hum",
-      "files": [
-        "audio/Player/Magic/magic-special-charge-1.mp3",
-        "audio/Player/Magic/magic-special-charge-2.mp3",
-        "audio/Player/Magic/magic-special-charge-3.mp3",
-        "audio/Player/Magic/magic-special-charge-4.mp3",
-        "audio/Player/Magic/magic-special-charge-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-charge-1.mp3"
     },
     {
       "id": "magic.special.burst",
       "category": "magic",
       "label": "Special: burst",
-      "prompt": "Magic energy burst exploding outward from a staff",
-      "files": [
-        "audio/Player/Magic/magic-special-burst-1.mp3",
-        "audio/Player/Magic/magic-special-burst-2.mp3",
-        "audio/Player/Magic/magic-special-burst-3.mp3",
-        "audio/Player/Magic/magic-special-burst-4.mp3",
-        "audio/Player/Magic/magic-special-burst-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-burst-5.mp3"
     },
     {
       "id": "magic.special.ring",
       "category": "magic",
       "label": "Special: ring",
-      "prompt": "Expanding magic ring shockwave, resonant whoom",
-      "files": [
-        "audio/Player/Magic/magic-special-ring-1.mp3",
-        "audio/Player/Magic/magic-special-ring-2.mp3",
-        "audio/Player/Magic/magic-special-ring-3.mp3",
-        "audio/Player/Magic/magic-special-ring-4.mp3",
-        "audio/Player/Magic/magic-special-ring-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-ring-1.mp3"
     },
     {
       "id": "magic.special.shard",
       "category": "magic",
       "label": "Special: shards",
-      "prompt": "Crystal shards launched in a spray, glassy whooshes",
-      "files": [
-        "audio/Player/Magic/magic-special-shard-1.mp3",
-        "audio/Player/Magic/magic-special-shard-2.mp3",
-        "audio/Player/Magic/magic-special-shard-3.mp3",
-        "audio/Player/Magic/magic-special-shard-4.mp3",
-        "audio/Player/Magic/magic-special-shard-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-shard-3.mp3"
     },
     {
       "id": "magic.special.firering",
       "category": "magic",
       "label": "Special: ring of fire",
-      "prompt": "Ring of fire igniting around the caster, roaring flames",
-      "files": [
-        "audio/Player/Magic/magic-special-firering-1.mp3",
-        "audio/Player/Magic/magic-special-firering-2.mp3",
-        "audio/Player/Magic/magic-special-firering-3.mp3",
-        "audio/Player/Magic/magic-special-firering-4.mp3",
-        "audio/Player/Magic/magic-special-firering-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-firering-4.mp3"
     },
     {
       "id": "magic.special.tornado",
       "category": "magic",
       "label": "Special: tornado",
-      "prompt": "Small sand tornado spinning up, howling wind",
-      "files": [
-        "audio/Player/Magic/magic-special-tornado-1.mp3",
-        "audio/Player/Magic/magic-special-tornado-2.mp3",
-        "audio/Player/Magic/magic-special-tornado-3.mp3",
-        "audio/Player/Magic/magic-special-tornado-4.mp3",
-        "audio/Player/Magic/magic-special-tornado-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-tornado-4.mp3"
     },
     {
       "id": "magic.special.wave",
       "category": "magic",
       "label": "Special: wave",
-      "prompt": "Wave of water surging forward, rushing splash",
-      "files": [
-        "audio/Player/Magic/magic-special-wave-1.mp3",
-        "audio/Player/Magic/magic-special-wave-2.mp3",
-        "audio/Player/Magic/magic-special-wave-3.mp3",
-        "audio/Player/Magic/magic-special-wave-4.mp3",
-        "audio/Player/Magic/magic-special-wave-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-wave-4.mp3"
     },
     {
       "id": "magic.special.light",
       "category": "magic",
       "label": "Special: divine light",
-      "prompt": "Beam of divine holy light, heavenly shimmer",
-      "files": [
-        "audio/Player/Magic/magic-special-light-1.mp3",
-        "audio/Player/Magic/magic-special-light-2.mp3",
-        "audio/Player/Magic/magic-special-light-3.mp3",
-        "audio/Player/Magic/magic-special-light-4.mp3",
-        "audio/Player/Magic/magic-special-light-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-light-1.mp3"
     },
     {
       "id": "magic.special.godhand",
       "category": "magic",
       "label": "Special: hand of God",
-      "prompt": "Enormous divine hand slamming down from the sky, holy impact boom",
-      "files": [
-        "audio/Player/Magic/magic-special-godhand-1.mp3",
-        "audio/Player/Magic/magic-special-godhand-2.mp3",
-        "audio/Player/Magic/magic-special-godhand-3.mp3",
-        "audio/Player/Magic/magic-special-godhand-4.mp3",
-        "audio/Player/Magic/magic-special-godhand-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Magic/magic-special-godhand-1.mp3"
     },
     {
       "id": "plague.serpent.cast",
       "category": "magic",
       "label": "Staff becomes serpent",
-      "prompt": "Wooden staff thrown down transforming into a hissing snake",
-      "files": [
-        "audio/Player/Plagues/plague-serpent-cast-1.mp3",
-        "audio/Player/Plagues/plague-serpent-cast-2.mp3",
-        "audio/Player/Plagues/plague-serpent-cast-3.mp3",
-        "audio/Player/Plagues/plague-serpent-cast-4.mp3",
-        "audio/Player/Plagues/plague-serpent-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-serpent-cast-4.mp3"
     },
     {
       "id": "plague.serpent.hit",
       "category": "magic",
       "label": "Serpent bites",
-      "prompt": "Snake bite strike with a short hiss",
-      "files": [
-        "audio/Player/Plagues/plague-serpent-hit-1.mp3",
-        "audio/Player/Plagues/plague-serpent-hit-2.mp3",
-        "audio/Player/Plagues/plague-serpent-hit-3.mp3",
-        "audio/Player/Plagues/plague-serpent-hit-4.mp3",
-        "audio/Player/Plagues/plague-serpent-hit-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-serpent-hit-4.mp3"
     },
     {
       "id": "plague.leprosy.cast",
       "category": "magic",
       "label": "White leprosy",
-      "prompt": "Eerie pale magical curse, cold whispering shimmer",
-      "files": [
-        "audio/Player/Plagues/plague-leprosy-cast-1.mp3",
-        "audio/Player/Plagues/plague-leprosy-cast-2.mp3",
-        "audio/Player/Plagues/plague-leprosy-cast-3.mp3",
-        "audio/Player/Plagues/plague-leprosy-cast-4.mp3",
-        "audio/Player/Plagues/plague-leprosy-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-leprosy-cast-2.mp3"
     },
     {
       "id": "plague.blood.cast",
       "category": "magic",
       "label": "Water into blood",
-      "prompt": "Pool of thick blood erupting from the ground, gurgling liquid splash",
-      "files": [
-        "audio/Player/Plagues/plague-blood-cast-1.mp3",
-        "audio/Player/Plagues/plague-blood-cast-2.mp3",
-        "audio/Player/Plagues/plague-blood-cast-3.mp3",
-        "audio/Player/Plagues/plague-blood-cast-4.mp3",
-        "audio/Player/Plagues/plague-blood-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-blood-cast-4.mp3"
     },
     {
       "id": "plague.frogs.cast",
       "category": "magic",
       "label": "Frogs released",
-      "prompt": "Group of frogs croaking and hopping out",
-      "files": [
-        "audio/Player/Plagues/plague-frogs-cast-1.mp3",
-        "audio/Player/Plagues/plague-frogs-cast-2.mp3",
-        "audio/Player/Plagues/plague-frogs-cast-3.mp3",
-        "audio/Player/Plagues/plague-frogs-cast-4.mp3",
-        "audio/Player/Plagues/plague-frogs-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-frogs-cast-4.mp3"
     },
     {
       "id": "plague.frogs.hit",
       "category": "magic",
       "label": "Frog lands on a foe",
-      "prompt": "Frog landing with a wet splat",
-      "files": [
-        "audio/Player/Plagues/plague-frogs-hit-1.mp3",
-        "audio/Player/Plagues/plague-frogs-hit-2.mp3",
-        "audio/Player/Plagues/plague-frogs-hit-3.mp3",
-        "audio/Player/Plagues/plague-frogs-hit-4.mp3",
-        "audio/Player/Plagues/plague-frogs-hit-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-frogs-hit-5.mp3"
     },
     {
       "id": "plague.gnats.cast",
       "category": "magic",
       "label": "Gnats swarm",
-      "prompt": "Swarm of tiny gnats buzzing, high pitched",
-      "files": [
-        "audio/Player/Plagues/plague-gnats-cast-1.mp3",
-        "audio/Player/Plagues/plague-gnats-cast-2.mp3",
-        "audio/Player/Plagues/plague-gnats-cast-3.mp3",
-        "audio/Player/Plagues/plague-gnats-cast-4.mp3",
-        "audio/Player/Plagues/plague-gnats-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-gnats-cast-4.mp3"
     },
     {
       "id": "plague.flies.block",
       "category": "magic",
       "label": "Flies stop a projectile",
-      "prompt": "Buzzing flies swarming and swallowing an arrow, short buzz burst",
-      "files": [
-        "audio/Player/Plagues/plague-flies-block-1.mp3",
-        "audio/Player/Plagues/plague-flies-block-2.mp3",
-        "audio/Player/Plagues/plague-flies-block-3.mp3",
-        "audio/Player/Plagues/plague-flies-block-4.mp3",
-        "audio/Player/Plagues/plague-flies-block-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-flies-block-4.mp3"
     },
     {
       "id": "plague.livestock.cast",
       "category": "magic",
       "label": "Livestock stampede",
-      "prompt": "Herd of cattle stampeding, hooves thundering and mooing",
-      "files": [
-        "audio/Player/Plagues/plague-livestock-cast-1.mp3",
-        "audio/Player/Plagues/plague-livestock-cast-2.mp3",
-        "audio/Player/Plagues/plague-livestock-cast-3.mp3",
-        "audio/Player/Plagues/plague-livestock-cast-4.mp3",
-        "audio/Player/Plagues/plague-livestock-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-livestock-cast-4.mp3"
     },
     {
       "id": "plague.boils.pop",
       "category": "magic",
       "label": "Boils pop",
-      "prompt": "Bubbling boil popping, wet squelchy pop",
-      "files": [
-        "audio/Player/Plagues/plague-boils-pop-1.mp3",
-        "audio/Player/Plagues/plague-boils-pop-2.mp3",
-        "audio/Player/Plagues/plague-boils-pop-3.mp3",
-        "audio/Player/Plagues/plague-boils-pop-4.mp3",
-        "audio/Player/Plagues/plague-boils-pop-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-boils-pop-5.mp3"
     },
     {
       "id": "plague.hail.impact",
       "category": "magic",
       "label": "Hailstone lands",
-      "prompt": "Big hailstone smashing into the ground, icy crack",
-      "files": [
-        "audio/Player/Plagues/plague-hail-impact-1.mp3",
-        "audio/Player/Plagues/plague-hail-impact-2.mp3",
-        "audio/Player/Plagues/plague-hail-impact-3.mp3",
-        "audio/Player/Plagues/plague-hail-impact-4.mp3",
-        "audio/Player/Plagues/plague-hail-impact-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-hail-impact-4.mp3"
     },
     {
       "id": "plague.fire.cast",
       "category": "magic",
       "label": "Fireball falls",
-      "prompt": "Fireball falling from the sky, whooshing flame",
-      "files": [
-        "audio/Player/Plagues/plague-fire-cast-1.mp3",
-        "audio/Player/Plagues/plague-fire-cast-2.mp3",
-        "audio/Player/Plagues/plague-fire-cast-3.mp3",
-        "audio/Player/Plagues/plague-fire-cast-4.mp3",
-        "audio/Player/Plagues/plague-fire-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-fire-cast-4.mp3"
     },
     {
       "id": "plague.fire.explode",
       "category": "magic",
       "label": "Fireball explodes",
-      "prompt": "Fireball explosion, fiery blast",
-      "files": [
-        "audio/Player/Plagues/plague-fire-explode-1.mp3",
-        "audio/Player/Plagues/plague-fire-explode-2.mp3",
-        "audio/Player/Plagues/plague-fire-explode-3.mp3",
-        "audio/Player/Plagues/plague-fire-explode-4.mp3",
-        "audio/Player/Plagues/plague-fire-explode-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-fire-explode-5.mp3"
     },
     {
       "id": "plague.locusts.cast",
       "category": "magic",
       "label": "Locust swarm",
-      "prompt": "Huge swarm of locusts flying past, dense rattling wings",
-      "files": [
-        "audio/Player/Plagues/plague-locusts-cast-1.mp3",
-        "audio/Player/Plagues/plague-locusts-cast-2.mp3",
-        "audio/Player/Plagues/plague-locusts-cast-3.mp3",
-        "audio/Player/Plagues/plague-locusts-cast-4.mp3",
-        "audio/Player/Plagues/plague-locusts-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-locusts-cast-4.mp3"
     },
     {
       "id": "plague.darkness.cast",
       "category": "magic",
       "label": "Darkness falls",
-      "prompt": "Darkness descending, deep ominous drone and wind",
-      "files": [
-        "audio/Player/Plagues/plague-darkness-cast-1.mp3",
-        "audio/Player/Plagues/plague-darkness-cast-2.mp3",
-        "audio/Player/Plagues/plague-darkness-cast-3.mp3",
-        "audio/Player/Plagues/plague-darkness-cast-4.mp3",
-        "audio/Player/Plagues/plague-darkness-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-darkness-cast-2.mp3"
     },
     {
       "id": "plague.firstborn.cast",
       "category": "magic",
       "label": "Angel of death appears",
-      "prompt": "Angel of death descending, ethereal choir and rushing wings",
-      "files": [
-        "audio/Player/Plagues/plague-firstborn-cast-1.mp3",
-        "audio/Player/Plagues/plague-firstborn-cast-2.mp3",
-        "audio/Player/Plagues/plague-firstborn-cast-3.mp3",
-        "audio/Player/Plagues/plague-firstborn-cast-4.mp3",
-        "audio/Player/Plagues/plague-firstborn-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-firstborn-cast-2.mp3"
     },
     {
       "id": "plague.firstborn.strike",
       "category": "magic",
       "label": "Angel's bolt strikes",
-      "prompt": "Holy lightning bolt strike from above, sharp crack",
-      "files": [
-        "audio/Player/Plagues/plague-firstborn-strike-1.mp3",
-        "audio/Player/Plagues/plague-firstborn-strike-2.mp3",
-        "audio/Player/Plagues/plague-firstborn-strike-3.mp3",
-        "audio/Player/Plagues/plague-firstborn-strike-4.mp3",
-        "audio/Player/Plagues/plague-firstborn-strike-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-firstborn-strike-2.mp3"
     },
     {
       "id": "plague.redsea.slam",
       "category": "magic",
       "label": "Red Sea: staff slam",
-      "prompt": "Staff slammed on the ground with a mighty echoing boom",
-      "files": [
-        "audio/Player/Plagues/plague-redsea-slam-1.mp3",
-        "audio/Player/Plagues/plague-redsea-slam-2.mp3",
-        "audio/Player/Plagues/plague-redsea-slam-3.mp3",
-        "audio/Player/Plagues/plague-redsea-slam-4.mp3",
-        "audio/Player/Plagues/plague-redsea-slam-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-redsea-slam-1.mp3"
     },
     {
       "id": "plague.redsea.crash",
       "category": "magic",
       "label": "Red Sea: walls crash",
-      "prompt": "Giant walls of sea water crashing down, roaring flood",
-      "files": [
-        "audio/Player/Plagues/plague-redsea-crash-1.mp3",
-        "audio/Player/Plagues/plague-redsea-crash-2.mp3",
-        "audio/Player/Plagues/plague-redsea-crash-3.mp3",
-        "audio/Player/Plagues/plague-redsea-crash-4.mp3",
-        "audio/Player/Plagues/plague-redsea-crash-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-redsea-crash-4.mp3"
     },
     {
       "id": "plague.pillar.cast",
       "category": "magic",
       "label": "Pillar of cloud and fire",
-      "prompt": "Towering pillar of cloud and fire rising, rumbling whoosh",
-      "files": [
-        "audio/Player/Plagues/plague-pillar-cast-1.mp3",
-        "audio/Player/Plagues/plague-pillar-cast-2.mp3",
-        "audio/Player/Plagues/plague-pillar-cast-3.mp3",
-        "audio/Player/Plagues/plague-pillar-cast-4.mp3",
-        "audio/Player/Plagues/plague-pillar-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Plagues/plague-pillar-cast-1.mp3"
     },
     {
       "id": "pickup.xp",
       "category": "pickups",
       "label": "Experience gem collected",
-      "prompt": "Tiny gem collected, short pickup sound",
-      "files": [
-        "audio/Pickups/pickup-xp-1.mp3",
-        "audio/Pickups/pickup-xp-2.mp3",
-        "audio/Pickups/pickup-xp-3.mp3",
-        "audio/Pickups/pickup-xp-4.mp3",
-        "audio/Pickups/pickup-xp-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/pickup-gem-chime.wav"
     },
     {
       "id": "pickup.magnet",
       "category": "pickups",
       "label": "Pickups pulled in (magnet)",
-      "prompt": "Many small items being pulled in by a magnet, rising whoosh",
-      "files": [
-        "audio/Pickups/pickup-magnet-1.mp3",
-        "audio/Pickups/pickup-magnet-2.mp3",
-        "audio/Pickups/pickup-magnet-3.mp3",
-        "audio/Pickups/pickup-magnet-4.mp3",
-        "audio/Pickups/pickup-magnet-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-magnet-hum.wav"
     },
     {
       "id": "pickup.bonus.appear",
       "category": "pickups",
       "label": "A bonus appears on the map",
-      "prompt": "Something special appearing, soft magical pop",
-      "files": [
-        "audio/Pickups/pickup-bonus-appear-1.mp3",
-        "audio/Pickups/pickup-bonus-appear-2.mp3",
-        "audio/Pickups/pickup-bonus-appear-3.mp3",
-        "audio/Pickups/pickup-bonus-appear-4.mp3",
-        "audio/Pickups/pickup-bonus-appear-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-bonus-pop.wav"
     },
     {
       "id": "bonus.heart",
       "category": "bonuses",
       "label": "Health",
-      "prompt": "Healing power-up collected, warm restorative chime",
-      "files": [
-        "audio/Bonuses/bonus-heart-1.mp3",
-        "audio/Bonuses/bonus-heart-2.mp3",
-        "audio/Bonuses/bonus-heart-3.mp3",
-        "audio/Bonuses/bonus-heart-4.mp3",
-        "audio/Bonuses/bonus-heart-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-heal-chord.wav"
     },
     {
       "id": "bonus.magnet",
       "category": "bonuses",
       "label": "Magnet",
-      "prompt": "Magnet power-up collected, magnetic hum rising",
-      "files": [
-        "audio/Bonuses/bonus-magnet-1.mp3",
-        "audio/Bonuses/bonus-magnet-2.mp3",
-        "audio/Bonuses/bonus-magnet-3.mp3",
-        "audio/Bonuses/bonus-magnet-4.mp3",
-        "audio/Bonuses/bonus-magnet-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-magic-rise.wav"
     },
     {
       "id": "bonus.star",
       "category": "bonuses",
       "label": "Star (invincibility)",
-      "prompt": "Invincibility star power-up collected, triumphant sparkle",
-      "files": [
-        "audio/Bonuses/bonus-star-1.mp3",
-        "audio/Bonuses/bonus-star-2.mp3",
-        "audio/Bonuses/bonus-star-3.mp3",
-        "audio/Bonuses/bonus-star-4.mp3",
-        "audio/Bonuses/bonus-star-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-star-fanfare.wav"
     },
     {
       "id": "bonus.lightning",
       "category": "bonuses",
       "label": "Speed",
-      "prompt": "Speed boost power-up collected, quick electric zip",
-      "files": [
-        "audio/Bonuses/bonus-lightning-1.mp3",
-        "audio/Bonuses/bonus-lightning-2.mp3",
-        "audio/Bonuses/bonus-lightning-3.mp3",
-        "audio/Bonuses/bonus-lightning-4.mp3",
-        "audio/Bonuses/bonus-lightning-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-speed-zip.wav"
     },
     {
       "id": "bonus.shield",
       "category": "bonuses",
       "label": "Shield",
-      "prompt": "Protective shield power-up collected, metallic shimmer",
-      "files": [
-        "audio/Bonuses/bonus-shield-1.mp3",
-        "audio/Bonuses/bonus-shield-2.mp3",
-        "audio/Bonuses/bonus-shield-3.mp3",
-        "audio/Bonuses/bonus-shield-4.mp3",
-        "audio/Bonuses/bonus-shield-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-shield-shimmer.wav"
     },
     {
       "id": "enemy.death.small",
       "category": "enemies",
       "label": "Small enemy dies",
-      "prompt": "Small enemy defeated, short grunt and poof",
-      "files": [
-        "audio/Enemies/enemy-death-small-1.mp3",
-        "audio/Enemies/enemy-death-small-2.mp3",
-        "audio/Enemies/enemy-death-small-3.mp3",
-        "audio/Enemies/enemy-death-small-4.mp3",
-        "audio/Enemies/enemy-death-small-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-death-small-2.mp3"
     },
     {
       "id": "enemy.death.medium",
       "category": "enemies",
       "label": "Medium enemy dies",
-      "prompt": "Soldier defeated, groan and armor clatter",
-      "files": [
-        "audio/Enemies/enemy-death-medium-1.mp3",
-        "audio/Enemies/enemy-death-medium-2.mp3",
-        "audio/Enemies/enemy-death-medium-3.mp3",
-        "audio/Enemies/enemy-death-medium-4.mp3",
-        "audio/Enemies/enemy-death-medium-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-death-medium-2.mp3"
     },
     {
       "id": "enemy.death.large",
       "category": "enemies",
       "label": "Large enemy dies",
-      "prompt": "Huge brute defeated, heavy fall and thud",
-      "files": [
-        "audio/Enemies/enemy-death-large-1.mp3",
-        "audio/Enemies/enemy-death-large-2.mp3",
-        "audio/Enemies/enemy-death-large-3.mp3",
-        "audio/Enemies/enemy-death-large-4.mp3",
-        "audio/Enemies/enemy-death-large-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-death-large-4.mp3"
     },
     {
       "id": "enemy.death.elite",
       "category": "enemies",
       "label": "Elite (chariot) dies",
-      "prompt": "War chariot destroyed, wood breaking and horse whinny",
-      "files": [
-        "audio/Enemies/enemy-death-elite-1.mp3",
-        "audio/Enemies/enemy-death-elite-2.mp3",
-        "audio/Enemies/enemy-death-elite-3.mp3",
-        "audio/Enemies/enemy-death-elite-4.mp3",
-        "audio/Enemies/enemy-death-elite-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-death-elite-4.mp3"
     },
     {
       "id": "enemy.melee",
       "category": "enemies",
       "label": "Enemy melee attack",
-      "prompt": "Enemy soldier swinging a weapon, grunt and swish",
-      "files": [
-        "audio/Enemies/enemy-melee-1.mp3",
-        "audio/Enemies/enemy-melee-2.mp3",
-        "audio/Enemies/enemy-melee-3.mp3",
-        "audio/Enemies/enemy-melee-4.mp3",
-        "audio/Enemies/enemy-melee-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-melee-2.mp3"
     },
     {
       "id": "enemy.arrow",
       "category": "enemies",
       "label": "Archer shoots",
-      "prompt": "Bow string release and arrow flying",
-      "files": [
-        "audio/Enemies/enemy-arrow-1.mp3",
-        "audio/Enemies/enemy-arrow-2.mp3",
-        "audio/Enemies/enemy-arrow-3.mp3",
-        "audio/Enemies/enemy-arrow-4.mp3",
-        "audio/Enemies/enemy-arrow-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-arrow-1.mp3"
     },
     {
       "id": "enemy.spear.throw",
       "category": "enemies",
       "label": "Spear thrown at Moses",
-      "prompt": "Spear hurled through the air, whoosh",
-      "files": [
-        "audio/Enemies/enemy-spear-throw-1.mp3",
-        "audio/Enemies/enemy-spear-throw-2.mp3",
-        "audio/Enemies/enemy-spear-throw-3.mp3",
-        "audio/Enemies/enemy-spear-throw-4.mp3",
-        "audio/Enemies/enemy-spear-throw-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-spear-throw-1.mp3"
     },
     {
       "id": "enemy.mage.cast",
       "category": "enemies",
       "label": "Mage casts light",
-      "prompt": "Egyptian sorcerer casting a magic orb, eerie whoosh",
-      "files": [
-        "audio/Enemies/enemy-mage-cast-1.mp3",
-        "audio/Enemies/enemy-mage-cast-2.mp3",
-        "audio/Enemies/enemy-mage-cast-3.mp3",
-        "audio/Enemies/enemy-mage-cast-4.mp3",
-        "audio/Enemies/enemy-mage-cast-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-mage-cast-3.mp3"
     },
     {
       "id": "enemy.knight.charge",
       "category": "enemies",
       "label": "Spear knight charges",
-      "prompt": "Armored knight charging, heavy footsteps and battle cry",
-      "files": [
-        "audio/Enemies/enemy-knight-charge-1.mp3",
-        "audio/Enemies/enemy-knight-charge-2.mp3",
-        "audio/Enemies/enemy-knight-charge-3.mp3",
-        "audio/Enemies/enemy-knight-charge-4.mp3",
-        "audio/Enemies/enemy-knight-charge-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-knight-charge-4.mp3"
     },
     {
       "id": "enemy.agile.dash",
       "category": "enemies",
       "label": "Agile soldier dashes",
-      "prompt": "Quick dash leap, fast swoosh and dust",
-      "files": [
-        "audio/Enemies/enemy-agile-dash-1.mp3",
-        "audio/Enemies/enemy-agile-dash-2.mp3",
-        "audio/Enemies/enemy-agile-dash-3.mp3",
-        "audio/Enemies/enemy-agile-dash-4.mp3",
-        "audio/Enemies/enemy-agile-dash-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-agile-dash-2.mp3"
     },
     {
       "id": "enemy.lion.roar",
       "category": "enemies",
       "label": "Lion roars and runs",
-      "prompt": "Lion roar",
-      "files": [
-        "audio/Enemies/enemy-lion-roar-1.mp3",
-        "audio/Enemies/enemy-lion-roar-2.mp3",
-        "audio/Enemies/enemy-lion-roar-3.mp3",
-        "audio/Enemies/enemy-lion-roar-4.mp3",
-        "audio/Enemies/enemy-lion-roar-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-lion-roar-1.mp3"
     },
     {
       "id": "enemy.wolf.howl",
       "category": "enemies",
       "label": "Wolf wakes up",
-      "prompt": "Wolf growl and short howl",
-      "files": [
-        "audio/Enemies/enemy-wolf-howl-1.mp3",
-        "audio/Enemies/enemy-wolf-howl-2.mp3",
-        "audio/Enemies/enemy-wolf-howl-3.mp3",
-        "audio/Enemies/enemy-wolf-howl-4.mp3",
-        "audio/Enemies/enemy-wolf-howl-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-wolf-howl-1.mp3"
     },
     {
       "id": "enemy.chariot.shoot",
       "category": "enemies",
       "label": "Chariot archer shoots",
-      "prompt": "Heavy bow shot from a war chariot, rattling wheels",
-      "files": [
-        "audio/Enemies/enemy-chariot-shoot-1.mp3",
-        "audio/Enemies/enemy-chariot-shoot-2.mp3",
-        "audio/Enemies/enemy-chariot-shoot-3.mp3",
-        "audio/Enemies/enemy-chariot-shoot-4.mp3",
-        "audio/Enemies/enemy-chariot-shoot-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/enemy-chariot-shoot-1.mp3"
     },
     {
       "id": "boss.appear",
       "category": "enemies",
       "label": "Ramses appears",
-      "prompt": "Pharaoh's arrival, deep ominous horns and drums",
-      "files": [
-        "audio/Enemies/boss-appear-1.mp3",
-        "audio/Enemies/boss-appear-2.mp3",
-        "audio/Enemies/boss-appear-3.mp3",
-        "audio/Enemies/boss-appear-4.mp3",
-        "audio/Enemies/boss-appear-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-appear-4.mp3"
     },
     {
       "id": "boss.wake",
       "category": "enemies",
       "label": "Ramses rises from the throne",
-      "prompt": "Pharaoh rising angrily, deep roar and stone grinding",
-      "files": [
-        "audio/Enemies/boss-wake-1.mp3",
-        "audio/Enemies/boss-wake-2.mp3",
-        "audio/Enemies/boss-wake-3.mp3",
-        "audio/Enemies/boss-wake-4.mp3",
-        "audio/Enemies/boss-wake-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-wake-4.mp3"
     },
     {
       "id": "boss.smash",
       "category": "enemies",
       "label": "Ramses smash",
-      "prompt": "Giant warrior smashing the ground, huge boom and rumble",
-      "files": [
-        "audio/Enemies/boss-smash-1.mp3",
-        "audio/Enemies/boss-smash-2.mp3",
-        "audio/Enemies/boss-smash-3.mp3",
-        "audio/Enemies/boss-smash-4.mp3",
-        "audio/Enemies/boss-smash-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-smash-4.mp3"
     },
     {
       "id": "boss.leap",
       "category": "enemies",
       "label": "Ramses leaps",
-      "prompt": "Heavy giant jumping into the air, whoosh",
-      "files": [
-        "audio/Enemies/boss-leap-1.mp3",
-        "audio/Enemies/boss-leap-2.mp3",
-        "audio/Enemies/boss-leap-3.mp3",
-        "audio/Enemies/boss-leap-4.mp3",
-        "audio/Enemies/boss-leap-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-leap-4.mp3"
     },
     {
       "id": "boss.land",
       "category": "enemies",
       "label": "Ramses lands",
-      "prompt": "Giant landing after a jump, earth-shaking crash",
-      "files": [
-        "audio/Enemies/boss-land-1.mp3",
-        "audio/Enemies/boss-land-2.mp3",
-        "audio/Enemies/boss-land-3.mp3",
-        "audio/Enemies/boss-land-4.mp3",
-        "audio/Enemies/boss-land-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-land-4.mp3"
     },
     {
       "id": "boss.spear",
       "category": "enemies",
       "label": "Ramses throws a flaming spear",
-      "prompt": "Flaming spear hurled, fire whoosh",
-      "files": [
-        "audio/Enemies/boss-spear-1.mp3",
-        "audio/Enemies/boss-spear-2.mp3",
-        "audio/Enemies/boss-spear-3.mp3",
-        "audio/Enemies/boss-spear-4.mp3",
-        "audio/Enemies/boss-spear-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-spear-4.mp3"
     },
     {
       "id": "boss.defeated",
       "category": "enemies",
       "label": "Ramses defeated",
-      "prompt": "Pharaoh defeated and sealed in a stone tomb, heavy stone slab closing with rumble",
-      "files": [
-        "audio/Enemies/boss-defeated-1.mp3",
-        "audio/Enemies/boss-defeated-2.mp3",
-        "audio/Enemies/boss-defeated-3.mp3",
-        "audio/Enemies/boss-defeated-4.mp3",
-        "audio/Enemies/boss-defeated-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-defeated-4.mp3"
     },
     {
       "id": "boss.revive",
       "category": "enemies",
       "label": "Ramses revives",
-      "prompt": "Stone tomb cracking open and the pharaoh returning, ominous roar",
-      "files": [
-        "audio/Enemies/boss-revive-1.mp3",
-        "audio/Enemies/boss-revive-2.mp3",
-        "audio/Enemies/boss-revive-3.mp3",
-        "audio/Enemies/boss-revive-4.mp3",
-        "audio/Enemies/boss-revive-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Enemies/boss-revive-4.mp3"
     },
     {
       "id": "player.hurt",
       "category": "player",
       "label": "Moses takes damage",
-      "prompt": "Old man hurt, short pained grunt with a hit",
-      "files": [
-        "audio/Player/Moses/player-hurt-1.mp3",
-        "audio/Player/Moses/player-hurt-2.mp3",
-        "audio/Player/Moses/player-hurt-3.mp3",
-        "audio/Player/Moses/player-hurt-4.mp3",
-        "audio/Player/Moses/player-hurt-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Moses/player-hurt-1.mp3"
     },
     {
       "id": "player.shield.absorb",
       "category": "player",
       "label": "Shield absorbs a hit",
-      "prompt": "Magic shield absorbing a hit, shimmering clang",
-      "files": [
-        "audio/Player/Moses/player-shield-absorb-1.mp3",
-        "audio/Player/Moses/player-shield-absorb-2.mp3",
-        "audio/Player/Moses/player-shield-absorb-3.mp3",
-        "audio/Player/Moses/player-shield-absorb-4.mp3",
-        "audio/Player/Moses/player-shield-absorb-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/hit-metal.wav"
     },
     {
       "id": "player.helmet.block",
       "category": "player",
       "label": "Helmet blocks a hit",
-      "prompt": "Hit deflected by a bronze helmet, metallic ding",
-      "files": [
-        "audio/Player/Moses/player-helmet-block-1.mp3",
-        "audio/Player/Moses/player-helmet-block-2.mp3",
-        "audio/Player/Moses/player-helmet-block-3.mp3",
-        "audio/Player/Moses/player-helmet-block-4.mp3",
-        "audio/Player/Moses/player-helmet-block-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-metal-clink.wav"
     },
     {
       "id": "player.death",
       "category": "player",
       "label": "Moses falls",
-      "prompt": "Old man collapsing, final breath and staff falling to the ground",
-      "files": [
-        "audio/Player/Moses/player-death-1.mp3",
-        "audio/Player/Moses/player-death-2.mp3",
-        "audio/Player/Moses/player-death-3.mp3",
-        "audio/Player/Moses/player-death-4.mp3",
-        "audio/Player/Moses/player-death-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Moses/player-death-1.mp3"
     },
     {
       "id": "player.revive",
       "category": "player",
       "label": "Moses revives (Tree of Life)",
-      "prompt": "Miraculous revival, warm rising holy light",
-      "files": [
-        "audio/Player/Moses/player-revive-1.mp3",
-        "audio/Player/Moses/player-revive-2.mp3",
-        "audio/Player/Moses/player-revive-3.mp3",
-        "audio/Player/Moses/player-revive-4.mp3",
-        "audio/Player/Moses/player-revive-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Player/Moses/player-revive-1.mp3"
     },
     {
       "id": "event.levelup",
       "category": "events",
       "label": "Level up",
-      "prompt": "Level up jingle, rising and joyful, very short",
-      "files": [
-        "audio/Events/event-levelup-1.mp3",
-        "audio/Events/event-levelup-2.mp3",
-        "audio/Events/event-levelup-3.mp3",
-        "audio/Events/event-levelup-4.mp3",
-        "audio/Events/event-levelup-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Events/event-levelup-2.mp3"
     },
     {
       "id": "event.plague.unlock",
       "category": "events",
       "label": "New plague / weapon unlocked",
-      "prompt": "New power unlocked, awe-inspiring reveal",
-      "files": [
-        "audio/Events/event-plague-unlock-1.mp3",
-        "audio/Events/event-plague-unlock-2.mp3",
-        "audio/Events/event-plague-unlock-3.mp3",
-        "audio/Events/event-plague-unlock-4.mp3",
-        "audio/Events/event-plague-unlock-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Events/event-plague-unlock-1.mp3"
     },
     {
       "id": "event.plague.evolve",
       "category": "events",
       "label": "Plague / weapon evolution",
-      "prompt": "Power upgraded, short rising empowerment",
-      "files": [
-        "audio/Events/event-plague-evolve-1.mp3",
-        "audio/Events/event-plague-evolve-2.mp3",
-        "audio/Events/event-plague-evolve-3.mp3",
-        "audio/Events/event-plague-evolve-4.mp3",
-        "audio/Events/event-plague-evolve-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Events/event-plague-evolve-2.mp3"
     },
     {
       "id": "event.blessing",
       "category": "events",
       "label": "Blessing chosen (passive)",
-      "prompt": "Blessing received, short warm sparkle",
-      "files": [
-        "audio/Events/event-blessing-1.mp3",
-        "audio/Events/event-blessing-2.mp3",
-        "audio/Events/event-blessing-3.mp3",
-        "audio/Events/event-blessing-4.mp3",
-        "audio/Events/event-blessing-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Library/Synth/power-holy-chord.wav"
     },
     {
       "id": "event.champion.summon",
       "category": "events",
       "label": "Champion summoned",
-      "prompt": "Heroic champion arrives with a blast, battle horn",
-      "files": [
-        "audio/Events/event-champion-summon-1.mp3",
-        "audio/Events/event-champion-summon-2.mp3",
-        "audio/Events/event-champion-summon-3.mp3",
-        "audio/Events/event-champion-summon-4.mp3",
-        "audio/Events/event-champion-summon-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Events/event-champion-summon-5.mp3"
     },
     {
       "id": "event.champion.down",
       "category": "events",
       "label": "Champion knocked down",
-      "prompt": "Ally warrior knocked down, groan and fall",
-      "files": [
-        "audio/Events/event-champion-down-1.mp3",
-        "audio/Events/event-champion-down-2.mp3",
-        "audio/Events/event-champion-down-3.mp3",
-        "audio/Events/event-champion-down-4.mp3",
-        "audio/Events/event-champion-down-5.mp3"
-      ],
-      "missing": [],
-      "selected": null
+      "sound": "audio/Events/event-champion-down-1.mp3"
     },
     {
       "id": "event.champion.revive",
       "category": "events",
       "label": "Champion back on his feet",
-      "prompt": "Ally warrior getting back up, short rallying shout",
-      "files": [
-        "audio/Events/event-champion-revive-1.mp3",
-        "audio/Events/event-champion-revive-2.mp3",
-        "audio/Events/event-champion-revive-3.mp3",
-        "audio/Events/event-champion-revive-4.mp3",
-        "audio/Events/event-champion-revive-5.mp3"
-      ],
-      "missing": [
-        "audio/Events/event-champion-revive-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Events/event-champion-revive-2.mp3"
     },
     {
       "id": "event.gameover",
       "category": "events",
       "label": "Game over",
-      "prompt": "Game over, sad descending melody",
-      "files": [
-        "audio/Events/event-gameover-1.mp3",
-        "audio/Events/event-gameover-2.mp3",
-        "audio/Events/event-gameover-3.mp3",
-        "audio/Events/event-gameover-4.mp3",
-        "audio/Events/event-gameover-5.mp3"
-      ],
-      "missing": [
-        "audio/Events/event-gameover-1.mp3",
-        "audio/Events/event-gameover-2.mp3",
-        "audio/Events/event-gameover-3.mp3",
-        "audio/Events/event-gameover-4.mp3",
-        "audio/Events/event-gameover-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-hush.wav"
     },
     {
       "id": "ui.hover",
       "category": "ui",
       "label": "Button hover",
-      "prompt": "Very short subtle UI hover tick",
-      "files": [
-        "audio/UI/ui-hover-1.mp3",
-        "audio/UI/ui-hover-2.mp3",
-        "audio/UI/ui-hover-3.mp3",
-        "audio/UI/ui-hover-4.mp3",
-        "audio/UI/ui-hover-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-hover-1.mp3",
-        "audio/UI/ui-hover-2.mp3",
-        "audio/UI/ui-hover-3.mp3",
-        "audio/UI/ui-hover-4.mp3",
-        "audio/UI/ui-hover-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-soft-tick.wav"
     },
     {
       "id": "ui.click",
       "category": "ui",
       "label": "Button click",
-      "prompt": "UI button click",
-      "files": [
-        "audio/UI/ui-click-1.mp3",
-        "audio/UI/ui-click-2.mp3",
-        "audio/UI/ui-click-3.mp3",
-        "audio/UI/ui-click-4.mp3",
-        "audio/UI/ui-click-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-click-1.mp3",
-        "audio/UI/ui-click-2.mp3",
-        "audio/UI/ui-click-3.mp3",
-        "audio/UI/ui-click-4.mp3",
-        "audio/UI/ui-click-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-wood-click.wav"
     },
     {
       "id": "ui.confirm",
       "category": "ui",
       "label": "Confirm",
-      "prompt": "UI confirmation, positive short tone",
-      "files": [
-        "audio/UI/ui-confirm-1.mp3",
-        "audio/UI/ui-confirm-2.mp3",
-        "audio/UI/ui-confirm-3.mp3",
-        "audio/UI/ui-confirm-4.mp3",
-        "audio/UI/ui-confirm-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-confirm-1.mp3",
-        "audio/UI/ui-confirm-2.mp3",
-        "audio/UI/ui-confirm-3.mp3",
-        "audio/UI/ui-confirm-4.mp3",
-        "audio/UI/ui-confirm-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-chime-up.wav"
     },
     {
       "id": "ui.back",
       "category": "ui",
       "label": "Back",
-      "prompt": "UI back button, short descending tone",
-      "files": [
-        "audio/UI/ui-back-1.mp3",
-        "audio/UI/ui-back-2.mp3",
-        "audio/UI/ui-back-3.mp3",
-        "audio/UI/ui-back-4.mp3",
-        "audio/UI/ui-back-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-back-1.mp3",
-        "audio/UI/ui-back-2.mp3",
-        "audio/UI/ui-back-3.mp3",
-        "audio/UI/ui-back-4.mp3",
-        "audio/UI/ui-back-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-chime-down.wav"
     },
     {
       "id": "ui.menu.open",
       "category": "ui",
       "label": "Menu opens",
-      "prompt": "Menu panel opening, soft swoosh up",
-      "files": [
-        "audio/UI/ui-menu-open-1.mp3",
-        "audio/UI/ui-menu-open-2.mp3",
-        "audio/UI/ui-menu-open-3.mp3",
-        "audio/UI/ui-menu-open-4.mp3",
-        "audio/UI/ui-menu-open-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-menu-open-1.mp3",
-        "audio/UI/ui-menu-open-2.mp3",
-        "audio/UI/ui-menu-open-3.mp3",
-        "audio/UI/ui-menu-open-4.mp3",
-        "audio/UI/ui-menu-open-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-scroll-open.wav"
     },
     {
       "id": "ui.menu.close",
       "category": "ui",
       "label": "Menu closes",
-      "prompt": "Menu panel closing, soft swoosh down",
-      "files": [
-        "audio/UI/ui-menu-close-1.mp3",
-        "audio/UI/ui-menu-close-2.mp3",
-        "audio/UI/ui-menu-close-3.mp3",
-        "audio/UI/ui-menu-close-4.mp3",
-        "audio/UI/ui-menu-close-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-menu-close-1.mp3",
-        "audio/UI/ui-menu-close-2.mp3",
-        "audio/UI/ui-menu-close-3.mp3",
-        "audio/UI/ui-menu-close-4.mp3",
-        "audio/UI/ui-menu-close-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-scroll-close.wav"
     },
     {
       "id": "ui.tab",
       "category": "ui",
       "label": "Tab switch",
-      "prompt": "Tab switching, light flick",
-      "files": [
-        "audio/UI/ui-tab-1.mp3",
-        "audio/UI/ui-tab-2.mp3",
-        "audio/UI/ui-tab-3.mp3",
-        "audio/UI/ui-tab-4.mp3",
-        "audio/UI/ui-tab-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-tab-1.mp3",
-        "audio/UI/ui-tab-2.mp3",
-        "audio/UI/ui-tab-3.mp3",
-        "audio/UI/ui-tab-4.mp3",
-        "audio/UI/ui-tab-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-paper-flick.wav"
     },
     {
       "id": "ui.pause",
       "category": "ui",
       "label": "Pause",
-      "prompt": "Game paused, soft descending tone",
-      "files": [
-        "audio/UI/ui-pause-1.mp3",
-        "audio/UI/ui-pause-2.mp3",
-        "audio/UI/ui-pause-3.mp3",
-        "audio/UI/ui-pause-4.mp3",
-        "audio/UI/ui-pause-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-pause-1.mp3",
-        "audio/UI/ui-pause-2.mp3",
-        "audio/UI/ui-pause-3.mp3",
-        "audio/UI/ui-pause-4.mp3",
-        "audio/UI/ui-pause-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-pause-tones.wav"
     },
     {
       "id": "ui.resume",
       "category": "ui",
       "label": "Resume",
-      "prompt": "Game resumed, soft ascending tone",
-      "files": [
-        "audio/UI/ui-resume-1.mp3",
-        "audio/UI/ui-resume-2.mp3",
-        "audio/UI/ui-resume-3.mp3",
-        "audio/UI/ui-resume-4.mp3",
-        "audio/UI/ui-resume-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-resume-1.mp3",
-        "audio/UI/ui-resume-2.mp3",
-        "audio/UI/ui-resume-3.mp3",
-        "audio/UI/ui-resume-4.mp3",
-        "audio/UI/ui-resume-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-resume-tones.wav"
     },
     {
       "id": "ui.toggle",
       "category": "ui",
       "label": "Toggle switch",
-      "prompt": "Toggle switch flipped, small click",
-      "files": [
-        "audio/UI/ui-toggle-1.mp3",
-        "audio/UI/ui-toggle-2.mp3",
-        "audio/UI/ui-toggle-3.mp3",
-        "audio/UI/ui-toggle-4.mp3",
-        "audio/UI/ui-toggle-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-toggle-1.mp3",
-        "audio/UI/ui-toggle-2.mp3",
-        "audio/UI/ui-toggle-3.mp3",
-        "audio/UI/ui-toggle-4.mp3",
-        "audio/UI/ui-toggle-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-toggle-on.wav"
     },
     {
       "id": "ui.slider",
       "category": "ui",
       "label": "Slider moved",
-      "prompt": "Slider tick, tiny",
-      "files": [
-        "audio/UI/ui-slider-1.mp3",
-        "audio/UI/ui-slider-2.mp3",
-        "audio/UI/ui-slider-3.mp3",
-        "audio/UI/ui-slider-4.mp3",
-        "audio/UI/ui-slider-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-slider-1.mp3",
-        "audio/UI/ui-slider-2.mp3",
-        "audio/UI/ui-slider-3.mp3",
-        "audio/UI/ui-slider-4.mp3",
-        "audio/UI/ui-slider-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-slider-tick.wav"
     },
     {
       "id": "ui.error",
       "category": "ui",
       "label": "Error / not allowed",
-      "prompt": "UI error, short low buzz denial",
-      "files": [
-        "audio/UI/ui-error-1.mp3",
-        "audio/UI/ui-error-2.mp3",
-        "audio/UI/ui-error-3.mp3",
-        "audio/UI/ui-error-4.mp3",
-        "audio/UI/ui-error-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-error-1.mp3",
-        "audio/UI/ui-error-2.mp3",
-        "audio/UI/ui-error-3.mp3",
-        "audio/UI/ui-error-4.mp3",
-        "audio/UI/ui-error-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-soft-error.wav"
     },
     {
       "id": "ui.buy",
       "category": "ui",
       "label": "Shop purchase (coins)",
-      "prompt": "Coins spent in a shop, coin jingle and register",
-      "files": [
-        "audio/UI/ui-buy-1.mp3",
-        "audio/UI/ui-buy-2.mp3",
-        "audio/UI/ui-buy-3.mp3",
-        "audio/UI/ui-buy-4.mp3",
-        "audio/UI/ui-buy-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-buy-1.mp3",
-        "audio/UI/ui-buy-2.mp3",
-        "audio/UI/ui-buy-3.mp3",
-        "audio/UI/ui-buy-4.mp3",
-        "audio/UI/ui-buy-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-coin-chime.wav"
     },
     {
       "id": "ui.equip",
       "category": "ui",
       "label": "Equip item",
-      "prompt": "Equipping gear, leather and metal clink",
-      "files": [
-        "audio/UI/ui-equip-1.mp3",
-        "audio/UI/ui-equip-2.mp3",
-        "audio/UI/ui-equip-3.mp3",
-        "audio/UI/ui-equip-4.mp3",
-        "audio/UI/ui-equip-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-equip-1.mp3",
-        "audio/UI/ui-equip-2.mp3",
-        "audio/UI/ui-equip-3.mp3",
-        "audio/UI/ui-equip-4.mp3",
-        "audio/UI/ui-equip-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-metal-clink.wav"
     },
     {
       "id": "ui.card",
       "category": "ui",
       "label": "Level-up card chosen",
-      "prompt": "Card selected, satisfying flip and chime",
-      "files": [
-        "audio/UI/ui-card-1.mp3",
-        "audio/UI/ui-card-2.mp3",
-        "audio/UI/ui-card-3.mp3",
-        "audio/UI/ui-card-4.mp3",
-        "audio/UI/ui-card-5.mp3"
-      ],
-      "missing": [
-        "audio/UI/ui-card-1.mp3",
-        "audio/UI/ui-card-2.mp3",
-        "audio/UI/ui-card-3.mp3",
-        "audio/UI/ui-card-4.mp3",
-        "audio/UI/ui-card-5.mp3"
-      ],
-      "selected": null
+      "sound": "audio/Library/Synth/ui-card-flip.wav"
+    }
+  ],
+  "library": [
+    {
+      "path": "audio/Player/Weapons/weapon-staff-hit-1.mp3",
+      "name": "Staff hits an enemy 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-hit-2.mp3",
+      "name": "Staff hits an enemy 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-hit-3.mp3",
+      "name": "Staff hits an enemy 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-hit-4.mp3",
+      "name": "Staff hits an enemy 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-hit-5.mp3",
+      "name": "Staff hits an enemy 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-crit-1.mp3",
+      "name": "Sword critical hit 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-crit-2.mp3",
+      "name": "Sword critical hit 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-crit-3.mp3",
+      "name": "Sword critical hit 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-crit-4.mp3",
+      "name": "Sword critical hit 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-crit-5.mp3",
+      "name": "Sword critical hit 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-mace-impact-1.mp3",
+      "name": "Mace hits the ground 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-mace-impact-2.mp3",
+      "name": "Mace hits the ground 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-mace-impact-3.mp3",
+      "name": "Mace hits the ground 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-mace-impact-4.mp3",
+      "name": "Mace hits the ground 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-mace-impact-5.mp3",
+      "name": "Mace hits the ground 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-whirlpool-1.mp3",
+      "name": "Harpoon whirlpool 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-whirlpool-2.mp3",
+      "name": "Harpoon whirlpool 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-whirlpool-3.mp3",
+      "name": "Harpoon whirlpool 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-whirlpool-4.mp3",
+      "name": "Harpoon whirlpool 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-whirlpool-5.mp3",
+      "name": "Harpoon whirlpool 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-catch-1.mp3",
+      "name": "Boomerang caught 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-catch-2.mp3",
+      "name": "Boomerang caught 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-catch-3.mp3",
+      "name": "Boomerang caught 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-catch-4.mp3",
+      "name": "Boomerang caught 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-catch-5.mp3",
+      "name": "Boomerang caught 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-ricochet-1.mp3",
+      "name": "Ring ricochet 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-ricochet-2.mp3",
+      "name": "Ring ricochet 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-ricochet-3.mp3",
+      "name": "Ring ricochet 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-ricochet-4.mp3",
+      "name": "Ring ricochet 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-ricochet-5.mp3",
+      "name": "Ring ricochet 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-zap-1.mp3",
+      "name": "Ring lightning zap 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-zap-2.mp3",
+      "name": "Ring lightning zap 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-zap-3.mp3",
+      "name": "Ring lightning zap 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-zap-4.mp3",
+      "name": "Ring lightning zap 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-zap-5.mp3",
+      "name": "Ring lightning zap 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-projectile-hit-1.mp3",
+      "name": "Fire staff bolt hits 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-projectile-hit-2.mp3",
+      "name": "Fire staff bolt hits 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-projectile-hit-3.mp3",
+      "name": "Fire staff bolt hits 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-projectile-hit-4.mp3",
+      "name": "Fire staff bolt hits 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-projectile-hit-5.mp3",
+      "name": "Fire staff bolt hits 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-shield-block-1.mp3",
+      "name": "Weapon hits a shield 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-shield-block-2.mp3",
+      "name": "Weapon hits a shield 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-shield-block-3.mp3",
+      "name": "Weapon hits a shield 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-shield-block-4.mp3",
+      "name": "Weapon hits a shield 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-shield-block-5.mp3",
+      "name": "Weapon hits a shield 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-swing-1.mp3",
+      "name": "Staff swing 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-swing-2.mp3",
+      "name": "Staff swing 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-swing-3.mp3",
+      "name": "Staff swing 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-swing-4.mp3",
+      "name": "Staff swing 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-staff-swing-5.mp3",
+      "name": "Staff swing 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-spear-thrust-1.mp3",
+      "name": "Spear thrust 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-spear-thrust-2.mp3",
+      "name": "Spear thrust 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-spear-thrust-3.mp3",
+      "name": "Spear thrust 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-spear-thrust-4.mp3",
+      "name": "Spear thrust 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-spear-thrust-5.mp3",
+      "name": "Spear thrust 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-slash-1.mp3",
+      "name": "Sword slash 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-slash-2.mp3",
+      "name": "Sword slash 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-slash-3.mp3",
+      "name": "Sword slash 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-slash-4.mp3",
+      "name": "Sword slash 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-sword-slash-5.mp3",
+      "name": "Sword slash 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-dagger-throw-1.mp3",
+      "name": "Dagger throw 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-dagger-throw-2.mp3",
+      "name": "Dagger throw 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-dagger-throw-3.mp3",
+      "name": "Dagger throw 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-dagger-throw-4.mp3",
+      "name": "Dagger throw 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-dagger-throw-5.mp3",
+      "name": "Dagger throw 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-throw-1.mp3",
+      "name": "Harpoon throw 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-throw-2.mp3",
+      "name": "Harpoon throw 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-throw-3.mp3",
+      "name": "Harpoon throw 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-throw-4.mp3",
+      "name": "Harpoon throw 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-harpoon-throw-5.mp3",
+      "name": "Harpoon throw 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-throw-1.mp3",
+      "name": "Boomerang throw 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-throw-2.mp3",
+      "name": "Boomerang throw 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-throw-3.mp3",
+      "name": "Boomerang throw 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-throw-4.mp3",
+      "name": "Boomerang throw 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-boomerang-throw-5.mp3",
+      "name": "Boomerang throw 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-throw-1.mp3",
+      "name": "Ring throw 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-throw-2.mp3",
+      "name": "Ring throw 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-throw-3.mp3",
+      "name": "Ring throw 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-throw-4.mp3",
+      "name": "Ring throw 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-ring-throw-5.mp3",
+      "name": "Ring throw 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-axe-cut-1.mp3",
+      "name": "Axe ground cut 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-axe-cut-2.mp3",
+      "name": "Axe ground cut 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-axe-cut-3.mp3",
+      "name": "Axe ground cut 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-axe-cut-4.mp3",
+      "name": "Axe ground cut 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-axe-cut-5.mp3",
+      "name": "Axe ground cut 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-branch-gust-1.mp3",
+      "name": "Branch wind gust 1",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-branch-gust-2.mp3",
+      "name": "Branch wind gust 2",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-branch-gust-3.mp3",
+      "name": "Branch wind gust 3",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-branch-gust-4.mp3",
+      "name": "Branch wind gust 4",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Weapons/weapon-branch-gust-5.mp3",
+      "name": "Branch wind gust 5",
+      "group": "Weapons (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-charge-1.mp3",
+      "name": "Staff special charging 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-charge-2.mp3",
+      "name": "Staff special charging 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-charge-3.mp3",
+      "name": "Staff special charging 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-charge-4.mp3",
+      "name": "Staff special charging 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-charge-5.mp3",
+      "name": "Staff special charging 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-burst-1.mp3",
+      "name": "Special: burst 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-burst-2.mp3",
+      "name": "Special: burst 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-burst-3.mp3",
+      "name": "Special: burst 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-burst-4.mp3",
+      "name": "Special: burst 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-burst-5.mp3",
+      "name": "Special: burst 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-ring-1.mp3",
+      "name": "Special: ring 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-ring-2.mp3",
+      "name": "Special: ring 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-ring-3.mp3",
+      "name": "Special: ring 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-ring-4.mp3",
+      "name": "Special: ring 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-ring-5.mp3",
+      "name": "Special: ring 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-shard-1.mp3",
+      "name": "Special: shards 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-shard-2.mp3",
+      "name": "Special: shards 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-shard-3.mp3",
+      "name": "Special: shards 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-shard-4.mp3",
+      "name": "Special: shards 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-shard-5.mp3",
+      "name": "Special: shards 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-firering-1.mp3",
+      "name": "Special: ring of fire 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-firering-2.mp3",
+      "name": "Special: ring of fire 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-firering-3.mp3",
+      "name": "Special: ring of fire 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-firering-4.mp3",
+      "name": "Special: ring of fire 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-firering-5.mp3",
+      "name": "Special: ring of fire 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-tornado-1.mp3",
+      "name": "Special: tornado 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-tornado-2.mp3",
+      "name": "Special: tornado 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-tornado-3.mp3",
+      "name": "Special: tornado 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-tornado-4.mp3",
+      "name": "Special: tornado 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-tornado-5.mp3",
+      "name": "Special: tornado 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-wave-1.mp3",
+      "name": "Special: wave 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-wave-2.mp3",
+      "name": "Special: wave 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-wave-3.mp3",
+      "name": "Special: wave 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-wave-4.mp3",
+      "name": "Special: wave 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-wave-5.mp3",
+      "name": "Special: wave 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-light-1.mp3",
+      "name": "Special: divine light 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-light-2.mp3",
+      "name": "Special: divine light 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-light-3.mp3",
+      "name": "Special: divine light 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-light-4.mp3",
+      "name": "Special: divine light 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-light-5.mp3",
+      "name": "Special: divine light 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-godhand-1.mp3",
+      "name": "Special: hand of God 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-godhand-2.mp3",
+      "name": "Special: hand of God 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-godhand-3.mp3",
+      "name": "Special: hand of God 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-godhand-4.mp3",
+      "name": "Special: hand of God 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Magic/magic-special-godhand-5.mp3",
+      "name": "Special: hand of God 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-cast-1.mp3",
+      "name": "Staff becomes serpent 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-cast-2.mp3",
+      "name": "Staff becomes serpent 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-cast-3.mp3",
+      "name": "Staff becomes serpent 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-cast-4.mp3",
+      "name": "Staff becomes serpent 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-cast-5.mp3",
+      "name": "Staff becomes serpent 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-hit-1.mp3",
+      "name": "Serpent bites 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-hit-2.mp3",
+      "name": "Serpent bites 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-hit-3.mp3",
+      "name": "Serpent bites 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-hit-4.mp3",
+      "name": "Serpent bites 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-serpent-hit-5.mp3",
+      "name": "Serpent bites 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-leprosy-cast-1.mp3",
+      "name": "White leprosy 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-leprosy-cast-2.mp3",
+      "name": "White leprosy 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-leprosy-cast-3.mp3",
+      "name": "White leprosy 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-leprosy-cast-4.mp3",
+      "name": "White leprosy 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-leprosy-cast-5.mp3",
+      "name": "White leprosy 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-blood-cast-1.mp3",
+      "name": "Water into blood 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-blood-cast-2.mp3",
+      "name": "Water into blood 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-blood-cast-3.mp3",
+      "name": "Water into blood 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-blood-cast-4.mp3",
+      "name": "Water into blood 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-blood-cast-5.mp3",
+      "name": "Water into blood 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-cast-1.mp3",
+      "name": "Frogs released 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-cast-2.mp3",
+      "name": "Frogs released 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-cast-3.mp3",
+      "name": "Frogs released 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-cast-4.mp3",
+      "name": "Frogs released 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-cast-5.mp3",
+      "name": "Frogs released 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-hit-1.mp3",
+      "name": "Frog lands on a foe 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-hit-2.mp3",
+      "name": "Frog lands on a foe 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-hit-3.mp3",
+      "name": "Frog lands on a foe 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-hit-4.mp3",
+      "name": "Frog lands on a foe 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-frogs-hit-5.mp3",
+      "name": "Frog lands on a foe 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-gnats-cast-1.mp3",
+      "name": "Gnats swarm 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-gnats-cast-2.mp3",
+      "name": "Gnats swarm 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-gnats-cast-3.mp3",
+      "name": "Gnats swarm 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-gnats-cast-4.mp3",
+      "name": "Gnats swarm 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-gnats-cast-5.mp3",
+      "name": "Gnats swarm 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-flies-block-1.mp3",
+      "name": "Flies stop a projectile 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-flies-block-2.mp3",
+      "name": "Flies stop a projectile 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-flies-block-3.mp3",
+      "name": "Flies stop a projectile 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-flies-block-4.mp3",
+      "name": "Flies stop a projectile 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-flies-block-5.mp3",
+      "name": "Flies stop a projectile 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-livestock-cast-1.mp3",
+      "name": "Livestock stampede 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-livestock-cast-2.mp3",
+      "name": "Livestock stampede 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-livestock-cast-3.mp3",
+      "name": "Livestock stampede 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-livestock-cast-4.mp3",
+      "name": "Livestock stampede 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-livestock-cast-5.mp3",
+      "name": "Livestock stampede 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-boils-pop-1.mp3",
+      "name": "Boils pop 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-boils-pop-2.mp3",
+      "name": "Boils pop 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-boils-pop-3.mp3",
+      "name": "Boils pop 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-boils-pop-4.mp3",
+      "name": "Boils pop 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-boils-pop-5.mp3",
+      "name": "Boils pop 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-hail-impact-1.mp3",
+      "name": "Hailstone lands 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-hail-impact-2.mp3",
+      "name": "Hailstone lands 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-hail-impact-3.mp3",
+      "name": "Hailstone lands 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-hail-impact-4.mp3",
+      "name": "Hailstone lands 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-hail-impact-5.mp3",
+      "name": "Hailstone lands 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-cast-1.mp3",
+      "name": "Fireball falls 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-cast-2.mp3",
+      "name": "Fireball falls 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-cast-3.mp3",
+      "name": "Fireball falls 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-cast-4.mp3",
+      "name": "Fireball falls 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-cast-5.mp3",
+      "name": "Fireball falls 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-explode-1.mp3",
+      "name": "Fireball explodes 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-explode-2.mp3",
+      "name": "Fireball explodes 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-explode-3.mp3",
+      "name": "Fireball explodes 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-explode-4.mp3",
+      "name": "Fireball explodes 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-fire-explode-5.mp3",
+      "name": "Fireball explodes 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-locusts-cast-1.mp3",
+      "name": "Locust swarm 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-locusts-cast-2.mp3",
+      "name": "Locust swarm 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-locusts-cast-3.mp3",
+      "name": "Locust swarm 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-locusts-cast-4.mp3",
+      "name": "Locust swarm 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-locusts-cast-5.mp3",
+      "name": "Locust swarm 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-darkness-cast-1.mp3",
+      "name": "Darkness falls 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-darkness-cast-2.mp3",
+      "name": "Darkness falls 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-darkness-cast-3.mp3",
+      "name": "Darkness falls 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-darkness-cast-4.mp3",
+      "name": "Darkness falls 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-darkness-cast-5.mp3",
+      "name": "Darkness falls 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-cast-1.mp3",
+      "name": "Angel of death appears 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-cast-2.mp3",
+      "name": "Angel of death appears 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-cast-3.mp3",
+      "name": "Angel of death appears 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-cast-4.mp3",
+      "name": "Angel of death appears 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-cast-5.mp3",
+      "name": "Angel of death appears 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-strike-1.mp3",
+      "name": "Angel's bolt strikes 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-strike-2.mp3",
+      "name": "Angel's bolt strikes 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-strike-3.mp3",
+      "name": "Angel's bolt strikes 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-strike-4.mp3",
+      "name": "Angel's bolt strikes 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-firstborn-strike-5.mp3",
+      "name": "Angel's bolt strikes 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-slam-1.mp3",
+      "name": "Red Sea: staff slam 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-slam-2.mp3",
+      "name": "Red Sea: staff slam 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-slam-3.mp3",
+      "name": "Red Sea: staff slam 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-slam-4.mp3",
+      "name": "Red Sea: staff slam 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-slam-5.mp3",
+      "name": "Red Sea: staff slam 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-crash-1.mp3",
+      "name": "Red Sea: walls crash 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-crash-2.mp3",
+      "name": "Red Sea: walls crash 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-crash-3.mp3",
+      "name": "Red Sea: walls crash 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-crash-4.mp3",
+      "name": "Red Sea: walls crash 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-redsea-crash-5.mp3",
+      "name": "Red Sea: walls crash 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-pillar-cast-1.mp3",
+      "name": "Pillar of cloud and fire 1",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-pillar-cast-2.mp3",
+      "name": "Pillar of cloud and fire 2",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-pillar-cast-3.mp3",
+      "name": "Pillar of cloud and fire 3",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-pillar-cast-4.mp3",
+      "name": "Pillar of cloud and fire 4",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Plagues/plague-pillar-cast-5.mp3",
+      "name": "Pillar of cloud and fire 5",
+      "group": "Magic and Plagues (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-xp-1.mp3",
+      "name": "Experience gem collected 1",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-xp-2.mp3",
+      "name": "Experience gem collected 2",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-xp-3.mp3",
+      "name": "Experience gem collected 3",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-xp-4.mp3",
+      "name": "Experience gem collected 4",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-xp-5.mp3",
+      "name": "Experience gem collected 5",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-magnet-1.mp3",
+      "name": "Pickups pulled in 1",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-magnet-2.mp3",
+      "name": "Pickups pulled in 2",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-magnet-3.mp3",
+      "name": "Pickups pulled in 3",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-magnet-4.mp3",
+      "name": "Pickups pulled in 4",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-magnet-5.mp3",
+      "name": "Pickups pulled in 5",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-bonus-appear-1.mp3",
+      "name": "A bonus appears on the map 1",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-bonus-appear-2.mp3",
+      "name": "A bonus appears on the map 2",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-bonus-appear-3.mp3",
+      "name": "A bonus appears on the map 3",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-bonus-appear-4.mp3",
+      "name": "A bonus appears on the map 4",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Pickups/pickup-bonus-appear-5.mp3",
+      "name": "A bonus appears on the map 5",
+      "group": "Coins and Pickups (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-heart-1.mp3",
+      "name": "Health 1",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-heart-2.mp3",
+      "name": "Health 2",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-heart-3.mp3",
+      "name": "Health 3",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-heart-4.mp3",
+      "name": "Health 4",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-heart-5.mp3",
+      "name": "Health 5",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-magnet-1.mp3",
+      "name": "Magnet 1",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-magnet-2.mp3",
+      "name": "Magnet 2",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-magnet-3.mp3",
+      "name": "Magnet 3",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-magnet-4.mp3",
+      "name": "Magnet 4",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-magnet-5.mp3",
+      "name": "Magnet 5",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-star-1.mp3",
+      "name": "Star 1",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-star-2.mp3",
+      "name": "Star 2",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-star-3.mp3",
+      "name": "Star 3",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-star-4.mp3",
+      "name": "Star 4",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-star-5.mp3",
+      "name": "Star 5",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-lightning-1.mp3",
+      "name": "Speed 1",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-lightning-2.mp3",
+      "name": "Speed 2",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-lightning-3.mp3",
+      "name": "Speed 3",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-lightning-4.mp3",
+      "name": "Speed 4",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-lightning-5.mp3",
+      "name": "Speed 5",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-shield-1.mp3",
+      "name": "Shield 1",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-shield-2.mp3",
+      "name": "Shield 2",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-shield-3.mp3",
+      "name": "Shield 3",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-shield-4.mp3",
+      "name": "Shield 4",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Bonuses/bonus-shield-5.mp3",
+      "name": "Shield 5",
+      "group": "Bonuses (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-small-1.mp3",
+      "name": "Small enemy dies 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-small-2.mp3",
+      "name": "Small enemy dies 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-small-3.mp3",
+      "name": "Small enemy dies 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-small-4.mp3",
+      "name": "Small enemy dies 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-small-5.mp3",
+      "name": "Small enemy dies 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-medium-1.mp3",
+      "name": "Medium enemy dies 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-medium-2.mp3",
+      "name": "Medium enemy dies 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-medium-3.mp3",
+      "name": "Medium enemy dies 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-medium-4.mp3",
+      "name": "Medium enemy dies 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-medium-5.mp3",
+      "name": "Medium enemy dies 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-large-1.mp3",
+      "name": "Large enemy dies 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-large-2.mp3",
+      "name": "Large enemy dies 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-large-3.mp3",
+      "name": "Large enemy dies 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-large-4.mp3",
+      "name": "Large enemy dies 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-large-5.mp3",
+      "name": "Large enemy dies 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-elite-1.mp3",
+      "name": "Elite dies 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-elite-2.mp3",
+      "name": "Elite dies 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-elite-3.mp3",
+      "name": "Elite dies 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-elite-4.mp3",
+      "name": "Elite dies 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-death-elite-5.mp3",
+      "name": "Elite dies 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-melee-1.mp3",
+      "name": "Enemy melee attack 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-melee-2.mp3",
+      "name": "Enemy melee attack 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-melee-3.mp3",
+      "name": "Enemy melee attack 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-melee-4.mp3",
+      "name": "Enemy melee attack 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-melee-5.mp3",
+      "name": "Enemy melee attack 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-arrow-1.mp3",
+      "name": "Archer shoots 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-arrow-2.mp3",
+      "name": "Archer shoots 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-arrow-3.mp3",
+      "name": "Archer shoots 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-arrow-4.mp3",
+      "name": "Archer shoots 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-arrow-5.mp3",
+      "name": "Archer shoots 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-spear-throw-1.mp3",
+      "name": "Spear thrown at Moses 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-spear-throw-2.mp3",
+      "name": "Spear thrown at Moses 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-spear-throw-3.mp3",
+      "name": "Spear thrown at Moses 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-spear-throw-4.mp3",
+      "name": "Spear thrown at Moses 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-spear-throw-5.mp3",
+      "name": "Spear thrown at Moses 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-mage-cast-1.mp3",
+      "name": "Mage casts light 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-mage-cast-2.mp3",
+      "name": "Mage casts light 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-mage-cast-3.mp3",
+      "name": "Mage casts light 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-mage-cast-4.mp3",
+      "name": "Mage casts light 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-mage-cast-5.mp3",
+      "name": "Mage casts light 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-knight-charge-1.mp3",
+      "name": "Spear knight charges 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-knight-charge-2.mp3",
+      "name": "Spear knight charges 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-knight-charge-3.mp3",
+      "name": "Spear knight charges 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-knight-charge-4.mp3",
+      "name": "Spear knight charges 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-knight-charge-5.mp3",
+      "name": "Spear knight charges 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-agile-dash-1.mp3",
+      "name": "Agile soldier dashes 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-agile-dash-2.mp3",
+      "name": "Agile soldier dashes 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-agile-dash-3.mp3",
+      "name": "Agile soldier dashes 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-agile-dash-4.mp3",
+      "name": "Agile soldier dashes 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-agile-dash-5.mp3",
+      "name": "Agile soldier dashes 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-lion-roar-1.mp3",
+      "name": "Lion roars and runs 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-lion-roar-2.mp3",
+      "name": "Lion roars and runs 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-lion-roar-3.mp3",
+      "name": "Lion roars and runs 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-lion-roar-4.mp3",
+      "name": "Lion roars and runs 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-lion-roar-5.mp3",
+      "name": "Lion roars and runs 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-wolf-howl-1.mp3",
+      "name": "Wolf wakes up 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-wolf-howl-2.mp3",
+      "name": "Wolf wakes up 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-wolf-howl-3.mp3",
+      "name": "Wolf wakes up 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-wolf-howl-4.mp3",
+      "name": "Wolf wakes up 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-wolf-howl-5.mp3",
+      "name": "Wolf wakes up 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-chariot-shoot-1.mp3",
+      "name": "Chariot archer shoots 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-chariot-shoot-2.mp3",
+      "name": "Chariot archer shoots 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-chariot-shoot-3.mp3",
+      "name": "Chariot archer shoots 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-chariot-shoot-4.mp3",
+      "name": "Chariot archer shoots 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/enemy-chariot-shoot-5.mp3",
+      "name": "Chariot archer shoots 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-appear-1.mp3",
+      "name": "Ramses appears 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-appear-2.mp3",
+      "name": "Ramses appears 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-appear-3.mp3",
+      "name": "Ramses appears 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-appear-4.mp3",
+      "name": "Ramses appears 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-appear-5.mp3",
+      "name": "Ramses appears 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-wake-1.mp3",
+      "name": "Ramses rises from the throne 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-wake-2.mp3",
+      "name": "Ramses rises from the throne 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-wake-3.mp3",
+      "name": "Ramses rises from the throne 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-wake-4.mp3",
+      "name": "Ramses rises from the throne 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-wake-5.mp3",
+      "name": "Ramses rises from the throne 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-smash-1.mp3",
+      "name": "Ramses smash 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-smash-2.mp3",
+      "name": "Ramses smash 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-smash-3.mp3",
+      "name": "Ramses smash 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-smash-4.mp3",
+      "name": "Ramses smash 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-smash-5.mp3",
+      "name": "Ramses smash 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-leap-1.mp3",
+      "name": "Ramses leaps 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-leap-2.mp3",
+      "name": "Ramses leaps 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-leap-3.mp3",
+      "name": "Ramses leaps 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-leap-4.mp3",
+      "name": "Ramses leaps 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-leap-5.mp3",
+      "name": "Ramses leaps 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-land-1.mp3",
+      "name": "Ramses lands 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-land-2.mp3",
+      "name": "Ramses lands 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-land-3.mp3",
+      "name": "Ramses lands 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-land-4.mp3",
+      "name": "Ramses lands 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-land-5.mp3",
+      "name": "Ramses lands 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-spear-1.mp3",
+      "name": "Ramses throws a flaming spear 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-spear-2.mp3",
+      "name": "Ramses throws a flaming spear 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-spear-3.mp3",
+      "name": "Ramses throws a flaming spear 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-spear-4.mp3",
+      "name": "Ramses throws a flaming spear 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-spear-5.mp3",
+      "name": "Ramses throws a flaming spear 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-defeated-1.mp3",
+      "name": "Ramses defeated 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-defeated-2.mp3",
+      "name": "Ramses defeated 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-defeated-3.mp3",
+      "name": "Ramses defeated 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-defeated-4.mp3",
+      "name": "Ramses defeated 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-defeated-5.mp3",
+      "name": "Ramses defeated 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-revive-1.mp3",
+      "name": "Ramses revives 1",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-revive-2.mp3",
+      "name": "Ramses revives 2",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-revive-3.mp3",
+      "name": "Ramses revives 3",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-revive-4.mp3",
+      "name": "Ramses revives 4",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Enemies/boss-revive-5.mp3",
+      "name": "Ramses revives 5",
+      "group": "Enemies (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-hurt-1.mp3",
+      "name": "Moses takes damage 1",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-hurt-2.mp3",
+      "name": "Moses takes damage 2",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-hurt-3.mp3",
+      "name": "Moses takes damage 3",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-hurt-4.mp3",
+      "name": "Moses takes damage 4",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-hurt-5.mp3",
+      "name": "Moses takes damage 5",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-shield-absorb-1.mp3",
+      "name": "Shield absorbs a hit 1",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-shield-absorb-2.mp3",
+      "name": "Shield absorbs a hit 2",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-shield-absorb-3.mp3",
+      "name": "Shield absorbs a hit 3",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-shield-absorb-4.mp3",
+      "name": "Shield absorbs a hit 4",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-shield-absorb-5.mp3",
+      "name": "Shield absorbs a hit 5",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-helmet-block-1.mp3",
+      "name": "Helmet blocks a hit 1",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-helmet-block-2.mp3",
+      "name": "Helmet blocks a hit 2",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-helmet-block-3.mp3",
+      "name": "Helmet blocks a hit 3",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-helmet-block-4.mp3",
+      "name": "Helmet blocks a hit 4",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-helmet-block-5.mp3",
+      "name": "Helmet blocks a hit 5",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-death-1.mp3",
+      "name": "Moses falls 1",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-death-2.mp3",
+      "name": "Moses falls 2",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-death-3.mp3",
+      "name": "Moses falls 3",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-death-4.mp3",
+      "name": "Moses falls 4",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-death-5.mp3",
+      "name": "Moses falls 5",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-revive-1.mp3",
+      "name": "Moses revives 1",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-revive-2.mp3",
+      "name": "Moses revives 2",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-revive-3.mp3",
+      "name": "Moses revives 3",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-revive-4.mp3",
+      "name": "Moses revives 4",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Player/Moses/player-revive-5.mp3",
+      "name": "Moses revives 5",
+      "group": "Player (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-levelup-1.mp3",
+      "name": "Level up 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-levelup-2.mp3",
+      "name": "Level up 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-levelup-3.mp3",
+      "name": "Level up 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-levelup-4.mp3",
+      "name": "Level up 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-levelup-5.mp3",
+      "name": "Level up 5",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-unlock-1.mp3",
+      "name": "New plague / weapon unlocked 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-unlock-2.mp3",
+      "name": "New plague / weapon unlocked 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-unlock-3.mp3",
+      "name": "New plague / weapon unlocked 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-unlock-4.mp3",
+      "name": "New plague / weapon unlocked 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-unlock-5.mp3",
+      "name": "New plague / weapon unlocked 5",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-evolve-1.mp3",
+      "name": "Plague / weapon evolution 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-evolve-2.mp3",
+      "name": "Plague / weapon evolution 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-evolve-3.mp3",
+      "name": "Plague / weapon evolution 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-evolve-4.mp3",
+      "name": "Plague / weapon evolution 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-plague-evolve-5.mp3",
+      "name": "Plague / weapon evolution 5",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-blessing-1.mp3",
+      "name": "Blessing chosen 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-blessing-2.mp3",
+      "name": "Blessing chosen 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-blessing-3.mp3",
+      "name": "Blessing chosen 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-blessing-4.mp3",
+      "name": "Blessing chosen 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-blessing-5.mp3",
+      "name": "Blessing chosen 5",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-summon-1.mp3",
+      "name": "Champion summoned 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-summon-2.mp3",
+      "name": "Champion summoned 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-summon-3.mp3",
+      "name": "Champion summoned 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-summon-4.mp3",
+      "name": "Champion summoned 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-summon-5.mp3",
+      "name": "Champion summoned 5",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-down-1.mp3",
+      "name": "Champion knocked down 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-down-2.mp3",
+      "name": "Champion knocked down 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-down-3.mp3",
+      "name": "Champion knocked down 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-down-4.mp3",
+      "name": "Champion knocked down 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-down-5.mp3",
+      "name": "Champion knocked down 5",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-revive-1.mp3",
+      "name": "Champion back on his feet 1",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-revive-2.mp3",
+      "name": "Champion back on his feet 2",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-revive-3.mp3",
+      "name": "Champion back on his feet 3",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Events/event-champion-revive-4.mp3",
+      "name": "Champion back on his feet 4",
+      "group": "Game Events (AI)",
+      "source": "ElevenLabs"
+    },
+    {
+      "path": "audio/Library/Synth/ui-soft-tick.wav",
+      "name": "Soft tick",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-glass-tick.wav",
+      "name": "Glass tick",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-bubble-blip.wav",
+      "name": "Bubble blip",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-tiny-pip.wav",
+      "name": "Tiny pip",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-velvet-tap.wav",
+      "name": "Velvet tap",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-wood-click.wav",
+      "name": "Wood click",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-wood-tap.wav",
+      "name": "Wood tap",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-pop.wav",
+      "name": "Pop",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-soft-click.wav",
+      "name": "Soft click",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-retro-blip.wav",
+      "name": "Retro blip",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-stone-click.wav",
+      "name": "Stone click",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-chime-up.wav",
+      "name": "Two-note chime up",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-bright-confirm.wav",
+      "name": "Bright confirm",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-harp-confirm.wav",
+      "name": "Harp pluck confirm",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-chime-down.wav",
+      "name": "Two-note chime down",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-soft-cancel.wav",
+      "name": "Soft cancel",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-wood-back.wav",
+      "name": "Wooden back",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-rising-swoosh.wav",
+      "name": "Rising swoosh",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-falling-swoosh.wav",
+      "name": "Falling swoosh",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-scroll-open.wav",
+      "name": "Scroll unroll",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-scroll-close.wav",
+      "name": "Scroll roll up",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-paper-flick.wav",
+      "name": "Paper flick",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-card-flip.wav",
+      "name": "Card flip",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-page-turn.wav",
+      "name": "Page turn",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-double-tick.wav",
+      "name": "Double tick",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-pause-tones.wav",
+      "name": "Pause tones",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-resume-tones.wav",
+      "name": "Resume tones",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-hush.wav",
+      "name": "Hush (muffled drop)",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-toggle-on.wav",
+      "name": "Toggle on",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-toggle-off.wav",
+      "name": "Toggle off",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-switch-click.wav",
+      "name": "Switch click",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-slider-tick.wav",
+      "name": "Slider tick",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-ratchet-tick.wav",
+      "name": "Ratchet tick",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-error-buzz.wav",
+      "name": "Error buzz",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-soft-error.wav",
+      "name": "Soft error",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-wood-thunk.wav",
+      "name": "Wooden thunk (denied)",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-coin-chime.wav",
+      "name": "Coin chime",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-coins-jingle.wav",
+      "name": "Coins jingle",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-purchase-sparkle.wav",
+      "name": "Purchase sparkle",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-metal-clink.wav",
+      "name": "Metal clink",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-leather-buckle.wav",
+      "name": "Leather and buckle",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/ui-heavy-equip.wav",
+      "name": "Heavy equip",
+      "group": "UI (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/pickup-gem-chime.wav",
+      "name": "Gem chime",
+      "group": "Pickups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/pickup-glass-gem.wav",
+      "name": "Glass gem",
+      "group": "Pickups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/pickup-marimba-blip.wav",
+      "name": "Marimba blip",
+      "group": "Pickups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/pickup-twinkle.wav",
+      "name": "Sparkle twinkle",
+      "group": "Pickups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/pickup-soft-pluck.wav",
+      "name": "Soft pluck",
+      "group": "Pickups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-arpeggio.wav",
+      "name": "Power-up arpeggio",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-magic-rise.wav",
+      "name": "Magic rise",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-heal-chord.wav",
+      "name": "Heal chord",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-shield-shimmer.wav",
+      "name": "Shield shimmer",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-speed-zip.wav",
+      "name": "Speed zip",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-magnet-hum.wav",
+      "name": "Magnet hum rise",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-star-fanfare.wav",
+      "name": "Star fanfare",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-retro.wav",
+      "name": "Retro power-up",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-holy-chord.wav",
+      "name": "Holy chord",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/power-bonus-pop.wav",
+      "name": "Bonus pop",
+      "group": "Power-ups (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-thud.wav",
+      "name": "Thud",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-heavy-thud.wav",
+      "name": "Heavy thud",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-punch.wav",
+      "name": "Punch",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-stab.wav",
+      "name": "Stab",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-slice.wav",
+      "name": "Slice",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-metal.wav",
+      "name": "Metal hit",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-crunch.wav",
+      "name": "Crunch",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-wood-knock.wav",
+      "name": "Wood knock",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-ground-slam.wav",
+      "name": "Ground slam",
+      "group": "Impacts (synth)",
+      "source": "Synth"
+    },
+    {
+      "path": "audio/Library/Synth/hit-soft-splat.wav",
+      "name": "Soft splat",
+      "group": "Impacts (synth)",
+      "source": "Synth"
     }
   ]
 }
