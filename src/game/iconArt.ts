@@ -10,11 +10,12 @@ import clock from "@/assets/icon-v2-clock.png";
 import skull from "@/assets/icon-v2-skull.png";
 import staff from "@/assets/icon-v2-staff.png";
 import champions from "@/assets/icon-v2-champions.png";
+import championFace from "@/assets/icon-v2-champion-face.png";
 import serpent from "@/assets/icon-v2-serpent.png";
 import sword from "@/assets/icon-v2-sword.png";
 import type { BonusKind } from "./bonuses";
 
-export const ICON_V2 = { lightning, heart, star, magnet, shield, level, clock, skull, staff, champions, serpent, sword } as const;
+export const ICON_V2 = { lightning, heart, star, magnet, shield, level, clock, skull, staff, champions, championFace, serpent, sword } as const;
 export type IconV2 = keyof typeof ICON_V2;
 
 /** Bonus pickup → its v2 icon (all five bonuses have one). */

@@ -43,7 +43,8 @@ const ROWS: Row[] = [
   { name: "Clock (time)", icon: ICON_V2.clock, hud: CLOCK_ART },
   { name: "Skull (kills)", icon: ICON_V2.skull, hud: SKULL_ART },
   { name: "Staff (staff level)", icon: ICON_V2.staff, stats: STAFF_ART, alsoIn: ["card"] },
-  { name: "Champions (recruited)", icon: ICON_V2.champions, alsoIn: ["stats"] },
+  { name: "Champions (level-up card)", icon: ICON_V2.champions, alsoIn: ["card"] },
+  { name: "Champion face (champions recruited)", icon: ICON_V2.championFace, alsoIn: ["stats"] },
 ];
 
 const COLS = [

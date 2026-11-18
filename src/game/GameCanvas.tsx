@@ -1383,23 +1383,6 @@ const FLAG_ART = {
     "KwK.........",
   ],
 };
-const BURNING_BUSH_ART = {
-  palette: { K: "#2b1d14", y: "#ffe3a0", o: "#f2c970", R: "#e05a48", r: "#a12b2b", g: "#7fa96b", G: "#4d7a3e", w: "#8a5a34" },
-  grid: [
-    ".....y......",
-    "...y.oy..y..",
-    "..yo.Ro.yo..",
-    "..oRoRRooR..",
-    ".oRRrRrRRro.",
-    ".RrgRrGRrgR.",
-    "KGggGgGgGggK",
-    "KGgGGgggGGgK",
-    ".KGgGgGgGgK.",
-    "..KKGwwGKK..",
-    "....Kww K...".replace(" ", "K"),
-    "...KKKKKK...",
-  ],
-};
 let frogImg: HTMLImageElement | null = null;
 function getFrogImage(): HTMLImageElement {
   if (!frogImg) { frogImg = new Image(); frogImg.src = frogPlagueAsset; }
@@ -1430,15 +1413,17 @@ function LevelUpStats({ state }: { state: GameState }) {
     { key: "dmg", label: "Plague damage level", value: passiveRank(state, "damage"), art: SWORD_ART, icon: ICON_V2.sword },
     { key: "speed", label: "Movement speed level", value: passiveRank(state, "speed"), art: BONUS_ART.lightning, icon: ICON_V2.lightning },
     { key: "magnet", label: "Pickup radius level", value: passiveRank(state, "magnet"), art: BONUS_ART.magnet, icon: ICON_V2.magnet },
-    { key: "champ", label: "Champions recruited", value: state.npcs.size, art: FLAG_ART, icon: ICON_V2.champions },
-    { key: "plagues", label: "Plagues unlocked", value: [...state.plagues.keys()].filter((id) => id !== "staff").length, art: BURNING_BUSH_ART },
+    { key: "champ", label: "Champions recruited", value: state.npcs.size, art: FLAG_ART, icon: ICON_V2.championFace },
   ];
+  // The row spans the whole width of the level-up panel (small side margins),
+  // icons sized with the screen height so the popup still fits on phones.
+  const S = "clamp(22px, 5vh, 44px)";
   return (
-    <div className="mb-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 border-[3px] border-[#3a2412] bg-[#f6e2ad] px-2 py-1 sm:mb-3">
+    <div className="mb-2 flex w-full items-center justify-between gap-1 border-[3px] border-[#3a2412] bg-[#f6e2ad] px-3 py-1 sm:mb-3 sm:px-5 sm:py-1.5">
       {items.map((it) => (
-        <div key={it.key} className="flex items-center gap-1" title={it.label}>
-          {it.icon ? <img src={it.icon} alt="" width={22} height={22} draggable={false} style={{ width: 22, height: 22 }} /> : it.art ? <StatPixelIcon art={it.art} size={18} /> : <PixelIcon grid={it.grid!} size={20} />}
-          <span className="font-stat text-sm leading-none tabular-nums text-[#4a2c10]">{it.value}</span>
+        <div key={it.key} className="flex items-center gap-1 sm:gap-1.5" title={it.label}>
+          {it.icon ? <img src={it.icon} alt="" draggable={false} style={{ width: S, height: S }} /> : it.art ? <span className="flex items-center justify-center" style={{ width: S, height: S }}><StatPixelIcon art={it.art} size={28} /></span> : <PixelIcon grid={it.grid!} size={28} />}
+          <span className="font-stat text-[clamp(0.85rem,2.6vh,1.35rem)] leading-none tabular-nums text-[#4a2c10]">{it.value}</span>
         </div>
       ))}
     </div>
@@ -1471,7 +1456,7 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
           {choices.map((c) => {
             const grid = iconGridFor(c);
             const passive = /^passive-([a-zA-Z]+)-/.exec(c.id)?.[1];
-            const icon = c.plague ? PLAGUE_ICON[c.plague] : !c.npc && !c.plague && passive ? PASSIVE_ICON[passive] : undefined;
+            const icon = c.npc ? ICON_V2.champions : c.plague ? PLAGUE_ICON[c.plague] : passive ? PASSIVE_ICON[passive] : undefined;
             return (
               <button
                 key={c.id}
@@ -1697,7 +1682,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     }
     if (e.kind === "arrow" || e.kind === "spear_e" || e.kind === "magebolt" || e.kind === "magelight" || e.kind === "flamingspear") { drawEnemyProjectile(ctx, e, camX, camY); continue; }
     if (e.kind?.startsWith("bonus_")) { drawBonus(ctx, e, camX, camY, s); continue; }
-    if (e.kind === "moses") { drawMagnetPulse(ctx, s, e, e.pos.x - camX, e.pos.y - camY + 8); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
+    if (e.kind === "moses") { drawMagnetOrbit(ctx, s, e, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "back"); drawMoses(ctx, e, s, camX, camY, swingProgress, attackProgress); drawFootwearAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawHelmetAura(ctx, s, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawMagnetOrbit(ctx, s, e, e.pos.x - camX, e.pos.y - camY + 8, "front"); drawPoisonBubbles(ctx, e, s, camX, camY); drawMosesHpLabel(ctx, e, s, camX, camY); continue; }
     if (e.kind === "ramses") { drawRamses(ctx, e, camX, camY, s); continue; }
     if (e.kind === "soldier" && drawSoldier(ctx, e, camX, camY)) continue;
     if (e.kind === "archer" && drawArcher(ctx, e, camX, camY)) continue;
@@ -1924,20 +1909,55 @@ function boostShoeGlow(s: GameState, e: Entity): number {
   return Math.max(speed, flash);
 }
 
-/** Magnet bonus / Voice that Calls: red rings on the ground pull inward around Moses. */
-function drawMagnetPulse(ctx: CanvasRenderingContext2D, s: GameState, e: Entity, x: number, y: number) {
+/** Magnet bonus / Voice that Calls: three magnets (the bonus icon) circle
+ *  Moses with their poles pointing outward and sparkling. The half of the
+ *  orbit above him is drawn on the "back" layer (behind Moses), the lower
+ *  half on the "front" layer. */
+const MAGNET_TIP_ANGLE = (128 * Math.PI) / 180; // pole direction inside the icon
+function drawMagnetOrbit(ctx: CanvasRenderingContext2D, s: GameState, e: Entity, x: number, groundY: number, layer: "back" | "front") {
   const bonusLeft = (s.magnetBoostUntil ?? 0) - s.now;
   const flashLeft = ((e.data?.magnetFxUntil as number) ?? 0) - s.now;
-  const k = Math.max(bonusLeft > 0 ? Math.min(1, bonusLeft / 0.5) * 0.8 : 0, Math.min(1, Math.max(0, flashLeft / 0.3)));
+  const k = Math.max(bonusLeft > 0 ? Math.min(1, bonusLeft / 0.5) : 0, Math.min(1, Math.max(0, flashLeft / 0.3)));
   if (k <= 0) return;
+  const img = iconImage(ICON_V2.magnet);
+  if (!img) return;
+  const RX = 34, RY = 13, cy = groundY - 22, SIZE = 18;
   ctx.save();
-  ctx.lineWidth = 2;
   for (let i = 0; i < 3; i++) {
-    const p = (s.now * 0.9 + i / 3) % 1;
-    const r = 46 * (1 - p) + 10;
-    ctx.globalAlpha = k * 0.55 * Math.sin(p * Math.PI);
-    ctx.strokeStyle = i % 2 ? "#ff8a7a" : "#e04848";
-    ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y), r, r * 0.42, 0, 0, Math.PI * 2); ctx.stroke();
+    const a = s.now * 2.4 + (i * Math.PI * 2) / 3;
+    const sin = Math.sin(a);
+    if ((sin < 0) !== (layer === "back")) continue;
+    const mx = x + Math.cos(a) * RX, my = cy + sin * RY;
+    const out = Math.atan2(sin * RY, Math.cos(a) * RX); // outward on the ellipse
+    const depth = 0.85 + 0.15 * sin; // a little smaller at the back
+    const size = SIZE * depth;
+    ctx.globalAlpha = k * (0.8 + 0.2 * sin);
+    ctx.save();
+    ctx.translate(mx, my);
+    ctx.rotate(out - MAGNET_TIP_ANGLE);
+    // icon centred on the horseshoe's centre of mass (71,57 of 128)
+    ctx.drawImage(img, -size * (71 / 128), -size * (57 / 128), size, size);
+    ctx.restore();
+    // sparkle at the white poles
+    const tx = mx + Math.cos(out) * size * 0.36, ty = my + Math.sin(out) * size * 0.36;
+    const tw = 0.6 + 0.4 * Math.sin(s.now * 13 + i * 2.1);
+    ctx.globalCompositeOperation = "lighter";
+    const g = ctx.createRadialGradient(tx, ty, 0, tx, ty, 7 * tw + 2);
+    g.addColorStop(0, `rgba(255,255,255,${0.9 * k})`);
+    g.addColorStop(0.45, `rgba(170,215,255,${0.45 * k})`);
+    g.addColorStop(1, "rgba(120,180,255,0)");
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(tx, ty, 7 * tw + 2, 0, Math.PI * 2); ctx.fill();
+    // two tiny sparks flicking outward
+    ctx.fillStyle = `rgba(235,245,255,${0.85 * k})`;
+    for (let j = 0; j < 2; j++) {
+      const p = (s.now * 2.2 + i * 0.37 + j * 0.5) % 1;
+      const d = 3 + p * 9, sa = out + (j ? 0.5 : -0.5);
+      ctx.globalAlpha = 1 - p;
+      ctx.fillRect(Math.round(tx + Math.cos(sa) * d) - 1, Math.round(ty + Math.sin(sa) * d) - 1, 2, 2);
+    }
+    ctx.globalCompositeOperation = "source-over";
   }
   ctx.restore();
 }
