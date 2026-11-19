@@ -102,7 +102,7 @@ export function IconInventory() {
         <div className="border-t-2 border-[#d8b878] pt-3">
           <h3 className="font-pixel mb-2 text-[11px] uppercase tracking-[0.18em] text-[#4a2f16]">Bars</h3>
           <div className="flex flex-col gap-3">
-            <span className="font-display text-[10px] uppercase tracking-[0.14em] text-[#7a5a30]">Ten plagues (level up)</span>
+            <span className="font-display text-[10px] uppercase tracking-[0.14em] text-[#7a5a30]">Serpent, leprosy and the ten plagues (level up)</span>
             <img src={plaguesBar} alt="Ten plagues bar" draggable={false} className="w-full max-w-[480px]" />
             <span className="font-display text-[10px] uppercase tracking-[0.14em] text-[#7a5a30]">Ten commandments (not in the game yet)</span>
             <img src={commandmentsBar} alt="Ten commandments bar" draggable={false} className="w-full max-w-[480px]" />
