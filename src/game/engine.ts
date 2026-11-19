@@ -1469,7 +1469,7 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
   }
   const CAST_SOUND: Partial<Record<PlagueId, string>> = {
     serpent: "plague.serpent.cast", frogs: "plague.frogs.cast", gnats: "plague.gnats.cast", livestock: "plague.livestock.cast",
-    locusts: "plague.locusts.cast", firstborn: "plague.firstborn.cast", darkness: "plague.darkness.cast", pillar: "plague.pillar.cast",
+    locusts: "plague.locusts.cast", firstborn: "plague.firstborn.cast", darkness: "plague.darkness.cast", cloudpillar: "plague.pillar.cast", firepillar: "plague.firepillar.cast",
     fire: "plague.fire.cast",
   };
   const castSound = id === "hail" ? (state.hailFirePhase ? "plague.fire.cast" : null) : CAST_SOUND[id];
@@ -1656,8 +1656,8 @@ function castPlague(state: GameState, id: PlagueId, level: number) {
     // Moses first raises and strikes his staff; the walls start at the strike.
     snd(state, "magic.special.charge");
     state.redSeaCast = { start: state.now, slamAt: state.now + RED_SEA_RAISE + RED_SEA_STRIKE, end: state.now + RED_SEA_RAISE + RED_SEA_STRIKE + RED_SEA_HOLD, stats, dmul };
-  } else if (id === "pillar") {
-    castPillars(state, stats, (def.base.extra?.radius ?? 80) * plagueAreaMul(id, level), dmul);
+  } else if (id === "cloudpillar" || id === "firepillar") {
+    castPillar(state, id, stats, (def.base.extra?.radius ?? 80) * plagueAreaMul(id, level), dmul);
   }
 }
 
@@ -2014,24 +2014,21 @@ function tickFirstbornBolt(state: GameState, e: Entity, dt: number) {
 }
 
 // ---------- Pillar of Cloud (containment) & Pillar of Fire (burning) ----------
-function castPillars(state: GameState, stats: { dmg: number; ttl: number }, radius: number, dmul: number) {
+// Two separate attacks: each cast raises one zone on a random enemy (or beside
+// Moses when no enemy is around).
+function castPillar(state: GameState, id: "cloudpillar" | "firepillar", stats: { dmg: number; ttl: number }, radius: number, dmul: number) {
   const p = state.player.pos;
-  const a = pickRandomEnemy(state);
-  let b = pickRandomEnemy(state);
-  for (let k = 0; k < 4 && b && a && b.id === a.id; k++) b = pickRandomEnemy(state);
-  const place = (en: Entity | undefined, side: number): Vec2 =>
-    en ? { x: en.pos.x, y: en.pos.y } : { x: p.x + side * 150, y: p.y + rand(-40, 40) };
-  const mk = (kind: string, pos: Vec2, extra: Record<string, unknown>) => {
-    const z: Entity = {
-      id: state.nextId++, pos, vel: { x: 0, y: 0 }, radius,
-      hp: 1, maxHp: 1, team: "hazard", facing: 1, animT: Math.random() * 10, born: state.now,
-      ttl: stats.ttl, kind,
-      data: { radius, maxTtl: stats.ttl, endAt: state.now + stats.ttl, seed: Math.floor(Math.random() * 1e6), dps: 0, ...extra },
-    };
-    state.entities.set(z.id, z);
+  const en = pickRandomEnemy(state);
+  const side = id === "cloudpillar" ? -1 : 1;
+  const pos: Vec2 = en ? { x: en.pos.x, y: en.pos.y } : { x: p.x + side * 150, y: p.y + rand(-40, 40) };
+  const extra: Record<string, unknown> = id === "firepillar" ? { burnDps: stats.dmg * dmul, tickAcc: 0 } : {};
+  const z: Entity = {
+    id: state.nextId++, pos, vel: { x: 0, y: 0 }, radius,
+    hp: 1, maxHp: 1, team: "hazard", facing: 1, animT: Math.random() * 10, born: state.now,
+    ttl: stats.ttl, kind: id === "cloudpillar" ? "pillarcloud" : "pillarfire",
+    data: { radius, maxTtl: stats.ttl, endAt: state.now + stats.ttl, seed: Math.floor(Math.random() * 1e6), dps: 0, ...extra },
   };
-  mk("pillarcloud", place(a, -1), {});
-  mk("pillarfire", place(b && b !== a ? b : undefined, 1), { burnDps: stats.dmg * dmul, tickAcc: 0 });
+  state.entities.set(z.id, z);
 }
 
 function tickPillarZone(state: GameState, z: Entity, dt: number) {

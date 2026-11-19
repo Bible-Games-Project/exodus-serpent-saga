@@ -63,6 +63,7 @@ export const DEFAULT_SOUNDS: Record<string, string> = {
   "plague.redsea.slam": ai("plague.redsea.slam", 1),
   "plague.redsea.crash": ai("plague.redsea.crash", 4),
   "plague.pillar.cast": ai("plague.pillar.cast", 1),
+  "plague.firepillar.cast": ai("plague.pillar.cast", 3),
   // Pickups and bonuses
   "pickup.xp": `${S}pickup-gem-chime.wav`,
   "pickup.magnet": `${S}power-magnet-hum.wav`,

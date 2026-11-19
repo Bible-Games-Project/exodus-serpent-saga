@@ -34,7 +34,8 @@ export type PlagueId =
   | "locusts"
   | "darkness"
   | "firstborn"
-  | "pillar"
+  | "cloudpillar"
+  | "firepillar"
   | "redsea";
 
 export type NpcId =

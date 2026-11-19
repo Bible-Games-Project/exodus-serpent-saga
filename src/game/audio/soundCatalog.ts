@@ -164,7 +164,8 @@ export const SOUND_EVENTS: SoundEvent[] = [
     { id: "plague.firstborn.strike", label: "Angel's bolt strikes", prompt: "Holy lightning bolt strike from above, sharp crack", duration: 0.7, maxVoices: 2, cooldown: 0.1 },
     { id: "plague.redsea.slam", label: "Red Sea: staff slam", prompt: "Staff slammed on the ground with a mighty echoing boom", duration: 1.0, priority: 2 },
     { id: "plague.redsea.crash", label: "Red Sea: walls crash", prompt: "Giant walls of sea water crashing down, roaring flood", duration: 2.0, priority: 2 },
-    { id: "plague.pillar.cast", label: "Pillar of cloud and fire", prompt: "Towering pillar of cloud and fire rising, rumbling whoosh", duration: 1.5 },
+    { id: "plague.pillar.cast", label: "Pillar of Cloud rises", prompt: "Towering pillar of cloud and fire rising, rumbling whoosh", duration: 1.5 },
+    { id: "plague.firepillar.cast", label: "Pillar of Fire rises", prompt: "", duration: 1.5, noFiles: true },
   ]),
 
   // ---------------- Pickups ----------------

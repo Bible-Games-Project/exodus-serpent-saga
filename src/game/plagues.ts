@@ -17,7 +17,7 @@ export const ATTACK_MULTI_MILESTONES: Array<{ level: number; casts: number }> = 
 /** Delay in seconds between repeated attacks of one cast. */
 export const MULTI_ATTACK_STAGGER = 0.18;
 /** Attacks whose behavior does not fit repeating (persistent/global effects). */
-export const NO_MULTI_ATTACK: PlagueId[] = ["darkness", "pillar", "flies"];
+export const NO_MULTI_ATTACK: PlagueId[] = ["darkness", "cloudpillar", "firepillar", "flies"];
 export function attackCasts(id: PlagueId, level: number): number {
   if (NO_MULTI_ATTACK.includes(id)) return 1;
   let n = 1;
@@ -234,14 +234,28 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     base: { level: 1, cooldown: 12.5, dmg: 99999, count: 5, speed: 120, ttl: 4.5, extra: { ramsesDmg: 600 } },
     scale: scale({ level: 1, cooldown: 12.5, dmg: 99999, count: 5, speed: 120, ttl: 4.5 }, { ttl: 0.25 }),
   },
-  pillar: {
-    id: "pillar",
-    name: "Pillar of Cloud & Fire",
-    description: "Raises two circles around the enemy ranks: a Pillar of Cloud that traps foes inside for 5 seconds, and a Pillar of Fire that burns foes inside — those who flee keep burning until the fire dies.",
+  cloudpillar: {
+    id: "cloudpillar",
+    name: "Pillar of Cloud",
+    description: "Raises a circle of cloud around the enemy ranks: every foe caught inside is trapped until the cloud lifts.",
     scripture:
-      "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, and by night in a pillar of fire, to give them light.",
+      "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, to lead them the way.",
+    unlockLevel: 120,
+    // Each cast raises the zone for `ttl` seconds (the time foes stay trapped).
+    base: { level: 1, cooldown: 9, dmg: 0, count: 1, speed: 0, ttl: 5, extra: { radius: 80 } },
+    scale: scale({ level: 1, cooldown: 9, dmg: 0, count: 1, speed: 0, ttl: 5 }, {
+      ttl: 0.4,
+      cooldown: 0.3,
+    }),
+  },
+  firepillar: {
+    id: "firepillar",
+    name: "Pillar of Fire",
+    description: "Raises a circle of fire around the enemy ranks: foes inside burn, and those who flee keep burning until the fire dies.",
+    scripture:
+      "Exodus 13:21 — And by night in a pillar of fire, to give them light; to go by day and night.",
     unlockLevel: 130,
-    // Each cast raises both zones for `ttl` seconds; `dmg` is burn damage per second.
+    // Each cast raises the zone for `ttl` seconds; `dmg` is burn damage per second.
     base: { level: 1, cooldown: 9, dmg: 16, count: 1, speed: 0, ttl: 5, extra: { radius: 80 } },
     scale: scale({ level: 1, cooldown: 9, dmg: 16, count: 1, speed: 0, ttl: 5 }, {
       dmg: 4,
@@ -280,7 +294,8 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "firstborn",
   // Miracles (post-plagues):
   "redsea",
-  "pillar",
+  "cloudpillar",
+  "firepillar",
 ];
 
 
@@ -305,7 +320,8 @@ export const PLAGUE_EVOLUTION: Record<PlagueId, { area: number; notes: [string, 
   darkness: { area: 0, notes: ["Darkness lasts longer.", "Darkness lasts longer.", "Darkness lasts longer.", "Final: a long, crushing darkness."] },
   firstborn: { area: 0, notes: ["Discharges reach farther before fading.", "Discharges reach farther before fading.", "Discharges reach farther before fading.", "Final: a vast storm of white discharges."] },
   fire: { area: 0.12, notes: ["Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Bigger blasts, faster falls.", "Final: an enormous fire from heaven."] },
-  pillar: { area: 0.1, notes: ["Wider circles, hotter flames.", "Wider circles, hotter flames.", "Wider circles, hotter flames.", "Final: blazing pillars."] },
+  cloudpillar: { area: 0.1, notes: ["A wider cloud that holds longer.", "A wider cloud that holds longer.", "A wider cloud that holds longer.", "Final: a vast cloud that holds the enemy ranks."] },
+  firepillar: { area: 0.1, notes: ["A wider circle, hotter flames.", "A wider circle, hotter flames.", "A wider circle, hotter flames.", "Final: a blazing pillar of fire."] },
   redsea: { area: 0.1, notes: ["Stronger waves, faster return.", "Stronger waves, wider meeting point.", "Stronger waves, faster return.", "Final: the waters meet with overwhelming force."] },
 };
 
