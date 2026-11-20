@@ -35,7 +35,6 @@ import { resolvePlayerDefeat } from "./playerDefeat";
 import { weaponMuzzle } from "./muzzles";
 import { offscreenEnemySpawn } from "./enemySpawn";
 
-import { playShieldBlock } from "./sfx";
 import { snd } from "./audio/gameSound";
 import { assignedSound } from "./audio/soundChoices";
 import type { TestMapConfig } from "./types";
@@ -1250,8 +1249,7 @@ function triggerShieldBlock(state: GameState, shield: Entity, source: Vec2) {
     seed: Math.floor(Math.random() * 1000),
     maxTtl: 0.24,
   });
-  if (assignedSound("weapon.shield.block")) snd(state, "weapon.shield.block", shield.pos);
-  else playShieldBlock();
+  snd(state, "weapon.shield.block", shield.pos);
 }
 
 
