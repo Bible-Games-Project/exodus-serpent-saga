@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { useSettings } from "@/hooks/useSettings";
 import { previewSound, stopPreview } from "@/game/audio/audioManager";
 import { SOUND_ACTIONS, SOUND_CATEGORIES, type SoundEvent } from "@/game/audio/soundCatalog";
-import { CHOICES_EVENT, allAssignments, assignSound, assignmentSource, myAssignments } from "@/game/audio/soundChoices";
+import { CHOICES_EVENT, PREVIOUS_SOUNDS, allAssignments, assignSound, assignmentSource, myAssignments } from "@/game/audio/soundChoices";
 import { LIBRARY_BY_PATH, LIBRARY_GROUPS, SOUND_LIBRARY } from "@/game/audio/soundLibrary";
 
 function useAssignmentsVersion(): number {
@@ -84,6 +84,8 @@ function SoundPicker({ action, anchor, onClose }: { action: SoundEvent; anchor: 
       [
         // Sounds made specifically for this action come first.
         { g: "Made for this action (Claude)", items: SOUND_LIBRARY.filter((s) => s.action === action.id && (!q || s.name.toLowerCase().includes(q))) },
+        // Then the pick this action had before Claude's pack.
+        { g: "Previous choice", items: SOUND_LIBRARY.filter((s) => s.path === PREVIOUS_SOUNDS[action.id] && (!q || s.name.toLowerCase().includes(q))) },
         ...LIBRARY_GROUPS.map((g) => ({
           g,
           items: SOUND_LIBRARY.filter((s) => s.group === g && (!q || s.name.toLowerCase().includes(q) || g.toLowerCase().includes(q))),

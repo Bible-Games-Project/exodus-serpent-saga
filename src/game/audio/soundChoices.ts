@@ -3,9 +3,10 @@
 // DEFAULT_SOUNDS are the game's own picks. The maintainer reassigns sounds in
 // Test Map → Sound testing; those picks are saved in this browser
 // (localStorage), override the defaults and are used by the game right away.
-// "Copy choices" there gives the text to paste into DEFAULT_SOUNDS to make the
+// "Copy choices" there gives the text to paste into PICKS() below to make the
 // picks permanent for every player. "" means silent.
 import { soundPath, SOUND_EVENTS } from "./soundCatalog";
+import { SOUND_LIBRARY } from "./soundLibrary";
 
 const S = "audio/Library/Synth/";
 const ai = (id: string, n: number) => {
@@ -13,8 +14,11 @@ const ai = (id: string, n: number) => {
   return ev ? soundPath(ev, n) : "";
 };
 
-/** action id → library sound path (the game's defaults) */
-export const DEFAULT_SOUNDS: Record<string, string> = {
+/**
+ * The maintainer's picks before Claude's pack (2026-11-20). Kept as the second
+ * option of each action in Sound testing.
+ */
+export const PREVIOUS_SOUNDS: Record<string, string> = {
   // Weapons: impacts only
   "weapon.staff.hit": "",
   "weapon.spear.hit": "",
@@ -128,8 +132,23 @@ export const DEFAULT_SOUNDS: Record<string, string> = {
   "ui.card": "audio/Bonuses/bonus-star-3.mp3",
 };
 
-const KEY = "exodus-survivors:sound-assignments";
-const OLD_KEY = "exodus-survivors:sound-choices"; // earlier format: event id → option 1-5
+/**
+ * action id → library sound path (the game's defaults): version 1 of the sound
+ * Claude made for the action (public/audio/Library/Claude), else the previous pick.
+ */
+export const DEFAULT_SOUNDS: Record<string, string> = {
+  ...Object.fromEntries(SOUND_EVENTS.map((ev) => [ev.id, SOUND_LIBRARY.find((s) => s.action === ev.id)?.path ?? PREVIOUS_SOUNDS[ev.id] ?? ""])),
+  ...PICKS(),
+};
+
+/** The maintainer's newer picks (pasted from "Copy choices"); they win over the above. */
+function PICKS(): Record<string, string> {
+  return {};
+}
+
+// New key when Claude's pack became the default: earlier browser picks (already
+// copied into PREVIOUS_SOUNDS) would otherwise hide the new defaults.
+const KEY = "exodus-survivors:sound-assignments-v2";
 export const CHOICES_EVENT = "exodus-survivors:sound-choices-changed";
 
 let cache: Record<string, string> | null = null;
@@ -138,13 +157,7 @@ function local(): Record<string, string> {
   if (cache) return cache;
   if (typeof window === "undefined") return {};
   try {
-    cache = JSON.parse(window.localStorage.getItem(KEY) ?? "null") as Record<string, string> | null;
-    if (!cache) {
-      // Carry over picks made with the earlier five-option menu.
-      const old = JSON.parse(window.localStorage.getItem(OLD_KEY) ?? "{}") as Record<string, number>;
-      cache = {};
-      for (const [id, n] of Object.entries(old)) if (typeof n === "number") cache[id] = ai(id, n);
-    }
+    cache = (JSON.parse(window.localStorage.getItem(KEY) ?? "null") as Record<string, string> | null) ?? {};
   } catch {
     cache = {};
   }
