@@ -240,7 +240,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Raises a circle of cloud around the enemy ranks: every foe caught inside is trapped until the cloud lifts.",
     scripture:
       "Exodus 13:21 — The LORD went before them by day in a pillar of a cloud, to lead them the way.",
-    unlockLevel: 120,
+    unlockLevel: 110,
     // Each cast raises the zone for `ttl` seconds (the time foes stay trapped).
     base: { level: 1, cooldown: 9, dmg: 0, count: 1, speed: 0, ttl: 5, extra: { radius: 80 } },
     scale: scale({ level: 1, cooldown: 9, dmg: 0, count: 1, speed: 0, ttl: 5 }, {
@@ -254,7 +254,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Raises a circle of fire around the enemy ranks: foes inside burn, and those who flee keep burning until the fire dies.",
     scripture:
       "Exodus 13:21 — And by night in a pillar of fire, to give them light; to go by day and night.",
-    unlockLevel: 130,
+    unlockLevel: 120,
     // Each cast raises the zone for `ttl` seconds; `dmg` is burn damage per second.
     base: { level: 1, cooldown: 9, dmg: 16, count: 1, speed: 0, ttl: 5, extra: { radius: 80 } },
     scale: scale({ level: 1, cooldown: 9, dmg: 16, count: 1, speed: 0, ttl: 5 }, {
@@ -267,7 +267,7 @@ export const PLAGUES: Record<PlagueId, PlagueDef> = {
     description: "Moses raises his staff and strikes the ground: walls of water rush in from both sides and crash together, sweeping the field.",
     scripture:
       "Exodus 14:21-28 — Moses stretched out his hand over the sea; the waters returned and covered the chariots of Pharaoh.",
-    unlockLevel: 110,
+    unlockLevel: 130,
     base: { level: 1, cooldown: 22, dmg: 120, count: 1, speed: 900, ttl: 1.6, extra: { centerDmg: 440 } },
     scale: scale({ level: 1, cooldown: 22, dmg: 120, count: 1, speed: 900, ttl: 1.6 }, {
       dmg: 40,
@@ -292,10 +292,11 @@ export const PLAGUE_ORDER: PlagueId[] = [
   "locusts",
   "darkness",
   "firstborn",
-  // Miracles (post-plagues):
-  "redsea",
+  // Miracles (post-plagues), in the order of Exodus 13-14: the pillar of cloud,
+  // the pillar of fire, then the Red Sea closing over Pharaoh's army.
   "cloudpillar",
   "firepillar",
+  "redsea",
 ];
 
 
