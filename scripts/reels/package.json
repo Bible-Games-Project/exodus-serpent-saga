@@ -1,0 +1,12 @@
+{
+  "name": "exodus-reels",
+  "private": true,
+  "description": "Tools to render the vertical social reels (not part of the game build). Install with `bun install` inside scripts/reels.",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
+    "@fontsource/rubik": "^5.3.0",
+    "@fontsource/silkscreen": "^5.3.0",
+    "@sparticuz/chromium": "^153.0.0",
+    "puppeteer-core": "^25.18.1"
+  }
+}
