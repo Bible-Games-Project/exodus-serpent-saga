@@ -81,11 +81,15 @@ function SoundPicker({ action, anchor, onClose }: { action: SoundEvent; anchor: 
   const q = query.trim().toLowerCase();
   const groups = useMemo(
     () =>
-      LIBRARY_GROUPS.map((g) => ({
-        g,
-        items: SOUND_LIBRARY.filter((s) => s.group === g && (!q || s.name.toLowerCase().includes(q) || g.toLowerCase().includes(q))),
-      })).filter((x) => x.items.length),
-    [q],
+      [
+        // Sounds made specifically for this action come first.
+        { g: "Made for this action (Claude)", items: SOUND_LIBRARY.filter((s) => s.action === action.id && (!q || s.name.toLowerCase().includes(q))) },
+        ...LIBRARY_GROUPS.map((g) => ({
+          g,
+          items: SOUND_LIBRARY.filter((s) => s.group === g && (!q || s.name.toLowerCase().includes(q) || g.toLowerCase().includes(q))),
+        })),
+      ].filter((x) => x.items.length),
+    [q, action.id],
   );
 
   const pick = (path: string | undefined) => {
