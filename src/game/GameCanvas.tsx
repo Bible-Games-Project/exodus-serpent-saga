@@ -685,7 +685,7 @@ const ICON_PAL: Record<string, string> = {
 // Higher-resolution 20×20 blessing icons (~2× the previous 12×12 grid).
 // Rendered at the same on-screen size, so the extra pixels buy detail and
 // smoother silhouettes without changing card layout.
-const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
+export const ICON_PLAGUE: Partial<Record<PlagueId, string[]>> = {
   staff: [
     "....................",
     ".......ktDDDDk......",

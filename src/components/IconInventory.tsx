@@ -2,13 +2,15 @@
 // background it has in the game (level-up card, level-up stats row, bonus
 // pickup on the ground, run HUD), new painted v2 icon next to the old pixel one.
 import type { ReactNode } from "react";
-import { ICON_V2 } from "@/game/iconArt";
+import { ICON_V2, PLAGUE_ICON } from "@/game/iconArt";
+import { PLAGUES, PLAGUE_ORDER } from "@/game/plagues";
 import { BONUS_ART, STAFF_ART, SWORD_ART } from "@/game/uiIcons";
 import plaguesBar from "@/assets/ui-plagues-bar.png";
 import commandmentsBar from "@/assets/ui-commandments-bar.png";
 import {
   CLOCK_ART,
   ICON_PASSIVE,
+  ICON_PLAGUE,
   MEDAL_ART,
   SKULL_ART,
   PixelIcon as GridIcon,
@@ -99,6 +101,23 @@ export function IconInventory() {
             </div>
           </div>
         ))}
+        <div className="border-t-2 border-[#d8b878] pt-3">
+          <h3 className="font-pixel mb-2 text-[11px] uppercase tracking-[0.18em] text-[#4a2f16]">Attack icons (level up card)</h3>
+          <div className="flex flex-wrap gap-3">
+            {PLAGUE_ORDER.map((id) => {
+              const png = PLAGUE_ICON[id];
+              const grid = ICON_PLAGUE[id];
+              return (
+                <span key={id} className="flex w-[92px] flex-col items-center gap-1">
+                  <span className="flex h-[84px] w-[84px] items-center justify-center border-[3px] border-[#3a2412]" style={{ background: "#f6e2ad" }}>
+                    {png ? <Img src={png} size={72} /> : grid ? <GridIcon grid={grid} size={72} /> : null}
+                  </span>
+                  <span className="font-pixel text-center text-[9px] uppercase leading-tight tracking-wider text-[#8a5a2c]">{PLAGUES[id].name}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
         <div className="border-t-2 border-[#d8b878] pt-3">
           <h3 className="font-pixel mb-2 text-[11px] uppercase tracking-[0.18em] text-[#4a2f16]">Bars</h3>
           <div className="flex flex-col gap-3">
