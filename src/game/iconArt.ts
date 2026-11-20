@@ -13,6 +13,21 @@ import champions from "@/assets/icon-v2-champions.png";
 import championFace from "@/assets/icon-v2-champion-face.png";
 import serpent from "@/assets/icon-v2-serpent.png";
 import sword from "@/assets/icon-v2-sword.png";
+// Attack icons for the level-up cards, generated to match the magnet's style.
+import leprosyIcon from "@/assets/icon-v2-leprosy.png";
+import bloodIcon from "@/assets/icon-v2-blood.png";
+import frogsIcon from "@/assets/icon-v2-frogs.png";
+import gnatsIcon from "@/assets/icon-v2-gnats.png";
+import fliesIcon from "@/assets/icon-v2-flies.png";
+import livestockIcon from "@/assets/icon-v2-livestock.png";
+import boilsIcon from "@/assets/icon-v2-boils.png";
+import hailIcon from "@/assets/icon-v2-hail.png";
+import locustsIcon from "@/assets/icon-v2-locusts.png";
+import darknessIcon from "@/assets/icon-v2-darkness.png";
+import firstbornIcon from "@/assets/icon-v2-firstborn.png";
+import redseaIcon from "@/assets/icon-v2-redsea.png";
+import cloudpillarIcon from "@/assets/icon-v2-cloudpillar.png";
+import firepillarIcon from "@/assets/icon-v2-firepillar.png";
 import type { BonusKind } from "./bonuses";
 
 export const ICON_V2 = { lightning, heart, star, magnet, shield, level, clock, skull, staff, champions, championFace, serpent, sword } as const;
@@ -25,7 +40,24 @@ export const BONUS_ICON: Record<BonusKind, string> = { heart, magnet, star, ligh
 export const PASSIVE_ICON: Record<string, string> = { maxHp: heart, shield, speed: lightning, magnet, damage: sword };
 
 /** Plague (level-up card) → v2 icon, when it has one. */
-export const PLAGUE_ICON: Partial<Record<string, string>> = { staff, serpent };
+export const PLAGUE_ICON: Partial<Record<string, string>> = {
+  staff,
+  serpent,
+  leprosy: leprosyIcon,
+  blood: bloodIcon,
+  frogs: frogsIcon,
+  gnats: gnatsIcon,
+  flies: fliesIcon,
+  livestock: livestockIcon,
+  boils: boilsIcon,
+  hail: hailIcon,
+  locusts: locustsIcon,
+  darkness: darknessIcon,
+  firstborn: firstbornIcon,
+  redsea: redseaIcon,
+  cloudpillar: cloudpillarIcon,
+  firepillar: firepillarIcon,
+};
 
 const cache = new Map<string, HTMLImageElement>();
 /** Loaded image for canvas drawing (null until it has loaded). */
