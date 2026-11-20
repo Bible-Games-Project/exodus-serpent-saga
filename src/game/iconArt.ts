@@ -13,7 +13,8 @@ import champions from "@/assets/icon-v2-champions.png";
 import championFace from "@/assets/icon-v2-champion-face.png";
 import serpent from "@/assets/icon-v2-serpent.png";
 import sword from "@/assets/icon-v2-sword.png";
-// Attack icons for the level-up cards, generated to match the magnet's style.
+// Attack icons for the level-up cards, generated to match the serpent, staff,
+// star, heart, sword and lightning icons (soft, muted, no outline).
 import leprosyIcon from "@/assets/icon-v2-leprosy.png";
 import bloodIcon from "@/assets/icon-v2-blood.png";
 import frogsIcon from "@/assets/icon-v2-frogs.png";
