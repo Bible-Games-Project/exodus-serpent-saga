@@ -25,6 +25,15 @@ html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hi
 .sub{position:absolute;top:1235px;left:80px;right:80px;text-align:center;font:900 70px/1.12 Rub;color:#fff;
   -webkit-text-stroke:12px #2a1406;paint-order:stroke fill;text-shadow:0 8px 18px rgba(0,0,0,.55)}
 .sub b{color:#ffd75e;font-weight:900}
+.sub.high{top:985px}
+.poster{position:absolute;inset:0;background:#000}
+.poster img{width:1080px;height:1920px;object-fit:cover}
+.steam{position:absolute;left:170px;right:170px;top:1585px;padding:22px 30px 28px;border-radius:22px;text-align:center;
+  background:linear-gradient(#1b2838ee,#171a21f2);border:3px solid #66c0f4;box-shadow:0 0 30px rgba(102,192,244,.45),0 14px 30px rgba(0,0,0,.6)}
+.steamtop{display:flex;align-items:center;justify-content:center;gap:18px;font:900 54px Rub;color:#fff;letter-spacing:6px}
+.steambtn{margin-top:16px;padding:20px 10px;border-radius:12px;font:900 46px/1 Rub;color:#fff;letter-spacing:1px;
+  background:linear-gradient(#79b42b,#4c7d16);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 6px 0 #2d4a0c;text-shadow:0 2px 0 #2d4a0c}
+.steam small{display:block;margin-top:14px;font:700 30px Rub;color:#c7d5e0;letter-spacing:2px}
 .card{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 35%,#4a2410 0%,#1d0f07 55%,#0e0703 100%)}
 .card img{position:absolute;left:190px;top:120px;width:700px;-webkit-mask-image:radial-gradient(ellipse 60% 62% at 50% 50%,#000 60%,transparent 100%)}
 .title{position:absolute;top:1170px;left:0;right:0;text-align:center;font:700 104px/1 Silk;color:#ffd75e;

@@ -10,17 +10,24 @@ export const VO0 = 0.3; // the story starts 0.3 s into the reel
 const ep = readJson(process.argv[2]);
 const dir = workDir(ep);
 const vo = readJson(`${dir}/vo.json`);
-const cta = readJson(`${dir}/cta.json`);
+const cta = ep.cta ? readJson(`${dir}/cta.json`) : null;
 const chunks: string[][] = ep.story.split("|").map((c: string) => c.trim().split(/\s+/));
 const words: Array<[string, number, number]> = vo.words;
 const nWords = chunks.flat().length;
 if (nWords !== words.length)
   throw new Error(`The story has ${nWords} words but Whisper heard ${words.length}: ${words.map((w) => w[0]).join(" ")}. Adjust the text (e.g. join or split words) or delete work/${ep.id}/vo.* to re-record.`);
 
+// Steam's mark, simplified (a disc with the piston-and-wheels shape), for the poster card.
+const STEAM_LOGO = `<svg viewBox="0 0 100 100" width="78" height="78"><circle cx="50" cy="50" r="48" fill="#fff"/><circle cx="50" cy="50" r="42" fill="#1b2838"/><circle cx="64" cy="37" r="15" fill="none" stroke="#fff" stroke-width="6"/><circle cx="64" cy="37" r="7" fill="#fff"/><path d="M10 56 L40 69" stroke="#fff" stroke-width="12" stroke-linecap="round"/><circle cx="38" cy="68" r="10" fill="#1b2838" stroke="#fff" stroke-width="5"/><path d="M43 63 L58 45" stroke="#fff" stroke-width="8"/></svg>`;
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const T = (s: number) => +(VO0 + s / TEMPO).toFixed(3);
 const overlays: Record<string, string> = {};
 const timeline: Array<{ png: string; a: number; b: number }> = [];
+// The narrator (episode `narrator`) is on screen for the first `chunks` subtitle lines;
+// meanwhile the subtitles sit higher, above his head.
+const narrChunks = ep.narrator ? ep.narrator.chunks ?? 2 : 0;
+const firstWordOf = (c: number) => chunks.slice(0, c).flat().length;
+const narrator = ep.narrator ? { a: 0, b: T(words[Math.min(firstWordOf(narrChunks), words.length - 1)][1]) } : null;
 let wi = 0;
 for (let c = 0; c < chunks.length; c++) {
   const ws = chunks[c];
@@ -28,7 +35,7 @@ for (let c = 0; c < chunks.length; c++) {
   for (let i = 0; i < ws.length; i++) {
     const end = i + 1 < ws.length ? words[wi + i + 1][1] : nextChunk;
     const name = `sub-${c}-${i}`;
-    overlays[name] = `<div class="sub">${ws.map((x, j) => (j === i ? `<b>${esc(x)}</b>` : esc(x))).join(" ")}</div>`;
+    overlays[name] = `<div class="sub${c < narrChunks ? " high" : ""}">${ws.map((x, j) => (j === i ? `<b>${esc(x)}</b>` : esc(x))).join(" ")}</div>`;
     timeline.push({ png: name, a: T(c === 0 && i === 0 ? 0 : words[wi + i][1]), b: T(end) });
   }
   wi += ws.length;
@@ -39,16 +46,25 @@ overlays.hook = `<div class="hook">${esc(ep.hook)}<div class="ref">${esc(ep.ref)
 timeline.unshift({ png: "hook", a: 0, b: storyEnd + 0.3 });
 
 const card = +(storyEnd + 0.35).toFixed(2);
-const ctaVo = +(card + 0.3).toFixed(2);
-const cue = cta.words.find((w: [string, number]) => w[0].startsWith(ep.card.buttonCue)) ?? cta.words[Math.floor(cta.words.length / 2)];
-const end = +(ctaVo + cta.duration / TEMPO + 0.9).toFixed(2);
-overlays.card = `<div class="card"><img src="file://${REPO}/${ep.card.image ?? "src/assets/moses-home.png"}"></div>`;
-overlays.cardtitle = `<div class="title">${ep.card.title}</div><div class="tag">${esc(ep.card.tag)}</div>`;
-overlays.cardbtn = `<div class="btn">${esc(ep.card.button)}<small>${esc(ep.card.buttonSmall)}</small></div>`;
+let ctaVo = card, end: number, fades: Array<[string, number, number]>;
+if (ep.card.poster) {
+  // Poster card: the episode's image full screen with a "Wishlist on Steam" badge, held `seconds` (no voice).
+  end = +(card + (ep.card.seconds ?? 2)).toFixed(2);
+  overlays.card = `<div class="poster"><img src="file://${REPO}/${ep.card.poster}"></div>`;
+  overlays.cardbtn = `<div class="steam"><div class="steamtop">${STEAM_LOGO}<span>STEAM</span></div><div class="steambtn">${esc(ep.card.button)}</div>${ep.card.buttonSmall ? `<small>${esc(ep.card.buttonSmall)}</small>` : ""}</div>`;
+  fades = [["card", card, 0.4], ["cardbtn", +(card + 0.45).toFixed(2), 0.3]];
+} else {
+  ctaVo = +(card + 0.3).toFixed(2);
+  const cue = cta ? cta.words.find((w: [string, number]) => w[0].startsWith(ep.card.buttonCue)) ?? cta.words[Math.floor(cta.words.length / 2)] : [0, 0.6];
+  end = +(ctaVo + (cta ? cta.duration / TEMPO : 1.5) + 0.9).toFixed(2);
+  overlays.card = `<div class="card"><img src="file://${REPO}/${ep.card.image ?? "src/assets/moses-home.png"}"></div>`;
+  overlays.cardtitle = `<div class="title">${ep.card.title}</div><div class="tag">${esc(ep.card.tag)}</div>`;
+  overlays.cardbtn = `<div class="btn">${esc(ep.card.button)}<small>${esc(ep.card.buttonSmall)}</small></div>`;
+  fades = [["card", card, 0.5], ["cardtitle", card + 0.35, 0.4], ["cardbtn", +(ctaVo + cue[1] / TEMPO - 0.1).toFixed(2), 0.3]];
+}
 
 writeJson(`${dir}/overlays.json`, overlays);
 writeJson(`${dir}/timeline.json`, {
-  timeline, TEMPO, VO0, storyEnd, card, ctaVo, end,
-  fades: [["card", card, 0.5], ["cardtitle", card + 0.35, 0.4], ["cardbtn", +(ctaVo + cue[1] / TEMPO - 0.1).toFixed(2), 0.3]],
+  timeline, TEMPO, VO0, storyEnd, card, ctaVo, end, fades, narrator,
 });
 console.log(`story ends ${storyEnd} s, card ${card} s, reel ${end} s, ${timeline.length} subtitle steps`);

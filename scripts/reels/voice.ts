@@ -56,7 +56,8 @@ async function timings(wav: string, json: string) {
 
 const story = ep.story.split("|").map((s: string) => s.trim()).join(" ");
 await speak(story, `${dir}/vo.wav`);
-await speak(ep.cta, `${dir}/cta.wav`);
+// The call to action is spoken only when the episode has a `cta` line.
+if (ep.cta) await speak(ep.cta, `${dir}/cta.wav`);
 await timings(`${dir}/vo.wav`, `${dir}/vo.json`);
-await timings(`${dir}/cta.wav`, `${dir}/cta.json`);
+if (ep.cta) await timings(`${dir}/cta.wav`, `${dir}/cta.json`);
 console.log("voice ready:", readJson(`${dir}/vo.json`).text);

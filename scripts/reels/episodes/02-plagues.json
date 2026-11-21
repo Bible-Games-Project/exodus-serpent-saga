@@ -1,25 +1,43 @@
 {
   "id": "02-plagues",
   "lang": "en",
-  "voice": "elevenlabs:e5WNhrdI30aXpS2RSGm1",
+  "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+  "speed": 1.05,
   "music": "scripts/reels/music/Ancient-Mystery.mp3",
+  "gameSound": false,
+  "narrator": {
+    "chunks": 3
+  },
   "hook": "EGYPT, 3,000 YEARS AGO",
   "ref": "The ten plagues",
   "story": "Three thousand years ago, | Egypt was struck | by ten plagues. | First, the river turned | red as blood. | Then came the frogs... | millions of them. | And the worst | was yet to come.",
-  "cta": "Would you survive? Wishlist Exodus Survivors on Steam.",
   "card": {
-    "title": "EXODUS<br>SURVIVORS",
-    "tag": "Survive the plagues of Egypt",
-    "button": "WISHLIST NOW",
-    "buttonSmall": "ON STEAM",
-    "buttonCue": "Wishlist"
+    "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+    "seconds": 2,
+    "button": "WISHLIST NOW"
   },
   "capture": {
     "seconds": 15,
     "warmup": 12,
-    "clicks": ["Water into Blood", "Plague of Frogs", "Camel", "Desert Lion", "Spear Knight", "Archer Chariot"],
-    "pick": ["Blood", "Frogs"],
-    "moves": [[0, 3, "d"], [3, 5, "ds"], [5, 8, "s"], [8, 11, "a"], [11, 13, "aw"], [13, 17, "w"]]
-  },
-  "speed": 1.05
+    "clicks": [
+      "Water into Blood",
+      "Plague of Frogs",
+      "Camel",
+      "Desert Lion",
+      "Spear Knight",
+      "Archer Chariot"
+    ],
+    "pick": [
+      "Blood",
+      "Frogs"
+    ],
+    "moves": [
+      [0, 3, "d"],
+      [3, 5, "ds"],
+      [5, 8, "s"],
+      [8, 11, "a"],
+      [11, 13, "aw"],
+      [13, 17, "w"]
+    ]
+  }
 }

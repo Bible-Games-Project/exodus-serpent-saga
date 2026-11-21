@@ -1,9 +1,11 @@
-# Reels ("¿Sabías que...?" with Moses)
+# Reels
 
-Short vertical videos (about 20 s, 1080x1920) for YouTube Shorts, Instagram
-Reels and TikTok. In each one Moses tells, in the first person, something
-that happened to him, over real gameplay. It ends on a card asking viewers
-to wishlist the game on Steam.
+Short vertical videos (15-20 s, 1080x1920) for YouTube Shorts, Instagram
+Reels and TikTok, in English for a mostly non-Christian audience: a narrator
+(the portrait in `narrator/`, who opens the reel blinking and talking) tells
+an ancient-history story over real gameplay. It ends on the game's poster
+(`cards/`) with a "Wishlist now on Steam" badge. Episode 01 is the older
+format (Moses in the first person, spoken call to action).
 
 Each episode is one JSON file in `episodes/`:
 
@@ -13,10 +15,12 @@ Each episode is one JSON file in `episodes/`:
 | `lang`, `voice`, `speed` | language for Whisper; voice: `elevenlabs:<voice id>` (any ElevenLabs library voice) or an OpenAI voice name (`onyx`, with `voiceStyle` as accent hint); `speed` for ElevenLabs (0.7-1.2) |
 | `layout` | `portrait` (default: the game fills the 1080x1920 frame) or `square` (1080x1080 gameplay between blurred bands) |
 | `music` | optional music file in the repo, e.g. `scripts/reels/music/Ancient-Mystery.mp3` (the owner's tracks, also used for the Eden to Heaven videos; looped); without it `music.ts` synthesizes a track |
-| `hook`, `ref` | big title on top and the Bible reference under it |
-| `story` | what Moses says; `\|` splits it into subtitle lines |
-| `cta` | what Moses says over the Steam card |
-| `card` | Steam card texts; `buttonCue` = the CTA word at which the button appears |
+| `gameSound` | `false`: no game sound effects in the mix |
+| `narrator` | the talking portrait at the start: `chunks` (how many subtitle lines it stays), optional `image`, `width`, `x`, `y`, and the face boxes `eyes`/`mouth` for another image |
+| `hook`, `ref` | big title on top and the line under it |
+| `story` | the narration; `\|` splits it into subtitle lines |
+| `cta` | optional spoken call to action over the card |
+| `card` | either `poster` (image, shown `seconds`, with the Steam badge and `button` text) or the older drawn card (`title`, `tag`, `button`, `buttonSmall`, `buttonCue` = the CTA word at which the button appears) |
 | `capture` | gameplay to record: `seconds`, `warmup` (seconds played before recording), `clicks` (Test Map buttons to press first), `pick` (preferred level-up cards), `moves` (`[from, to, "keys"]` held, WASD) |
 
 To choose a narrator, `bun voice-samples.ts` renders the same line with 20 American male
@@ -29,9 +33,10 @@ Tools live in their own package (not part of the game build):
 ```sh
 cd scripts/reels && bun install
 # the game must be running: in the repo root, `bun run dev -- --port 5180`
-E=episodes/01-serpent.json
-bun voice.ts $E          # Moses' voice + word timings (OpenAI, needs OPENAI_API_KEY)
+E=episodes/02-plagues.json
+bun voice.ts $E          # narration + word timings (ElevenLabs/OpenAI TTS, Whisper: OPENAI_API_KEY)
 bun plan.ts $E           # subtitles and timing
+node narrator.mjs $E     # talking narrator sprites (when the episode has `narrator`)
 bun music.ts $E          # synthesized background music (skipped when the episode sets `music`)
 node overlays.mjs $E     # hook, subtitles and card as PNGs (headless Chromium)
 node capture.mjs $E      # gameplay frames + the sounds the game played (slow: ~0.5 s/frame)
