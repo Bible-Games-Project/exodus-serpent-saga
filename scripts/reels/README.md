@@ -12,15 +12,15 @@ Each episode is one JSON file in `episodes/`:
 | `id` | file name of the reel (`public/reels/<id>.mp4`) |
 | `lang`, `voice`, `speed` | language for Whisper; voice: `elevenlabs:<voice id>` (any ElevenLabs library voice) or an OpenAI voice name (`onyx`, with `voiceStyle` as accent hint); `speed` for ElevenLabs (0.7-1.2) |
 | `layout` | `portrait` (default: the game fills the 1080x1920 frame) or `square` (1080x1080 gameplay between blurred bands) |
-| `music` | optional music file in the repo (looped); without it `music.ts` synthesizes a track |
+| `music` | optional music file in the repo, e.g. `scripts/reels/music/Ancient-Mystery.mp3` (the owner's tracks, also used for the Eden to Heaven videos; looped); without it `music.ts` synthesizes a track |
 | `hook`, `ref` | big title on top and the Bible reference under it |
 | `story` | what Moses says; `\|` splits it into subtitle lines |
 | `cta` | what Moses says over the Steam card |
 | `card` | Steam card texts; `buttonCue` = the CTA word at which the button appears |
 | `capture` | gameplay to record: `seconds`, `warmup` (seconds played before recording), `clicks` (Test Map buttons to press first), `pick` (preferred level-up cards), `moves` (`[from, to, "keys"]` held, WASD) |
 
-To choose a narrator, `bun voice-samples.ts` renders the same line with 20 male
-ElevenLabs voices into `public/reels/voces/` (with an `index.html` to listen to them).
+To choose a narrator, `bun voice-samples.ts` renders the same line with 20 American male
+ElevenLabs voices into `public/reels/voices/` (with an `index.html` to listen to them).
 
 ## Making a reel
 
