@@ -1,0 +1,202 @@
+{
+ "id": "08-sandals",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.05,
+ "gameSound": false,
+ "music": "scripts/reels/music/The-Discovery-2.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v3.png",
+  "eyes": [
+   [
+    444,
+    256,
+    24,
+    16
+   ],
+   [
+    562,
+    236,
+    28,
+    16
+   ]
+  ],
+  "mouth": [
+   465,
+   328,
+   585,
+   372
+  ],
+  "x": 180
+ },
+ "hook": "WHAT IF YOUR SHOES LASTED 40 YEARS?",
+ "ref": "Deuteronomy 8:3-4",
+ "story": "Did you know | Israel's sandals | never wore out? | For forty years | in the desert, | their clothes didn't tear, | and their feet didn't swell. | Moses reminded them: | man does not live | on bread alone, | but on every word | from the mouth of God. | He provided every single day.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Shoes that lasted 40 years? 👣 #shorts",
+  "caption": "For 40 years in the desert, Israel's clothes didn't wear out and their feet didn't swell. Man does not live on bread alone, but on every word from the mouth of God (Deuteronomy 8:3-4). 🍞 Wishlist Exodus Survivors on Steam!",
+  "hashtags": [
+   "#bible",
+   "#faith",
+   "#christian",
+   "#biblestudy",
+   "#jesus",
+   "#moses",
+   "#deuteronomy",
+   "#indiegame"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Parting of the Red Sea",
+     "Plague of Locusts",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Red Sea",
+     "Locusts"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.36,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.2
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.4,
+        2.1
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.37,
+      "skip": 2,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.2,
+        2.7
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.6,
+        1.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Hail"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.37,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.2
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.37,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 3.56,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,202 @@
+{
+ "id": "07-bronze-serpent",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.13,
+ "gameSound": false,
+ "music": "scripts/reels/music/Secrets2.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v2.png",
+  "eyes": [
+   [
+    504,
+    266,
+    27,
+    17
+   ],
+   [
+    634,
+    264,
+    30,
+    17
+   ]
+  ],
+  "mouth": [
+   515,
+   364,
+   636,
+   400
+  ],
+  "x": 180
+ },
+ "hook": "WHY WOULD GOD HEAL WITH A SNAKE?",
+ "ref": "Numbers 21:4-9",
+ "story": "Why would God heal people | with a snake? | In the desert, | venomous snakes | bit the Israelites. | God told Moses | to make a bronze serpent | and lift it up on a pole. | Anyone who looked at it | lived. | Centuries later, | Jesus said: | so must the Son of Man | be lifted up. | Look up, and live.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Why would God heal with a snake? 🐍 #shorts",
+  "caption": "Bitten Israelites only had to look at the bronze serpent Moses lifted up, and they lived (Numbers 21:4-9). Jesus said the Son of Man must be lifted up the same way (John 3:14). ✝️ Wishlist Exodus Survivors on Steam!",
+  "hashtags": [
+   "#bible",
+   "#faith",
+   "#christian",
+   "#biblestudy",
+   "#jesus",
+   "#moses",
+   "#numbers",
+   "#indiegame"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Staff becomes Serpent",
+     "Plague of Boils",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Serpent",
+     "Boils"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.59,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.1,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 2.32,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.8,
+        2.3
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.53,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.32,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.5,
+        1.9
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Staff becomes Serpent",
+     "Pillar of Fire",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Serpent",
+     "Fire"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.53,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.3,
+        2
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.53,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2,
+        2.6
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 3.8,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

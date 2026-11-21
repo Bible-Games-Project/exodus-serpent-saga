@@ -1,0 +1,180 @@
+{
+ "id": "06-shining-face",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.05,
+ "gameSound": false,
+ "music": "scripts/reels/music/Ancient-Mystery-2.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "WHY DID MOSES' FACE GLOW?",
+ "ref": "Exodus 34:29-35",
+ "story": "Did you know | Moses' face glowed? | After forty days | with God on the mountain, | his skin shone so bright | the people were afraid | to come near him. | And Moses didn't even know. | He had to cover his face | with a veil. | Time with God | changes you... | even when you can't see it.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Why did Moses' face glow? ✨ #shorts",
+  "caption": "After 40 days with God, Moses' face shone so bright that Israel was afraid to come near him, and he didn't even know it (Exodus 34:29-35). Time with God changes you. 🙏 Wishlist Exodus Survivors on Steam!",
+  "hashtags": [
+   "#bible",
+   "#faith",
+   "#christian",
+   "#biblestudy",
+   "#jesus",
+   "#moses",
+   "#exodus",
+   "#indiegame"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Pillar of Fire",
+     "Pillar of Cloud",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Fire",
+     "Cloud"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.49,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.26,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.26,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.46,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Hail"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.46,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.46,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.7,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
