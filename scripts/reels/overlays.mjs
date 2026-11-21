@@ -19,9 +19,9 @@ const css = `
 @font-face{font-family:Rub;font-weight:700;src:url(${F("rubik/files/rubik-latin-700-normal.woff2")})}
 html,body{margin:0;width:1080px;height:1920px;background:transparent;overflow:hidden}
 .ov{position:absolute;inset:0;display:none}
-.hook{position:absolute;top:150px;left:0;right:0;text-align:center;font:700 84px Silk;color:#ffd75e;letter-spacing:2px;
+.hook{position:absolute;top:150px;left:40px;right:40px;line-height:1.3;text-align:center;font:700 84px Silk;color:#ffd75e;letter-spacing:2px;
   text-shadow:0 6px 0 #5a2a0c,4px 0 0 #3a1a08,-4px 0 0 #3a1a08,0 -4px 0 #3a1a08,0 4px 0 #3a1a08,0 10px 24px rgba(0,0,0,.6)}
-.ref{position:absolute;top:290px;left:0;right:0;text-align:center;font:700 34px Rub;color:#f6e2ad;letter-spacing:3px;text-transform:uppercase;text-shadow:0 3px 8px rgba(0,0,0,.8)}
+.ref{margin-top:22px;text-align:center;font:700 38px Rub;color:#fff4d6;letter-spacing:3px;text-transform:uppercase;-webkit-text-stroke:8px #2a1406;paint-order:stroke fill;text-shadow:0 4px 10px rgba(0,0,0,.5)}
 .sub{position:absolute;top:1235px;left:80px;right:80px;text-align:center;font:900 70px/1.12 Rub;color:#fff;
   -webkit-text-stroke:12px #2a1406;paint-order:stroke fill;text-shadow:0 8px 18px rgba(0,0,0,.55)}
 .sub b{color:#ffd75e;font-weight:900}

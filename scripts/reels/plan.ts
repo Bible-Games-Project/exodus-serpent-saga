@@ -34,7 +34,8 @@ for (let c = 0; c < chunks.length; c++) {
   wi += ws.length;
 }
 const storyEnd = T(words[words.length - 1][2]);
-overlays.hook = `<div class="hook">${esc(ep.hook)}</div><div class="ref">${esc(ep.ref)}</div>`;
+// The reference sits under the title, however many lines the title takes.
+overlays.hook = `<div class="hook">${esc(ep.hook)}<div class="ref">${esc(ep.ref)}</div></div>`;
 timeline.unshift({ png: "hook", a: 0, b: storyEnd + 0.3 });
 
 const card = +(storyEnd + 0.35).toFixed(2);

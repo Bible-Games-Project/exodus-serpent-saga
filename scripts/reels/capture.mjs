@@ -19,7 +19,15 @@ fs.mkdirSync(framesDir, { recursive: true });
 
 const b = await browser();
 const pg = await b.newPage();
-await pg.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1.5 });
+// "portrait" (default): the game fills the whole 1080x1920 reel. "square": a 1080x1080
+// crop of the landscape game, for the layout with bands above and below.
+const PORTRAIT = (ep.layout ?? "portrait") === "portrait";
+await pg.setViewport(PORTRAIT ? { width: 540, height: 960, deviceScaleFactor: 2 } : { width: 1280, height: 720, deviceScaleFactor: 1.5 });
+// The game pauses in portrait (it asks to rotate the phone): report a square window to that check.
+if (PORTRAIT) await pg.evaluateOnNewDocument(() => {
+  const h = Object.getOwnPropertyDescriptor(window, "innerHeight");
+  Object.defineProperty(window, "innerHeight", { configurable: true, get: () => Math.min(h.get.call(window), window.innerWidth) });
+});
 pg.on("pageerror", (e) => console.log("page error:", e.message));
 
 await pg.evaluateOnNewDocument(() => {
@@ -107,9 +115,9 @@ for (let f = 0; f < FRAMES; f++) {
   for (const k of want) if (!held.has(k)) { await pg.keyboard.down(k); held.add(k); }
   await pg.evaluate((ms) => window.__vt.step(ms), 1000 / FPS);
   await pickCard();
-  // Central square of the 1920x1080 view (Moses stays in the middle). captureBeyondViewport
-  // must be off or Chromium resizes the page and the canvas is blank.
-  await pg.screenshot({ path: `${framesDir}/f${String(f).padStart(4, "0")}.jpg`, type: "jpeg", quality: 92, clip: { x: 280, y: 0, width: 720, height: 720 }, captureBeyondViewport: false });
+  // Square layout: central square of the 1920x1080 view (Moses stays in the middle).
+  // captureBeyondViewport must be off or Chromium resizes the page and the canvas is blank.
+  await pg.screenshot({ path: `${framesDir}/f${String(f).padStart(4, "0")}.jpg`, type: "jpeg", quality: 92, captureBeyondViewport: false, ...(PORTRAIT ? {} : { clip: { x: 280, y: 0, width: 720, height: 720 } }) });
   if (f % 60 === 0) console.log(`frame ${f}/${FRAMES} (${((Date.now() - t0) / 1000).toFixed(0)} s)`);
 }
 fs.writeFileSync(`${outDir}/sounds.json`, JSON.stringify(await pg.evaluate(() => window.__sounds)));

@@ -7,6 +7,7 @@ import { readJson, workDir, writeWav } from "./lib.mjs";
 
 const ep = readJson(process.argv[2]);
 const dir = workDir(ep);
+if (ep.music) { console.log("episode uses", ep.music); process.exit(0); }
 const D = readJson(`${dir}/timeline.json`).end + 1;
 setSeed(ep.musicSeed ?? 42);
 const beat = 60 / 92;

@@ -35,12 +35,20 @@ const args = ["-y", "-v", "error", "-framerate", "30", "-i", `${dir}/frames/f%04
 for (const x of others) args.push("-i", `${dir}/ov/${x.png}.png`);
 for (const [p, , d] of fades) args.push("-loop", "1", "-framerate", "30", "-t", String(d + 0.1), "-i", `${dir}/ov/${p}.png`);
 const A = 2 + others.length + fades.length;
-args.push("-i", `${dir}/vo.wav`, "-i", `${dir}/cta.wav`, "-i", `${dir}/music.wav`, "-i", `${dir}/sfx.wav`);
+// `music` in the episode: a track from the repo (looped if shorter than the reel); otherwise music.ts' synth.
+const music = ep.music ? `${REPO}/${ep.music}` : `${dir}/music.wav`;
+args.push("-i", `${dir}/vo.wav`, "-i", `${dir}/cta.wav`, "-stream_loop", "-1", "-i", music, "-i", `${dir}/sfx.wav`);
 
 let f = `[0:v]tpad=stop_mode=clone:stop_duration=${END},trim=duration=${END},setpts=PTS-STARTPTS,split[g1][g2];`;
-f += `[g1]scale=480:480,crop=270:480,boxblur=6:2,scale=1080:1920,eq=brightness=-0.12:saturation=0.85[bg];`;
-f += `[g2]pad=1080:1092:0:6:color=0x2a1406,pad=1080:1104:0:0:color=0x2a1406[sq];`;
-f += `[bg][sq]overlay=0:408[v00];`;
+if ((ep.layout ?? "portrait") === "portrait") {
+  // The game fills the whole frame.
+  f += `[g1]scale=1080:1920[v00];[g2]nullsink;`;
+} else {
+  // Blurred gameplay behind a 1080x1080 gameplay square with brown borders.
+  f += `[g1]scale=480:480,crop=270:480,boxblur=6:2,scale=1080:1920,eq=brightness=-0.12:saturation=0.85[bg];`;
+  f += `[g2]pad=1080:1092:0:6:color=0x2a1406,pad=1080:1104:0:0:color=0x2a1406[sq];`;
+  f += `[bg][sq]overlay=0:408[v00];`;
+}
 f += `[1:v]fps=30,format=rgba[subs];[v00][subs]overlay=0:0:shortest=0:eof_action=pass[v0];`;
 let last = "v0", n = 0;
 others.forEach((it: any, i: number) => {

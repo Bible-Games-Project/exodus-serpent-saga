@@ -2,9 +2,10 @@
 // call to action, then Whisper word timings for the karaoke subtitles.
 // Files already in the work folder are kept (delete them to re-record).
 //
-//   bun voice.ts episodes/01-serpent.json   (needs OPENAI_API_KEY)
+//   bun voice.ts episodes/01-serpent.json   (needs OPENAI_API_KEY; ELEVENLABS_API_KEY for "elevenlabs:" voices)
 import fs from "node:fs";
-import { readJson, workDir, writeJson } from "./lib.mjs";
+import { execFileSync } from "node:child_process";
+import { FFMPEG, readJson, workDir, writeJson } from "./lib.mjs";
 
 const ep = readJson(process.argv[2]);
 const dir = workDir(ep);
@@ -17,6 +18,19 @@ const persona =
 
 async function speak(text: string, file: string) {
   if (fs.existsSync(file)) return;
+  // "elevenlabs:<voice id>" uses ElevenLabs (any voice of its library); anything else is an OpenAI voice.
+  if (String(ep.voice).startsWith("elevenlabs:")) {
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ep.voice.slice(11)}?output_format=mp3_44100_128`, {
+      method: "POST",
+      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY!, "Content-Type": "application/json" },
+      body: JSON.stringify({ text, model_id: "eleven_multilingual_v2", voice_settings: { stability: 0.45, similarity_boost: 0.8, style: 0.3, speed: ep.speed ?? 1 } }),
+    });
+    if (!r.ok) throw new Error(`ElevenLabs ${r.status}: ${await r.text()}`);
+    fs.writeFileSync(`${file}.mp3`, Buffer.from(await r.arrayBuffer()));
+    execFileSync(FFMPEG, ["-v", "error", "-y", "-i", `${file}.mp3`, file]);
+    fs.rmSync(`${file}.mp3`);
+    return;
+  }
   const r = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: { Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" },
