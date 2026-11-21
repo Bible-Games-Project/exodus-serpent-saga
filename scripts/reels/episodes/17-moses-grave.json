@@ -1,0 +1,228 @@
+{
+ "id": "17-moses-grave",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Secrets1.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v3.png",
+  "eyes": [
+   [
+    444,
+    256,
+    24,
+    16
+   ],
+   [
+    562,
+    236,
+    28,
+    16
+   ]
+  ],
+  "mouth": [
+   465,
+   328,
+   585,
+   372
+  ],
+  "x": 180
+ },
+ "hook": "WHERE IS MOSES BURIED?",
+ "ref": "Deuteronomy 34:5-7",
+ "story": "Where is Moses buried? | Nobody knows. | The Bible says | God himself buried him | in a valley in Moab, | and no one knows the place | to this day. | He was 120 years old, | his eyes were still clear | and his strength was strong. | His story ended | in God's hands. | So can yours.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Where Is Moses Buried? ⛰️ Nobody Knows #shorts",
+  "hook": "Where is Moses buried? ⛰️",
+  "summary": "Nobody knows. The Bible says God himself buried him in a valley in Moab, and no one knows the place to this day. He was 120, his eyes still clear and his strength still strong. His story ended in God's hands.",
+  "source": "Deuteronomy 34:5-7",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#deuteronomy",
+   "#mystery",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "moses grave",
+   "where is moses buried",
+   "mount nebo",
+   "deuteronomy 34",
+   "bible mysteries",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Plague of Darkness",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Darkness"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.34,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.2
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.16,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.4,
+        2.1
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.36,
+      "skip": 2,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.2,
+        2.7
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.16,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.6,
+        1.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Parting of the Red Sea",
+     "Pillar of Cloud",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Red Sea",
+     "Cloud"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.36,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.2
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.36,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 3.54,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

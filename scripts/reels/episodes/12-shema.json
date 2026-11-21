@@ -1,0 +1,206 @@
+{
+ "id": "12-shema",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Chronique-de-l-Aventure.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "WHAT IS THE GREATEST COMMANDMENT?",
+ "ref": "Deuteronomy 6:4-5",
+ "story": "What is the greatest | commandment of all? | When Jesus was asked, | he didn't invent a new one. | He quoted Moses: | Love the Lord your God | with all your heart, | all your soul | and all your strength. | Jewish families | still pray these words | every morning and night. | Love comes first.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "What Is the Greatest Commandment? ❤️ Jesus Quoted Moses #shorts",
+  "hook": "What is the greatest commandment of all? ❤️",
+  "summary": "When Jesus was asked, he didn't invent a new one. He quoted Moses: love the Lord your God with all your heart, all your soul and all your strength. Jewish families still pray these words, the Shema, every morning and night.",
+  "source": "Deuteronomy 6:4-5; Mark 12:29-30",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#deuteronomy",
+   "#love",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "greatest commandment",
+   "shema",
+   "deuteronomy 6",
+   "love the lord your god",
+   "mark 12",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Pillar of Fire",
+     "Water into Blood",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Fire",
+     "Blood"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 1.94,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 1.94,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.12,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Death of the Firstborn",
+     "Pillar of Cloud",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Firstborn",
+     "Cloud"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.12,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.12,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.18,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

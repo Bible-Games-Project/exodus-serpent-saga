@@ -1,0 +1,206 @@
+{
+ "id": "09-gleaning",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Ancient-Mystery.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "WHY NOT HARVEST THE WHOLE FIELD?",
+ "ref": "Leviticus 19:9-10",
+ "story": "Why did God tell farmers | not to harvest | their whole field? | In Leviticus, | the edges of every field | and the grapes left behind | belonged to the poor | and the foreigner. | That's how Ruth | found food... | and met Boaz. | Generosity wasn't extra. | It was built into the work.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Why Did God Say NOT to Harvest the Whole Field? 🌾 #shorts",
+  "hook": "Why did God tell farmers not to harvest their whole field? 🌾",
+  "summary": "In Leviticus, the edges of every field and the grapes left behind belonged to the poor and the foreigner. That's how Ruth found food and met Boaz. Generosity wasn't extra: it was built into the work.",
+  "source": "Leviticus 19:9-10; Ruth 2",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#leviticus",
+   "#generosity",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "leviticus 19",
+   "gleaning",
+   "ruth and boaz",
+   "generosity",
+   "helping the poor",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Plague of Locusts",
+     "Plague on Livestock",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Locusts",
+     "Livestock"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.33,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.15,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.15,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.34,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Plague of Frogs",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Frogs"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.34,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.34,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.52,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

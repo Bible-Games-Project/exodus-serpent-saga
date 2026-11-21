@@ -1,0 +1,207 @@
+{
+ "id": "15-spies",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.17,
+ "gameSound": false,
+ "music": "scripts/reels/music/The-Discovery-2.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "WHY DID 10 SPIES SAY NO?",
+ "ref": "Numbers 13:25-33",
+ "story": "Why did ten spies | say no to the Promised Land? | They saw giants, | and said: | we looked like grasshoppers. | Only Joshua and Caleb | said: we can do it. | The people listened to fear. | That generation | wandered forty years. | Joshua and Caleb | were the only adults who entered. | Faith sees the same giants... | and a bigger God.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Why Did 10 Spies Say No? 🦗 Giants in the Promised Land #shorts",
+  "hook": "Why did ten spies say no to the Promised Land? 🦗",
+  "summary": "They saw giants and said: we looked like grasshoppers. Only Joshua and Caleb said: we can do it. The people listened to fear and wandered 40 years. Faith sees the same giants, and a bigger God.",
+  "source": "Numbers 13:25-33; 14:6-9, 30",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#numbers",
+   "#courage",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "twelve spies",
+   "joshua and caleb",
+   "giants in the bible",
+   "nephilim",
+   "numbers 13",
+   "fear vs faith",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Plague of Locusts",
+     "Plague of Darkness",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Locusts",
+     "Darkness"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.51,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.27,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.27,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.47,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Fire",
+     "Plague of Boils",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Fire",
+     "Boils"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.47,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.47,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.72,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

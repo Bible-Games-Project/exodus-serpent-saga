@@ -1,0 +1,228 @@
+{
+ "id": "11-manna",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/The-Discovery.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v3.png",
+  "eyes": [
+   [
+    444,
+    256,
+    24,
+    16
+   ],
+   [
+    562,
+    236,
+    28,
+    16
+   ]
+  ],
+  "mouth": [
+   465,
+   328,
+   585,
+   372
+  ],
+  "x": 180
+ },
+ "hook": "WHAT DID MANNA TASTE LIKE?",
+ "ref": "Exodus 16:14-35",
+ "story": "What did manna | taste like? | The Bible says | like wafers made with honey. | Its name means: | what is it? | It fell every morning | for forty years. | Keep it for tomorrow, | and it spoiled. | God wanted them | to trust him for today. | Give us this day | our daily bread.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "What Did Manna Taste Like? 🍯 Bread From Heaven #shorts",
+  "hook": "What did manna taste like? 🍯",
+  "summary": "The Bible says it tasted like wafers made with honey, and its name means \"what is it?\". It fell every morning for 40 years, and if they kept it for tomorrow, it spoiled. God wanted them to trust him for today: give us this day our daily bread.",
+  "source": "Exodus 16:14-35; Matthew 6:11",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#exodus",
+   "#dailybread",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "manna",
+   "bread from heaven",
+   "exodus 16",
+   "daily bread",
+   "trust god",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Hail"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.3,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.2
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.14,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.4,
+        2.1
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.34,
+      "skip": 2,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.2,
+        2.7
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.14,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.6,
+        1.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Plague of Gnats (Lice)",
+     "Pillar of Fire",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Gnats",
+     "Fire"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.34,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.2
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.34,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 3.5,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

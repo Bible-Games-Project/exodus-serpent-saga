@@ -1,0 +1,32 @@
+{
+ "target": {
+  "profile": "Brand_2_BibleFun",
+  "facebookPageId": "1020908321106180",
+  "pinterestBoardId": "269090215174938478",
+  "steam": "https://store.steampowered.com/app/4102420/Exodus_Survivors/",
+  "platforms": [
+   "youtube",
+   "tiktok",
+   "instagram",
+   "facebook",
+   "pinterest"
+  ]
+ },
+ "posts": [
+  {
+   "date": "2026-11-21T17:00:00Z",
+   "id": "07-bronze-serpent",
+   "job": "d93beb06e3ee4e1d81ef2bc4aa70eadc"
+  },
+  {
+   "date": "2026-11-23T17:00:00Z",
+   "id": "06-shining-face",
+   "job": "902c6801610f4902b0fb4a8d45b6d3fe"
+  },
+  {
+   "date": "2026-11-29T17:00:00Z",
+   "id": "08-sandals",
+   "job": "ed9331fbfe7941379b99ab000e169611"
+  }
+ ]
+}

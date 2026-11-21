@@ -20,7 +20,7 @@ Each episode is one JSON file in `episodes/`:
 | `hook`, `ref` | big title on top and the line under it |
 | `story` | the narration; `\|` splits it into subtitle lines |
 | `cta` | optional spoken call to action over the card |
-| `post` | title, caption and hashtags prepared for scheduling the reel |
+| `post` | texts for `publish.ts`: `title` (YouTube/Facebook, with `#shorts`), `hook` (the opening question), `summary`, `source` (Bible references), `hashtags`, `tags` (YouTube) |
 | `card` | either `poster` (image, shown `seconds`, with the Steam badge and `button` text) or the older drawn card (`title`, `tag`, `button`, `buttonSmall`, `buttonCue` = the CTA word at which the button appears) |
 | `capture` | gameplay to record: `seconds`, `warmup` (seconds played before recording), `clicks` (Test Map buttons to press first), `pick` (preferred level-up cards), `moves` (`[from, to, "keys"]` held, WASD) |
 | `capture.takes` | cut gameplay instead of one long run: a list of takes (each a fresh game: `clicks`, `pick`, `warmup`, `warmupMoves`), each with `shots`: `len` (seconds on screen), `skip` (seconds played unfilmed before the shot, `skipMoves`), `moves`, `slow` (0.5 = slow motion), `cam`: `on` (`moses`, `enemy` = nearest enemy, locked until it dies, optional `kinds`; or `center`), `zoom` `[start, end]` (eased), `dx`/`dy` offset. The shot lengths must add up to at least the card time + 0.2 s (`timeline.json`). The HUD is hidden in takes. `capture.dpr` (default 3) is the render sharpness for close-ups |
@@ -58,5 +58,20 @@ answered on the spot so they never appear on screen. Chromium comes from
 `@sparticuz/chromium` and ffmpeg from `@ffmpeg-installer/ffmpeg`, so nothing
 needs to be installed system-wide.
 
-Publishing (YouTube, Instagram, TikTok) goes through upload-post.com, which can
-schedule posts ahead; always ask the owner before publishing anything.
+Publishing goes through upload-post.com (always ask the owner first):
+
+```sh
+bun publish.ts episodes/07-bronze-serpent.json 2026-11-21T17:00:00Z   # add --dry to only print the texts
+```
+
+It uploads `public/reels/<id>.mp4` to the brand in `schedule.json` (Brand_2_BibleFun:
+YouTube, TikTok, Instagram, Facebook page, Pinterest board) with the post scheduled at
+that UTC time, and records the job id in `schedule.json`. Run it with bun (bun goes
+through the sandbox proxy; node's fetch does not). The Steam link is in every
+description; TikTok and Instagram never make caption links clickable, so those also
+say "link in bio". `GET /api/uploadposts/schedule` lists scheduled posts and
+`DELETE /api/uploadposts/schedule/<job>` cancels one.
+
+Channel direction (owner, Nov 2026): a Christian channel. Every reel teaches something
+interesting from Exodus, Leviticus, Numbers or Deuteronomy, opens with a question hook
+(title and first spoken line) and ends on the lesson.

@@ -1,0 +1,208 @@
+{
+ "id": "18-jubilee",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/The-Discovery.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "WHAT IF EVERYONE GOT A FRESH START?",
+ "ref": "Leviticus 25:8-10",
+ "story": "What if every fifty years, | everyone got | a fresh start? | That was God's law | in Leviticus: | the Year of Jubilee. | Slaves went free, | and land went back | to the families who lost it. | Its words are even | on America's Liberty Bell: | Proclaim liberty throughout all the land. | God's heart is freedom.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "What If Everyone Got a Fresh Start? 🔔 The Year of Jubilee #shorts",
+  "hook": "What if every 50 years, everyone got a fresh start? 🔔",
+  "summary": "That was God's law in Leviticus: the Year of Jubilee. Slaves went free and land went back to the families who lost it. Its words are even on America's Liberty Bell: proclaim liberty throughout all the land.",
+  "source": "Leviticus 25:8-10",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#leviticus",
+   "#freedom",
+   "#libertybell",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "year of jubilee",
+   "liberty bell",
+   "proclaim liberty",
+   "leviticus 25",
+   "freedom",
+   "american history",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Death of the Firstborn",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Firstborn",
+     "Hail"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.52,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 2.28,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.28,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.48,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Water into Blood",
+     "Plague of Flies",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Blood",
+     "Flies"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.48,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.48,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.73,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
