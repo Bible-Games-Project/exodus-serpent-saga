@@ -1,0 +1,202 @@
+{
+ "id": "04-darkness",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.05,
+ "gameSound": false,
+ "music": "scripts/reels/music/Secrets1.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v2.png",
+  "eyes": [
+   [
+    504,
+    266,
+    27,
+    17
+   ],
+   [
+    634,
+    264,
+    30,
+    17
+   ]
+  ],
+  "mouth": [
+   515,
+   364,
+   636,
+   400
+  ],
+  "x": 180
+ },
+ "hook": "THREE DAYS OF DARKNESS",
+ "ref": "Egypt's ninth plague",
+ "story": "For three days, | Egypt went completely dark. | People couldn't see | each other. | No one left home. | One theory? | A giant desert sandstorm. | Egyptians call it | the khamsin, | and it can turn day | into night. | But for three whole days? | Nobody knows. | Could you survive the dark?",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "3 days of total darkness in Ancient Egypt 🌑 #shorts",
+  "caption": "For three days Egypt went completely dark. A giant sandstorm? Nobody really knows. 🌪️ Wishlist Exodus Survivors on Steam!",
+  "hashtags": [
+   "#ancientegypt",
+   "#history",
+   "#mystery",
+   "#darkness",
+   "#indiegame",
+   "#pixelart",
+   "#steam",
+   "#gaming"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Plague of Darkness",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Darkness",
+     "Hail"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.57,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.1,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.8,
+        2.3
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.52,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.5,
+        1.9
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Fire",
+     "Plague of Darkness",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Fire",
+     "Darkness"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.3,
+        2
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2,
+        2.6
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 3.78,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

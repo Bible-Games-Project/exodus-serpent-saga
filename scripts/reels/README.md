@@ -16,12 +16,14 @@ Each episode is one JSON file in `episodes/`:
 | `layout` | `portrait` (default: the game fills the 1080x1920 frame) or `square` (1080x1080 gameplay between blurred bands) |
 | `music` | optional music file in the repo, e.g. `scripts/reels/music/Ancient-Mystery.mp3` (the owner's tracks, also used for the Eden to Heaven videos; looped); without it `music.ts` synthesizes a track |
 | `gameSound` | `false`: no game sound effects in the mix |
-| `narrator` | the talking portrait at the start: `chunks` (how many subtitle lines it stays), optional `image`, `width`, `x`, `y`, and the face boxes `eyes`/`mouth` for another image |
+| `narrator` | the talking portrait at the start: `chunks` (how many subtitle lines it stays), optional `image`, `width`, `x`, `y`, and the face boxes `eyes`/`mouth` for another image (`narrator/narrator-v2.png` holding papers and `narrator-v3.png` pointing at a book: see episodes 04 and 05 for their boxes) |
 | `hook`, `ref` | big title on top and the line under it |
 | `story` | the narration; `\|` splits it into subtitle lines |
 | `cta` | optional spoken call to action over the card |
+| `post` | title, caption and hashtags prepared for scheduling the reel |
 | `card` | either `poster` (image, shown `seconds`, with the Steam badge and `button` text) or the older drawn card (`title`, `tag`, `button`, `buttonSmall`, `buttonCue` = the CTA word at which the button appears) |
 | `capture` | gameplay to record: `seconds`, `warmup` (seconds played before recording), `clicks` (Test Map buttons to press first), `pick` (preferred level-up cards), `moves` (`[from, to, "keys"]` held, WASD) |
+| `capture.takes` | cut gameplay instead of one long run: a list of takes (each a fresh game: `clicks`, `pick`, `warmup`, `warmupMoves`), each with `shots`: `len` (seconds on screen), `skip` (seconds played unfilmed before the shot, `skipMoves`), `moves`, `slow` (0.5 = slow motion), `cam`: `on` (`moses`, `enemy` = nearest enemy, locked until it dies, optional `kinds`; or `center`), `zoom` `[start, end]` (eased), `dx`/`dy` offset. The shot lengths must add up to at least the card time + 0.2 s (`timeline.json`). The HUD is hidden in takes. `capture.dpr` (default 3) is the render sharpness for close-ups |
 
 To choose a narrator, `bun voice-samples.ts` renders the same line with 20 American male
 ElevenLabs voices into `public/reels/voices/` (with an `index.html` to listen to them).

@@ -1,0 +1,182 @@
+{
+ "id": "03-red-river",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.15,
+ "gameSound": false,
+ "music": "scripts/reels/music/Ancient-Mystery.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "THE RIVER THAT TURNED RED",
+ "ref": "Egypt's first plague",
+ "story": "Ancient texts say | Egypt's great river | turned red as blood. | The fish died. | The water stank. | Some scientists think | a toxic red algae | could do exactly that... | and push millions of frogs | out of the water. | One disaster | triggered the next. | Would you have survived?",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "The river that turned red 🩸 #shorts",
+  "caption": "Ancient texts say Egypt's great river turned red as blood. Could a toxic algae bloom explain it? 🐸 Wishlist Exodus Survivors on Steam!",
+  "hashtags": [
+   "#ancientegypt",
+   "#history",
+   "#nile",
+   "#mystery",
+   "#indiegame",
+   "#pixelart",
+   "#steam",
+   "#gaming"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Water into Blood",
+     "Plague of Frogs",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Blood",
+     "Frogs"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.08,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Plague of Frogs",
+     "Plague of Flies",
+     "Plague of Gnats (Lice)",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Frogs",
+     "Flies",
+     "Gnats"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.26,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
