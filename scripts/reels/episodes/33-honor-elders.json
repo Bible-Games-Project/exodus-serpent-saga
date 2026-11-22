@@ -1,0 +1,207 @@
+{
+ "id": "33-honor-elders",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Secrets2.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "SHOULD YOU STAND UP FOR THE ELDERLY?",
+ "ref": "Leviticus 19:32",
+ "story": "Does the Bible tell you | to stand up | when an old person walks in? | Yes. | Leviticus says: | rise in the presence of the aged, | and honor the face of the old. | In God's eyes, | gray hair isn't weakness. | It's a crown of glory. | Who is the oldest person | you can honor today?",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Should You Stand Up When an Elder Walks In? 👴 The Bible Says #shorts",
+  "hook": "Does the Bible tell you to stand up when an old person walks in? 👴",
+  "summary": "Yes. Leviticus says: rise in the presence of the aged, and honor the face of the old. In God's eyes, gray hair isn't weakness, it's a crown of glory. Who is the oldest person you can honor today?",
+  "source": "Leviticus 19:32; Proverbs 16:31",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#leviticus",
+   "#respect",
+   "#family",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "honor the elderly",
+   "leviticus 19 32",
+   "respect",
+   "grandparents",
+   "gray hair crown of glory",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Plague of Frogs",
+     "Plague of Gnats (Lice)",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Frogs",
+     "Gnats"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.08,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Pillar of Fire",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Fire"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.26,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

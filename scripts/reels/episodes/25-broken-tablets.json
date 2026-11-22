@@ -1,0 +1,230 @@
+{
+ "id": "25-broken-tablets",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Ancient-Mystery-2.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v2.png",
+  "eyes": [
+   [
+    504,
+    266,
+    27,
+    17
+   ],
+   [
+    634,
+    264,
+    30,
+    17
+   ]
+  ],
+  "mouth": [
+   515,
+   364,
+   636,
+   400
+  ],
+  "x": 180
+ },
+ "hook": "DID MOSES BREAK THE TEN COMMANDMENTS?",
+ "ref": "Exodus 32:19; 34:1",
+ "story": "Did you know | Moses broke the Ten Commandments? | Literally. | God wrote them | with his own finger | on two tablets of stone. | But when Moses saw the golden calf, | he threw them down | and smashed them. | So God told him: | cut two new tablets. | He wrote it all again. | Our God gives second chances.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Did Moses Break the Ten Commandments? 🪨 Literally #shorts",
+  "hook": "Did you know Moses broke the Ten Commandments? Literally. 🪨",
+  "summary": "God wrote them with his own finger on two tablets of stone. When Moses saw the golden calf, he threw them down and smashed them. So God told him to cut two new tablets, and wrote it all again. Our God gives second chances.",
+  "source": "Exodus 31:18; 32:19; 34:1",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#exodus",
+   "#tencommandments",
+   "#secondchances",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "ten commandments",
+   "tablets of stone",
+   "moses broke the tablets",
+   "exodus 34",
+   "second chances",
+   "finger of god",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Plague of Hail",
+     "Pillar of Fire",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Hail",
+     "Fire"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.57,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.1,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.8,
+        2.3
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.52,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.5,
+        1.9
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Plague of Darkness",
+     "Staff becomes Serpent",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Darkness",
+     "Serpent"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.3,
+        2
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2,
+        2.6
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 3.78,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

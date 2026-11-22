@@ -1,0 +1,228 @@
+{
+ "id": "31-enemy-ox",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Chronique-de-l-Aventure.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v2.png",
+  "eyes": [
+   [
+    504,
+    266,
+    27,
+    17
+   ],
+   [
+    634,
+    264,
+    30,
+    17
+   ]
+  ],
+  "mouth": [
+   515,
+   364,
+   636,
+   400
+  ],
+  "x": 180
+ },
+ "hook": "WHAT IF YOU FIND YOUR ENEMY'S OX?",
+ "ref": "Exodus 23:4-5",
+ "story": "What should you do | if you find | your enemy's lost ox? | The law of Moses | is clear: | take it back to him. | And if his donkey falls | under its load, | help him lift it. | Long before Jesus said | love your enemies, | God was already teaching it. | Kindness starts with small things.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "What If You Find Your Enemy's Lost Ox? 🐂 #shorts",
+  "hook": "What should you do if you find your enemy's lost ox? 🐂",
+  "summary": "The law of Moses is clear: take it back to him. And if his donkey falls under its load, help him lift it. Long before Jesus said love your enemies, God was already teaching it.",
+  "source": "Exodus 23:4-5; Matthew 5:44",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#exodus",
+   "#loveyourenemies",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "love your enemies",
+   "exodus 23",
+   "kindness",
+   "forgiveness",
+   "matthew 5 44",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Plague on Livestock",
+     "Staff becomes Serpent",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Livestock",
+     "Serpent"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.57,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.1,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.8,
+        2.3
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.52,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.5,
+        1.9
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Plague of Hail",
+     "Plague of Frogs",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Hail",
+     "Frogs"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.3,
+        2
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2,
+        2.6
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 3.78,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

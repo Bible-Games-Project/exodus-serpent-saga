@@ -1,0 +1,207 @@
+{
+ "id": "21-baby-moses",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/Ancient-Mystery.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "DID MOSES' MOM GET PAID TO RAISE HIM?",
+ "ref": "Exodus 2:1-10",
+ "story": "Did you know | Moses' mother got paid | to raise her own son? | Pharaoh ordered every Hebrew baby boy | thrown into the Nile. | So she hid Moses | in a basket on the river. | Pharaoh's daughter found him, | and hired a Hebrew nurse... | his real mother. | God turned her worst fear | into her greatest gift. | He sees what you can't.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "Did Moses' Mom Get Paid to Raise Him? 👶 Baby in a Basket #shorts",
+  "hook": "Did you know Moses' mother got paid to raise her own son? 👶",
+  "summary": "Pharaoh ordered every Hebrew baby boy thrown into the Nile, so she hid Moses in a basket on the river. Pharaoh's daughter found him and hired a Hebrew nurse: his real mother. God turned her worst fear into her greatest gift.",
+  "source": "Exodus 2:1-10",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#exodus",
+   "#motherhood",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "baby moses",
+   "moses in the basket",
+   "pharaoh's daughter",
+   "exodus 2",
+   "jochebed",
+   "mother's faith",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Water into Blood",
+     "Plague of Frogs",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Blood",
+     "Frogs"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.08,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Cloud",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Cloud",
+     "Hail"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.26,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

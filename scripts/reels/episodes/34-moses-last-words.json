@@ -1,0 +1,230 @@
+{
+ "id": "34-moses-last-words",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/The-Discovery-2.mp3",
+ "narrator": {
+  "chunks": 3,
+  "image": "scripts/reels/narrator/narrator-v2.png",
+  "eyes": [
+   [
+    504,
+    266,
+    27,
+    17
+   ],
+   [
+    634,
+    264,
+    30,
+    17
+   ]
+  ],
+  "mouth": [
+   515,
+   364,
+   636,
+   400
+  ],
+  "x": 180
+ },
+ "hook": "WHAT DID MOSES SAY BEFORE HE DIED?",
+ "ref": "Deuteronomy 31:6-8",
+ "story": "What did Moses say | before he died? | Old, | and about to die, | Moses gathered all Israel | and told them: | be strong and courageous. | Do not be afraid. | The Lord himself goes before you. | He will never leave you | nor forsake you. | Centuries later, | Hebrews repeated those words | for every believer. | Including you.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "What Did Moses Say Before He Died? 🕊️ Be Strong and Courageous #shorts",
+  "hook": "What did Moses say before he died? 🕊️",
+  "summary": "Old and about to die, Moses gathered all Israel and told them: be strong and courageous, do not be afraid. The Lord himself goes before you. He will never leave you nor forsake you. Centuries later, Hebrews repeated those words for every believer.",
+  "source": "Deuteronomy 31:6-8; Hebrews 13:5",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#deuteronomy",
+   "#courage",
+   "#encouragement",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "be strong and courageous",
+   "never leave you nor forsake you",
+   "deuteronomy 31 6",
+   "moses last words",
+   "hebrews 13 5",
+   "encouragement",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Parting of the Red Sea",
+     "Pillar of Cloud",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Red Sea",
+     "Cloud"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 3.57,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.1,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "a"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.8,
+        2.3
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 2.52,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.4
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 2.31,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.5,
+        1.9
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "d"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Pillar of Fire",
+     "Plague of Locusts",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Fire",
+     "Locusts"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.3,
+        2
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.52,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2,
+        2.6
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 3.78,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

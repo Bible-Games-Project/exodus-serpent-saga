@@ -1,0 +1,207 @@
+{
+ "id": "27-stop-praying",
+ "lang": "en",
+ "voice": "elevenlabs:kqVT88a5QfII1HNAEPTJ",
+ "speed": 1.08,
+ "gameSound": false,
+ "music": "scripts/reels/music/The-Discovery-2.mp3",
+ "narrator": {
+  "chunks": 3
+ },
+ "hook": "WHEN DID GOD SAY STOP PRAYING?",
+ "ref": "Exodus 14:13-16",
+ "story": "Did you know God once told Moses | to stop praying? | Pharaoh's army was behind them. | The sea was in front of them. | Moses cried out to God, | and God said: | why are you crying out to me? | Tell the people | to move forward. | Lift your staff. | The sea opened | when they started walking. | Sometimes faith is a step.",
+ "card": {
+  "poster": "scripts/reels/cards/exodus-survivors-poster.png",
+  "seconds": 2,
+  "button": "WISHLIST NOW"
+ },
+ "post": {
+  "title": "When Did God Tell Moses to Stop Praying? 🌊 The Red Sea #shorts",
+  "hook": "Did you know God once told Moses to stop praying? 🌊",
+  "summary": "Pharaoh's army was behind them and the sea was in front of them. Moses cried out, and God said: why are you crying out to me? Tell the people to move forward. Lift your staff. Sometimes faith is a step.",
+  "source": "Exodus 14:13-16",
+  "hashtags": [
+   "#bible",
+   "#biblefacts",
+   "#christian",
+   "#faith",
+   "#jesus",
+   "#moses",
+   "#exodus",
+   "#redsea",
+   "#didyouknow",
+   "#history",
+   "#indiegame"
+  ],
+  "tags": [
+   "red sea",
+   "parting of the red sea",
+   "exodus 14 15",
+   "move forward",
+   "faith in action",
+   "prayer",
+   "bible",
+   "bible facts",
+   "christian",
+   "faith",
+   "jesus",
+   "moses",
+   "bible study",
+   "did you know",
+   "old testament",
+   "christian shorts",
+   "history",
+   "Exodus Survivors",
+   "indie game",
+   "pixel art"
+  ]
+ },
+ "capture": {
+  "takes": [
+   {
+    "clicks": [
+     "Parting of the Red Sea",
+     "Plague of Hail",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Red Sea",
+     "Hail"
+    ],
+    "warmup": 10,
+    "shots": [
+     {
+      "len": 3.08,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1,
+        1.15
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.6,
+        2.1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "s"
+       ]
+      ]
+     },
+     {
+      "len": 1.99,
+      "skip": 2,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2.2,
+        2.5
+       ]
+      },
+      "slow": 0.5
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        1.4,
+        1.8
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "a"
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "clicks": [
+     "Parting of the Red Sea",
+     "Pillar of Fire",
+     "Camel",
+     "Desert Lion",
+     "Spear Knight",
+     "Archer Chariot"
+    ],
+    "pick": [
+     "Red Sea",
+     "Fire"
+    ],
+    "warmup": 12,
+    "shots": [
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "enemy",
+       "zoom": [
+        2,
+        2.3
+       ]
+      },
+      "moves": [
+       [
+        0,
+        3,
+        "w"
+       ]
+      ]
+     },
+     {
+      "len": 2.17,
+      "cam": {
+       "on": "moses",
+       "zoom": [
+        2.3,
+        2.8
+       ]
+      },
+      "slow": 0.6
+     },
+     {
+      "len": 3.26,
+      "skip": 2,
+      "cam": {
+       "on": "center",
+       "zoom": [
+        1.4,
+        1
+       ]
+      },
+      "moves": [
+       [
+        0,
+        4,
+        "d"
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
