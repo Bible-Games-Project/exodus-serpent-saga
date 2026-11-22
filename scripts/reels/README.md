@@ -47,8 +47,13 @@ bun compose.ts $E        # -> public/reels/<id>.mp4
 ```
 
 Intermediate files go to `work/<id>/` (git-ignored); delete one to redo that step
-(e.g. `vo.*` to re-record the voice). Run only one Chromium step at a time:
-the build server is small.
+(e.g. `vo.*` to re-record the voice). Run only one heavy step at a time
+(Chromium or `compose.ts`): the build server has about 1.2 GB of memory, and a
+compose next to a capture gets killed. To make many reels, capture them all first,
+then compose them one by one. When the main ElevenLabs account runs out of credits,
+run `voice.ts` with `ELEVENLABS_API_KEY` set (for that command only) to another
+account's key: library voices such as Declan Sage work by voice id without adding
+them to that account.
 
 How it works: `capture.mjs` replaces the game's clock (`performance.now`,
 `requestAnimationFrame`, audio time) with a virtual one, so the video is a

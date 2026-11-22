@@ -75,7 +75,7 @@
     "warmup": 10,
     "shots": [
      {
-      "len": 3.08,
+      "len": 3.39,
       "cam": {
        "on": "center",
        "zoom": [
@@ -92,7 +92,7 @@
       ]
      },
      {
-      "len": 1.99,
+      "len": 2.19,
       "cam": {
        "on": "moses",
        "zoom": [
@@ -109,7 +109,7 @@
       ]
      },
      {
-      "len": 1.99,
+      "len": 2.19,
       "skip": 2,
       "cam": {
        "on": "enemy",
@@ -121,7 +121,7 @@
       "slow": 0.5
      },
      {
-      "len": 2.17,
+      "len": 2.39,
       "cam": {
        "on": "moses",
        "zoom": [
@@ -155,7 +155,7 @@
     "warmup": 12,
     "shots": [
      {
-      "len": 2.17,
+      "len": 2.39,
       "cam": {
        "on": "enemy",
        "zoom": [
@@ -172,7 +172,7 @@
       ]
      },
      {
-      "len": 2.17,
+      "len": 2.39,
       "cam": {
        "on": "moses",
        "zoom": [
@@ -183,7 +183,7 @@
       "slow": 0.6
      },
      {
-      "len": 3.26,
+      "len": 3.59,
       "skip": 2,
       "cam": {
        "on": "center",
