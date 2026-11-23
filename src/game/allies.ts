@@ -29,10 +29,10 @@ import amramBody from "@/assets/ally-amram-clean-body.png";
 import amramAction from "@/assets/ally-amram-clean-action.png";
 import amramStone from "@/assets/champion-amram-stone.png";
 import jethroAsset from "@/assets/ally-jethro-clean.png";
-import ithamarAsset from "@/assets/ally-ithamar-v2.png";
-import nadabAsset from "@/assets/ally-nadab-supplied.png";
-import abihuAsset from "@/assets/ally-abihu-supplied.png";
-import eleazarAsset from "@/assets/ally-eleazar-supplied.png";
+import ithamarAsset from "@/assets/ally-ithamar-v3.png";
+import nadabAsset from "@/assets/ally-nadab-v2.png";
+import abihuAsset from "@/assets/ally-abihu-v2.png";
+import eleazarAsset from "@/assets/ally-eleazar-v2.png";
 import type { NpcId } from "./types";
 
 export type AllyAttackKind =
@@ -217,10 +217,10 @@ export const ALLIES: Record<string, AllyDef> = {
   eliezer: suppliedChampion(champ("eliezer", "Eliezer", "Moses' second son. Throws a piercing spear.", "Exodus 18:4 — The God of my father was mine help.", { ...suppliedSprite(eliezerAsset, 41, 109, 20, 62, 41, { x: 40, y: 38 }), scale: 0.8, sink: 5.5 }, { cooldown: 1.5, range: 280, hitRadius: 12, moveSpeed: 86, attack: "spear" }), eliezerBody, eliezerAction, { x: 17, y: 48 }, 0.45, { url: eliezerSpear, grip: { x: 10.4, y: 40.4 }, angle: -0.307, len: 89, gripFrac: 0.2 }),
   amram: suppliedChampion(champ("amram", "Amram", "Moses' father. Hurls a great stone that cracks the ground.", "Exodus 6:20 — Amram took Jochebed to wife.", { ...suppliedSprite(amramAsset, 42, 114, 35, 51, 43, { x: 39, y: 14 }), scale: 0.8 }, { cooldown: 2.4, range: 260, hitRadius: 70, moveSpeed: 72, attack: "pyramid" }), amramBody, amramAction, { x: 43, y: 49 }, 0.25, { url: amramStone, grip: { x: 38.7, y: 14.1 }, angle: 0, len: 31, gripFrac: 0.5 }),
   jethro: { ...champ("jethro", "Jethro", "Priest of Midian. His staff sends a green mist that turns an enemy to fight for Moses.", "Exodus 18:1 — Jethro, the priest of Midian, Moses' father in law.", { ...suppliedSprite(jethroAsset, 42, 116, 30, 54, 42, { x: 72, y: 15 }), scale: 0.68 }, { cooldown: 1.0, range: 260, hitRadius: 200, moveSpeed: 52, attack: "convert" }), windup: 0.45, action: 0.35 },
-  ithamar: champ("ithamar", "Ithamar", "Aaron's son. Raises protective wards instead of attacking.", "Exodus 38:21 — By the hand of Ithamar.", suppliedSprite(ithamarAsset, 44, 116, 34, 56, 45, { x: 12, y: 15 }), { cooldown: 1.0, range: 400, hitRadius: 46, moveSpeed: 82, attack: "ward" }),
-  nadab: champ("nadab", "Nadab", "Aaron's firstborn. Throws exploding fireballs.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(nadabAsset, 40, 116, 28, 52, 40, { x: 77, y: 37 }), { cooldown: 1.5, range: 280, hitRadius: 60, moveSpeed: 84, attack: "fireball" }),
-  abihu: champ("abihu", "Abihu", "Aaron's second son. Surrounds himself with fire.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(abihuAsset, 40, 116, 28, 52, 40, { x: 75, y: 38 }), { cooldown: 4.0, range: 120, hitRadius: 70, moveSpeed: 90, attack: "firering" }),
-  eleazar: champ("eleazar", "Eleazar", "Aaron's son. Fires continuous beams of light.", "Numbers 20:28 — Moses put Aaron's garments upon Eleazar.", suppliedSprite(eleazarAsset, 42, 116, 30, 54, 42, { x: 75, y: 55 }), { cooldown: 3.0, range: 300, hitRadius: 10, moveSpeed: 80, attack: "beam" }),
+  ithamar: champ("ithamar", "Ithamar", "Aaron's son. Raises protective wards instead of attacking.", "Exodus 38:21 — By the hand of Ithamar.", suppliedSprite(ithamarAsset, 42, 113, 32, 53, 41, { x: 70, y: 45 }), { cooldown: 1.0, range: 400, hitRadius: 46, moveSpeed: 82, attack: "ward" }),
+  nadab: champ("nadab", "Nadab", "Aaron's firstborn. Throws exploding fireballs.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(nadabAsset, 42, 115, 32, 52, 41, { x: 75, y: 35 }), { cooldown: 1.5, range: 280, hitRadius: 60, moveSpeed: 84, attack: "fireball" }),
+  abihu: champ("abihu", "Abihu", "Aaron's second son. Surrounds himself with fire.", "Leviticus 10:1 — Nadab and Abihu offered strange fire.", suppliedSprite(abihuAsset, 42, 115, 32, 52, 41, { x: 75, y: 35 }), { cooldown: 4.0, range: 120, hitRadius: 70, moveSpeed: 90, attack: "firering" }),
+  eleazar: champ("eleazar", "Eleazar", "Aaron's son. Fires continuous beams of light.", "Numbers 20:28 — Moses put Aaron's garments upon Eleazar.", suppliedSprite(eleazarAsset, 42, 115, 32, 53, 41, { x: 75, y: 34 }), { cooldown: 3.0, range: 300, hitRadius: 10, moveSpeed: 80, attack: "beam" }),
 };
 
 export const ALLY_POOL: NpcId[] = Object.keys(ALLIES) as NpcId[];

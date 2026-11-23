@@ -305,7 +305,8 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       const n = evo >= 3 ? 5 : evo >= 2 ? 3 : 1;
       const base = Math.atan2(dir.y, dir.x);
       for (let i = 0; i < n; i++) {
-        h.spawn("chbeam", ally.pos, 1.5, { ownerId: ally.id, angle: base + (i - (n - 1) / 2) * 0.32, len: 300, w: 14, dps: dmg * 1.2, maxTtl: 1.5 });
+        // ox/oy: where the light orb in his hand sits, relative to the beam's hit origin (pos.y - 24).
+        h.spawn("chbeam", ally.pos, 1.5, { ownerId: ally.id, angle: base + (i - (n - 1) / 2) * 0.32, len: 300, w: 14, dps: dmg * 1.2, maxTtl: 1.5, ox: from.x - ally.pos.x, oy: 24 - lift });
       }
       return true;
     }

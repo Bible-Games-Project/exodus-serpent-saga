@@ -144,12 +144,23 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chbeam": {
+      // Eleazar's light leaves the orb in his hand and ends where the hit line ends.
       const a = d.angle as number, len = d.len as number;
-      ctx.translate(x, y); ctx.rotate(a);
-      ctx.globalAlpha = 0.45 * Math.min(1, life * 4);
-      ctx.fillStyle = "#fff3b0"; ctx.fillRect(0, -(d.w as number) / 2, len, d.w as number);
-      ctx.globalAlpha = 0.9 * Math.min(1, life * 4);
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, -2, len, 4);
+      const sx = x + ((d.ox as number) ?? 0), sy = y + ((d.oy as number) ?? 0);
+      const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+      const fade = Math.min(1, life * 4);
+      const orb = ctx.createRadialGradient(sx, sy, 0, sx, sy, 16);
+      orb.addColorStop(0, `rgba(255,255,240,${0.95 * fade})`);
+      orb.addColorStop(0.45, `rgba(255,226,120,${0.6 * fade})`);
+      orb.addColorStop(1, "rgba(255,200,60,0)");
+      ctx.fillStyle = orb;
+      ctx.beginPath(); ctx.arc(sx, sy, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.translate(sx, sy); ctx.rotate(Math.atan2(ey - sy, ex - sx));
+      const l = Math.hypot(ex - sx, ey - sy);
+      ctx.globalAlpha = 0.45 * fade;
+      ctx.fillStyle = "#fff3b0"; ctx.fillRect(0, -(d.w as number) / 2, l, d.w as number);
+      ctx.globalAlpha = 0.9 * fade;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, -2, l, 4);
       break;
     }
     case "chaoe": {
@@ -192,8 +203,13 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     case "chward": {
       const pulse = 0.5 + 0.2 * Math.sin(s.now * 6);
       ctx.globalAlpha = pulse;
+      // Ithamar's shield colours: a blue field with a gold rim and a gold cross on top.
+      ctx.fillStyle = "rgba(40,100,210,0.16)";
+      ctx.beginPath(); ctx.ellipse(x, y - 26, 34, 42, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = "#ffe08a"; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.ellipse(x, y - 26, 34, 42, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#f2c443";
+      ctx.fillRect(x - 1, y - 93, 3, 10); ctx.fillRect(x - 4, y - 90, 9, 3);
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#3a2a10"; ctx.font = "bold 10px monospace"; ctx.textAlign = "center";
       ctx.fillText(String(d.hits ?? ""), x, y - 72);
