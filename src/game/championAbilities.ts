@@ -403,14 +403,20 @@ function wardFree(state: GameState, t: Entity): boolean {
   return !hasWard(state, t) && !(((t.data?.wardPendingUntil as number) ?? 0) > state.now);
 }
 
-/** Who Ithamar would shield now: himself and the nearest champion, each only without a shield. */
+/** A champion or Moses by id (Moses is not always in the entity map). */
+function byId(state: GameState, id: unknown): Entity | undefined {
+  return state.entities.get(id as number) ?? (id === state.player.id ? state.player : undefined);
+}
+
+/** Who Ithamar would shield now: himself and the nearest champion or Moses, each only without a shield. */
 export function wardTargets(state: GameState, h: ChampHelpers, ally: Entity): Entity[] {
   const out: Entity[] = [];
   if (wardFree(state, ally)) out.push(ally);
   let best: Entity | undefined, bestD = ITHAMAR_WARD_REACH;
-  for (const id of state.npcs.values()) {
-    const t = state.entities.get(id);
-    if (!t || t === ally || t.data?.downedUntil || (t.data?.summonUntil as number) > state.now || !wardFree(state, t)) continue;
+  const ids = [...state.npcs.values(), state.player.id];
+  for (const id of ids) {
+    const t = byId(state, id);
+    if (!t || t === ally || t.hp <= 0 || t.data?.downedUntil || (t.data?.summonUntil as number) > state.now || !wardFree(state, t)) continue;
     const v = delta(state, h, t.pos, ally.pos);
     const dd = Math.hypot(v.x, v.y);
     if (dd < bestD) { bestD = dd; best = t; }
@@ -429,16 +435,11 @@ function giveWard(state: GameState, t: Entity, hits: number, h: ChampHelpers) {
   h.spawn("chward", t.pos, 1e6, { ownerId: t.id, hits, maxHits: hits, maxTtl: 1e6 });
 }
 
-/**
- * Where the shield sits on a champion (world coordinates, screen height included):
- * Ithamar's own shield hand, the back (defensive) hand for everyone else.
- */
-export function wardShieldPos(t: Entity): Vec2 {
-  const def = ALLIES[t.kind];
-  if (!def) return { x: t.pos.x - 10 * t.facing, y: t.pos.y - 30 };
-  const sp = def.sprite, sc = sp.scale ?? 1;
-  const p = t.kind === "ithamar" ? sp.FX : { x: sp.CX - sp.W * 0.2, y: sp.H * 0.34 };
-  return { x: t.pos.x + (p.x - sp.CX) * sc * t.facing, y: t.pos.y + 10 - (sp.H - p.y - (sp.sink ?? 0)) * sc };
+/** Ithamar's bubble around a champion or Moses: its centre height above the feet and its radius. */
+export const WARD_BUBBLE_LIFT = 32;
+export const WARD_BUBBLE_R = 44;
+export function wardBubblePos(t: Entity): Vec2 {
+  return { x: t.pos.x, y: t.pos.y - WARD_BUBBLE_LIFT };
 }
 
 // ---------------------------------------------------------------- entities
@@ -488,14 +489,13 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
       t.hp -= (d.dps as number) * dt;
       if (t.hp <= 0) h.killEnemy(t);
     } else if (e.kind === "chward") {
-      // The shield rides in its champion's hand; when it breaks it bursts into shards.
-      const o = state.entities.get(d.ownerId as number);
+      // The bubble wraps its champion (or Moses); when it breaks it bursts into shards.
+      const o = byId(state, d.ownerId);
       const od = o?.data;
       if (!o || !od) { e.ttl = 0; continue; }
       if (od.downedUntil) od.wardHits = 0;
       if (!((od.wardHits as number) > 0) || !((od.wardUntil as number) > state.now)) {
-        const p = wardShieldPos(o);
-        h.spawn("chshatter", { x: p.x, y: o.pos.y }, 0.6, { lift: o.pos.y - p.y, face: o.facing, seed: Math.floor(Math.random() * 9999), maxTtl: 0.6 });
+        h.spawn("chshatter", { x: o.pos.x, y: o.pos.y + 0.5 }, 0.7, { lift: WARD_BUBBLE_LIFT, seed: Math.floor(Math.random() * 9999), maxTtl: 0.7 });
         od.wardHits = 0;
         e.ttl = 0; continue;
       }
@@ -561,11 +561,11 @@ function updateBird(state: GameState, e: Entity, d: Record<string, unknown>, own
 
 function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt: number, h: ChampHelpers) {
   if ((e.ttl ?? 1) <= 0) return;
-  // Ithamar's magic orb: homes in on the champion's shield hand and raises the shield there.
+  // Ithamar's magic orb: homes in on the champion (or Moses) and raises the bubble there.
   if (d.wardTo != null) {
-    const t = state.entities.get(d.wardTo as number);
+    const t = byId(state, d.wardTo);
     if (!t || t.data?.downedUntil) { if (t?.data) t.data.wardPendingUntil = 0; e.ttl = 0; return; }
-    const p = wardShieldPos(t);
+    const p = wardBubblePos(t);
     const v = delta(state, h, t.pos, e.pos);
     const dd = Math.hypot(v.x, v.y);
     d.d0 ??= Math.max(1, dd);

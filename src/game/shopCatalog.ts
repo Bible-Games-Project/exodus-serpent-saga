@@ -334,9 +334,9 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "ithamar", name: "Ithamar", relationship: "Aaron's youngest son, keeper of the tabernacle.",
     evolutions: [
-      cev(1, 100_000, 120, 200, "Does not attack. Every 15 seconds sends a magic shield to himself and the nearest champion that has none; it stays in hand until it has absorbed 2 hits."),
-      cev(2, 5_500_000, 190, 260, "Shields absorb 3 hits."),
-      cev(3, 13_500_000, 310, 340, "Shields absorb 4 hits."),
+      cev(1, 100_000, 120, 200, "Does not attack. Every 15 seconds wraps himself and the nearest champion or Moses without one in a magic bubble; it cracks with each hit and bursts after absorbing 2 hits."),
+      cev(2, 5_500_000, 190, 260, "Bubbles absorb 3 hits."),
+      cev(3, 13_500_000, 310, 340, "Bubbles absorb 4 hits."),
     ],
   },
   {

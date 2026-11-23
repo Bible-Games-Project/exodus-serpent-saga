@@ -54,6 +54,7 @@ test('Puah heals Moses through the real attack timeline without enemies', () => 
 test('Ithamar shields himself and the nearest champion: 2 / 3 / 4 hits, melee or projectile, until it breaks', () => {
   for (const [evo, hits] of [[1, 2], [2, 3], [3, 4]]) {
     const a = arena('ithamar', evo); a.state.plagues.clear();
+    a.state.player.pos = { x: a.ally.pos.x + 400, y: a.ally.pos.y };
     const mate: Entity = { ...a.ally, id: a.state.nextId++, kind: 'nadab', pos: { x: a.ally.pos.x + 80, y: a.ally.pos.y }, data: {} };
     a.state.entities.set(mate.id, mate); a.state.npcs.set(ALLIES.nadab.id, mate.id);
     a.cast();
@@ -66,6 +67,16 @@ test('Ithamar shields himself and the nearest champion: 2 / 3 / 4 hits, melee or
     updateChampionEntities(a.state, 1 / 60, a.h);
     assert.ok(a.spawned.some(e => e.kind === 'chshatter'), 'a broken shield shatters');
   }
+});
+test('Ithamar can shield Moses when he is the nearest, and the bubble absorbs his hits', () => {
+  const a = arena('ithamar', 2); a.state.plagues.clear();
+  a.state.player.pos = { x: a.ally.pos.x + 60, y: a.ally.pos.y };
+  a.cast();
+  assert.ok(a.spawned.some(e => e.data?.wardTo === a.state.player.id), 'a magic orb flies to Moses');
+  for (let i = 0; i < 30; i++) { updateChampionEntities(a.state, 1 / 30, a.h); a.state.now += 1 / 30; }
+  assert.equal(a.state.player.data?.wardHits, 3);
+  assert.equal(wardAbsorb(a.state, a.state.player, true), true);
+  assert.equal(a.state.player.data?.wardHits, 2);
 });
 test('Ithamar does not recast on a champion whose shield is still up', () => {
   const a = arena('ithamar', 1); a.cast(); const before = a.spawned.length;

@@ -1,9 +1,10 @@
 // Lightweight pixel-art visuals for shop champion abilities (championAbilities.ts).
 import type { Entity, GameState } from "./types";
-import { AMRAM_GROW_SECONDS, isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE, wardShieldPos } from "./championAbilities";
+import { AMRAM_GROW_SECONDS, isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE, WARD_BUBBLE_R, wardBubblePos } from "./championAbilities";
 import { ALLIES } from "./allies";
 import { drawPixelFlame } from "./plagueFx";
 import nadabFireUrl from "@/assets/champion-nadab-fireball.png";
+import wardBubbleUrl from "@/assets/champion-ithamar-bubble.png";
 import amramStoneUrl from "@/assets/champion-amram-stone.png";
 import amramImpactUrl from "@/assets/champion-amram-impact.png";
 import jethroImpactUrl from "@/assets/champion-jethro-impact.png";
@@ -191,10 +192,10 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chward": {
-      const o = s.entities.get(d.ownerId as number);
+      const o = s.entities.get(d.ownerId as number) ?? (d.ownerId === s.player.id ? s.player : undefined);
       if (!o) break;
-      const p = wardShieldPos(o);
-      drawWardShield(ctx, Math.round(p.x - camX), Math.round(p.y - camY), e, d, s);
+      const p = wardBubblePos(o);
+      drawWardBubble(ctx, Math.round(p.x - camX), Math.round(p.y - camY), e, d, s);
       break;
     }
     case "chshatter": {
@@ -682,53 +683,75 @@ function drawAmramImpact(ctx: CanvasRenderingContext2D, x: number, y: number, e:
 }
 
 // ---------------------------------------------------------------- Ithamar
-/** Ithamar's shield in pixels: G gold rim, B blue field, Y gold cross. */
-const SHIELD_ROWS = [".GGGGG.", "GBBYBBG", "GYYYYYG", "GBBYBBG", "GBBYBBG", ".GBYBG.", "..GBG..", "...G..."];
-const SHIELD_COL: Record<string, string> = { G: "#f2c443", B: "#2f6fd8", Y: "#ffe08a" };
+/** Pseudo-random 0..1 from an integer, stable across frames. */
+function rnd(n: number): number {
+  const v = Math.sin(n * 91.3 + 17.1) * 43758.5453;
+  return v - Math.floor(v);
+}
 
-/** A semi-transparent shield anchored in a champion's hand, with one pip per hit it can still take. */
-function drawWardShield(ctx: CanvasRenderingContext2D, cx: number, cy: number, e: Entity, d: Record<string, unknown>, s: GameState) {
-  const age = s.now - e.born;
-  const pop = Math.min(1, age / 0.2);
-  const px = 2;
-  const flash = d.flash != null && s.now - (d.flash as number) < 0.18;
-  // Soft blue halo behind the shield.
-  const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
-  halo.addColorStop(0, `rgba(150,200,255,${0.35 * pop})`);
-  halo.addColorStop(1, "rgba(80,140,255,0)");
-  ctx.fillStyle = halo;
-  ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill();
-  const sc = 0.6 + 0.4 * pop;
-  ctx.save();
-  ctx.translate(cx, cy); ctx.scale(sc, sc);
-  ctx.globalAlpha = (0.55 + 0.1 * Math.sin(s.now * 5)) * pop;
-  const x0 = -3.5 * px, y0 = -4 * px;
-  SHIELD_ROWS.forEach((row, r) => {
-    for (let c = 0; c < row.length; c++) {
-      const k = row[c];
-      if (k === ".") continue;
-      ctx.fillStyle = flash ? "#ffffff" : SHIELD_COL[k];
-      ctx.fillRect(x0 + c * px, y0 + r * px, px, px);
-    }
-  });
-  ctx.restore();
-  // Pips: hits the shield can still absorb.
-  const max = (d.maxHits as number) ?? (d.hits as number) ?? 0, left = (d.hits as number) ?? 0;
-  ctx.globalAlpha = 0.9 * pop;
-  for (let i = 0; i < max; i++) {
-    ctx.fillStyle = i < left ? "#ffe08a" : "rgba(60,60,80,0.6)";
-    ctx.fillRect(Math.round(cx - max * 2 + i * 4), cy - 13, 3, 3);
+/** One crack in the bubble: a jagged pixel line from the rim inwards with a short branch. */
+function drawCrack(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, seed: number) {
+  const a = rnd(seed) * Math.PI * 2;
+  const len = r * (0.55 + 0.3 * rnd(seed + 1));
+  const pts: Array<{ x: number; y: number }> = [];
+  let x = cx + Math.cos(a) * r * 0.95, y = cy + Math.sin(a) * r * 0.95, dir = a + Math.PI;
+  const steps = 5;
+  pts.push({ x, y });
+  for (let i = 0; i < steps; i++) {
+    dir += (rnd(seed + 10 + i) - 0.5) * 1.1;
+    x += Math.cos(dir) * len / steps; y += Math.sin(dir) * len / steps;
+    pts.push({ x, y });
   }
-  // Sparkle ring when it appears.
-  if (age < 0.35) {
-    const k = age / 0.35;
+  const b = 2 + Math.floor(rnd(seed + 3) * 2);
+  const bd = dir + (rnd(seed + 4) > 0.5 ? 0.9 : -0.9);
+  const branch = [pts[b], { x: pts[b].x + Math.cos(bd) * len * 0.3, y: pts[b].y + Math.sin(bd) * len * 0.3 }];
+  const plot = (line: Array<{ x: number; y: number }>, size: number, color: string, ox: number, oy: number) => {
+    ctx.fillStyle = color;
+    for (let i = 1; i < line.length; i++) {
+      const p = line[i - 1], q = line[i];
+      const n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 2));
+      for (let k = 0; k <= n; k++) {
+        ctx.fillRect(Math.round(p.x + (q.x - p.x) * k / n + ox - size / 2), Math.round(p.y + (q.y - p.y) * k / n + oy - size / 2), size, size);
+      }
+    }
+  };
+  plot(pts, 2, "rgba(20,60,150,0.75)", 1, 1);
+  plot(branch, 2, "rgba(20,60,150,0.75)", 1, 1);
+  plot(pts, 2, "#f2fbff", 0, 0);
+  plot(branch, 2, "#d8efff", 0, 0);
+}
+
+/** Ithamar's bubble around a champion or Moses: see-through, it cracks a little more with every hit. */
+function drawWardBubble(ctx: CanvasRenderingContext2D, cx: number, cy: number, e: Entity, d: Record<string, unknown>, s: GameState) {
+  const age = s.now - e.born;
+  const pop = Math.min(1, age / 0.22);
+  const flash = d.flash != null ? Math.max(0, 1 - (s.now - (d.flash as number)) / 0.2) : 0;
+  const r = WARD_BUBBLE_R * (0.5 + 0.5 * pop) * (1 + 0.015 * Math.sin(s.now * 4 + e.id));
+  const img = art(wardBubbleUrl);
+  ctx.save();
+  ctx.globalAlpha = (0.38 + 0.04 * Math.sin(s.now * 3) + 0.35 * flash) * pop;
+  if (img) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, cx - r, cy - r, r * 2, r * 2);
+  } else {
+    ctx.strokeStyle = "#7fc8ff"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  }
+  // Cracks: one per hit taken (the last hit breaks it).
+  const max = (d.maxHits as number) ?? 1, left = (d.hits as number) ?? max;
+  ctx.globalAlpha = 0.9 * pop;
+  for (let i = 0; i < max - left; i++) drawCrack(ctx, cx, cy, r, e.id * 13 + i * 7);
+  // Sparkles when it appears.
+  if (age < 0.4) {
+    const k = age / 0.4;
     ctx.globalAlpha = 1 - k;
     ctx.fillStyle = "#e8f4ff";
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      ctx.fillRect(Math.round(cx + Math.cos(a) * (6 + 12 * k)) - 1, Math.round(cy + Math.sin(a) * (6 + 12 * k)) - 1, 2, 2);
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      ctx.fillRect(Math.round(cx + Math.cos(a) * (r * 0.6 + 14 * k)) - 1, Math.round(cy + Math.sin(a) * (r * 0.6 + 14 * k)) - 1, 2, 2);
     }
   }
+  ctx.restore();
 }
 
 /** Ithamar's magic orb flying to a champion: blue-white core, gold motes and a short trail. */
@@ -754,25 +777,54 @@ function drawWardOrb(ctx: CanvasRenderingContext2D, x: number, y: number, e: Ent
   }
 }
 
-/** A shield breaking: a white flash and blue / gold shards flying out and falling. */
+/** The bubble bursting: a white flash ring, pieces of the bubble flying out and spinning, and blue sparks. */
 function drawShieldShatter(ctx: CanvasRenderingContext2D, x: number, y: number, d: Record<string, unknown>, life: number) {
   const k = 1 - life;
-  if (k < 0.3) {
-    ctx.globalAlpha = 1 - k / 0.3;
-    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(x, y, 6 + 20 * k, 0, Math.PI * 2); ctx.stroke();
-  }
+  const r = WARD_BUBBLE_R;
   const seed = (d.seed as number) ?? 1;
-  const cols = ["#2f6fd8", "#f2c443", "#ffe08a", "#7fb4ff"];
-  ctx.globalAlpha = Math.min(1, life * 2);
-  for (let i = 0; i < 10; i++) {
-    const a = (i / 10) * Math.PI * 2 + ((seed * (i + 3)) % 7) * 0.12;
-    const sp = 30 + ((seed * (i + 1)) % 5) * 8;
-    const px = x + Math.cos(a) * sp * k;
-    const py = y + Math.sin(a) * sp * 0.7 * k + 60 * k * k;
-    ctx.fillStyle = cols[i % cols.length];
-    ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, i % 3 === 0 ? 3 : 2, 2);
+  ctx.save();
+  if (k < 0.35) {
+    ctx.globalAlpha = 1 - k / 0.35;
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, r * (1 + 0.6 * k), 0, Math.PI * 2); ctx.stroke();
   }
+  const img = art(wardBubbleUrl);
+  const n = 9;
+  for (let i = 0; i < n; i++) {
+    const a0 = (i / n) * Math.PI * 2 + rnd(seed + i) * 0.3, a1 = ((i + 1) / n) * Math.PI * 2;
+    const mid = (a0 + a1) / 2;
+    const sp = r * (0.8 + 0.6 * rnd(seed + 20 + i));
+    const ox = Math.cos(mid) * sp * k, oy = Math.sin(mid) * sp * k + 50 * k * k;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 0.75 * (1 - k));
+    ctx.translate(x + ox, y + oy);
+    const cx0 = Math.cos(mid) * r * 0.65, cy0 = Math.sin(mid) * r * 0.65;
+    ctx.translate(cx0, cy0); ctx.rotate((rnd(seed + 40 + i) - 0.5) * 3 * k); ctx.translate(-cx0, -cy0);
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a0) * r * 0.35, Math.sin(a0) * r * 0.35);
+    ctx.lineTo(Math.cos(a0) * r, Math.sin(a0) * r);
+    ctx.lineTo(Math.cos(mid) * r * 1.02, Math.sin(mid) * r * 1.02);
+    ctx.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    ctx.lineTo(Math.cos(a1) * r * 0.35, Math.sin(a1) * r * 0.35);
+    ctx.closePath();
+    if (img) {
+      ctx.clip();
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, -r, -r, r * 2, r * 2);
+    } else {
+      ctx.fillStyle = "rgba(127,200,255,0.5)"; ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha = Math.min(1, life * 2);
+  const cols = ["#ffffff", "#bfe6ff", "#7fc8ff", "#3f8cff"];
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 2 + rnd(seed + 60 + i) * 0.4;
+    const sp = r * (0.9 + rnd(seed + 80 + i) * 0.9);
+    ctx.fillStyle = cols[i % cols.length];
+    ctx.fillRect(Math.round(x + Math.cos(a) * sp * k) - 1, Math.round(y + Math.sin(a) * sp * 0.8 * k + 40 * k * k) - 1, i % 3 === 0 ? 3 : 2, 2);
+  }
+  ctx.restore();
 }
 
 // ---------------------------------------------------------------- Nadab
@@ -794,13 +846,10 @@ function drawNadabFire(ctx: CanvasRenderingContext2D, e: Entity, d: Record<strin
 }
 
 // ---------------------------------------------------------------- Abihu
-/** One patch of Abihu's trail: a scorch mark and pixel flames that die down before it ends. */
+/** One patch of Abihu's trail: pixel flames (no scorch shadow) that die down before it ends. */
 function drawAbihuFlames(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, s: GameState) {
   const k = Math.min(1, (e.ttl ?? 0) / 0.5, (s.now - e.born) / 0.12);
   const seed = (d.seed as number) ?? 0;
-  ctx.globalAlpha = 0.3 * k;
-  ctx.fillStyle = "#2a1408";
-  ctx.beginPath(); ctx.ellipse(x, y, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
   const size = 0.55 + 0.25 * k;
   drawPixelFlame(ctx, x - 4 + Math.sin(seed) * 3, y + 1, s.now + seed, size, k);
   drawPixelFlame(ctx, x + 5 + Math.cos(seed) * 2, y + 2, s.now * 1.2 + seed * 0.7, size * 0.75, k * 0.95);
