@@ -79,12 +79,9 @@ say "link in bio". `GET /api/uploadposts/schedule` lists scheduled posts and
 `PATCH /api/uploadposts/schedule/<job>` with `{"scheduled_date"}` moves one. Posts go out at
 00:00 Spain time (23:00 UTC the day before).
 
-Comments: `comments.ts` reads the new comments on the brand's reels (YouTube, TikTok,
-Instagram, Facebook; upload-post has no Pinterest comments) and answers each one once,
-short and kind, written by OpenAI (`gpt-5.4-mini`); spam, insults and trolling are
-skipped. `.github/workflows/reel-comments.yml` runs it every night at 00:00 UTC (01:00
-in Spain) with the repository secrets `UPLOAD_POST_BGP_API_KEY` and `OPENAI_API_KEY`.
-Try it with `bun comments.ts --dry` (prints the replies, posts nothing).
+Comments are not answered from this repo: the owner wants one free comment bot per
+upload-post profile, run as a Claude Code routine (see COMMENT_BOTS.md in the owner's
+bible-videos repository). Do not add another one here.
 
 Channel direction (owner, Nov 2026): a Christian channel. Every reel teaches something
 interesting from Exodus, Leviticus, Numbers or Deuteronomy, opens with a question hook
