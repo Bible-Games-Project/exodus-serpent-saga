@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createInitialState, update } from './engine';
 import { ALLIES } from './allies';
-import { resolveChampionAttack, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE, AMRAM_STONE_GROW, JETHRO_CONVERT_SECONDS, isAllyFoe } from './championAbilities';
+import { resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, championCooldownMul, championRange, GERSHOM_RANGE, AMRAM_STONE_GROW, JETHRO_CONVERT_SECONDS, isAllyFoe } from './championAbilities';
 import type { ChampHelpers } from './championAbilities';
 import type { Entity } from './types';
 
@@ -51,20 +51,55 @@ test('Puah heals Moses through the real attack timeline without enemies', () => 
   for (let i = 0; i < 120; i++) update(a.state, 1 / 60);
   assert.ok(a.state.player.hp >= 43, `Expected healing, received ${a.state.player.hp}`);
 });
-test('Ithamar wards without enemies and absorbs two melee hits at evolution I', () => {
-  const a = arena('ithamar', 1); a.state.plagues.clear();
-  for (let i = 0; i < 60; i++) update(a.state, 1 / 60);
-  assert.equal(a.state.player.data?.wardHits, 2);
-  assert.equal(wardAbsorb(a.state, a.state.player, true), false);
-  assert.equal(wardAbsorb(a.state, a.state.player, false), true); a.state.now += .5;
-  assert.equal(wardAbsorb(a.state, a.state.player, false), true); a.state.now += .5;
-  assert.equal(wardAbsorb(a.state, a.state.player, false), false);
-});
-test('Ithamar II and III protect against projectiles for five and eight hits', () => {
-  for (const [evo, hits] of [[2, 5], [3, 8]]) {
-    const a = arena('ithamar', evo); a.cast(); assert.equal(a.ally.data?.wardHits, hits);
-    assert.equal(wardAbsorb(a.state, a.ally, true), true);
+test('Ithamar shields himself and the nearest champion: 2 / 3 / 4 hits, melee or projectile, until it breaks', () => {
+  for (const [evo, hits] of [[1, 2], [2, 3], [3, 4]]) {
+    const a = arena('ithamar', evo); a.state.plagues.clear();
+    const mate: Entity = { ...a.ally, id: a.state.nextId++, kind: 'nadab', pos: { x: a.ally.pos.x + 80, y: a.ally.pos.y }, data: {} };
+    a.state.entities.set(mate.id, mate); a.state.npcs.set(ALLIES.nadab.id, mate.id);
+    a.cast();
+    assert.equal(a.ally.data?.wardHits, hits);
+    assert.ok(a.spawned.some(e => e.data?.wardTo === mate.id), 'a magic orb flies to the nearest champion');
+    for (let i = 0; i < 30; i++) { updateChampionEntities(a.state, 1 / 30, a.h); a.state.now += 1 / 30; }
+    assert.equal(mate.data?.wardHits, hits);
+    for (let i = 0; i < hits; i++) { assert.equal(wardAbsorb(a.state, a.ally, i % 2 === 0), true); a.state.now += .5; }
+    assert.equal(wardAbsorb(a.state, a.ally, false), false);
+    updateChampionEntities(a.state, 1 / 60, a.h);
+    assert.ok(a.spawned.some(e => e.kind === 'chshatter'), 'a broken shield shatters');
   }
+});
+test('Ithamar does not recast on a champion whose shield is still up', () => {
+  const a = arena('ithamar', 1); a.cast(); const before = a.spawned.length;
+  a.cast(); assert.equal(a.spawned.length, before);
+  assert.equal(ALLIES.ithamar.cooldown, 15);
+});
+test('Nadab burns every enemy he hits for 2 s: one at I, all in a line at II, bouncing at III', () => {
+  for (const [evo, hitCount] of [[1, 1], [2, 3], [3, 3]]) {
+    const a = arena('nadab', evo);
+    const foes = evo === 3 ? [a.enemy(100), a.enemy(100, 150), a.enemy(-60, 150)] : [a.enemy(100), a.enemy(140), a.enemy(180)];
+    a.cast(); assert.equal(a.spawned[0].data?.explodeR, undefined);
+    for (let i = 0; i < 130; i++) { updateChampionEntities(a.state, 1 / 60, a.h); a.state.now += 1 / 60; }
+    assert.equal(foes.filter(f => f.hp < 1000).length, hitCount, `level ${evo}`);
+    for (const f of foes.filter(f => f.hp < 1000)) assert.ok((f.data?.burnUntil as number) > 0);
+  }
+});
+test('Abihu leaves a trail of flames lasting 1.5 / 3 / 4.5 s that burns for 2 s', () => {
+  for (const [evo, secs] of [[1, 1.5], [2, 3], [3, 4.5]]) {
+    const a = arena('abihu', evo); a.ally.vel = { x: 50, y: 0 };
+    updateChampionAlly(a.state, a.ally, 1 / 60, a.h);
+    const flame = a.spawned.find(e => e.kind === 'chzone');
+    assert.equal(flame?.ttl, secs);
+    const foe = a.enemy(0); updateChampionEntities(a.state, 1 / 60, a.h);
+    assert.equal(foe.data?.burnUntil, a.state.now + 2);
+  }
+});
+test('Eleazar casts 1 / 2 / 3 rays locked on the nearest enemies, stronger by level', () => {
+  const dps: number[] = [];
+  for (const evo of [1, 2, 3]) {
+    const a = arena('eleazar', evo); a.enemy(100); a.enemy(-120, 40);
+    a.cast(); const rays = a.spawned.filter(e => e.kind === 'chbeam');
+    assert.equal(rays.length, evo); dps.push(rays[0].data?.dps as number);
+  }
+  assert.ok(dps[0] < dps[1] && dps[1] < dps[2]);
 });
 test('Shiphrah vials explode on their target and damage enemies at every evolution', () => {
   for (const evo of [1, 2, 3]) { const a = arena('shiphrah', evo); const e = a.enemy(120); a.cast(); updateChampionEntities(a.state, .5, a.h); assert.equal(e.hp, 900); }

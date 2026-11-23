@@ -6,6 +6,7 @@
 import type { Entity, GameState, Vec2 } from "./types";
 import type { AllyDef } from "./allies";
 import { sealEnemy } from "./helmets";
+import { ALLIES } from "./allies";
 
 export type ChampHelpers = {
   spawn: (kind: string, pos: Vec2, ttl: number, data: Record<string, unknown>) => Entity;
@@ -13,7 +14,7 @@ export type ChampHelpers = {
   wrapDelta: (a: number, b: number, size: number) => number;
 };
 
-const CH_KINDS = new Set(["chproj", "chzone", "chbeam", "chaoe", "chbolt", "chward", "chbird", "chpeck"]);
+const CH_KINDS = new Set(["chproj", "chzone", "chbeam", "chaoe", "chbolt", "chward", "chbird", "chpeck", "chshatter"]);
 export function isChampionFxKind(kind: string): boolean {
   return CH_KINDS.has(kind);
 }
@@ -130,6 +131,22 @@ function proj(h: ChampHelpers, from: Vec2, dir: Vec2, speed: number, ttl: number
   });
 }
 
+/** Ithamar: hits one shield absorbs at levels I / II / III, and seconds between casts. */
+export const ITHAMAR_WARD_HITS = [2, 3, 4];
+export const ITHAMAR_WARD_COOLDOWN = 15;
+/** How far the nearest champion may be for Ithamar to shield it. */
+const ITHAMAR_WARD_REACH = 520;
+const WARD_ORB_SPEED = 360;
+/** Nadab: flight of the level II / III flame and the burn every hit leaves. */
+export const NADAB_FLIGHT = 2;
+export const NADAB_BURN_SECONDS = 2;
+/** Abihu: seconds his trail of flames lasts at levels I / II / III, and the burn it leaves. */
+export const ABIHU_TRAIL_SECONDS = [1.5, 3, 4.5];
+export const ABIHU_BURN_SECONDS = 2;
+/** Eleazar: rays per cast, damage of each ray (× the champion hit) and how long a ray lasts. */
+export const ELEAZAR_RAYS = [1, 2, 3];
+export const ELEAZAR_RAY_DMG = [1.8, 2.4, 3.2];
+export const ELEAZAR_RAY_SECONDS = 0.6;
 /** How far Zipporah's stones fly at levels I / II / III (world px). */
 /** Puah's vial and splash size by level (I, II, III). */
 /** Shiphrah's vial size and blast reach (px) by level (I, II, III). */
@@ -271,42 +288,35 @@ export function resolveChampionAttack(state: GameState, ally: Entity, def: AllyD
       return true;
     }
     case "ward": {
-      // Ithamar never attacks: he wards himself and the nearest ally / Moses.
-      const hits = evo >= 3 ? 8 : evo >= 2 ? 5 : 2;
-      const dur = evo >= 3 ? 14 : evo >= 2 ? 10 : 6;
-      const others = alliesAndMoses(state).filter((t) => t !== ally)
-        .map((t) => ({ t, d: Math.hypot(delta(state, h, t.pos, ally.pos).x, delta(state, h, t.pos, ally.pos).y) }))
-        .sort((a, b) => a.d - b.d);
-      const targets = [ally, ...(others[0] && others[0].d < 420 ? [others[0].t] : [])];
-      for (const t of targets) {
-        const td = (t.data ??= {});
-        const active = (td.wardUntil as number) > state.now && (td.wardHits as number) > 0;
-        if (active || state.now < ((td.wardNext as number) ?? 0)) continue;
-        td.wardUntil = state.now + dur;
-        td.wardHits = hits;
-        td.wardProj = evo >= 2 ? 1 : 0;
-        td.wardNext = state.now + dur + 3;
-        h.spawn("chward", t.pos, dur, { ownerId: t.id, maxTtl: dur });
+      // Ithamar: a shield for himself and for the nearest champion without one.
+      // His own appears on his shield at once; the other's flies there as a magic orb.
+      const hits = ITHAMAR_WARD_HITS[evo - 1];
+      for (const t of wardTargets(state, h, ally)) {
+        if (t === ally) { giveWard(state, t, hits, h); continue; }
+        (t.data ??= {}).wardPendingUntil = state.now + 3;
+        thrown(delta(state, h, t.pos, from), WARD_ORB_SPEED, 3, { art: "wardorb", wardTo: t.id, hits, noContact: 1, curLift: lift });
       }
       return true;
     }
     case "fireball": {
-      if (evo >= 3) thrown( dir, 460, 2.0, { dmg, pierce: 1, rebound: 5, art: "flame", burn: 3 });
-      else if (evo >= 2) thrown( dir, 520, 0.8, { dmg, pierce: 99, art: "flameline", burn: 3 });
-      else thrown( dir, 420, 0.9, { dmg, pierce: 1, explodeR: 60, art: "fireball" });
-      return true;
-    }
-    case "firering": {
-      const r = evo >= 3 ? 105 : 70;
-      h.spawn("chzone", ally.pos, 3, { r, dps: dmg, color: "fire", followId: ally.id, maxTtl: 3, burn: 1 });
+      // Nadab throws the flame from his hand. I: one enemy. II: straight on, burning
+      // everything it touches for 2 s. III: bounces from enemy to enemy for 2 s.
+      // Every hit burns for 2 s; the flame fades out when it ends.
+      const base = { dmg, burn: NADAB_BURN_SECONDS, art: "nadabfire", liftEnd: 18, fadeOut: 1 };
+      if (evo >= 3) thrown(dir, 420, NADAB_FLIGHT, { ...base, pierce: 99, rebound: 99, keepFlying: 1 });
+      else if (evo >= 2) thrown(dir, 420, NADAB_FLIGHT, { ...base, pierce: 99 });
+      else thrown(dir, 420, 0.9, { ...base, pierce: 1 });
       return true;
     }
     case "beam": {
-      const n = evo >= 3 ? 5 : evo >= 2 ? 3 : 1;
-      const base = Math.atan2(dir.y, dir.x);
+      // Eleazar: 1 / 2 / 3 rays of light from his staff, each locked on one of the
+      // nearest enemies (they never miss), stronger at each level.
+      const n = ELEAZAR_RAYS[evo - 1];
+      const foes = nearest(state, h, ally.pos, n, def.range + 60);
+      if (!foes.length) return true;
+      const dps = (dmg * ELEAZAR_RAY_DMG[evo - 1]) / ELEAZAR_RAY_SECONDS;
       for (let i = 0; i < n; i++) {
-        // ox/oy: where the light orb in his hand sits, relative to the beam's hit origin (pos.y - 24).
-        h.spawn("chbeam", ally.pos, 1.5, { ownerId: ally.id, angle: base + (i - (n - 1) / 2) * 0.32, len: 300, w: 14, dps: dmg * 1.2, maxTtl: 1.5, ox: from.x - ally.pos.x, oy: 24 - lift });
+        h.spawn("chbeam", ally.pos, ELEAZAR_RAY_SECONDS, { ownerId: ally.id, targetId: foes[i % foes.length].id, dps, lvl: evo, idx: i, maxTtl: ELEAZAR_RAY_SECONDS });
       }
       return true;
     }
@@ -359,27 +369,76 @@ export function updateChampionAlly(state: GameState, ally: Entity, dt: number, h
       for (let i = 0; i < want; i++) h.spawn("chbird", ally.pos, 1e9, { ownerId: ally.id, idx: i, n: want, next: state.now + 0.5 + i * 0.12 });
     }
   }
-  // Abihu II/III: damaging fire trail while moving.
-  if (ally.kind === "abihu" && evo >= 2 && Math.hypot(ally.vel.x, ally.vel.y) > 5 && state.now >= ((d.trailNext as number) ?? 0)) {
-    d.trailNext = state.now + 0.35;
-    h.spawn("chzone", ally.pos, 2, { r: evo >= 3 ? 28 : 22, dps: dmg * 0.5, color: "fire", maxTtl: 2 });
+  // Abihu: wanders and leaves flames behind him; foes touching them burn for 2 s.
+  if (ally.kind === "abihu" && Math.hypot(ally.vel.x, ally.vel.y) > 5 && state.now >= ((d.trailNext as number) ?? 0)) {
+    d.trailNext = state.now + 0.18;
+    const ttl = ABIHU_TRAIL_SECONDS[evo - 1];
+    h.spawn("chzone", { x: ally.pos.x, y: ally.pos.y }, ttl, { r: 16, dps: dmg * 0.4, color: "fire", trail: 1, burnSecs: ABIHU_BURN_SECONDS, seed: Math.random() * 99, maxTtl: ttl });
   }
   void dt;
 }
 
 // ---------------------------------------------------------------- wards
 /**
- * Ithamar's ward: absorbs one hit (melee always; projectiles from Evolution II).
- * Continuous contact damage within 0.4 s counts as the same hit.
+ * Ithamar's shield: absorbs 2 / 3 / 4 hits (melee or projectiles) and stays until
+ * it breaks. Continuous contact damage within 0.4 s counts as the same hit.
  */
 export function wardAbsorb(state: GameState, target: Entity, projectile: boolean): boolean {
+  void projectile;
   const d = target.data;
-  if (!d || !((d.wardUntil as number) > state.now) || !((d.wardHits as number) > 0)) return false;
-  if (projectile && !d.wardProj) return false;
+  if (!d || !hasWard(state, target)) return false;
   if (state.now < ((d.wardGate as number) ?? 0)) return true;
   d.wardGate = state.now + 0.4;
   d.wardHits = (d.wardHits as number) - 1;
+  d.wardFlash = state.now;
   return true;
+}
+
+export function hasWard(state: GameState, t: Entity): boolean {
+  const d = t.data;
+  return !!d && (d.wardHits as number) > 0 && (d.wardUntil as number) > state.now;
+}
+
+function wardFree(state: GameState, t: Entity): boolean {
+  return !hasWard(state, t) && !(((t.data?.wardPendingUntil as number) ?? 0) > state.now);
+}
+
+/** Who Ithamar would shield now: himself and the nearest champion, each only without a shield. */
+export function wardTargets(state: GameState, h: ChampHelpers, ally: Entity): Entity[] {
+  const out: Entity[] = [];
+  if (wardFree(state, ally)) out.push(ally);
+  let best: Entity | undefined, bestD = ITHAMAR_WARD_REACH;
+  for (const id of state.npcs.values()) {
+    const t = state.entities.get(id);
+    if (!t || t === ally || t.data?.downedUntil || (t.data?.summonUntil as number) > state.now || !wardFree(state, t)) continue;
+    const v = delta(state, h, t.pos, ally.pos);
+    const dd = Math.hypot(v.x, v.y);
+    if (dd < bestD) { bestD = dd; best = t; }
+  }
+  if (best) out.push(best);
+  return out;
+}
+
+function giveWard(state: GameState, t: Entity, hits: number, h: ChampHelpers) {
+  const td = (t.data ??= {});
+  td.wardHits = hits;
+  td.wardUntil = state.now + 1e6; // until it breaks
+  td.wardPendingUntil = 0;
+  td.wardGate = 0;
+  td.wardFlash = undefined;
+  h.spawn("chward", t.pos, 1e6, { ownerId: t.id, hits, maxHits: hits, maxTtl: 1e6 });
+}
+
+/**
+ * Where the shield sits on a champion (world coordinates, screen height included):
+ * Ithamar's own shield hand, the back (defensive) hand for everyone else.
+ */
+export function wardShieldPos(t: Entity): Vec2 {
+  const def = ALLIES[t.kind];
+  if (!def) return { x: t.pos.x - 10 * t.facing, y: t.pos.y - 30 };
+  const sp = def.sprite, sc = sp.scale ?? 1;
+  const p = t.kind === "ithamar" ? sp.FX : { x: sp.CX - sp.W * 0.2, y: sp.H * 0.34 };
+  return { x: t.pos.x + (p.x - sp.CX) * sc * t.facing, y: t.pos.y + 10 - (sp.H - p.y - (sp.sink ?? 0)) * sc };
 }
 
 // ---------------------------------------------------------------- entities
@@ -411,38 +470,38 @@ export function updateChampionEntities(state: GameState, dt: number, h: ChampHel
           const v = delta(state, h, en.pos, e.pos);
           if (Math.hypot(v.x, v.y) > r + en.radius) continue;
           en.hp -= ((d.dps as number) ?? 0) * dt;
-          if (d.burn) { en.data ??= {}; en.data.burnUntil = state.now + 1.5; }
+          if (d.burn || d.burnSecs) { en.data ??= {}; en.data.burnUntil = Math.max((en.data.burnUntil as number) ?? 0, state.now + ((d.burnSecs as number) ?? 1.5)); }
           if (en.hp <= 0) h.killEnemy(en);
         }
       }
     } else if (e.kind === "chbeam") {
+      // Eleazar's ray stays locked on its enemy; if it falls, it jumps to the next nearest.
       const o = state.entities.get(d.ownerId as number);
       if (!o || o.data?.downedUntil) { e.ttl = 0; continue; }
-      e.pos.x = o.pos.x; e.pos.y = o.pos.y - 24;
-      const a = d.angle as number, len = d.len as number;
-      const ux = Math.cos(a), uy = Math.sin(a);
-      for (const en of [...state.entities.values()]) {
-        if (!validEnemy(en, state.now)) continue;
-        const v = delta(state, h, en.pos, e.pos);
-        const t = Math.max(0, Math.min(len, v.x * ux + v.y * uy));
-        if (Math.hypot(v.x - ux * t, v.y - uy * t) > (d.w as number) * 0.5 + en.radius) continue;
-        en.hp -= (d.dps as number) * dt;
-        if (en.hp <= 0) h.killEnemy(en);
+      e.pos.x = o.pos.x; e.pos.y = o.pos.y;
+      let t = state.entities.get(d.targetId as number);
+      if (!t || !validEnemy(t, state.now)) {
+        t = nearest(state, h, o.pos, 1, (ALLIES[o.kind]?.range ?? 300) + 60)[0];
+        if (!t) { e.ttl = 0; continue; }
+        d.targetId = t.id;
       }
+      t.hp -= (d.dps as number) * dt;
+      if (t.hp <= 0) h.killEnemy(t);
     } else if (e.kind === "chward") {
+      // The shield rides in its champion's hand; when it breaks it bursts into shards.
       const o = state.entities.get(d.ownerId as number);
       const od = o?.data;
-      if (!o || !od || !((od.wardHits as number) > 0) || !((od.wardUntil as number) > state.now) || od.downedUntil) { e.ttl = 0; continue; }
-      e.pos.x = o.pos.x; e.pos.y = o.pos.y;
-      d.hits = od.wardHits;
-      // Keeps melee enemies out of the bubble.
-      for (const en of state.entities.values()) {
-        if (en.team !== "enemy" || en.kind === "ramses") continue;
-        const v = delta(state, h, en.pos, o.pos);
-        const dd = Math.hypot(v.x, v.y);
-        const R = 46 + en.radius;
-        if (dd < R && dd > 0.01) { en.pos.x += (v.x / dd) * (R - dd); en.pos.y += (v.y / dd) * (R - dd); }
+      if (!o || !od) { e.ttl = 0; continue; }
+      if (od.downedUntil) od.wardHits = 0;
+      if (!((od.wardHits as number) > 0) || !((od.wardUntil as number) > state.now)) {
+        const p = wardShieldPos(o);
+        h.spawn("chshatter", { x: p.x, y: o.pos.y }, 0.6, { lift: o.pos.y - p.y, face: o.facing, seed: Math.floor(Math.random() * 9999), maxTtl: 0.6 });
+        od.wardHits = 0;
+        e.ttl = 0; continue;
       }
+      e.pos.x = o.pos.x; e.pos.y = o.pos.y + 0.5; // drawn just in front of its champion
+      d.hits = od.wardHits;
+      d.flash = od.wardFlash;
     } else if (e.kind === "chbird") {
       const o = state.entities.get(d.ownerId as number);
       if (!o) { e.ttl = 0; continue; }
@@ -502,6 +561,29 @@ function updateBird(state: GameState, e: Entity, d: Record<string, unknown>, own
 
 function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt: number, h: ChampHelpers) {
   if ((e.ttl ?? 1) <= 0) return;
+  // Ithamar's magic orb: homes in on the champion's shield hand and raises the shield there.
+  if (d.wardTo != null) {
+    const t = state.entities.get(d.wardTo as number);
+    if (!t || t.data?.downedUntil) { if (t?.data) t.data.wardPendingUntil = 0; e.ttl = 0; return; }
+    const p = wardShieldPos(t);
+    const v = delta(state, h, t.pos, e.pos);
+    const dd = Math.hypot(v.x, v.y);
+    d.d0 ??= Math.max(1, dd);
+    const k = Math.max(0, Math.min(1, 1 - dd / (d.d0 as number)));
+    d.lift0 ??= (d.curLift as number) ?? 40;
+    d.curLift = (d.lift0 as number) + ((t.pos.y - p.y) - (d.lift0 as number)) * k;
+    d.offX = (p.x - t.pos.x) * k;
+    if (dd < 12) {
+      giveWard(state, t, d.hits as number, h);
+      e.ttl = 0;
+      return;
+    }
+    const step = Math.min(dd, WARD_ORB_SPEED * dt);
+    d.vx = (v.x / dd) * WARD_ORB_SPEED; d.vy = (v.y / dd) * WARD_ORB_SPEED;
+    e.pos.x += (v.x / dd) * step; e.pos.y += (v.y / dd) * step;
+    e.ttl = Math.max(e.ttl ?? 0, 0.5);
+    return;
+  }
   // Healing vial: homes in on its ally / Moses and heals on arrival.
   if (d.heal != null) {
     const t = state.entities.get(d.targetId as number) ?? (d.targetId === state.player.id ? state.player : undefined);
@@ -576,15 +658,17 @@ function updateProj(state: GameState, e: Entity, d: Record<string, unknown>, dt:
         const nd = Math.hypot(nv.x, nv.y) || 1;
         const sp = Math.hypot(d.vx as number, d.vy as number);
         d.vx = (nv.x / nd) * sp; d.vy = (nv.y / nd) * sp;
-        e.ttl = Math.max(e.ttl ?? 0, 0.8);
+        if (!d.keepFlying) e.ttl = Math.max(e.ttl ?? 0, 0.8);
         return;
       }
+      // Nadab III: nobody left to bounce to — fly on until the 2 s are up.
+      if (d.keepFlying) return;
       e.ttl = 0; return;
     }
     d.pierce = ((d.pierce as number) ?? 1) - 1;
     if ((d.pierce as number) <= 0) {
       // Stones drift on a little and fade out instead of vanishing on the spot.
-      if (d.art === "stone") { d.noContact = 1; d.fading = 1; e.ttl = Math.min(e.ttl ?? 0, STONE_FADE); return; }
+      if (d.art === "stone" || d.fadeOut) { d.noContact = 1; d.fading = 1; e.ttl = Math.min(e.ttl ?? 0, STONE_FADE); return; }
       e.ttl = 0; return;
     }
   }

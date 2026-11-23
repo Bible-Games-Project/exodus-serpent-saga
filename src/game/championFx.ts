@@ -1,6 +1,9 @@
 // Lightweight pixel-art visuals for shop champion abilities (championAbilities.ts).
 import type { Entity, GameState } from "./types";
-import { AMRAM_GROW_SECONDS, isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE } from "./championAbilities";
+import { AMRAM_GROW_SECONDS, isChampionFxKind, PUAH_RING_HALF_W, STONE_FADE, wardShieldPos } from "./championAbilities";
+import { ALLIES } from "./allies";
+import { drawPixelFlame } from "./plagueFx";
+import nadabFireUrl from "@/assets/champion-nadab-fireball.png";
 import amramStoneUrl from "@/assets/champion-amram-stone.png";
 import amramImpactUrl from "@/assets/champion-amram-impact.png";
 import jethroImpactUrl from "@/assets/champion-jethro-impact.png";
@@ -49,9 +52,9 @@ const PROJ_ART: Record<string, [string, string, number, number]> = {
 };
 
 /** Champion visuals that lie on the ground, drawn behind every character
- *  (Puah's vial splash and her healing ring). */
+ *  (Puah's vial splash and her healing ring, Abihu's trail of flames). */
 export function isGroundChampionFx(e: Entity): boolean {
-  return (e.kind === "chaoe" && (!!e.data?.splash || !!e.data?.impact)) || (e.kind === "chzone" && !!e.data?.puahRing);
+  return (e.kind === "chaoe" && (!!e.data?.splash || !!e.data?.impact)) || (e.kind === "chzone" && (!!e.data?.puahRing || !!e.data?.trail));
 }
 
 /** Returns true when the entity is a champion ability visual and was drawn. */
@@ -66,6 +69,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     case "chproj": {
       if (d.art === "boulder" && drawAmramStone(ctx, x, y, e, d, life)) break;
       if (d.art === "mist") { drawJethroMist(ctx, x, y, e, d, s); break; }
+      if (d.art === "wardorb") { drawWardOrb(ctx, x + ((d.offX as number) ?? 0), y - ((d.curLift as number) ?? 0), e, d, s); break; }
       const projArt = PROJ_ART[(d.art as string) ?? "stone"] ?? PROJ_ART.stone;
       const [a, b, w, hgt] = projArt;
       const lift = (d.lift as number) ?? 0;
@@ -73,6 +77,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       if (d.art === "stone" && d.liftEnd != null) ctx.globalAlpha = Math.min(1, (e.ttl ?? 0) / STONE_FADE);
       // Straight throws (liftEnd) glide evenly from the hand to body height, so they fly in a straight line.
       ctx.translate(x, y - (d.liftEnd != null ? (d.liftEnd as number) + (lift - (d.liftEnd as number)) * (1 - ((d.prog as number) ?? 1 - life)) : lift * Math.max(0, 1 - (1 - life) * 3)));
+      if (d.art === "nadabfire") { drawNadabFire(ctx, e, d, s); break; }
       if (d.art === "arrow" || d.art === "spear" || d.art === "flameline") {
         // Point along the path seen on screen (ground motion plus the even descent of a straight throw).
         const drop = d.liftEnd != null && d.prog == null ? (lift - (d.liftEnd as number)) / ((d.maxTtl as number) || 1) : 0;
@@ -129,6 +134,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
     case "chzone": {
       if (d.tornado) { drawMiriamTornado(ctx, x, y, e, s, life); break; }
       if (d.puahRing) { drawPuahRing(ctx, x, y, e, s, life); break; }
+      if (d.trail) { drawAbihuFlames(ctx, x, y, e, d, s); break; }
       const [a, b] = COLORS[(d.color as string) ?? "fire"] ?? COLORS.fire;
       const r = d.r as number;
       ctx.globalAlpha = 0.25 + 0.25 * Math.min(1, life * 3);
@@ -144,23 +150,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chbeam": {
-      // Eleazar's light leaves the orb in his hand and ends where the hit line ends.
-      const a = d.angle as number, len = d.len as number;
-      const sx = x + ((d.ox as number) ?? 0), sy = y + ((d.oy as number) ?? 0);
-      const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
-      const fade = Math.min(1, life * 4);
-      const orb = ctx.createRadialGradient(sx, sy, 0, sx, sy, 16);
-      orb.addColorStop(0, `rgba(255,255,240,${0.95 * fade})`);
-      orb.addColorStop(0.45, `rgba(255,226,120,${0.6 * fade})`);
-      orb.addColorStop(1, "rgba(255,200,60,0)");
-      ctx.fillStyle = orb;
-      ctx.beginPath(); ctx.arc(sx, sy, 16, 0, Math.PI * 2); ctx.fill();
-      ctx.translate(sx, sy); ctx.rotate(Math.atan2(ey - sy, ex - sx));
-      const l = Math.hypot(ex - sx, ey - sy);
-      ctx.globalAlpha = 0.45 * fade;
-      ctx.fillStyle = "#fff3b0"; ctx.fillRect(0, -(d.w as number) / 2, l, d.w as number);
-      ctx.globalAlpha = 0.9 * fade;
-      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, -2, l, 4);
+      drawEleazarRay(ctx, e, d, camX, camY, s, life);
       break;
     }
     case "chaoe": {
@@ -201,18 +191,14 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       break;
     }
     case "chward": {
-      const pulse = 0.5 + 0.2 * Math.sin(s.now * 6);
-      ctx.globalAlpha = pulse;
-      // Ithamar's shield colours: a blue field with a gold rim and a gold cross on top.
-      ctx.fillStyle = "rgba(40,100,210,0.16)";
-      ctx.beginPath(); ctx.ellipse(x, y - 26, 34, 42, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#ffe08a"; ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.ellipse(x, y - 26, 34, 42, 0, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = "#f2c443";
-      ctx.fillRect(x - 1, y - 93, 3, 10); ctx.fillRect(x - 4, y - 90, 9, 3);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = "#3a2a10"; ctx.font = "bold 10px monospace"; ctx.textAlign = "center";
-      ctx.fillText(String(d.hits ?? ""), x, y - 72);
+      const o = s.entities.get(d.ownerId as number);
+      if (!o) break;
+      const p = wardShieldPos(o);
+      drawWardShield(ctx, Math.round(p.x - camX), Math.round(p.y - camY), e, d, s);
+      break;
+    }
+    case "chshatter": {
+      drawShieldShatter(ctx, x, y - ((d.lift as number) ?? 0), d, life);
       break;
     }
     case "chbird": {
@@ -693,4 +679,191 @@ function drawAmramImpact(ctx: CanvasRenderingContext2D, x: number, y: number, e:
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(img, x - w / 2, y - hgt * 0.55, w, hgt);
   return true;
+}
+
+// ---------------------------------------------------------------- Ithamar
+/** Ithamar's shield in pixels: G gold rim, B blue field, Y gold cross. */
+const SHIELD_ROWS = [".GGGGG.", "GBBYBBG", "GYYYYYG", "GBBYBBG", "GBBYBBG", ".GBYBG.", "..GBG..", "...G..."];
+const SHIELD_COL: Record<string, string> = { G: "#f2c443", B: "#2f6fd8", Y: "#ffe08a" };
+
+/** A semi-transparent shield anchored in a champion's hand, with one pip per hit it can still take. */
+function drawWardShield(ctx: CanvasRenderingContext2D, cx: number, cy: number, e: Entity, d: Record<string, unknown>, s: GameState) {
+  const age = s.now - e.born;
+  const pop = Math.min(1, age / 0.2);
+  const px = 2;
+  const flash = d.flash != null && s.now - (d.flash as number) < 0.18;
+  // Soft blue halo behind the shield.
+  const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, 14);
+  halo.addColorStop(0, `rgba(150,200,255,${0.35 * pop})`);
+  halo.addColorStop(1, "rgba(80,140,255,0)");
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI * 2); ctx.fill();
+  const sc = 0.6 + 0.4 * pop;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(sc, sc);
+  ctx.globalAlpha = (0.55 + 0.1 * Math.sin(s.now * 5)) * pop;
+  const x0 = -3.5 * px, y0 = -4 * px;
+  SHIELD_ROWS.forEach((row, r) => {
+    for (let c = 0; c < row.length; c++) {
+      const k = row[c];
+      if (k === ".") continue;
+      ctx.fillStyle = flash ? "#ffffff" : SHIELD_COL[k];
+      ctx.fillRect(x0 + c * px, y0 + r * px, px, px);
+    }
+  });
+  ctx.restore();
+  // Pips: hits the shield can still absorb.
+  const max = (d.maxHits as number) ?? (d.hits as number) ?? 0, left = (d.hits as number) ?? 0;
+  ctx.globalAlpha = 0.9 * pop;
+  for (let i = 0; i < max; i++) {
+    ctx.fillStyle = i < left ? "#ffe08a" : "rgba(60,60,80,0.6)";
+    ctx.fillRect(Math.round(cx - max * 2 + i * 4), cy - 13, 3, 3);
+  }
+  // Sparkle ring when it appears.
+  if (age < 0.35) {
+    const k = age / 0.35;
+    ctx.globalAlpha = 1 - k;
+    ctx.fillStyle = "#e8f4ff";
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      ctx.fillRect(Math.round(cx + Math.cos(a) * (6 + 12 * k)) - 1, Math.round(cy + Math.sin(a) * (6 + 12 * k)) - 1, 2, 2);
+    }
+  }
+}
+
+/** Ithamar's magic orb flying to a champion: blue-white core, gold motes and a short trail. */
+function drawWardOrb(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, s: GameState) {
+  const vx = (d.vx as number) ?? 0, vy = (d.vy as number) ?? 0, v = Math.hypot(vx, vy) || 1;
+  for (let i = 3; i >= 1; i--) {
+    ctx.globalAlpha = 0.18 * (4 - i);
+    ctx.fillStyle = "#7fb4ff";
+    const z = 6 - i;
+    ctx.fillRect(Math.round(x - (vx / v) * i * 5 - z / 2), Math.round(y - (vy / v) * i * 5 - z / 2), z, z);
+  }
+  ctx.globalAlpha = 1;
+  const g = ctx.createRadialGradient(x, y, 0, x, y, 9);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.4, "rgba(140,190,255,0.85)");
+  g.addColorStop(1, "rgba(60,110,230,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#ffe08a";
+  for (let i = 0; i < 3; i++) {
+    const a = s.now * 9 + i * 2.1 + e.id;
+    ctx.fillRect(Math.round(x + Math.cos(a) * 7) - 1, Math.round(y + Math.sin(a) * 5) - 1, 2, 2);
+  }
+}
+
+/** A shield breaking: a white flash and blue / gold shards flying out and falling. */
+function drawShieldShatter(ctx: CanvasRenderingContext2D, x: number, y: number, d: Record<string, unknown>, life: number) {
+  const k = 1 - life;
+  if (k < 0.3) {
+    ctx.globalAlpha = 1 - k / 0.3;
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, y, 6 + 20 * k, 0, Math.PI * 2); ctx.stroke();
+  }
+  const seed = (d.seed as number) ?? 1;
+  const cols = ["#2f6fd8", "#f2c443", "#ffe08a", "#7fb4ff"];
+  ctx.globalAlpha = Math.min(1, life * 2);
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2 + ((seed * (i + 3)) % 7) * 0.12;
+    const sp = 30 + ((seed * (i + 1)) % 5) * 8;
+    const px = x + Math.cos(a) * sp * k;
+    const py = y + Math.sin(a) * sp * 0.7 * k + 60 * k * k;
+    ctx.fillStyle = cols[i % cols.length];
+    ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, i % 3 === 0 ? 3 : 2, 2);
+  }
+}
+
+// ---------------------------------------------------------------- Nadab
+/** Nadab's thrown flame: the flame from his hand, flickering, fading out at the end. */
+function drawNadabFire(ctx: CanvasRenderingContext2D, e: Entity, d: Record<string, unknown>, s: GameState) {
+  const img = art(nadabFireUrl);
+  ctx.globalAlpha = Math.min(1, (e.ttl ?? 0) / STONE_FADE);
+  // Embers left behind.
+  const vx = (d.vx as number) ?? 0, vy = (d.vy as number) ?? 0, v = Math.hypot(vx, vy) || 1;
+  for (let i = 1; i <= 3; i++) {
+    ctx.fillStyle = i === 1 ? "#ffd050" : "#ff6a14";
+    const j = Math.sin(s.now * 23 + i * 2 + e.id) * 2;
+    ctx.fillRect(Math.round(-(vx / v) * i * 7 + j) - 1, Math.round(-(vy / v) * i * 7 + 4 - i) - 1, 3 - (i > 2 ? 1 : 0), 2);
+  }
+  if (!img) { drawPixelFlame(ctx, 0, 8, s.now + e.id, 1.2, 1); return; }
+  const hgt = 30 * (1 + 0.06 * Math.sin(s.now * 18 + e.id)), w = hgt * img.naturalWidth / img.naturalHeight;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, -w / 2, -hgt * 0.7, w, hgt);
+}
+
+// ---------------------------------------------------------------- Abihu
+/** One patch of Abihu's trail: a scorch mark and pixel flames that die down before it ends. */
+function drawAbihuFlames(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, d: Record<string, unknown>, s: GameState) {
+  const k = Math.min(1, (e.ttl ?? 0) / 0.5, (s.now - e.born) / 0.12);
+  const seed = (d.seed as number) ?? 0;
+  ctx.globalAlpha = 0.3 * k;
+  ctx.fillStyle = "#2a1408";
+  ctx.beginPath(); ctx.ellipse(x, y, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+  const size = 0.55 + 0.25 * k;
+  drawPixelFlame(ctx, x - 4 + Math.sin(seed) * 3, y + 1, s.now + seed, size, k);
+  drawPixelFlame(ctx, x + 5 + Math.cos(seed) * 2, y + 2, s.now * 1.2 + seed * 0.7, size * 0.75, k * 0.95);
+}
+
+// ---------------------------------------------------------------- Eleazar
+function hash01(n: number): number {
+  const v = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+/** Eleazar's ray: a jagged pixel bolt of light from the top of his staff to its enemy. */
+function drawEleazarRay(ctx: CanvasRenderingContext2D, e: Entity, d: Record<string, unknown>, camX: number, camY: number, s: GameState, life: number) {
+  const o = s.entities.get(d.ownerId as number), t = s.entities.get(d.targetId as number);
+  const def = o && ALLIES[o.kind];
+  if (!o || !t || !def) return;
+  const sp = def.sprite, sc = sp.scale ?? 1;
+  const sx = o.pos.x - camX + (sp.FX.x - sp.CX) * sc * o.facing;
+  const sy = o.pos.y - camY + 10 - (sp.H - sp.FX.y) * sc;
+  let dx = t.pos.x - o.pos.x, dy = t.pos.y - o.pos.y;
+  if (Math.abs(dx) > s.worldW / 2) dx -= Math.sign(dx) * s.worldW;
+  if (Math.abs(dy) > s.worldH / 2) dy -= Math.sign(dy) * s.worldH;
+  const ex = o.pos.x - camX + dx, ey = o.pos.y - camY + dy - 14;
+  const lvl = (d.lvl as number) ?? 1;
+  const len = Math.hypot(ex - sx, ey - sy) || 1;
+  const nx = -(ey - sy) / len, ny = (ex - sx) / len;
+  const frame = Math.floor(s.now * 16);
+  const segs = Math.max(3, Math.round(len / 18));
+  const pts: Array<{ x: number; y: number }> = [{ x: sx, y: sy }];
+  for (let i = 1; i < segs; i++) {
+    const f = i / segs;
+    const j = (hash01(frame * 31 + i * 7 + ((d.idx as number) ?? 0) * 101 + e.id) * 2 - 1) * (7 + 2 * lvl);
+    pts.push({ x: sx + (ex - sx) * f + nx * j, y: sy + (ey - sy) * f + ny * j });
+  }
+  pts.push({ x: ex, y: ey });
+  const fade = Math.min(1, life * 5, (1 - life) * 12 + 0.2);
+  const plot = (size: number, color: string, alpha: number) => {
+    ctx.globalAlpha = alpha * fade;
+    ctx.fillStyle = color;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const n = Math.max(1, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / 2));
+      for (let k = 0; k <= n; k++) {
+        const px = a.x + (b.x - a.x) * (k / n), py = a.y + (b.y - a.y) * (k / n);
+        ctx.fillRect(Math.round(px - size / 2), Math.round(py - size / 2), size, size);
+      }
+    }
+  };
+  plot(4 + 2 * lvl, "#ffd66a", 0.35);
+  plot(2 + lvl, "#fff3b0", 0.85);
+  plot(2, "#ffffff", 1);
+  // Bursts of light at the staff and on the enemy.
+  ctx.globalAlpha = fade;
+  for (const [cx, cy, r] of [[sx, sy, 3 + lvl], [ex, ey, 4 + lvl]] as const) {
+    ctx.fillStyle = "#fff3b0";
+    ctx.fillRect(Math.round(cx - r), Math.round(cy) - 1, r * 2, 2);
+    ctx.fillRect(Math.round(cx) - 1, Math.round(cy - r), 2, r * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(Math.round(cx) - 2, Math.round(cy) - 2, 4, 4);
+  }
+  ctx.fillStyle = "#ffe680";
+  for (let i = 0; i < 3 + lvl; i++) {
+    const a = hash01(frame * 13 + i * 5 + e.id) * Math.PI * 2, r = 4 + hash01(frame * 7 + i) * (6 + 2 * lvl);
+    ctx.fillRect(Math.round(ex + Math.cos(a) * r) - 1, Math.round(ey + Math.sin(a) * r) - 1, 2, 2);
+  }
 }

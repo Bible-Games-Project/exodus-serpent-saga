@@ -334,33 +334,33 @@ export const CHAMPIONS: ChampionDef[] = [
   {
     id: "ithamar", name: "Ithamar", relationship: "Aaron's youngest son, keeper of the tabernacle.",
     evolutions: [
-      cev(1, 100_000, 120, 200, "Does not attack. Creates a temporary shield for himself and the nearest ally or Moses that keeps melee enemies out; breaks after two hits."),
-      cev(2, 5_500_000, 190, 260, "Shield lasts longer and absorbs five hits, including projectiles and flying animals."),
-      cev(3, 13_500_000, 310, 340, "Shield lasts longer and breaks after eight hits."),
+      cev(1, 100_000, 120, 200, "Does not attack. Every 15 seconds sends a magic shield to himself and the nearest champion that has none; it stays in hand until it has absorbed 2 hits."),
+      cev(2, 5_500_000, 190, 260, "Shields absorb 3 hits."),
+      cev(3, 13_500_000, 310, 340, "Shields absorb 4 hits."),
     ],
   },
   {
     id: "nadab", name: "Nadab", relationship: "Aaron's firstborn, who offered fire before the LORD.",
     evolutions: [
-      cev(1, 130_000, 200, 110, "Throws a fireball that explodes on the first enemy hit and damages an area."),
-      cev(2, 6_700_000, 290, 140, "Fires a line of piercing flame."),
-      cev(3, 16_500_000, 450, 170, "Fires flames that rebound between enemies."),
+      cev(1, 130_000, 200, 110, "Throws the flame from his hand at one enemy, leaving it burning for 2 seconds."),
+      cev(2, 6_700_000, 290, 140, "The flame flies straight for 2 seconds, burning every enemy it touches."),
+      cev(3, 16_500_000, 450, 170, "The flame bounces from enemy to enemy for 2 seconds, burning each one."),
     ],
   },
   {
     id: "abihu", name: "Abihu", relationship: "Aaron's second son, consecrated to the fire.",
     evolutions: [
-      cev(1, 180_000, 220, 120, "Creates a ring of fire around himself."),
-      cev(2, 8_000_000, 320, 150, "Constantly flees while leaving a damaging fire trail."),
-      cev(3, 20_000_000, 500, 190, "Larger fire ring and damaging fire trail."),
+      cev(1, 180_000, 220, 120, "Wanders leaving flames behind him for 1.5 seconds; enemies touching them burn for 2 seconds."),
+      cev(2, 8_000_000, 320, 150, "His flames last 3 seconds."),
+      cev(3, 20_000_000, 500, 190, "His flames last 4.5 seconds."),
     ],
   },
   {
     id: "eleazar", name: "Eleazar", relationship: "Aaron's son, priest after his father.",
     evolutions: [
-      cev(1, 250_000, 250, 140, "Fires a continuous beam of light that damages enemies it touches."),
-      cev(2, 10_000_000, 370, 180, "Fires three continuous beams."),
-      cev(3, 25_000_000, 580, 230, "Fires five continuous beams."),
+      cev(1, 250_000, 250, 140, "A ray of light from his staff strikes the nearest enemy; it never misses."),
+      cev(2, 10_000_000, 370, 180, "Two stronger rays."),
+      cev(3, 25_000_000, 580, 230, "Three even stronger rays."),
     ],
   },
   {

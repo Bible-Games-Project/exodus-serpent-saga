@@ -13,7 +13,7 @@ import { updateEquipment } from "./equipment";
 import { sealedAllies } from "./helmets";
 import {
   broomRadiusMul, isAllyFoe, championCooldownMul, classicChampionExtras, hornKnockMul,
-  resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, champEvo, championRange, type ChampHelpers,
+  resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, wardTargets, champEvo, championRange, type ChampHelpers,
 } from "./championAbilities";
 import { findChampion } from "./shopCatalog";
 import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
@@ -2440,8 +2440,18 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
   }
 
   d.atkCd = ((d.atkCd as number) ?? 0) - dt;
+  if (def.attack === "trail") {
+    // Abihu never attacks: he roams at random, leaving flames behind him
+    // (championAbilities.updateChampionAlly); they hit with his shop damage.
+    d.lastDmg = staffStrikeDamage(state) * (((d.atkPct as number) ?? 100) / 100);
+    allyWander(e, def, dt, true);
+    resolveObstacles(e.pos, e.radius, state);
+    wrapPos(state, e.pos);
+    return;
+  }
   if (def.attack === "heal" || def.attack === "ward") {
-    if ((d.atkCd as number) <= 0) {
+    // Ithamar only casts when he or the nearest champion has no shield.
+    if ((d.atkCd as number) <= 0 && (def.attack !== "ward" || wardTargets(state, champHelpers(state), e).length > 0)) {
       d.attackT = def.windup + def.action;
       d.attackResolved = false;
       d.atkCd = def.cooldown;
@@ -2535,13 +2545,13 @@ function allyRetreat(e: Entity, def: AllyDef, dt: number) {
 }
 
 /** Randomized, smoothly-turning roam used while an attack is on cooldown. */
-function allyWander(e: Entity, def: AllyDef, dt: number) {
+function allyWander(e: Entity, def: AllyDef, dt: number, keepWalking = false) {
   const d = e.data!;
   d.wanderT = ((d.wanderT as number) ?? 0) - dt;
   if ((d.wanderT as number) <= 0) {
     d.wanderGoal = Math.random() * Math.PI * 2;
     d.wanderT = 0.6 + Math.random() * 1.4;
-    d.wanderPause = Math.random() < 0.2;
+    d.wanderPause = !keepWalking && Math.random() < 0.2;
   }
   let a = (d.wanderAng as number) ?? (d.wanderGoal as number);
   let diff = (d.wanderGoal as number) - a;
