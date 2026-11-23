@@ -75,7 +75,16 @@ that UTC time, and records the job id in `schedule.json`. Run it with bun (bun g
 through the sandbox proxy; node's fetch does not). The Steam link is in every
 description; TikTok and Instagram never make caption links clickable, so those also
 say "link in bio". `GET /api/uploadposts/schedule` lists scheduled posts and
-`DELETE /api/uploadposts/schedule/<job>` cancels one.
+`DELETE /api/uploadposts/schedule/<job>` cancels one;
+`PATCH /api/uploadposts/schedule/<job>` with `{"scheduled_date"}` moves one. Posts go out at
+00:00 Spain time (23:00 UTC the day before).
+
+Comments: `comments.ts` reads the new comments on the brand's reels (YouTube, TikTok,
+Instagram, Facebook; upload-post has no Pinterest comments) and answers each one once,
+short and kind, written by OpenAI (`gpt-5.4-mini`); spam, insults and trolling are
+skipped. `.github/workflows/reel-comments.yml` runs it every night at 00:00 UTC (01:00
+in Spain) with the repository secrets `UPLOAD_POST_BGP_API_KEY` and `OPENAI_API_KEY`.
+Try it with `bun comments.ts --dry` (prints the replies, posts nothing).
 
 Channel direction (owner, Nov 2026): a Christian channel. Every reel teaches something
 interesting from Exodus, Leviticus, Numbers or Deuteronomy, opens with a question hook
