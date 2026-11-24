@@ -16,7 +16,7 @@ const FACE = { x: 352 / 1024, y: 190 / 1024, w: 320 / 1024 };
 // Portraits whose face sits off-centre (to keep the held item in frame) get
 // their own crop so the sidebar face stays centred.
 const FACE_BY_ID: Record<string, typeof FACE> = {
-  amram: { x: 429 / 1024, y: 190 / 1024, w: 320 / 1024 },
+  amram: { x: 397 / 1024, y: 190 / 1024, w: 320 / 1024 },
 };
 
 export function ChampionArt({ id, url, alt = "", face, size }: { id?: string; url?: string; alt?: string; face?: boolean; size?: number }) {
