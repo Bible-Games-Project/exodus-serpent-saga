@@ -28,7 +28,7 @@ const MUZZLES: Record<string, Muzzle> = {
   // The crystal at the head of the staff.
   mage: { mx: MAGE_STAFF_TIP.x, my: MAGE_STAFF_TIP.y, ...MAGE_ART },
   // Bow of the archer riding the chariot.
-  chariotarcher: { mx: CHARIOT_BOW.x, my: CHARIOT_BOW.y, ...CHARIOT_ART },
+  chariotarcher: { mx: CHARIOT_BOW.x, my: CHARIOT_BOW.y, ...CHARIOT_ART, H: CHARIOT_ART.FOOT_Y },
 };
 
 /**

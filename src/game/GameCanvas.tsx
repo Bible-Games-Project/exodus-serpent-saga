@@ -30,6 +30,8 @@ import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
 import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
 import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall, drawMageAura, MAGE_LIGHT } from "./mageArt";
 import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
+import { drawSwordSoldierArt, ensureSwordArt, SWORD_SOLDIER_ART, swordArtHeight, swordSlashAt } from "./swordSoldierArt";
+import { drawTridentSoldierArt, ensureTridentArt, TRIDENT_ART, tridentArtHeight } from "./tridentSoldierArt";
 
 
 import { drawDogArt, ensureDogArt, DOG_ART } from "./dogArt";
@@ -1732,6 +1734,8 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "spearknight" && drawSpearKnight(ctx, e, camX, camY)) continue;
     if (e.kind === "mage" && drawMage(ctx, e, camX, camY, s)) continue;
     if (e.kind === "chariotarcher" && drawChariotArcher(ctx, e, camX, camY)) continue;
+    if (e.kind === "swordsoldier" && drawSwordSoldier(ctx, e, camX, camY)) continue;
+    if (e.kind === "tridentsoldier" && drawTridentSoldier(ctx, e, camX, camY)) continue;
 
 
 
@@ -2416,6 +2420,7 @@ function drawEnemyPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: Gam
     heavysoldier: HEAVY_ART.H * HEAVY_ART.PX, agilesoldier: AGILE_ART.H * AGILE_ART.PX,
     mage: MAGE_ART.H * MAGE_ART.PX, cobra: COBRA_ART.H * COBRA_ART.PX,
     wolf: WOLF_ART.H * WOLF_ART.PX, lion: LION_ART.H * LION_ART.PX,
+    swordsoldier: swordArtHeight(Number(e.data?.tier ?? 1)), tridentsoldier: tridentArtHeight(Number(e.data?.tier ?? 1)),
   };
   const x = e.pos.x - camX, y = e.pos.y - camY - (heights[e.kind] ?? e.radius * 3) + 12;
   ctx.save(); ctx.imageSmoothingEnabled = false;
@@ -2533,7 +2538,7 @@ function drawSpearKnight(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   });
   if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 32;
-    const by = groundY - SPEAR_KNIGHT_ART.H * SPEAR_KNIGHT_ART.PX - 6;
+    const by = groundY - (SPEAR_KNIGHT_ART.FOOT_Y - 20) * SPEAR_KNIGHT_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
@@ -2594,11 +2599,79 @@ function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
   });
   if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 44;
-    const by = groundY - CHARIOT_ART.H * CHARIOT_ART.PX - 6;
+    const by = groundY - (CHARIOT_ART.FOOT_Y - 10) * CHARIOT_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
   }
+  return true;
+}
+
+// ------------- Sword and trident soldiers (layered supplied sprites, ranks I-III) -------------
+/** Rank marker under ranks II/III: a pulsing ring on the ground (blue, then gold). */
+function drawRankRing(ctx: CanvasRenderingContext2D, x: number, groundY: number, tier: number, t: number) {
+  if (tier < 2) return;
+  const pulse = 0.75 + 0.25 * Math.sin(t * 0.6);
+  ctx.save();
+  ctx.globalAlpha = 0.55 * pulse;
+  ctx.strokeStyle = tier >= 3 ? "#f2c14e" : "#6fb6ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(x, groundY + 1, tier >= 3 ? 19 : 16, tier >= 3 ? 6 : 5, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+/** Arc trail behind each sword slash, coloured by rank. */
+function drawSlashTrail(ctx: CanvasRenderingContext2D, x: number, y: number, flip: 1 | -1, p: number, up: boolean, tier: number) {
+  if (p < 0.3 || p > 0.7) return;
+  const k = (p - 0.3) / 0.4;
+  const col = tier >= 3 ? "255,214,110" : tier >= 2 ? "150,205,255" : "245,245,235";
+  ctx.save();
+  ctx.translate(x, y);
+  if (flip === -1) ctx.scale(-1, 1);
+  if (up) ctx.scale(1, -1);
+  ctx.strokeStyle = `rgba(${col},${(0.75 * (1 - Math.abs(k - 0.5) * 2)).toFixed(3)})`;
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(0, 0, 26, -1.4, -1.4 + 2.6 * Math.min(1, k * 1.4)); ctx.stroke();
+  ctx.restore();
+}
+
+function drawHpBarAt(ctx: CanvasRenderingContext2D, e: Entity, x: number, by: number, bw: number) {
+  if (!(e.hp < e.maxHp || isAllyFoe(e))) return;
+  ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
+  ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
+  ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
+}
+
+function drawSwordSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureSwordArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const tier = Number(e.data?.tier ?? 1);
+  const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
+  const swing = (e.data?.slashProgress as number | undefined) ?? null;
+  drawRankRing(ctx, x, groundY, tier, e.animT);
+  drawPixelShadow(ctx, x, groundY - 2, SWORD_SOLDIER_ART.W * SWORD_SOLDIER_ART.PX * 0.4, { px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6 });
+  drawSwordSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 5.2, moving: swing == null, swing, tier });
+  if (swing != null) {
+    const { i, p } = swordSlashAt(swing, tier);
+    const lunge = tier >= 3 && i === 2 ? Math.sin(Math.PI * p) * 120 * SWORD_SOLDIER_ART.PX * 1.12 : 0;
+    drawSlashTrail(ctx, x + flip * (14 + lunge), groundY - 52, flip, p, i % 2 === 1, tier);
+  }
+  drawHpBarAt(ctx, e, x, groundY - swordArtHeight(tier) + 4, tier >= 3 ? 30 : 26);
+  return true;
+}
+
+function drawTridentSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
+  if (!ensureTridentArt()) return false;
+  const x = Math.round(e.pos.x - camX);
+  const groundY = Math.round(e.pos.y - camY + 8);
+  const tier = Number(e.data?.tier ?? 1);
+  const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
+  const thrust = (e.data?.thrustProgress as number | undefined) ?? null;
+  drawRankRing(ctx, x, groundY, tier, e.animT);
+  drawPixelShadow(ctx, x, groundY - 2, TRIDENT_ART.W * TRIDENT_ART.PX * 0.4, { px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6 });
+  drawTridentSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 4.4, moving: thrust == null, thrust, tier });
+  drawHpBarAt(ctx, e, x, groundY - tridentArtHeight(tier) + 4, tier >= 3 ? 30 : 26);
   return true;
 }
 
@@ -5173,6 +5246,7 @@ const ENEMY_ART_BOX: Record<string, () => { W: number; H: number; PX: number }> 
   soldier: () => SOLDIER_ART, axesoldier: () => AXE_ART, shieldsoldier: () => SHIELD_ART, heavysoldier: () => HEAVY_ART,
   agilesoldier: () => AGILE_ART, spearsoldier: () => SPEAR_SOLDIER_ART, spearknight: () => SPEAR_KNIGHT_ART,
   mage: () => MAGE_ART, archer: () => ARCHER_ART, chariotarcher: () => CHARIOT_ART,
+  swordsoldier: () => SWORD_SOLDIER_ART, tridentsoldier: () => TRIDENT_ART,
   wolf: () => WOLF_ART, jackal: () => DOG_ART, lion: () => LION_ART, cobra: () => COBRA_ART, camel: () => CAMEL_ART,
 };
 /** Four-legged foes carry their head in front, not on top. */
@@ -5182,8 +5256,8 @@ const BEAST_HEAD = new Set(['wolf', 'jackal', 'lion', 'camel']);
  *  centre (in the facing direction), screen px above its position]. */
 const ENEMY_EYE: Record<string, readonly [number, number]> = {
   soldier: [4.5, 53.5], axesoldier: [5.6, 57.5], archer: [5, 43.5], shieldsoldier: [7.4, 52.5],
-  heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5, 63.5], spearknight: [5.3, 78.5],
-  mage: [3.6, 63], chariotarcher: [-55, 97], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
+  heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5, 63.5], spearknight: [33, 82],
+  mage: [3.6, 63], chariotarcher: [-39, 106], swordsoldier: [7.5, 78], tridentsoldier: [7.8, 80.6], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
   camel: [25.6, 31.5], cobra: [2, 30.5],
 };
 

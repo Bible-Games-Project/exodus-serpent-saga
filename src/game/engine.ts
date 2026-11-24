@@ -31,6 +31,8 @@ import { COBRA_STRIKE_DUR } from "./cobraArt";
 import { LION_MAUL_DUR } from "./lionArt";
 import { MAGE_CAST_DUR } from "./mageArt";
 import { CHARIOT_SHOOT_DUR } from "./chariotArt";
+import { SWORD_SLASH_DUR, swordHitWindows, swordSlashCount } from "./swordSoldierArt";
+import { TRIDENT_JAB_DUR, tridentHitWindows, tridentJabCount } from "./tridentSoldierArt";
 import { resolvePlayerDefeat } from "./playerDefeat";
 import { weaponMuzzle } from "./muzzles";
 import { offscreenEnemySpawn } from "./enemySpawn";
@@ -55,11 +57,32 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   agilesoldier: { key: "stabAt", dur: AGILE_STAB_DUR, gap: 30, from: 0.35, to: 0.58 },
   cobra: { key: "strikeAt", dur: COBRA_STRIKE_DUR, gap: 26, from: 0.34, to: 0.55 },
   lion: { key: "maulAt", dur: LION_MAUL_DUR, gap: 30, from: 0.45, to: 0.75 },
+  // Ranked soldiers: duration and hit windows depend on the rank (see meleeFor).
+  swordsoldier: { key: "slashAt", dur: SWORD_SLASH_DUR, gap: 34, from: 0.42, to: 0.62 },
+  tridentsoldier: { key: "thrustAt", dur: TRIDENT_JAB_DUR, gap: 58, from: 0.45, to: 0.62 },
 
 };
 
 
 
+
+type MeleeSpec = { key: string; dur: number; gap: number; wins: [number, number][] };
+
+/** The melee attack of one enemy. Ranked soldiers chain 1-3 blows per attack,
+ *  each with its own damage window; every other kind has a single window. */
+function meleeFor(e: Entity): MeleeSpec | undefined {
+  const m = MELEE_ATTACKS[e.kind];
+  if (!m) return undefined;
+  const tier = Number(e.data?.tier ?? 1);
+  if (e.kind === "swordsoldier") return { key: m.key, gap: m.gap, dur: SWORD_SLASH_DUR * swordSlashCount(tier), wins: swordHitWindows(tier) };
+  if (e.kind === "tridentsoldier") return { key: m.key, gap: m.gap, dur: TRIDENT_JAB_DUR * tridentJabCount(tier), wins: tridentHitWindows(tier) };
+  return { key: m.key, gap: m.gap, dur: m.dur, wins: [[m.from, m.to]] };
+}
+
+/** Index of the damage window `prog` falls in, or -1. */
+function meleeWindow(m: MeleeSpec, prog: number): number {
+  return m.wins.findIndex(([a, b]) => prog >= a && prog <= b);
+}
 
 // ---------- utilities ----------
 const rand = (a: number, b: number) => a + Math.random() * (b - a);
@@ -501,6 +524,17 @@ export function update(state: GameState, dt: number) {
         if (pp >= 1) { delete e.data.heavyAt; delete e.data.heavyProgress; }
         else e.data.heavyProgress = pp;
       }
+      // Sword / trident soldier combo progress (visual only; planted while attacking).
+      if ((e.kind === "swordsoldier" || e.kind === "tridentsoldier") && e.data) {
+        const m = meleeFor(e)!;
+        const out = e.kind === "swordsoldier" ? "slashProgress" : "thrustProgress";
+        if (e.data[m.key] == null) delete e.data[out];
+        else {
+          const pp = (state.now - (e.data[m.key] as number)) / m.dur;
+          if (pp >= 1) { delete e.data[m.key]; delete e.data[out]; }
+          else e.data[out] = pp;
+        }
+      }
       // Agile soldier hop progress (visual only).
       if (e.kind === "agilesoldier") {
         const hopAt = (e.data?.hopAt as number | undefined) ?? null;
@@ -687,7 +721,7 @@ export function update(state: GameState, dt: number) {
       }
 
       // ---- melee attack: triggered from beside Moses, damage lands mid-anim ----
-      const melee = MELEE_ATTACKS[e.kind];
+      const melee = meleeFor(e);
       const dd = Math.sqrt(wrapDist2(state, e.pos, p.pos));
       if (melee && targetAlly && !(e.kind === "agilesoldier" && e.data?.specialDash)) {
         // Same melee timeline, aimed at the champion this enemy is chasing.
@@ -700,12 +734,15 @@ export function update(state: GameState, dt: number) {
           e.data![key] = state.now;
           snd(state, "enemy.melee", e.pos);
           e.data!.atkHitDone = false;
+          e.data!.atkHitWin = -1;
         }
         if (e.data?.[key] != null) {
           const prog = (state.now - (e.data[key] as number)) / melee.dur;
-          if (prog >= melee.from && prog <= melee.to && da < reach + 10) {
-            const first = !e.data.atkHitDone;
+          const win = meleeWindow(melee, prog);
+          if (win >= 0 && da < reach + 10) {
+            const first = e.data.atkHitWin !== win;
             e.data.atkHitDone = true;
+            e.data.atkHitWin = win;
             damageAlly(state, n, ((e.data?.contactDmg as number) ?? 8) * dt, first ? { x: n.pos.x, y: n.pos.y - 24 } : undefined);
           }
         }
@@ -718,15 +755,18 @@ export function update(state: GameState, dt: number) {
           e.data![key] = state.now;
           snd(state, "enemy.melee", e.pos);
           e.data!.atkHitDone = false;
+          e.data!.atkHitWin = -1;
         }
         if (!invuln && e.data?.[key] != null) {
           const prog = (state.now - (e.data[key] as number)) / melee.dur;
-          if (prog >= melee.from && prog <= melee.to && dd < reach + 10) {
+          const win = meleeWindow(melee, prog);
+          if (win >= 0 && dd < reach + 10) {
             const contactDmg = (e.data?.contactDmg as number) ?? 8;
             damagePlayer(state, contactDmg * dt, false, e);
             state.damageImpactKind = "normal";
-            if (!e.data.atkHitDone) {
+            if (e.data.atkHitWin !== win) {
               e.data.atkHitDone = true;
+              e.data.atkHitWin = win;
               const fdx = wrapDelta(p.pos.x, e.pos.x, state.worldW);
               const fdy = wrapDelta(p.pos.y, e.pos.y, state.worldH);
               const fd = Math.hypot(fdx, fdy) || 1;
@@ -736,7 +776,7 @@ export function update(state: GameState, dt: number) {
               const my = p.pos.y - (fdy / fd) * 4 - (dog ? 14 : 24);
               spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
               spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
-              if (e.kind === "heavysoldier") {
+              if (e.kind === "heavysoldier" || e.kind === "swordsoldier") {
                 spawnVisualHazard(state, "heavyslash", { x: mx, y: my }, 0.3, {
                   seed: e.id,
                   maxTtl: 0.3,
@@ -2260,11 +2300,11 @@ function brawlTick(state: GameState, e: Entity, dt: number, pick?: (o: Entity) =
       e.animT += dt;
     } else if (d.brawlStrikeAt == null && state.now >= Number(d.brawlNext ?? 0)) {
       // Wind up the enemy's own attack animation; the blow lands mid-swing.
-      const melee = MELEE_ATTACKS[e.kind];
+      const melee = meleeFor(e);
       const dur = melee?.dur ?? .3;
       if (melee) { d[melee.key] = state.now; d.atkHitDone = true; }
       d.brawlNext = state.now + Math.max(BRAWL_HIT_EVERY, dur) + Math.random() * .25;
-      d.brawlStrikeAt = state.now + dur * (melee ? (melee.from + melee.to) / 2 : .4);
+      d.brawlStrikeAt = state.now + dur * (melee ? (melee.wins[0][0] + melee.wins[0][1]) / 2 : .4);
       d.brawlFoeId = foe.id;
       d.brawlDirX = vx / dist; d.brawlDirY = vy / dist;
       if (!melee) d.brawlHitAt = state.now; // no attack animation: lunge instead (see GameCanvas)

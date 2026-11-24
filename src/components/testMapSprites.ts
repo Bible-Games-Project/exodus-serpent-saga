@@ -12,11 +12,11 @@ import wolf from "@/assets/wolf-body.png";
 import agilesoldier from "@/assets/agile-new-source.png";
 import cobra from "@/assets/cobra-head.png";
 import spearsoldier from "@/assets/spear-v2-source.png";
-import camel from "@/assets/camel-body.png";
-import lion from "@/assets/lion-body.png";
-import spearknight from "@/assets/mounted-new-source.png";
+import swordsoldier from "@/assets/enemy-sword-soldier-supplied.png";
+import tridentsoldier from "@/assets/enemy-trident-soldier-supplied.png";
+import spearknight from "@/assets/enemy-spear-knight-v2-supplied.png";
 import mage from "@/assets/mage-red-source.png";
-import chariotarcher from "@/assets/chariot-v2-source.png";
+import chariotarcher from "@/assets/chariot-v3-source.png";
 import ramses from "@/assets/ramses-quiet-body.png";
 
 const SPRITES: Record<string, string> = {
@@ -31,8 +31,8 @@ const SPRITES: Record<string, string> = {
   agilesoldier: agilesoldier,
   cobra: cobra,
   spearsoldier: spearsoldier,
-  camel: camel,
-  lion: lion,
+  swordsoldier: swordsoldier,
+  tridentsoldier: tridentsoldier,
   spearknight: spearknight,
   mage: mage,
   chariotarcher: chariotarcher,

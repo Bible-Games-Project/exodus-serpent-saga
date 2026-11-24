@@ -2,7 +2,7 @@
 // It creates no new attacks, enemies, animations or rules: it only decides which
 // of the already-implemented plagues and enemies are active in the session, and
 // which Ramses phase is forced. Normal progression is untouched.
-import { ENEMY_DEFS, ENEMY_ORDER, enemyLabel } from "./enemies";
+import { ENEMY_DEFS, ENEMY_ORDER, RETIRED_ENEMIES, enemyLabel } from "./enemies";
 import { PLAGUES, PLAGUE_ORDER } from "./plagues";
 import { ALLY_POOL, allyDef } from "./allies";
 import { CHAMPIONS } from "./shopCatalog";
@@ -26,7 +26,7 @@ export function testAttackName(index: number): string {
  */
 export function testEnemyKinds(): string[] {
   const extra = Object.keys(ENEMY_DEFS).filter((k) => !ENEMY_ORDER.includes(k));
-  return [...ENEMY_ORDER, ...extra];
+  return [...ENEMY_ORDER, ...extra].filter((k) => !RETIRED_ENEMIES.has(k));
 }
 
 export function testEnemyLabel(kind: string): string {

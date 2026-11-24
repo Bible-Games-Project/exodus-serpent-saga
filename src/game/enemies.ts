@@ -148,6 +148,19 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     radius: 24, baseHp: 42, hpPerMinute: 42, speed: 95, contactDmg: 36, xp: 12,
     minMinute: 0, weight: 3, behavior: "chase",
   },
+  swordsoldier: {
+    kind: "swordsoldier", category: "human",
+    // Egyptian swordsman: a quick foot soldier whose rank (data.tier) decides
+    // the combo — one slash, two, or three with a lunge (see swordSoldierArt).
+    radius: 13, baseHp: 38, hpPerMinute: 25, speed: 62, contactDmg: 22, xp: 6,
+    minMinute: 0, weight: 4, behavior: "chase",
+  },
+  tridentsoldier: {
+    kind: "tridentsoldier", category: "human",
+    // Slower and tougher; jabs from beyond sword reach. Rank = 1-3 jabs.
+    radius: 15, baseHp: 50, hpPerMinute: 28, speed: 48, contactDmg: 26, xp: 7,
+    minMinute: 0, weight: 3, behavior: "chase",
+  },
   spearknight: {
     kind: "spearknight", category: "human",
     // Mounted lancer: never trades blows, he gallops clean through Moses and
@@ -199,8 +212,8 @@ export const ENEMY_ORDER = [
   "agilesoldier",
   "cobra",
   "spearsoldier",
-  "camel",
-  "lion",
+  "swordsoldier",
+  "tridentsoldier",
   "spearknight",
   "mage",
   "chariotarcher",
@@ -219,6 +232,8 @@ const ENEMY_LABELS: Record<string, string> = {
   agilesoldier: "Agile Soldier",
   cobra: "Cobra",
   spearsoldier: "Spear Soldier",
+  swordsoldier: "Sword Soldier",
+  tridentsoldier: "Trident Soldier",
   camel: "Camel",
   lion: "Desert Lion",
   spearknight: "Spear Knight",
@@ -234,6 +249,31 @@ export function enemyLabel(kind: string): string {
 
 
 
+
+/** Enemies taken out of the game. Their code and art stay for rollback, but
+ *  they never spawn and are hidden from the Test Map. */
+export const RETIRED_ENEMIES = new Set(["camel", "lion"]);
+
+/** Enemies that come in ranks I-III (data.tier). */
+export const RANKED_ENEMIES = new Set(["swordsoldier", "tridentsoldier"]);
+
+/** Per-rank multipliers: health, speed, xp and body size. */
+const RANK_STATS = [
+  { hp: 1, speed: 1, xp: 1, size: 1 },
+  { hp: 1.6, speed: 1.08, xp: 1.5, size: 1 },
+  { hp: 2.3, speed: 1.15, xp: 2.2, size: 1.12 },
+] as const;
+
+/** Rank of a new ranked soldier. The Test Map mixes all three evenly; in the
+ *  normal game higher ranks grow more common the longer the type is unlocked. */
+export function rollEnemyTier(state: GameState, kind: string): number {
+  const r = Math.random();
+  if (state.testMap) return r < 1 / 3 ? 1 : r < 2 / 3 ? 2 : 3;
+  const since = Math.max(0, state.level - enemyUnlockLevel(kind));
+  const p3 = Math.min(0.35, 0.08 + since / 50);
+  const p2 = Math.min(0.45, 0.25 + since / 60);
+  return r < p3 ? 3 : r < p3 + p2 ? 2 : 1;
+}
 
 /** Levels between each newly introduced enemy type. */
 export const ENEMY_UNLOCK_INTERVAL = 5;
@@ -257,7 +297,8 @@ export function pickEnemyKind(state: GameState): string {
   // keeps its untouched level-based unlock rule.
   const tm = state.testMap;
   const allowed = (k: string) =>
-    (tm ? tm.enemies[k] === true : enemyUnlockLevel(k) <= state.level)
+    !RETIRED_ENEMIES.has(k)
+    && (tm ? tm.enemies[k] === true : enemyUnlockLevel(k) <= state.level)
     && (k !== "camel" || camelAllowed(state));
   const eligible = ENEMY_ORDER.filter(allowed);
   if (eligible.length === 0) return "";
@@ -342,11 +383,14 @@ export function enemyTick(
     }
     // Stop just beside the target so the melee animation can reach it without
     // the sprites overlapping.
-    const standoff = e.radius + 36;
+    // The trident soldier holds his distance at the length of his trident.
+    const standoff = e.kind === "tridentsoldier" ? e.radius + 60 : e.radius + 36;
     // The heavy soldier plants his boots for the whole sword swing; the cobra
-    // anchors its coil while it strikes.
+    // anchors its coil while it strikes; the ranked soldiers stand for their combo.
     const planted = (e.kind === "heavysoldier" && e.data?.heavyAt != null)
-      || (e.kind === "cobra" && e.data?.strikeAt != null);
+      || (e.kind === "cobra" && e.data?.strikeAt != null)
+      || (e.kind === "swordsoldier" && e.data?.slashAt != null)
+      || (e.kind === "tridentsoldier" && e.data?.thrustAt != null);
 
     if (d > standoff && !planted) move(mvx * spd, mvy * spd);
 
@@ -721,12 +765,14 @@ export function makeEnemy(state: GameState, kind: string, pos: Vec2): Entity {
   const def = ENEMY_DEFS[kind] ?? ENEMY_DEFS.soldier;
   if (kind === "camel") (state as unknown as { __camelLevel?: number }).__camelLevel = state.level;
   const mins = state.now / 60;
-  const hp = def.baseHp + def.hpPerMinute * mins;
+  const tier = RANKED_ENEMIES.has(kind) ? rollEnemyTier(state, kind) : 0;
+  const rank = RANK_STATS[Math.max(0, tier - 1)];
+  const hp = (def.baseHp + def.hpPerMinute * mins) * rank.hp;
   return {
     id: state.nextId++,
     pos: { x: pos.x, y: pos.y },
     vel: { x: 0, y: 0 },
-    radius: def.radius,
+    radius: def.radius * rank.size,
     hp, maxHp: hp,
     team: "enemy",
     facing: 1,
@@ -734,9 +780,10 @@ export function makeEnemy(state: GameState, kind: string, pos: Vec2): Entity {
     born: state.now,
     kind,
     data: {
-      speed: def.speed,
+      speed: def.speed * rank.speed,
       contactDmg: def.contactDmg,
-      xp: def.xp,
+      xp: Math.round(def.xp * rank.xp),
+      ...(tier ? { tier } : {}),
       category: def.category,
       atkCd: def.attack ? Math.random() * def.attack.cooldown : 0,
       chargeCd: def.chargeCooldown ?? 0,
