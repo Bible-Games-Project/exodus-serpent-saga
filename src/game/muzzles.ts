@@ -3,7 +3,7 @@
 // the middle of its body. The offsets live in each sprite's own pixel space and
 // are converted here, so they stay correct as the enemy moves and turns.
 import type { Entity } from "./types";
-import { ARCHER_ART } from "./archerArt";
+import { ARCHER_ART, ARCHER_MUZZLE } from "./archerArt";
 import { SPEAR_SOLDIER_ART } from "./spearSoldierArt";
 import { MAGE_ART, MAGE_STAFF_TIP } from "./mageArt";
 import { CHARIOT_ART, CHARIOT_BOW } from "./chariotArt";
@@ -22,7 +22,7 @@ type Muzzle = {
 
 const MUZZLES: Record<string, Muzzle> = {
   // Bow grip / string release, just in front of the archer's leading hand.
-  archer: { mx: 42, my: 26, ...ARCHER_ART },
+  archer: { mx: ARCHER_MUZZLE.x, my: ARCHER_MUZZLE.y, ...ARCHER_ART, H: ARCHER_ART.FOOT_Y },
   // Tip of the spear as it leaves his hand.
   spearsoldier: { mx: 1000, my: 290, ...SPEAR_SOLDIER_ART },
   // The crystal at the head of the staff.

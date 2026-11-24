@@ -30,7 +30,7 @@ import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
 import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
 import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall, drawMageAura, MAGE_LIGHT } from "./mageArt";
 import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
-import { drawSwordSoldierArt, ensureSwordArt, SWORD_SOLDIER_ART, swordArtHeight, swordSlashAt } from "./swordSoldierArt";
+import { drawSwordSoldierArt, ensureSwordArt, SWORD_SOLDIER_ART, SWORD_ELBOW_SCREEN, SWORD_LUNGE_PX, swordArtHeight, swordSlashAt } from "./swordSoldierArt";
 import { drawTridentSoldierArt, ensureTridentArt, TRIDENT_ART, tridentArtHeight } from "./tridentSoldierArt";
 
 
@@ -2415,7 +2415,7 @@ function drawPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameStat
 function drawEnemyPoisonBubbles(ctx: CanvasRenderingContext2D, e: Entity, s: GameState, camX: number, camY: number) {
   if (Number(e.data?.poisonUntil ?? 0) <= s.now) return;
   const heights: Record<string, number> = {
-    soldier: SOLDIER_ART.H * SOLDIER_ART.PX, archer: ARCHER_ART.H * ARCHER_ART.PX,
+    soldier: SOLDIER_ART.H * SOLDIER_ART.PX, archer: (ARCHER_ART.FOOT_Y - ARCHER_ART.TOP) * ARCHER_ART.PX,
     spearsoldier: SPEAR_SOLDIER_ART.H * SPEAR_SOLDIER_ART.PX,
     axesoldier: AXE_ART.H * AXE_ART.PX, shieldsoldier: SHIELD_ART.H * SHIELD_ART.PX,
     heavysoldier: HEAVY_ART.H * HEAVY_ART.PX, agilesoldier: AGILE_ART.H * AGILE_ART.PX,
@@ -2691,12 +2691,14 @@ function drawSwordSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   const tier = Number(e.data?.tier ?? 1);
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const swing = (e.data?.slashProgress as number | undefined) ?? null;
-  drawPixelShadow(ctx, x, groundY - 2, SWORD_SOLDIER_ART.W * SWORD_SOLDIER_ART.PX * 0.4, { px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6 });
+  drawPixelShadow(ctx, x, groundY - 2, 26, { px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6 });
   drawSwordSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 5.2, moving: swing == null && e.data?.stepping !== 0, swing, tier });
   if (swing != null) {
     const { i, p } = swordSlashAt(swing, tier);
-    const lunge = tier >= 3 && i === 2 ? Math.sin(Math.PI * p) * 120 * SWORD_SOLDIER_ART.PX * 1.12 : 0;
-    drawSlashTrail(ctx, x + flip * (14 + lunge), groundY - 52, flip, p, i % 2 === 1, tier);
+    const k = tier >= 3 ? 1.12 : 1;
+    const lunge = tier >= 3 && i === 2 ? Math.sin(Math.PI * p) * SWORD_LUNGE_PX * k : 0;
+    // Centred a little ahead of the elbow, where the blade sweeps.
+    drawSlashTrail(ctx, x + flip * ((SWORD_ELBOW_SCREEN.x + 15) * k + lunge), groundY - SWORD_ELBOW_SCREEN.y * k, flip, p, i % 2 === 1, tier);
   }
   drawHpBarAt(ctx, e, x, groundY - swordArtHeight(tier) + 4, tier >= 3 ? 30 : 26);
   return true;
@@ -2721,7 +2723,7 @@ function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   if (!ensureArcherArt()) return false;
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
-  drawPixelShadow(ctx, x, groundY + 1, ARCHER_ART.W * ARCHER_ART.PX * 0.45, {
+  drawPixelShadow(ctx, x, groundY + 1, 22, {
     px: 3, alpha: 0.24, seed: e.id, phase: e.animT, sway: 0.8,
   });
   const shoot = (e.data?.shootProgress as number | undefined) ?? null;
@@ -2734,7 +2736,7 @@ function drawArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY
   });
   if (e.hp < e.maxHp || isAllyFoe(e)) {
     const bw = 26;
-    const by = groundY - ARCHER_ART.H * ARCHER_ART.PX - 6;
+    const by = groundY - (ARCHER_ART.FOOT_Y - ARCHER_ART.TOP) * ARCHER_ART.PX - 6;
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(x - bw / 2 - 1, by - 1, bw + 2, 5);
     ctx.fillStyle = isAllyFoe(e) ? "#1e5a1e" : "#5a1a1a"; ctx.fillRect(x - bw / 2, by, bw, 3);
     ctx.fillStyle = isAllyFoe(e) ? "#4ec24e" : "#e05a48"; ctx.fillRect(x - bw / 2, by, bw * Math.max(0, e.hp / e.maxHp), 3);
@@ -5297,9 +5299,9 @@ const BEAST_HEAD = new Set(['wolf', 'jackal', 'lion', 'camel']);
 /** Where each foe's eye sits, measured on its sprite: [screen px ahead of its
  *  centre (in the facing direction), screen px above its position]. */
 const ENEMY_EYE: Record<string, readonly [number, number]> = {
-  soldier: [4.5, 53.5], axesoldier: [5.6, 57.5], archer: [5, 43.5], shieldsoldier: [7.4, 52.5],
+  soldier: [4.5, 53.5], axesoldier: [5.6, 57.5], archer: [4.7, 62], shieldsoldier: [7.4, 52.5],
   heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5, 63.5], spearknight: [33, 82],
-  mage: [3.6, 63], chariotarcher: [-39, 106], swordsoldier: [7.5, 78], tridentsoldier: [6.2, 64.5], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
+  mage: [3.6, 63], chariotarcher: [-39, 106], swordsoldier: [3.2, 61.4], tridentsoldier: [6.2, 64.5], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
   camel: [25.6, 31.5], cobra: [2, 30.5],
 };
 
