@@ -158,7 +158,8 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   tridentsoldier: {
     kind: "tridentsoldier", category: "human",
     // Slower and tougher; jabs from beyond sword reach. Rank = 1-3 jabs.
-    radius: 15, baseHp: 50, hpPerMinute: 28, speed: 48, contactDmg: 26, xp: 7,
+    // Radius follows his art, drawn 20% smaller than the sword soldier's scale.
+    radius: 12, baseHp: 50, hpPerMinute: 28, speed: 48, contactDmg: 26, xp: 7,
     minMinute: 0, weight: 3, behavior: "chase",
   },
   spearknight: {
@@ -186,7 +187,8 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     kind: "chariotarcher", category: "human",
     // Mounted archer: the rig never stops rolling, looses arrows on the move,
     // and the chariot itself runs Moses down on contact.
-    radius: 60, baseHp: 80, hpPerMinute: 40, speed: 135, contactDmg: 30, xp: 14,
+    // Speed lowered 135 -> 95 so the rig reads as a heavy cart, not a dart.
+    radius: 60, baseHp: 80, hpPerMinute: 40, speed: 95, contactDmg: 30, xp: 14,
     minMinute: 0, weight: 3, behavior: "chariot",
     attack: {
       // Same arrow as the archer on foot (9 damage), fired while driving.
@@ -352,7 +354,9 @@ export function enemyTick(
 
   // Camel aura: nearby Egyptian soldiers move 10% faster for a short while.
   const aura = def.category === "human" && state.now < ((e.data?.auraUntil as number) ?? 0) ? 1.1 : 1;
-  const spd = def.speed * helpers.baseSlow * freezeMul * aura;
+  // Ranked soldiers carry their rank's speed in data.speed.
+  const baseSpeed = RANKED_ENEMIES.has(e.kind) ? Number(e.data?.speed ?? def.speed) : def.speed;
+  const spd = baseSpeed * helpers.baseSlow * freezeMul * aura;
 
   if (def.behavior === "chase" || def.behavior === "pack") {
     let mvx = nx, mvy = ny;
@@ -384,7 +388,7 @@ export function enemyTick(
     // Stop just beside the target so the melee animation can reach it without
     // the sprites overlapping.
     // The trident soldier holds his distance at the length of his trident.
-    const standoff = e.kind === "tridentsoldier" ? e.radius + 60 : e.radius + 36;
+    const standoff = e.kind === "tridentsoldier" ? e.radius + 50 : e.radius + 36;
     // The heavy soldier plants his boots for the whole sword swing; the cobra
     // anchors its coil while it strikes; the ranked soldiers stand for their combo.
     const planted = (e.kind === "heavysoldier" && e.data?.heavyAt != null)
@@ -392,7 +396,10 @@ export function enemyTick(
       || (e.kind === "swordsoldier" && e.data?.slashAt != null)
       || (e.kind === "tridentsoldier" && e.data?.thrustAt != null);
 
-    if (d > standoff && !planted) move(mvx * spd, mvy * spd);
+    const stepping = d > standoff && !planted;
+    if (stepping) move(mvx * spd, mvy * spd);
+    // Ranked soldiers only play their walk cycle while actually walking.
+    if (RANKED_ENEMIES.has(e.kind)) e.data!.stepping = stepping ? 1 : 0;
 
     // Melee swing anim for humans in close range.
     if (def.category === "human" && d < e.radius + 26) {
@@ -728,7 +735,8 @@ export function enemyTick(
     dch.driveY = mvy;
     // The wheel is a separate anchored layer. Canvas mirroring handles the
     // opposite visual rotation when the chariot turns around.
-    dch.wheelAngle = ((dch.wheelAngle as number) ?? 0) + (spd * dt) / 35;
+    // 20 = the wheel's on-screen radius, so it rolls without slipping.
+    dch.wheelAngle = ((dch.wheelAngle as number) ?? 0) + (spd * dt) / 20;
 
     // Aim and fire while rolling — nothing here ever stops the movement.
     const cd = ((dch.atkCd as number) ?? 0) - dt;
@@ -756,7 +764,11 @@ export function enemyTick(
     // The rig faces where the horses are pulling, never sideways-snapping.
     const drive = (e.data?.driveX as number) ?? dx;
     if (Math.abs(drive) > 0.15) e.facing = drive > 0 ? 1 : -1;
-  } else {
+  } else if (RANKED_ENEMIES.has(e.kind) && (e.data?.slashAt != null || e.data?.thrustAt != null)) {
+    // Keep facing the target the combo started on; never flip mid-blow.
+  } else if (Math.abs(dx) > 8) {
+    // A small dead zone stops foes standing right above or below the target
+    // from flipping left/right every frame (it looked like stutter).
     e.facing = dx > 0 ? 1 : -1;
   }
 }

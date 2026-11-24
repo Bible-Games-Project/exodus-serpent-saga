@@ -1748,6 +1748,7 @@ function draw(ctx: CanvasRenderingContext2D, cnv: HTMLCanvasElement, s: GameStat
     if (e.kind === "magecast") { drawMageCastBurst(ctx, e, camX, camY); continue; }
     if (e.kind === "leprosybeam") { drawLeprosyBeam(ctx, e, camX, camY); continue; }
     if (e.kind === "heavyslash") { drawHeavySlash(ctx, e, camX, camY); continue; }
+    if (e.kind === "swordcut") { drawSwordCut(ctx, e, camX, camY); continue; }
     if (e.kind === "staffblood") { drawStaffBlood(ctx, e, camX, camY); continue; }
     if (e.kind === "deathpuff") { drawDeathPuff(ctx, e, camX, camY); continue; }
     if (drawWeaponEntity(ctx, e, s, camX, camY)) continue;
@@ -2593,7 +2594,7 @@ function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
   drawChariotArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
-    phase: e.animT * 6,
+    phase: e.animT * 4,
     wheelAngle: (e.data?.wheelAngle as number | undefined) ?? 0,
     shoot: (e.data?.shootProgress as number | undefined) ?? null,
   });
@@ -2608,30 +2609,71 @@ function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
 }
 
 // ------------- Sword and trident soldiers (layered supplied sprites, ranks I-III) -------------
-/** Rank marker under ranks II/III: a pulsing ring on the ground (blue, then gold). */
-function drawRankRing(ctx: CanvasRenderingContext2D, x: number, groundY: number, tier: number, t: number) {
-  if (tier < 2) return;
-  const pulse = 0.75 + 0.25 * Math.sin(t * 0.6);
-  ctx.save();
-  ctx.globalAlpha = 0.55 * pulse;
-  ctx.strokeStyle = tier >= 3 ? "#f2c14e" : "#6fb6ff";
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.ellipse(x, groundY + 1, tier >= 3 ? 19 : 16, tier >= 3 ? 6 : 5, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.restore();
+/** Colours of a sword cut by rank: steel, cold blue, gold. */
+const CUT_COLORS = [
+  ["255,255,255", "214,224,236"],
+  ["236,246,255", "120,180,255"],
+  ["255,250,225", "250,196,80"],
+] as const;
+
+/**
+ * Smooth crescent of a sword cut: a tapered arc (thick in the middle, sharp at
+ * both ends) with a soft halo, painted with anti-aliasing so it matches the
+ * game's painted sprites instead of blocky pixels. `k` 0..1 sweeps it open.
+ */
+function drawCutCrescent(ctx: CanvasRenderingContext2D, r: number, width: number, k: number, alpha: number, tier: number) {
+  const a0 = -1.35, a1 = a0 + 2.5 * Math.min(1, k);
+  const [core, glow] = CUT_COLORS[Math.max(0, Math.min(2, tier - 1))];
+  const shape = (w: number) => {
+    ctx.beginPath();
+    const n = 18;
+    for (let i = 0; i <= n; i++) {
+      const a = a0 + (a1 - a0) * (i / n);
+      ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    for (let i = n; i >= 0; i--) {
+      const u = i / n, a = a0 + (a1 - a0) * u;
+      const rr = r - w * Math.sin(Math.PI * u) ** 0.8;
+      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fill();
+  };
+  ctx.imageSmoothingEnabled = true;
+  ctx.fillStyle = `rgba(${glow},${(alpha * 0.35).toFixed(3)})`;
+  shape(width * 2.2);
+  ctx.fillStyle = `rgba(${glow},${(alpha * 0.75).toFixed(3)})`;
+  shape(width * 1.3);
+  ctx.fillStyle = `rgba(${core},${alpha.toFixed(3)})`;
+  shape(width * 0.6);
 }
 
-/** Arc trail behind each sword slash, coloured by rank. */
+/** Sweep of the blade during each sword slash. */
 function drawSlashTrail(ctx: CanvasRenderingContext2D, x: number, y: number, flip: 1 | -1, p: number, up: boolean, tier: number) {
-  if (p < 0.3 || p > 0.7) return;
-  const k = (p - 0.3) / 0.4;
-  const col = tier >= 3 ? "255,214,110" : tier >= 2 ? "150,205,255" : "245,245,235";
+  if (p < 0.32 || p > 0.72) return;
+  const k = (p - 0.32) / 0.23;
+  const fade = p < 0.55 ? 1 : 1 - (p - 0.55) / 0.17;
   ctx.save();
   ctx.translate(x, y);
   if (flip === -1) ctx.scale(-1, 1);
   if (up) ctx.scale(1, -1);
-  ctx.strokeStyle = `rgba(${col},${(0.75 * (1 - Math.abs(k - 0.5) * 2)).toFixed(3)})`;
-  ctx.lineWidth = 3;
-  ctx.beginPath(); ctx.arc(0, 0, 26, -1.4, -1.4 + 2.6 * Math.min(1, k * 1.4)); ctx.stroke();
+  drawCutCrescent(ctx, 27, 5, k, 0.7 * fade, tier);
+  ctx.restore();
+}
+
+/** The cut a sword soldier leaves on Moses when a slash connects. */
+function drawSwordCut(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const maxTtl = (e.data?.maxTtl as number) ?? 0.32;
+  const life = Math.max(0, Math.min(1, (e.ttl ?? 0) / maxTtl));
+  if (life <= 0) return;
+  const t = 1 - life;
+  const dx = (e.data?.dirX as number) ?? 1, dy = (e.data?.dirY as number) ?? 0;
+  ctx.save();
+  ctx.translate(e.pos.x - camX, e.pos.y - camY);
+  ctx.rotate(Math.atan2(dy, dx) + Math.PI / 2);
+  if ((e.data?.flip as number) === -1) ctx.scale(-1, 1);
+  ctx.translate(-16, 0);
+  drawCutCrescent(ctx, 18 + t * 4, 4.5, Math.min(1, t * 4), Math.min(1, life * 1.6), Number(e.data?.tier ?? 1));
   ctx.restore();
 }
 
@@ -2649,9 +2691,8 @@ function drawSwordSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: number
   const tier = Number(e.data?.tier ?? 1);
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const swing = (e.data?.slashProgress as number | undefined) ?? null;
-  drawRankRing(ctx, x, groundY, tier, e.animT);
   drawPixelShadow(ctx, x, groundY - 2, SWORD_SOLDIER_ART.W * SWORD_SOLDIER_ART.PX * 0.4, { px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6 });
-  drawSwordSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 5.2, moving: swing == null, swing, tier });
+  drawSwordSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 5.2, moving: swing == null && e.data?.stepping !== 0, swing, tier });
   if (swing != null) {
     const { i, p } = swordSlashAt(swing, tier);
     const lunge = tier >= 3 && i === 2 ? Math.sin(Math.PI * p) * 120 * SWORD_SOLDIER_ART.PX * 1.12 : 0;
@@ -2668,9 +2709,8 @@ function drawTridentSoldier(ctx: CanvasRenderingContext2D, e: Entity, camX: numb
   const tier = Number(e.data?.tier ?? 1);
   const flip: 1 | -1 = e.facing === -1 ? -1 : 1;
   const thrust = (e.data?.thrustProgress as number | undefined) ?? null;
-  drawRankRing(ctx, x, groundY, tier, e.animT);
   drawPixelShadow(ctx, x, groundY - 2, TRIDENT_ART.W * TRIDENT_ART.PX * 0.4, { px: 3, alpha: 0.28, seed: e.id, phase: e.animT, sway: 0.6 });
-  drawTridentSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 4.4, moving: thrust == null, thrust, tier });
+  drawTridentSoldierArt(ctx, { x, groundY, flip, walkPhase: e.animT * 4.4, moving: thrust == null && e.data?.stepping !== 0, thrust, tier });
   drawHpBarAt(ctx, e, x, groundY - tridentArtHeight(tier) + 4, tier >= 3 ? 30 : 26);
   return true;
 }
@@ -5257,7 +5297,7 @@ const BEAST_HEAD = new Set(['wolf', 'jackal', 'lion', 'camel']);
 const ENEMY_EYE: Record<string, readonly [number, number]> = {
   soldier: [4.5, 53.5], axesoldier: [5.6, 57.5], archer: [5, 43.5], shieldsoldier: [7.4, 52.5],
   heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5, 63.5], spearknight: [33, 82],
-  mage: [3.6, 63], chariotarcher: [-39, 106], swordsoldier: [7.5, 78], tridentsoldier: [7.8, 80.6], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
+  mage: [3.6, 63], chariotarcher: [-39, 106], swordsoldier: [7.5, 78], tridentsoldier: [6.2, 64.5], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
   camel: [25.6, 31.5], cobra: [2, 30.5],
 };
 

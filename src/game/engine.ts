@@ -59,7 +59,7 @@ const MELEE_ATTACKS: Record<string, { key: string; dur: number; gap: number; fro
   lion: { key: "maulAt", dur: LION_MAUL_DUR, gap: 30, from: 0.45, to: 0.75 },
   // Ranked soldiers: duration and hit windows depend on the rank (see meleeFor).
   swordsoldier: { key: "slashAt", dur: SWORD_SLASH_DUR, gap: 34, from: 0.42, to: 0.62 },
-  tridentsoldier: { key: "thrustAt", dur: TRIDENT_JAB_DUR, gap: 58, from: 0.45, to: 0.62 },
+  tridentsoldier: { key: "thrustAt", dur: TRIDENT_JAB_DUR, gap: 48, from: 0.45, to: 0.62 },
 
 };
 
@@ -776,7 +776,13 @@ export function update(state: GameState, dt: number) {
               const my = p.pos.y - (fdy / fd) * 4 - (dog ? 14 : 24);
               spawnVisualHazard(state, "hitspark", { x: mx, y: my }, 0.18, { seed: e.id, small: 1 });
               spawnVisualHazard(state, "bloodhit", { x: mx, y: my }, 0.45, { seed: e.id, maxTtl: 0.45 });
-              if (e.kind === "heavysoldier" || e.kind === "swordsoldier") {
+              if (e.kind === "swordsoldier") {
+                spawnVisualHazard(state, "swordcut", { x: mx, y: my }, 0.32, {
+                  seed: e.id, maxTtl: 0.32, dirX: fdx / fd, dirY: fdy / fd,
+                  tier: Number(e.data.tier ?? 1), flip: e.data.atkHitWin as number % 2 === 1 ? -1 : 1,
+                });
+              }
+              if (e.kind === "heavysoldier") {
                 spawnVisualHazard(state, "heavyslash", { x: mx, y: my }, 0.3, {
                   seed: e.id,
                   maxTtl: 0.3,

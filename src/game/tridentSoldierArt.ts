@@ -16,7 +16,8 @@ import tridentAsset from "@/assets/trident-soldier-trident.png";
 export const TRIDENT_ART = {
   W: 1024,
   H: 1535,
-  PX: 0.065,
+  /** 20% smaller than the sword soldier (0.065). */
+  PX: 0.052,
   /** x of his body centre inside the sprite */
   CX: 480,
   /** Transparent rows below the sandals. */
