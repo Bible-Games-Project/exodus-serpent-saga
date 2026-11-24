@@ -802,3 +802,10 @@ export function makeEnemy(state: GameState, kind: string, pos: Vec2): Entity {
     },
   };
 }
+
+/**
+ * How much of a knockback each kind actually takes (1 = all of it).
+ * Heavy riders shrug most pushes off; the chariot barely moves.
+ */
+export const KNOCK_TAKEN: Partial<Record<string, number>> = { chariotarcher: 0.15, spearknight: 0.4 };
+export const knockTaken = (kind: string) => KNOCK_TAKEN[kind] ?? 1;

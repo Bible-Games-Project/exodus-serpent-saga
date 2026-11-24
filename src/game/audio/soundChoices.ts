@@ -141,14 +141,35 @@ export const DEFAULT_SOUNDS: Record<string, string> = {
   ...PICKS(),
 };
 
-/** The maintainer's newer picks (pasted from "Copy choices"); they win over the above. */
+/**
+ * The maintainer's newer picks; they win over the above.
+ * 2026-11-24: only the coin (gem) pickup and the UI keep their sounds; every
+ * other action is silent, except enemy deaths (a soft puff of smoke, see
+ * scripts/claude-sounds/smoke.ts) and the blessing picks, which play the
+ * former level-up sound. Levelling up itself is silent.
+ */
 function PICKS(): Record<string, string> {
-  return {};
+  const C = "audio/Library/Claude/";
+  const SMOKE = "audio/Library/ClaudeFx/";
+  const keep = (id: string) => id === "pickup.xp" || SOUND_EVENTS.find((e) => e.id === id)?.category === "ui";
+  const out: Record<string, string> = {};
+  for (const ev of SOUND_EVENTS) if (!keep(ev.id)) out[ev.id] = "";
+  Object.assign(out, {
+    "enemy.death.small": `${SMOKE}enemy-death-smoke-1.mp3`,
+    "enemy.death.medium": `${SMOKE}enemy-death-smoke-1.mp3`,
+    "enemy.death.large": `${SMOKE}enemy-death-smoke-2.mp3`,
+    "enemy.death.elite": `${SMOKE}enemy-death-smoke-2.mp3`,
+    "event.blessing": `${C}event-levelup-1.mp3`,
+    "event.plague.unlock": `${C}event-levelup-1.mp3`,
+    "event.plague.evolve": `${C}event-levelup-1.mp3`,
+  });
+  return out;
 }
 
 // New key when Claude's pack became the default: earlier browser picks (already
 // copied into PREVIOUS_SOUNDS) would otherwise hide the new defaults.
-const KEY = "exodus-survivors:sound-assignments-v2";
+// v3 (2026-11-24): the trimmed-down sound set replaced every earlier pick.
+const KEY = "exodus-survivors:sound-assignments-v3";
 export const CHOICES_EVENT = "exodus-survivors:sound-choices-changed";
 
 let cache: Record<string, string> | null = null;

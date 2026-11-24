@@ -16,7 +16,7 @@ import {
   resolveChampionAttack, updateChampionAlly, updateChampionEntities, wardAbsorb, wardTargets, champEvo, championRange, type ChampHelpers,
 } from "./championAbilities";
 import { findChampion } from "./shopCatalog";
-import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG } from "./enemies";
+import { ENEMY_DEFS, enemyTick, makeEnemy, pickEnemyKind, KNIGHT_LANCE_DMG, knockTaken } from "./enemies";
 import { spawnRamses, tickRamses } from "./ramses";
 import { MOSES_ART, MOSES_ATTACK, mosesStaffTip, mosesSwingAngle } from "./mosesGameArt";
 import { SOLDIER_PUNCH_DUR } from "./soldierArt";
@@ -673,7 +673,7 @@ export function update(state: GameState, dt: number) {
       const kU = e.data?.knockUntil as number | undefined;
       if (kU != null) {
         if (state.now < kU) {
-          const f = (kU - state.now) / 0.22; // eases out to zero
+          const f = (kU - state.now) / 0.22 * knockTaken(e.kind); // eases out to zero; riders resist
           e.pos.x += (e.data!.knockVx as number) * f * dt;
           e.pos.y += (e.data!.knockVy as number) * f * dt;
         } else delete e.data!.knockUntil;
@@ -2340,7 +2340,7 @@ function brawlTick(state: GameState, e: Entity, dt: number, pick?: (o: Entity) =
   const kU = d.knockUntil as number | undefined;
   if (kU != null) {
     if (state.now < kU) {
-      const f = (kU - state.now) / .22;
+      const f = (kU - state.now) / .22 * knockTaken(e.kind);
       e.pos.x += Number(d.knockVx) * f * dt; e.pos.y += Number(d.knockVy) * f * dt;
     } else delete d.knockUntil;
   }

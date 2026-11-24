@@ -1,0 +1,24 @@
+{
+  "source": "Claude",
+  "license": "Made for this game by Claude (procedural synthesis, no third-party audio)",
+  "sounds": [
+    {
+      "file": "enemy-death-smoke-1.mp3",
+      "name": "Enemy vanishes in smoke 1",
+      "group": "Enemies (Claude)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-smoke-2.mp3",
+      "name": "Enemy vanishes in smoke 2",
+      "group": "Enemies (Claude)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-smoke-3.mp3",
+      "name": "Enemy vanishes in smoke 3",
+      "group": "Enemies (Claude)",
+      "action": "enemy.death.small"
+    }
+  ]
+}

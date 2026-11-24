@@ -25,6 +25,18 @@ function art(url: string): HTMLImageElement | null {
   if (!img) { img = new Image(); img.src = url; images.set(url, img); }
   return img.complete && img.naturalWidth ? img : null;
 }
+/**
+ * Gershom's arrow art, centred on the origin and pointing along +x (rotate the
+ * context first). Also used by the enemy archers. False until it has loaded.
+ */
+export function drawGershomArrow(ctx: CanvasRenderingContext2D, len = 28): boolean {
+  const img = art(gershomArrowUrl);
+  if (!img) return false;
+  const ah = len * img.naturalHeight / img.naturalWidth;
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(img, -len / 2, -ah / 2, len, ah);
+  return true;
+}
 /** Shades of Miriam's tornado art, used for its swirling streaks and motes. */
 /** Shades of Puah's healing art (the greens and pale crosses of her ring, vial and splash). */
 const PUAH_TINT = ["#2fa82a", "#78e758", "#c6f78e", "#f6fbc8"];
@@ -99,13 +111,7 @@ export function drawChampionFx(ctx: CanvasRenderingContext2D, e: Entity, camX: n
       }
       if (d.art === "arrow") {
         // Gershom's arrow: the supplied art, pointing where it flies.
-        const img = art(gershomArrowUrl);
-        if (img) {
-          const len = 28, ah = len * img.naturalHeight / img.naturalWidth;
-          ctx.imageSmoothingEnabled = true;
-          ctx.drawImage(img, -len / 2, -ah / 2, len, ah);
-          break;
-        }
+        if (drawGershomArrow(ctx)) break;
       }
       if (d.art === "heal" || d.art === "vial") {
         // Puah's / Shiphrah's vial: their supplied art, tumbling a little, bigger at each level.

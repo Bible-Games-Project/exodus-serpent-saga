@@ -3,7 +3,7 @@ import { BONUS_ART, STAFF_ART, SWORD_ART } from "./uiIcons";
 import { BONUS_ICON, ICON_V2, PASSIVE_ICON, PLAGUE_ICON, iconImage } from "./iconArt";
 import { PlagueBar } from "./PlagueBar";
 export { BONUS_ART } from "./uiIcons";
-import { drawChampionFx, isGroundChampionFx } from "./championFx";
+import { drawChampionFx, drawGershomArrow, isGroundChampionFx } from "./championFx";
 import { isAllyFoe } from "./championAbilities";
 import { drawLocust, drawDarkness, drawChampionFlames, drawFirstbornBolt, drawFirstbornHit, drawPillarCloud, drawPillarFire, drawFireball as drawFireballFx, drawFireExplosion as drawFireExplosionFx, drawCorpseFlame, drawBurningOverlay, drawRedSeaWall as drawRedSeaWallFx, drawRedSeaBurst as drawRedSeaBurstFx, redSeaStaffAngle } from "./plagueFx";
 import frogPlagueAsset from "@/assets/frog-plague.png";
@@ -4166,8 +4166,10 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
   const angle = (e.data?.angle as number | undefined) ?? Math.atan2(e.vel.y, e.vel.x);
   ctx.save();
   ctx.translate(x, y); ctx.rotate(angle);
-  if (e.kind === "arrow") {
-    // plain wooden Egyptian arrow — shaft, bronze head, pale fletching
+  if (e.kind === "arrow" && drawGershomArrow(ctx)) {
+    // The archers and the chariot shoot Gershom's arrow art.
+  } else if (e.kind === "arrow") {
+    // fallback until the art loads: plain wooden Egyptian arrow — shaft, bronze head, pale fletching
     ctx.fillStyle = "#6b421f"; ctx.fillRect(-11, -1, 16, 3);
     ctx.fillStyle = "#8a5a2b"; ctx.fillRect(-11, -1, 16, 1);
     ctx.fillStyle = "#b9832f"; ctx.fillRect(5, -2, 5, 5);
