@@ -24,7 +24,7 @@ import foreC from "@/assets/chariot-v4-leg-fore-c.png";
 import foreFarA from "@/assets/chariot-v4-leg-fore-far-a.png";
 import foreFarB from "@/assets/chariot-v4-leg-fore-far-b.png";
 import foreFarC from "@/assets/chariot-v4-leg-fore-far-c.png";
-import { drawHorseLeg, GALLOP_OFFSETS, HORSE_GALLOP, horseLegPose, type HorseLegRig } from "./horseGait";
+import { drawHorseLeg, GALLOP_OFFSETS, HORSE_GALLOP, type HorseLegRig } from "./horseGait";
 
 export const CHARIOT_ART = {
   W: 1536,
@@ -48,10 +48,14 @@ export const CHARIOT_SHOOT_DUR = 0.55;
 /** progress at which the arrow leaves the bow */
 export const CHARIOT_RELEASE_AT = 0.62;
 
-/** Leg rigs (sprite px); pieces and pivots from split-horse-legs.mjs. */
-const HIND_A: HorseLegRig = { kind: "hind", hip: { x: 885, y: 742 }, knee: [857, 785], fetlock: [882, 898], seg: [[853, 720, 59, 65], [846, 775, 55, 123], [840, 888, 87, 106]] };
-const HIND_B: HorseLegRig = { kind: "hind", hip: { x: 955, y: 742 }, knee: [902, 790], fetlock: [970, 898], seg: [[898, 720, 123, 70], [898, 780, 78, 118], [926, 888, 102, 109]] };
-const FORE: HorseLegRig = { kind: "fore", hip: { x: 1303, y: 726 }, knee: [1303, 790], fetlock: [1291, 892], seg: [[1236, 704, 126, 86], [1247, 780, 69, 112], [1246, 882, 96, 112]] };
+/** Leg rigs (sprite px); pieces, knee and fetlock pivots from split-horse-legs.mjs.
+ * The hip / shoulder pivots sit at the centre of each leg's top edge, so the
+ * edge only tilts in place under the body instead of poking out of it. */
+const HIND_A: HorseLegRig = { kind: "hind", hip: { x: 898, y: 728 }, knee: [875.5, 785], fetlock: [870, 898], seg: [[853, 720, 59, 65], [846, 762, 55, 136], [840, 881, 87, 113]] };
+const HIND_B: HorseLegRig = { kind: "hind", hip: { x: 957, y: 728 }, knee: [929, 790], fetlock: [953.5, 898], seg: [[898, 720, 123, 70], [898, 759, 78, 139], [926, 876, 102, 121]] };
+const FORE: HorseLegRig = { kind: "fore", hip: { x: 1288, y: 714 }, knee: [1282.5, 790], fetlock: [1276.5, 892], seg: [[1236, 704, 126, 86], [1247, 764, 65, 128], [1246, 872, 96, 122]] };
+/** Chariot legs are ~0.6x the knight's (in sprite px), so strides shrink too. */
+const LEG_SCALE = 0.62;
 /** The shadowed far fore leg stands a little ahead of the near one. */
 const FAR_FORE_DX = 26;
 
@@ -103,25 +107,27 @@ export function drawChariotArt(ctx: CanvasRenderingContext2D, pose: ChariotPose)
   if (!ensureChariotArt() || !bodyImg || !wheelImg || !legImgs) return;
   const { W, H, PX, CX, FOOT_Y } = CHARIOT_ART;
   const u = pose.phase / (Math.PI * 2);
-  // The rig lifts a pixel in the gallop's moment of suspension.
-  const bounce = Math.sin(Math.PI * 2 * (u - 0.62)) > 0.5 ? -1 : 0;
   // Recoil: the archer's whole rig nudges back a pixel as the arrow flies.
   const sh = pose.shoot;
   const recoil = sh != null && sh > CHARIOT_RELEASE_AT && sh < CHARIOT_RELEASE_AT + 0.15 ? -1 : 0;
 
   ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.translate(Math.round(pose.x), Math.round(pose.groundY) + bounce);
+  // Smooth sampling: the rotating legs and wheel would shimmer with nearest-neighbour.
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  // The horse and the cab are one picture, so the rig does not bob: the
+  // hooves stay planted on the ground while they push.
+  ctx.translate(Math.round(pose.x), Math.round(pose.groundY));
   if (pose.flip === -1) ctx.scale(-1, 1);
   ctx.translate(-CX * PX + recoil, -FOOT_Y * PX);
 
   // Far legs first (far fore, far hind), then the near ones.
   const g = GALLOP_OFFSETS;
   const l = legImgs;
-  drawHorseLeg(ctx, l.foreFar, FORE, horseLegPose(u + g.foreFar, "fore", HORSE_GALLOP), PX, FAR_FORE_DX);
-  drawHorseLeg(ctx, l.hindA, HIND_A, horseLegPose(u + g.hindFar, "hind", HORSE_GALLOP), PX);
-  drawHorseLeg(ctx, l.hindB, HIND_B, horseLegPose(u + g.hindNear, "hind", HORSE_GALLOP), PX);
-  drawHorseLeg(ctx, l.fore, FORE, horseLegPose(u + g.foreNear, "fore", HORSE_GALLOP), PX);
+  drawHorseLeg(ctx, l.foreFar, FORE, u + g.foreFar, HORSE_GALLOP, PX, FAR_FORE_DX, 0, LEG_SCALE);
+  drawHorseLeg(ctx, l.hindA, HIND_A, u + g.hindFar, HORSE_GALLOP, PX, 0, 0, LEG_SCALE);
+  drawHorseLeg(ctx, l.hindB, HIND_B, u + g.hindNear, HORSE_GALLOP, PX, 0, 0, LEG_SCALE);
+  drawHorseLeg(ctx, l.fore, FORE, u + g.foreNear, HORSE_GALLOP, PX, 0, 0, LEG_SCALE);
   ctx.drawImage(bodyImg, 0, 0, W * PX, H * PX);
 
   // The wheel sits in front of the cab and rolls around its hub.

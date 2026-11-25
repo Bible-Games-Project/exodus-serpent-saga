@@ -144,21 +144,23 @@ export const DEFAULT_SOUNDS: Record<string, string> = {
 /**
  * The maintainer's newer picks; they win over the above.
  * 2026-11-24: only the coin (gem) pickup and the UI keep their sounds; every
- * other action is silent, except enemy deaths (a soft puff of smoke, see
- * scripts/claude-sounds/smoke.ts) and the blessing picks, which play the
- * former level-up sound. Levelling up itself is silent.
+ * other action is silent, except enemy deaths and the blessing picks, which
+ * play the former level-up sound. Levelling up itself is silent.
+ * 2026-11-25: enemy deaths play a soft pop (ElevenLabs, see
+ * scripts/claude-sounds/eleven-death.ts) instead of the puff of smoke; the
+ * smoke and the other new takes stay selectable in Sound testing.
  */
 function PICKS(): Record<string, string> {
   const C = "audio/Library/Claude/";
-  const SMOKE = "audio/Library/ClaudeFx/";
+  const DEATH = "audio/Library/ElevenFx/";
   const keep = (id: string) => id === "pickup.xp" || SOUND_EVENTS.find((e) => e.id === id)?.category === "ui";
   const out: Record<string, string> = {};
   for (const ev of SOUND_EVENTS) if (!keep(ev.id)) out[ev.id] = "";
   Object.assign(out, {
-    "enemy.death.small": `${SMOKE}enemy-death-smoke-1.mp3`,
-    "enemy.death.medium": `${SMOKE}enemy-death-smoke-1.mp3`,
-    "enemy.death.large": `${SMOKE}enemy-death-smoke-2.mp3`,
-    "enemy.death.elite": `${SMOKE}enemy-death-smoke-2.mp3`,
+    "enemy.death.small": `${DEATH}enemy-death-pop-1.mp3`,
+    "enemy.death.medium": `${DEATH}enemy-death-pop-1.mp3`,
+    "enemy.death.large": `${DEATH}enemy-death-pop-2.mp3`,
+    "enemy.death.elite": `${DEATH}enemy-death-pop-2.mp3`,
     "event.blessing": `${C}event-levelup-1.mp3`,
     "event.plague.unlock": `${C}event-levelup-1.mp3`,
     "event.plague.evolve": `${C}event-levelup-1.mp3`,
@@ -179,6 +181,11 @@ function local(): Record<string, string> {
   if (typeof window === "undefined") return {};
   try {
     cache = (JSON.parse(window.localStorage.getItem(KEY) ?? "null") as Record<string, string> | null) ?? {};
+    // The smoke puff was replaced on 2026-11-25: a browser pick of it must not
+    // hide the new default death sound.
+    for (const [id, path] of Object.entries(cache)) {
+      if (id.startsWith("enemy.death.") && path.includes("enemy-death-smoke")) delete cache[id];
+    }
   } catch {
     cache = {};
   }

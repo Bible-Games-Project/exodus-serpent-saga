@@ -2319,7 +2319,7 @@ function drawWolf(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   drawWolfArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
-    walkPhase: e.animT * (awake ? 11 : 1),
+    walkPhase: e.animT * (awake ? 7 : 1),
     running: awake && leap == null,
     leap,
   });
@@ -2533,7 +2533,7 @@ function drawSpearKnight(ctx: CanvasRenderingContext2D, e: Entity, camX: number,
   drawSpearKnightArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
-    walkPhase: e.animT * (charging ? 9 : 5),
+    walkPhase: e.animT * (charging ? 13 : 8),
     moving: true,
     charging,
   });

@@ -1,0 +1,42 @@
+{
+  "source": "ElevenLabs",
+  "license": "Generated for this game with the ElevenLabs sound-effects API",
+  "sounds": [
+    {
+      "file": "enemy-death-thud-1.mp3",
+      "name": "Enemy falls: soft thud and sand",
+      "group": "Enemies (ElevenLabs)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-thud-2.mp3",
+      "name": "Enemy falls: soft thud and sand 2",
+      "group": "Enemies (ElevenLabs)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-pop-1.mp3",
+      "name": "Enemy defeated: soft pop",
+      "group": "Enemies (ElevenLabs)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-pop-2.mp3",
+      "name": "Enemy defeated: soft pop 2",
+      "group": "Enemies (ElevenLabs)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-hit-1.mp3",
+      "name": "Enemy defeated: final hit",
+      "group": "Enemies (ElevenLabs)",
+      "action": "enemy.death.small"
+    },
+    {
+      "file": "enemy-death-chime-1.mp3",
+      "name": "Enemy defeated: low chime",
+      "group": "Enemies (ElevenLabs)",
+      "action": "enemy.death.small"
+    }
+  ]
+}
