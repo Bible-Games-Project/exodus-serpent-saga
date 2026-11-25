@@ -12,7 +12,8 @@ import flyAsset from "@/assets/spear-fly2.png";
 export const SPEAR_SOLDIER_ART = {
   W: 1024,
   H: 1536,
-  PX: 0.066,
+  /** 10% larger than the original 0.066 (2026-11-25). */
+  PX: 0.0726,
   /** x of his body centre inside the sprite */
   CX: 372,
 } as const;

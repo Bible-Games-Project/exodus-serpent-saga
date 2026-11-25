@@ -2319,7 +2319,7 @@ function drawWolf(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
   drawWolfArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
-    walkPhase: e.animT * (awake ? 7.5 : 1),
+    walkPhase: e.animT * (awake ? 11 : 1),
     running: awake && leap == null,
     leap,
   });
@@ -2594,7 +2594,7 @@ function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: numbe
   drawChariotArt(ctx, {
     x, groundY,
     flip: e.facing === -1 ? -1 : 1,
-    phase: e.animT * 4,
+    phase: e.animT * 8,
     wheelAngle: (e.data?.wheelAngle as number | undefined) ?? 0,
     shoot: (e.data?.shootProgress as number | undefined) ?? null,
   });
@@ -4188,9 +4188,9 @@ function drawEnemyProjectile(ctx: CanvasRenderingContext2D, e: Entity, camX: num
     ctx.fillStyle = "#a0a0a0"; ctx.fillRect(6, -3, 6, 5);
     ctx.fillStyle = "#ffffff"; ctx.fillRect(10, -1, 2, 2);
   } else if (e.kind === "magelight") {
-    // Sorcerer's ball of light — chunky pixels, unrotated, in the staff's colour.
+    // Sorcerer's ball of light — a smooth glowing orb with a short tail.
     ctx.restore();
-    drawMageLightBall(ctx, x, y, e.animT);
+    drawMageLightBall(ctx, x, y, e.animT, angle);
     return;
   } else if (e.kind === "magebolt") {
     const t = e.animT;
@@ -5300,7 +5300,7 @@ const BEAST_HEAD = new Set(['wolf', 'jackal', 'lion', 'camel']);
  *  centre (in the facing direction), screen px above its position]. */
 const ENEMY_EYE: Record<string, readonly [number, number]> = {
   soldier: [4.5, 53.5], axesoldier: [5.6, 57.5], archer: [4.7, 62], shieldsoldier: [7.4, 52.5],
-  heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5, 63.5], spearknight: [33, 82],
+  heavysoldier: [3.6, 86], agilesoldier: [7.8, 40.5], spearsoldier: [5.5, 70.6], spearknight: [33, 82],
   mage: [3.6, 63], chariotarcher: [-39, 106], swordsoldier: [3.2, 61.4], tridentsoldier: [6.2, 64.5], wolf: [20, 14], jackal: [15.3, 22.5], lion: [34.5, 44.5],
   camel: [25.6, 31.5], cobra: [2, 30.5],
 };

@@ -4,11 +4,17 @@
 //   body   — head, ears, neck, torso, tail and hips (down to the leg cut)
 //   legRN  — near hind leg      legRF — far hind leg
 //   legFN  — near front leg     legFF — far front leg
-import bodyAsset from "@/assets/wolf-body.png";
-import legRNAsset from "@/assets/wolf-legrn.png";
-import legRFAsset from "@/assets/wolf-legrf.png";
-import legFNAsset from "@/assets/wolf-legfn.png";
-import legFFAsset from "@/assets/wolf-legff.png";
+//
+// v2 layers (2026-11-25): two stray pieces moved to the right layer (a belly
+// bit from the far hind leg into the body, a toe from the far fore leg into the
+// near fore leg) and the legs upscaled x4 with their diagonal pixel joints
+// bridged, so they stay whole when they swing. The original wolf-*.png files
+// are kept untouched.
+import bodyAsset from "@/assets/wolf-v2-body.png";
+import legRNAsset from "@/assets/wolf-v2-legrn.png";
+import legRFAsset from "@/assets/wolf-v2-legrf.png";
+import legFNAsset from "@/assets/wolf-v2-legfn.png";
+import legFFAsset from "@/assets/wolf-v2-legff.png";
 
 export const WOLF_ART = {
   /** sprite-pixel size of the shared layer canvas */
@@ -18,6 +24,12 @@ export const WOLF_ART = {
   PX: 1.0,
   /** x of the body centre inside the sprite */
   CX: 26,
+} as const;
+
+/** Top of each leg (where it meets the body), the pivot of the gallop swing. */
+const LEG_PIVOT = {
+  RN: { x: 14, y: 15.5 }, RF: { x: 21.5, y: 15.5 },
+  FN: { x: 37, y: 15.5 }, FF: { x: 42, y: 17.5 },
 } as const;
 
 /** duration (seconds) of the pouncing leap attack */
@@ -88,17 +100,15 @@ export function drawWolfArt(ctx: CanvasRenderingContext2D, pose: WolfPose): void
   const leaping = pose.leap != null && pose.leap > 0 && pose.leap < 1;
   const o = leaping ? leapOffset(pose.leap as number) : { dx: 0, dy: 0 };
 
-  // Running: diagonal gait, near hind + far front swinging against the others.
-  const swing = pose.running && !leaping ? Math.sin(pose.walkPhase) : 0;
-  const stepA = Math.round(swing * 3);
-  const stepB = -stepA;
-  const liftA = stepA > 0 ? -2 : 0;
-  const liftB = stepB > 0 ? -2 : 0;
+  // Running: a gallop. Each leg swings from its own hip/shoulder (never slides
+  // under the body), hind pair against the front pair, far legs a beat late.
+  const running = pose.running && !leaping;
+  const ph = pose.walkPhase;
   // Waiting: a slow breath, one pixel, plus the same for the planted legs.
   const idleBreath = !pose.running && !leaping
     ? (Math.sin(pose.walkPhase * 0.25) > 0.6 ? -1 : 0)
     : 0;
-  const bodyDY = pose.running && !leaping ? (Math.cos(pose.walkPhase) > 0.5 ? -1 : 0) : idleBreath;
+  const bodyDY = running ? -Math.max(0, Math.cos(ph * 2)) * 1.5 : idleBreath;
   const idle = !pose.running && !leaping;
 
   ctx.save();
@@ -127,11 +137,17 @@ export function drawWolfArt(ctx: CanvasRenderingContext2D, pose: WolfPose): void
     stampIdleLeg(l.legFF, 43, 17, Math.PI / 9, 0);
     stampIdleLeg(l.legRN, 13, 15, -Math.PI / 4.5, 4);
     stampIdleLeg(l.legFN, 37, 15, Math.PI / 12, 0);
+  } else if (running) {
+    const A = 0.42;
+    stampIdleLeg(l.legRF, LEG_PIVOT.RF.x, LEG_PIVOT.RF.y, Math.sin(ph - 0.7) * A, bodyDY);
+    stampIdleLeg(l.legFF, LEG_PIVOT.FF.x, LEG_PIVOT.FF.y, Math.sin(ph + Math.PI - 0.7) * A, bodyDY);
+    stampIdleLeg(l.legRN, LEG_PIVOT.RN.x, LEG_PIVOT.RN.y, Math.sin(ph) * A, bodyDY);
+    stampIdleLeg(l.legFN, LEG_PIVOT.FN.x, LEG_PIVOT.FN.y, Math.sin(ph + Math.PI) * A, bodyDY);
   } else {
-    stamp(l.legRF, stepB, liftB);
-    stamp(l.legFF, stepA, liftA);
-    stamp(l.legRN, stepA, liftA);
-    stamp(l.legFN, stepB, liftB);
+    stamp(l.legRF, 0, 0);
+    stamp(l.legFF, 0, 0);
+    stamp(l.legRN, 0, 0);
+    stamp(l.legFN, 0, 0);
   }
   stamp(l.body, 0, bodyDY);
   ctx.restore();

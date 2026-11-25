@@ -163,33 +163,52 @@ export function drawMageAura(
   ctx.restore();
 }
 
-/** Pixel-art energy ball cast from the red staff jewel. */
-export function drawMageLightBall(ctx: CanvasRenderingContext2D, x: number, y: number, t: number): void {
-  const P = 3;
+/**
+ * Energy ball cast from the red staff jewel: a smooth glowing orb (soft halo,
+ * hot core, a short fading tail along `angle` and two orbiting embers).
+ */
+export function drawMageLightBall(ctx: CanvasRenderingContext2D, x: number, y: number, t: number, angle?: number): void {
   ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  const px = Math.round(x);
-  const py = Math.round(y);
-  const wob = Math.sin(t * 18) > 0;
-  ctx.globalAlpha = 0.56;
-  ctx.fillStyle = MAGE_LIGHT.deep;
-  ctx.fillRect(px - P * 3, py - P, P * 6, P * 2);
-  ctx.fillRect(px - P, py - P * 3, P * 2, P * 6);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = MAGE_LIGHT.outer;
-  ctx.fillRect(px - P * 2, py - P * 2, P * 4, P * 4);
-  ctx.fillStyle = MAGE_LIGHT.mid;
-  ctx.fillRect(px - P, py - P * 2, P * 2, P * 4);
-  ctx.fillRect(px - P * 2, py - P, P * 4, P * 2);
-  ctx.fillStyle = MAGE_LIGHT.core;
-  ctx.fillRect(px - P, py - P, P * 2, P * 2);
+  ctx.imageSmoothingEnabled = true;
+  ctx.translate(x, y);
+  const pulse = 1 + Math.sin(t * 14) * 0.08;
+  if (angle != null) {
+    // Tail: fading puffs trailing behind the flight direction.
+    const tx = -Math.cos(angle), ty = -Math.sin(angle);
+    const puffs = [[6, 5.2, 0.34], [11, 4, 0.22], [15.5, 2.8, 0.12]] as const;
+    for (const [d, r, al] of puffs) {
+      ctx.globalAlpha = al;
+      ctx.fillStyle = MAGE_LIGHT.mid;
+      ctx.beginPath(); ctx.arc(tx * d, ty * d, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  // Soft halo.
+  const R = 13 * pulse;
+  const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, R);
+  halo.addColorStop(0, "rgba(255, 115, 80, 0.55)");
+  halo.addColorStop(0.55, "rgba(189, 39, 48, 0.22)");
+  halo.addColorStop(1, "rgba(89, 17, 36, 0)");
+  ctx.fillStyle = halo;
+  ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+  // Orb.
+  const r = 6.2 * pulse;
+  const orb = ctx.createRadialGradient(-1.2, -1.2, 0.5, 0, 0, r);
+  orb.addColorStop(0, MAGE_LIGHT.core);
+  orb.addColorStop(0.45, MAGE_LIGHT.mid);
+  orb.addColorStop(1, MAGE_LIGHT.outer);
+  ctx.fillStyle = orb;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  // Glint.
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath(); ctx.arc(-2, -2.2, 1.5, 0, Math.PI * 2); ctx.fill();
+  // Two embers circling the orb.
   ctx.fillStyle = MAGE_LIGHT.ember;
-  if (wob) {
-    ctx.fillRect(px - P * 3, py - P * 3, P, P);
-    ctx.fillRect(px + P * 2, py + P * 2, P, P);
-  } else {
-    ctx.fillRect(px + P * 2, py - P * 3, P, P);
-    ctx.fillRect(px - P * 3, py + P * 2, P, P);
+  for (let i = 0; i < 2; i++) {
+    const a = t * 6 + i * Math.PI;
+    ctx.globalAlpha = 0.75;
+    ctx.beginPath(); ctx.arc(Math.cos(a) * 9.5, Math.sin(a) * 4.5, 1.3, 0, Math.PI * 2); ctx.fill();
   }
   ctx.restore();
 }
