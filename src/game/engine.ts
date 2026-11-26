@@ -838,6 +838,7 @@ export function update(state: GameState, dt: number) {
     } else if (e.team === "ally") {
       updateChampionAlly(state, e, dt, champHelpers(state));
       updateCompanion(state, e, dt);
+      spaceChampion(state, e, dt);
     } else if (e.team === "projectile") {
       // The living serpent is viewport-bound, not timer-bound: it remains in
       // play for as long as Moses can still see any part of it.
@@ -2540,6 +2541,39 @@ function updateCompanion(state: GameState, e: Entity, dt: number) {
     // No valid target until the next permitted refresh: keep moving.
     allyRetreat(e, def, dt);
   }
+  resolveObstacles(e.pos, e.radius, state);
+  wrapPos(state, e.pos);
+}
+
+/** Champions closer than this (px) to each other drift apart. */
+const CHAMPION_SPACING = 72;
+
+/**
+ * Champions tend to pick the same target and flee the same threats, so they
+ * walk as a group. Keep the group, but give each one some room: a soft push
+ * away from any other standing champion inside CHAMPION_SPACING.
+ */
+function spaceChampion(state: GameState, e: Entity, dt: number) {
+  const d = e.data;
+  if (!d || d.downedUntil || d.attackT != null || d.standupUntil || (d.summonUntil && state.now < (d.summonUntil as number))) return;
+  let px = 0, py = 0;
+  for (const npcId of state.npcs.values()) {
+    if (npcId === e.id) continue;
+    const o = state.entities.get(npcId);
+    if (!o || o.data?.downedUntil) continue;
+    const dx = wrapDelta(e.pos.x, o.pos.x, state.worldW);
+    const dy = wrapDelta(e.pos.y, o.pos.y, state.worldH);
+    const dd = Math.hypot(dx, dy);
+    if (dd >= CHAMPION_SPACING) continue;
+    const w = 1 - dd / CHAMPION_SPACING;
+    // Exactly on top of each other: split along a direction fixed by the ids.
+    const ux = dd > 0.01 ? dx / dd : Math.cos(e.id * 2.4), uy = dd > 0.01 ? dy / dd : Math.sin(e.id * 2.4);
+    px += ux * w; py += uy * w;
+  }
+  if (!px && !py) return;
+  const pl = Math.hypot(px, py);
+  const spd = 90 * Math.min(1, pl);
+  e.pos.x += (px / pl) * spd * dt; e.pos.y += (py / pl) * spd * dt;
   resolveObstacles(e.pos, e.radius, state);
   wrapPos(state, e.pos);
 }

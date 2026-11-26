@@ -29,7 +29,7 @@ import { drawWolfArt, ensureWolfArt, WOLF_ART } from "./wolfArt";
 import { drawLionArt, ensureLionArt, LION_ART } from "./lionArt";
 import { drawSpearKnightArt, ensureSpearKnightArt, SPEAR_KNIGHT_ART } from "./spearKnightArt";
 import { drawMageArt, ensureMageArt, MAGE_ART, mageStaffTip, drawMageStaffLight, drawMageLightBall, drawMageAura, MAGE_LIGHT } from "./mageArt";
-import { drawChariotArt, ensureChariotArt, CHARIOT_ART } from "./chariotArt";
+import { drawChariotArt, ensureChariotArt, CHARIOT_ART, CHARIOT_WHEEL } from "./chariotArt";
 import { drawSwordSoldierArt, ensureSwordArt, SWORD_SOLDIER_ART, SWORD_ELBOW_SCREEN, SWORD_LUNGE_PX, swordArtHeight, swordSlashAt } from "./swordSoldierArt";
 import { drawTridentSoldierArt, ensureTridentArt, TRIDENT_ART, tridentArtHeight } from "./tridentSoldierArt";
 
@@ -2584,8 +2584,51 @@ function drawMage(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: 
 }
 
 // ------------- Archer chariot (supplied sprite, always on the move) -------------
+/** Recent wheel contact points (world px, ms) per chariot, for a short rut in the sand. */
+const chariotTrails = new Map<number, { x: number; y: number; t: number }[]>();
+const TRAIL_MS = 650;
+
+/** A short, fading wheel track behind the archer chariot. Render-only. */
+function drawChariotTrail(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number) {
+  const now = performance.now();
+  const flip = e.facing === -1 ? -1 : 1;
+  const wx = e.pos.x + (CHARIOT_WHEEL.X - CHARIOT_ART.CX) * CHARIOT_ART.PX * flip;
+  const wy = e.pos.y + 8;
+  let pts = chariotTrails.get(e.id);
+  if (!pts) {
+    pts = [];
+    chariotTrails.set(e.id, pts);
+    if (chariotTrails.size > 24) {
+      for (const [id, p] of chariotTrails) if (!p.length || now - p[p.length - 1].t > 2000) chariotTrails.delete(id);
+    }
+  }
+  const last = pts[pts.length - 1];
+  if (!last || Math.hypot(wx - last.x, wy - last.y) > 3) pts.push({ x: wx, y: wy, t: now });
+  else last.t = now;
+  // A jump (teleport, respawn) starts a fresh track.
+  if (last && Math.hypot(wx - last.x, wy - last.y) > 60) pts.splice(0, pts.length - 1);
+  while (pts.length && now - pts[0].t > TRAIL_MS) pts.shift();
+  if (pts.length < 2) return;
+  ctx.save();
+  ctx.lineCap = "round";
+  for (let i = 1; i < pts.length; i++) {
+    const k = 1 - (now - pts[i].t) / TRAIL_MS;
+    if (k <= 0) continue;
+    const ax = pts[i - 1].x - camX, ay = pts[i - 1].y - camY, bx = pts[i].x - camX, by = pts[i].y - camY;
+    // Dusty halo, then the darker rut itself.
+    ctx.strokeStyle = `rgba(150,120,80,${(0.18 * k).toFixed(3)})`;
+    ctx.lineWidth = 3 + 3 * k;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+    ctx.strokeStyle = `rgba(80,60,38,${(0.32 * k).toFixed(3)})`;
+    ctx.lineWidth = 1 + 1.5 * k;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+  }
+  ctx.restore();
+}
+
 function drawChariotArcher(ctx: CanvasRenderingContext2D, e: Entity, camX: number, camY: number): boolean {
   if (!ensureChariotArt()) return false;
+  drawChariotTrail(ctx, e, camX, camY);
   const x = Math.round(e.pos.x - camX);
   const groundY = Math.round(e.pos.y - camY + 8);
   drawPixelShadow(ctx, x, groundY + 1, CHARIOT_ART.W * CHARIOT_ART.PX * 0.45, {

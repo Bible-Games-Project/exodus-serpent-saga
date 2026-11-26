@@ -48,6 +48,16 @@ export const HORSE_STILL: HorseGait = { duty: 1, stride: 0, liftFore: 0, liftHin
 /** Footfall offsets (fraction of the stride) for far/near hind and fore legs. */
 export const WALK_OFFSETS = { hindFar: 0.5, hindNear: 0, foreFar: 0.75, foreNear: 0.25 } as const;
 export const GALLOP_OFFSETS = { hindFar: 0, hindNear: 0.1, foreFar: 0.36, foreNear: 0.46 } as const;
+/** Running pace used in game (2026-11-26): the legs of each pair alternate
+ * (half a stride apart) and the diagonals move nearly together, like a fast
+ * trot, so the fore legs and the hind legs never travel as one block. Two
+ * moments of suspension per stride, at u ≈ 0.45 and 0.95. */
+export const RUN_OFFSETS = { hindFar: 0, hindNear: 0.5, foreFar: 0.6, foreNear: 0.1 } as const;
+
+/** How much the upper leg's top edge tilts with the leg (0 = stays flat). */
+const TOP_TILT = 0.25;
+/** Largest swing of the upper leg (radians). */
+const HIP_LIMIT = 0.5;
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
@@ -100,32 +110,55 @@ export function drawHorseLeg(
   const t1 = phi - side * psi;
   const nkx = a * Math.cos(t1), nky = a * Math.sin(t1);
   const t2 = Math.atan2(d * Math.sin(phi) - nky, d * Math.cos(phi) - nkx);
-  const hip = wrap(t1 - Math.atan2(ky - hy, kx - hx));
-  const knee = wrap(t2 - Math.atan2(fy - ky, fx - kx) - hip);
+  let hip = wrap(t1 - Math.atan2(ky - hy, kx - hx));
+  let knee = wrap(t2 - Math.atan2(fy - ky, fx - kx) - hip);
+  // A lifted hind leg would otherwise fling its thigh far back: keep the
+  // upper leg within a natural swing and point the cannon at the hoof target.
+  if (Math.abs(hip) > HIP_LIMIT) {
+    hip = Math.sign(hip) * HIP_LIMIT;
+    const ta = hip + Math.atan2(ky - hy, kx - hx);
+    const nx = a * Math.cos(ta), ny = a * Math.sin(ta);
+    knee = wrap(Math.atan2(ty - ny, tx - nx) - Math.atan2(fy - ky, fx - kx) - hip);
+  }
   // The hoof stays upright on the ground and tips back while it travels.
   const fetlock = -(hip + knee) + foot.fold;
 
-  const piv = (x: number, y: number, ang: number) => {
-    ctx.translate(x * px, y * px);
-    ctx.rotate(ang);
-    ctx.translate(-x * px, -y * px);
-  };
+  // World positions of the knee and fetlock after the solve.
+  const rot = (x: number, y: number, t: number) => [x * Math.cos(t) - y * Math.sin(t), x * Math.sin(t) + y * Math.cos(t)];
+  const [vx, vy] = [kx - hx, ky - hy];
+  const [rkx, rky] = rot(vx, vy, hip);
+  const K = [hx + rkx, hy + rky];
+  const [rfx, rfy] = rot(fx - kx, fy - ky, hip + knee);
+  const F = [K[0] + rfx, K[1] + rfy];
+
+  const base = ctx.getTransform();
   const piece = (k: number) => {
     const [x, y, w, h] = rig.seg[k];
     ctx.drawImage(imgs[k], (x + dx) * px, (y + bodyDY) * px, w * px, h * px);
   };
+  const place = (to: number[], from: number[], ang: number) => {
+    ctx.setTransform(base);
+    ctx.translate(to[0] * px, to[1] * px);
+    ctx.rotate(ang);
+    ctx.translate(-from[0] * px, -from[1] * px);
+  };
   ctx.save();
-  piv(hx, hy, hip);
-  const upper = ctx.getTransform();
-  piv(kx, ky, knee);
-  const cannon = ctx.getTransform();
-  piv(fx, fy, fetlock);
   // Hoof first, then cannon, then upper: each piece covers the round cap of
   // the one below it, so the joints stay closed while they fold.
+  place(F, [fx, fy], hip + knee + fetlock);
   piece(2);
-  ctx.setTransform(cannon);
+  place(K, [kx, ky], hip + knee);
   piece(1);
-  ctx.setTransform(upper);
+  // The upper leg is not turned rigidly: its bone (hip -> knee) follows the
+  // solve, but its top edge, cut flat where the body hides it, only tilts a
+  // quarter as much, so no corner drops out from under the belly.
+  const tilt = hip * TOP_TILT;
+  const u1 = [Math.cos(tilt), Math.sin(tilt)];
+  const w = [(rkx - vx * u1[0]) / vy, (rky - vx * u1[1]) / vy];
+  ctx.setTransform(base);
+  ctx.translate(hx * px, hy * px);
+  ctx.transform(u1[0], u1[1], w[0], w[1], 0, 0);
+  ctx.translate(-hx * px, -hy * px);
   piece(0);
   ctx.restore();
 }

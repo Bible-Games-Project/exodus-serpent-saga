@@ -335,11 +335,13 @@ function drawMiriamTornado(ctx: CanvasRenderingContext2D, x: number, y: number, 
 
 /** How see-through the vial splashes are at most (1 = solid). */
 const SPLASH_ALPHA = 0.7;
+/** Shiphrah's ground splash art is kept faint so it reads as a stain, not a sticker (2026-11-26). */
+const SHIPHRAH_SPLASH_ALPHA = 0.25;
 /** Shades of Shiphrah's blue splash art, deep to bright. */
 const SHIPHRAH_TINT = ["#1f4fe0", "#2f9bff", "#7fd8ff", "#e8f8ff"];
 
 /** Shiphrah's blast: her supplied splash art opening on the ground over the whole
- *  reach, half see-through, with a bright copy shimmering over it, ripples
+ *  reach, mostly see-through, with a bright copy shimmering over it, ripples
  *  running out, drops flying and bubbles rising in its blues. */
 function drawShiphrahSplash(ctx: CanvasRenderingContext2D, x: number, y: number, e: Entity, life: number): void {
   const d = e.data ?? {};
@@ -353,13 +355,13 @@ function drawShiphrahSplash(ctx: CanvasRenderingContext2D, x: number, y: number,
   const open = 0.5 + 0.5 * (1 - (1 - Math.min(1, k * 3)) ** 3);
   if (img) {
     const sw = r * 2.2 * open, sh = sw * img.naturalHeight / img.naturalWidth;
-    ctx.globalAlpha = fade * SPLASH_ALPHA;
+    ctx.globalAlpha = fade * SHIPHRAH_SPLASH_ALPHA;
     ctx.save(); ctx.rotate(Math.sin(seed) * 0.3 + k * 0.35);
     ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
     // A brighter copy shimmering and turning the other way.
     ctx.globalCompositeOperation = "lighter";
     ctx.rotate(-k * 0.7);
-    ctx.globalAlpha = fade * 0.22 * (0.5 + 0.5 * Math.sin(k * 18));
+    ctx.globalAlpha = fade * 0.08 * (0.5 + 0.5 * Math.sin(k * 18));
     ctx.drawImage(img, -sw * 0.47, -sh * 0.47, sw * 0.94, sh * 0.94);
     ctx.restore();
   }

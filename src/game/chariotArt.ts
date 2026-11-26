@@ -10,21 +10,24 @@
 // and the fetlock (chariot-v4-leg-<id>-a/b/c.png, see horseGait.ts) so the
 // horse gallops with folding legs. The v3 layers and the previous chariot
 // (chariot-v2-*.png) are kept in assets for rollback.
+// v5 (2026-11-26): upper leg pieces extended under the body
+// (chariot-v5-leg-<id>-a.png), hips above the knees, and RUN_OFFSETS so the
+// fore and hind pairs alternate. The v4 a-pieces are kept.
 import bodyAsset from "@/assets/chariot-v4-body.png";
 import wheelAsset from "@/assets/chariot-v4-wheel.png";
-import hindAa from "@/assets/chariot-v4-leg-hind-a-a.png";
+import hindAa from "@/assets/chariot-v5-leg-hind-a-a.png";
 import hindAb from "@/assets/chariot-v4-leg-hind-a-b.png";
 import hindAc from "@/assets/chariot-v4-leg-hind-a-c.png";
-import hindBa from "@/assets/chariot-v4-leg-hind-b-a.png";
+import hindBa from "@/assets/chariot-v5-leg-hind-b-a.png";
 import hindBb from "@/assets/chariot-v4-leg-hind-b-b.png";
 import hindBc from "@/assets/chariot-v4-leg-hind-b-c.png";
-import foreA from "@/assets/chariot-v4-leg-fore-a.png";
+import foreA from "@/assets/chariot-v5-leg-fore-a.png";
 import foreB from "@/assets/chariot-v4-leg-fore-b.png";
 import foreC from "@/assets/chariot-v4-leg-fore-c.png";
-import foreFarA from "@/assets/chariot-v4-leg-fore-far-a.png";
+import foreFarA from "@/assets/chariot-v5-leg-fore-far-a.png";
 import foreFarB from "@/assets/chariot-v4-leg-fore-far-b.png";
 import foreFarC from "@/assets/chariot-v4-leg-fore-far-c.png";
-import { drawHorseLeg, GALLOP_OFFSETS, HORSE_GALLOP, type HorseLegRig } from "./horseGait";
+import { drawHorseLeg, HORSE_GALLOP, RUN_OFFSETS, type HorseLegRig } from "./horseGait";
 
 export const CHARIOT_ART = {
   W: 1536,
@@ -51,9 +54,9 @@ export const CHARIOT_RELEASE_AT = 0.62;
 /** Leg rigs (sprite px); pieces, knee and fetlock pivots from split-horse-legs.mjs.
  * The hip / shoulder pivots sit at the centre of each leg's top edge, so the
  * edge only tilts in place under the body instead of poking out of it. */
-const HIND_A: HorseLegRig = { kind: "hind", hip: { x: 898, y: 728 }, knee: [875.5, 785], fetlock: [870, 898], seg: [[853, 720, 59, 65], [846, 762, 55, 136], [840, 881, 87, 113]] };
-const HIND_B: HorseLegRig = { kind: "hind", hip: { x: 957, y: 728 }, knee: [929, 790], fetlock: [953.5, 898], seg: [[898, 720, 123, 70], [898, 759, 78, 139], [926, 876, 102, 121]] };
-const FORE: HorseLegRig = { kind: "fore", hip: { x: 1288, y: 714 }, knee: [1282.5, 790], fetlock: [1276.5, 892], seg: [[1236, 704, 126, 86], [1247, 764, 65, 128], [1246, 872, 96, 122]] };
+const HIND_A: HorseLegRig = { kind: "hind", hip: { x: 875.5, y: 728 }, knee: [875.5, 785], fetlock: [870, 898], seg: [[853, 680, 59, 105], [846, 762, 55, 136], [840, 881, 87, 113]] };
+const HIND_B: HorseLegRig = { kind: "hind", hip: { x: 929, y: 728 }, knee: [929, 790], fetlock: [953.5, 898], seg: [[898, 680, 123, 110], [898, 759, 78, 139], [926, 876, 102, 121]] };
+const FORE: HorseLegRig = { kind: "fore", hip: { x: 1282.5, y: 714 }, knee: [1282.5, 790], fetlock: [1276.5, 892], seg: [[1236, 664, 126, 126], [1247, 764, 65, 128], [1246, 872, 96, 122]] };
 /** Chariot legs are ~0.6x the knight's (in sprite px), so strides shrink too. */
 const LEG_SCALE = 0.62;
 /** The shadowed far fore leg stands a little ahead of the near one. */
@@ -122,7 +125,7 @@ export function drawChariotArt(ctx: CanvasRenderingContext2D, pose: ChariotPose)
   ctx.translate(-CX * PX + recoil, -FOOT_Y * PX);
 
   // Far legs first (far fore, far hind), then the near ones.
-  const g = GALLOP_OFFSETS;
+  const g = RUN_OFFSETS;
   const l = legImgs;
   drawHorseLeg(ctx, l.foreFar, FORE, u + g.foreFar, HORSE_GALLOP, PX, FAR_FORE_DX, 0, LEG_SCALE);
   drawHorseLeg(ctx, l.hindA, HIND_A, u + g.hindFar, HORSE_GALLOP, PX, 0, 0, LEG_SCALE);

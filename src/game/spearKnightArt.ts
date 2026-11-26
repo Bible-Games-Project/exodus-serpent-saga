@@ -7,20 +7,26 @@
 // a planted-then-lifted path and the knees fold to reach it. The walk is a
 // four-beat walk and the charge a gallop. The stiff v3 legs and the previous
 // horse (mounted-joint-*.png) are kept in assets for rollback.
-import bodyAsset from "@/assets/knight-v3-body.png";
-import h1a from "@/assets/knight-v4-leg-h1-a.png";
+//
+// v5 (2026-11-26): the upper leg pieces (knight-v5-leg-<id>-a.png) reach a
+// little up under the coat so no gap opens when they swing, the hip pivots sit
+// straight above the knees, and the charge uses RUN_OFFSETS (fore and hind
+// pairs alternate instead of moving together). knight-v5-body.png has the far
+// hind leg's stray tab cleared. The v4 a-pieces and body are kept.
+import bodyAsset from "@/assets/knight-v5-body.png";
+import h1a from "@/assets/knight-v5-leg-h1-a.png";
 import h1b from "@/assets/knight-v4-leg-h1-b.png";
 import h1c from "@/assets/knight-v4-leg-h1-c.png";
-import h2a from "@/assets/knight-v4-leg-h2-a.png";
+import h2a from "@/assets/knight-v5-leg-h2-a.png";
 import h2b from "@/assets/knight-v4-leg-h2-b.png";
 import h2c from "@/assets/knight-v4-leg-h2-c.png";
-import f1a from "@/assets/knight-v4-leg-f1-a.png";
+import f1a from "@/assets/knight-v5-leg-f1-a.png";
 import f1b from "@/assets/knight-v4-leg-f1-b.png";
 import f1c from "@/assets/knight-v4-leg-f1-c.png";
-import f2a from "@/assets/knight-v4-leg-f2-a.png";
+import f2a from "@/assets/knight-v5-leg-f2-a.png";
 import f2b from "@/assets/knight-v4-leg-f2-b.png";
 import f2c from "@/assets/knight-v4-leg-f2-c.png";
-import { drawHorseLeg, GALLOP_OFFSETS, HORSE_GALLOP, HORSE_STILL, HORSE_WALK, WALK_OFFSETS, type HorseLegRig } from "./horseGait";
+import { drawHorseLeg, HORSE_GALLOP, RUN_OFFSETS, HORSE_STILL, HORSE_WALK, WALK_OFFSETS, type HorseLegRig } from "./horseGait";
 
 export const SPEAR_KNIGHT_ART = {
   W: 1147,
@@ -36,10 +42,10 @@ export const SPEAR_KNIGHT_ART = {
  * The hip / shoulder pivots sit at the centre of each leg's top edge, so the
  * edge only tilts in place under the body instead of poking out of it. h1/f1 are the far legs. */
 const LEGS = {
-  h1: { kind: "hind", hip: { x: 220, y: 973 }, knee: [178, 1045], fetlock: [165, 1235], seg: [[138, 961, 120, 84], [120, 1004, 138, 231], [128, 1204, 113, 132]] },
-  h2: { kind: "hind", hip: { x: 341, y: 945 }, knee: [303.5, 1045], fetlock: [324, 1235], seg: [[258, 926, 172, 119], [258, 1001, 103, 234], [287, 1201, 133, 124]] },
-  f1: { kind: "fore", hip: { x: 622, y: 960 }, knee: [616.5, 1080], fetlock: [610, 1235], seg: [[560, 936, 124, 144], [574, 1046, 110, 189], [564, 1203, 119, 139]] },
-  f2: { kind: "fore", hip: { x: 757, y: 955 }, knee: [721.5, 1080], fetlock: [723, 1235], seg: [[684, 931, 142, 149], [684, 1044, 136, 191], [688, 1203, 124, 134]] },
+  h1: { kind: "hind", hip: { x: 178, y: 973 }, knee: [178, 1045], fetlock: [165, 1235], seg: [[138, 891, 120, 154], [120, 1004, 138, 231], [128, 1204, 113, 132]] },
+  h2: { kind: "hind", hip: { x: 303.5, y: 945 }, knee: [303.5, 1045], fetlock: [324, 1235], seg: [[258, 856, 172, 189], [258, 1001, 103, 234], [287, 1201, 133, 124]] },
+  f1: { kind: "fore", hip: { x: 616.5, y: 960 }, knee: [616.5, 1080], fetlock: [610, 1235], seg: [[560, 866, 124, 214], [574, 1046, 110, 189], [564, 1203, 119, 139]] },
+  f2: { kind: "fore", hip: { x: 721.5, y: 955 }, knee: [721.5, 1080], fetlock: [723, 1235], seg: [[684, 861, 142, 219], [684, 1044, 136, 191], [688, 1203, 124, 134]] },
 } as const satisfies Record<string, HorseLegRig>;
 const URLS = { h1: [h1a, h1b, h1c], h2: [h2a, h2b, h2c], f1: [f1a, f1b, f1c], f2: [f2a, f2b, f2c] } as const;
 
@@ -80,15 +86,15 @@ export function drawSpearKnightArt(ctx: CanvasRenderingContext2D, pose: SpearKni
 
   const gallop = !!pose.charging;
   const gait = !pose.moving ? HORSE_STILL : gallop ? HORSE_GALLOP : HORSE_WALK;
-  const off = gallop ? GALLOP_OFFSETS : WALK_OFFSETS;
+  const off = gallop ? RUN_OFFSETS : WALK_OFFSETS;
   const u = pose.moving ? pose.walkPhase / (Math.PI * 2) : 0;
   const offsets: Record<LegId, number> = { h1: off.hindFar, h2: off.hindNear, f1: off.foreFar, f2: off.foreNear };
-  // Body (sprite px, negative = up): a gallop rises in the moment of
-  // suspension after the fore legs push off; a walk dips gently twice a stride.
+  // Body (sprite px, negative = up): the run rises in its two moments of
+  // suspension (u ≈ 0.45, 0.95) and sinks mid-stance; a walk dips gently twice a stride.
   const bodyDY = !pose.moving ? 0
-    : gallop ? -Math.round(14 * Math.max(0, Math.sin(Math.PI * 2 * (u - 0.5)))) + 4
+    : gallop ? Math.round(-7 * Math.sin(Math.PI * 4 * (u - 0.325)))
     : Math.round(3 * Math.sin(Math.PI * 4 * u));
-  const pitch = pose.moving && gallop ? Math.sin(Math.PI * 2 * (u - 0.15)) * 0.025 : 0;
+  const pitch = pose.moving && gallop ? Math.sin(Math.PI * 4 * (u - 0.2)) * 0.012 : 0;
 
   ctx.save();
   // Smooth sampling: the rotating legs would shimmer with nearest-neighbour.
