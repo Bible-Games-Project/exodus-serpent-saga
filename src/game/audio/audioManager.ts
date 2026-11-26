@@ -236,7 +236,7 @@ export async function previewSound(path: string, id?: string): Promise<boolean> 
 // ---------- music ----------
 // One looping track through the music bus (Settings → Music volume).
 /** The game's song, looped everywhere (menus and runs). */
-export const MAIN_THEME_URL = libraryUrl("audio/Music/the-first-light.mp3");
+export const MAIN_THEME_URL = libraryUrl("audio/Music/rising-three.mp3");
 let musicSrc: { el: HTMLAudioElement; node: MediaElementAudioSourceNode } | null = null;
 
 export function playMusic(url: string | null) {
