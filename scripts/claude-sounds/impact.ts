@@ -8,7 +8,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Mp3Encoder } from "@breezystack/lamejs";
-import { SR, ad, dc, fade, fadeIn, lp, mix, modal, norm, pink, reverb, setSeed, thump, trim, WOOD, scaleTau, type Buf } from "./dsp";
+import { SR, ad, dc, drive, fade, fadeIn, lp, mix, modal, norm, pink, reverb, setSeed, thump, trim, WOOD, scaleTau, type Buf } from "./dsp";
 
 const OUT = join(import.meta.dir, "..", "..", "public", "audio", "Library", "ClaudeFx");
 mkdirSync(OUT, { recursive: true });
@@ -49,8 +49,9 @@ const files = [0, 1, 2].map((t) => `soft-hit-${t + 1}.mp3`);
 pack.sounds = pack.sounds.filter((s: { file: string }) => !files.includes(s.file));
 for (let t = 0; t < 3; t++) {
   setSeed(7300 + t * 389);
-  let b = trim(norm(dc(softHit(t)), 0.9));
-  b = fade(fadeIn(norm(b, 0.8), 0.002), 0.03);
+  // Gentle saturation keeps it round but louder (2026-11-26: 2.5x after "too quiet").
+  let b = trim(norm(drive(norm(dc(softHit(t)), 0.9), 1.6), 0.9));
+  b = fade(fadeIn(norm(b, 0.95), 0.002), 0.03);
   writeFileSync(join(OUT, files[t]), encode(b));
   pack.sounds.push({ file: files[t], name: `Soft weapon hit ${t + 1}`, group: "Weapons (Claude)", action: "weapon.staff.hit" });
   console.log(files[t], (b.length / SR).toFixed(2) + "s");
