@@ -149,9 +149,11 @@ export const DEFAULT_SOUNDS: Record<string, string> = {
  * 2026-11-25: enemy deaths play a soft pop (ElevenLabs, see
  * scripts/claude-sounds/eleven-death.ts) instead of the puff of smoke; the
  * smoke and the other new takes stay selectable in Sound testing.
+ * 2026-11-26: blessing / plague picks play a new warm bell chime and every
+ * bonus pickup a shorter sibling of it (scripts/claude-sounds/chimes.ts).
  */
 function PICKS(): Record<string, string> {
-  const C = "audio/Library/Claude/";
+  const FX = "audio/Library/ClaudeFx/";
   const DEATH = "audio/Library/ElevenFx/";
   const keep = (id: string) => id === "pickup.xp" || SOUND_EVENTS.find((e) => e.id === id)?.category === "ui";
   const out: Record<string, string> = {};
@@ -161,9 +163,14 @@ function PICKS(): Record<string, string> {
     "enemy.death.medium": `${DEATH}enemy-death-pop-1.mp3`,
     "enemy.death.large": `${DEATH}enemy-death-pop-2.mp3`,
     "enemy.death.elite": `${DEATH}enemy-death-pop-2.mp3`,
-    "event.blessing": `${C}event-levelup-1.mp3`,
-    "event.plague.unlock": `${C}event-levelup-1.mp3`,
-    "event.plague.evolve": `${C}event-levelup-1.mp3`,
+    "event.blessing": `${FX}blessing-chosen-1.mp3`,
+    "event.plague.unlock": `${FX}blessing-chosen-1.mp3`,
+    "event.plague.evolve": `${FX}blessing-chosen-1.mp3`,
+    "bonus.heart": `${FX}bonus-pickup-1.mp3`,
+    "bonus.magnet": `${FX}bonus-pickup-1.mp3`,
+    "bonus.star": `${FX}bonus-pickup-1.mp3`,
+    "bonus.lightning": `${FX}bonus-pickup-1.mp3`,
+    "bonus.shield": `${FX}bonus-pickup-1.mp3`,
   });
   return out;
 }
@@ -172,6 +179,12 @@ function PICKS(): Record<string, string> {
 // copied into PREVIOUS_SOUNDS) would otherwise hide the new defaults.
 // v3 (2026-11-24): the trimmed-down sound set replaced every earlier pick.
 const KEY = "exodus-survivors:sound-assignments-v3";
+export // One-time resets: browser picks of these actions are dropped once so the new
+// defaults are heard; picks made afterwards are kept.
+const RESETS: Array<[string, string[]]> = [
+  ["2026-11-26", ["event.blessing", "event.plague.unlock", "event.plague.evolve", "bonus.heart", "bonus.magnet", "bonus.star", "bonus.lightning", "bonus.shield"]],
+];
+const RESET_KEY = "exodus-survivors:sound-resets";
 export const CHOICES_EVENT = "exodus-survivors:sound-choices-changed";
 
 let cache: Record<string, string> | null = null;
@@ -185,6 +198,16 @@ function local(): Record<string, string> {
     // hide the new default death sound.
     for (const [id, path] of Object.entries(cache)) {
       if (id.startsWith("enemy.death.") && path.includes("enemy-death-smoke")) delete cache[id];
+    }
+    const done = new Set((window.localStorage.getItem(RESET_KEY) ?? "").split(",").filter(Boolean));
+    const todo = RESETS.filter(([tag]) => !done.has(tag));
+    if (todo.length) {
+      for (const [tag, ids] of todo) {
+        for (const id of ids) delete cache[id];
+        done.add(tag);
+      }
+      window.localStorage.setItem(KEY, JSON.stringify(cache));
+      window.localStorage.setItem(RESET_KEY, [...done].join(","));
     }
   } catch {
     cache = {};

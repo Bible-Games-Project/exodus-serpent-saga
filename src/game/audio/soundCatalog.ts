@@ -170,7 +170,7 @@ export const SOUND_EVENTS: SoundEvent[] = [
 
   // ---------------- Pickups ----------------
   ...group("pickups", "Pickups", PICKUP_TAKES, { priority: 5, pitchVar: 0.03, volume: 0.45 }, [
-    { id: "pickup.xp", label: "Experience gem collected", prompt: "Tiny gem collected, short pickup sound", duration: 0.5, maxVoices: 2, cooldown: 0.07, streak: true },
+    { id: "pickup.xp", label: "Experience gem collected", prompt: "Tiny gem collected, short pickup sound", duration: 0.5, maxVoices: 2, cooldown: 0.07, streak: true, volume: 0.9 },
     { id: "pickup.magnet", label: "Pickups pulled in (magnet)", prompt: "Many small items being pulled in by a magnet, rising whoosh", duration: 0.8, cooldown: 0.8, maxVoices: 1 },
     { id: "pickup.bonus.appear", label: "A bonus appears on the map", prompt: "Something special appearing, soft magical pop", duration: 0.6, cooldown: 0.5, volume: 0.5 },
   ]),
