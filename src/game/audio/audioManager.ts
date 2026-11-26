@@ -234,7 +234,9 @@ export async function previewSound(path: string, id?: string): Promise<boolean> 
 }
 
 // ---------- music ----------
-// No music tracks yet: the bus and volume are ready for when they are chosen.
+// One looping track through the music bus (Settings → Music volume).
+/** The game's song, looped everywhere (menus and runs). */
+export const MAIN_THEME_URL = libraryUrl("audio/Music/the-first-light.mp3");
 let musicSrc: { el: HTMLAudioElement; node: MediaElementAudioSourceNode } | null = null;
 
 export function playMusic(url: string | null) {
@@ -251,4 +253,21 @@ export function playMusic(url: string | null) {
   node.connect(musicBus);
   musicSrc = { el, node };
   void el.play().catch(() => {});
+}
+
+/**
+ * Starts the main theme on the first tap / click / key press (browsers block
+ * sound before that) and keeps it looping for the whole session.
+ */
+let musicInstalled = false;
+export function installBackgroundMusic() {
+  if (musicInstalled || typeof window === "undefined") return;
+  musicInstalled = true;
+  const start = () => {
+    window.removeEventListener("pointerdown", start, true);
+    window.removeEventListener("keydown", start, true);
+    if (!musicSrc) playMusic(MAIN_THEME_URL);
+  };
+  window.addEventListener("pointerdown", start, true);
+  window.addEventListener("keydown", start, true);
 }
