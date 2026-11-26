@@ -221,9 +221,9 @@ export const SOUND_EVENTS: SoundEvent[] = [
   // ---------------- Game events ----------------
   ...group("events", "Events", JINGLE_TAKES, { priority: 1, maxVoices: 1, cooldown: 0.5, pitchVar: 0, volume: 0.85 }, [
     { id: "event.levelup", label: "Level up", prompt: "Level up jingle, rising and joyful, very short", duration: 1.5 },
-    { id: "event.plague.unlock", label: "New plague / weapon unlocked", prompt: "New power unlocked, awe-inspiring reveal", duration: 2.0 },
-    { id: "event.plague.evolve", label: "Plague / weapon evolution", prompt: "Power upgraded, short rising empowerment", duration: 1.2 },
-    { id: "event.blessing", label: "Blessing chosen (passive)", prompt: "Blessing received, short warm sparkle", duration: 1.0 },
+    { id: "event.plague.unlock", label: "New plague / weapon unlocked", prompt: "New power unlocked, awe-inspiring reveal", duration: 2.0, volume: 0.6 },
+    { id: "event.plague.evolve", label: "Plague / weapon evolution", prompt: "Power upgraded, short rising empowerment", duration: 1.2, volume: 0.6 },
+    { id: "event.blessing", label: "Blessing chosen (passive)", prompt: "Blessing received, short warm sparkle", duration: 1.0, volume: 0.6 },
     { id: "event.champion.summon", label: "Champion summoned", prompt: "Heroic champion arrives with a blast, battle horn", duration: 2.0 },
     { id: "event.champion.down", label: "Champion knocked down", prompt: "Ally warrior knocked down, groan and fall", duration: 1.0, takes: ACTION_TAKES },
     { id: "event.champion.revive", label: "Champion back on his feet", prompt: "Ally warrior getting back up, short rallying shout", duration: 1.0, takes: ACTION_TAKES },

@@ -43,6 +43,24 @@
       "name": "Bonus picked up: short bell chime 2",
       "group": "Bonuses (Claude)",
       "action": "bonus.star"
+    },
+    {
+      "file": "soft-hit-1.mp3",
+      "name": "Soft weapon hit 1",
+      "group": "Weapons (Claude)",
+      "action": "weapon.staff.hit"
+    },
+    {
+      "file": "soft-hit-2.mp3",
+      "name": "Soft weapon hit 2",
+      "group": "Weapons (Claude)",
+      "action": "weapon.staff.hit"
+    },
+    {
+      "file": "soft-hit-3.mp3",
+      "name": "Soft weapon hit 3",
+      "group": "Weapons (Claude)",
+      "action": "weapon.staff.hit"
     }
   ]
 }

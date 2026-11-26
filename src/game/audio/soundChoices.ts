@@ -151,6 +151,9 @@ export const DEFAULT_SOUNDS: Record<string, string> = {
  * smoke and the other new takes stay selectable in Sound testing.
  * 2026-11-26: blessing / plague picks play a new warm bell chime and every
  * bonus pickup a shorter sibling of it (scripts/claude-sounds/chimes.ts).
+ * 2026-11-26 (later): opening the level-up popup and hovering its cards are
+ * silent; every weapon impact on an enemy plays a soft hit
+ * (scripts/claude-sounds/impact.ts), once per swing.
  */
 function PICKS(): Record<string, string> {
   const FX = "audio/Library/ClaudeFx/";
@@ -171,6 +174,14 @@ function PICKS(): Record<string, string> {
     "bonus.star": `${FX}bonus-pickup-1.mp3`,
     "bonus.lightning": `${FX}bonus-pickup-1.mp3`,
     "bonus.shield": `${FX}bonus-pickup-1.mp3`,
+    "weapon.staff.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.spear.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.sword.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.dagger.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.harpoon.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.boomerang.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.ring.hit": `${FX}soft-hit-1.mp3`,
+    "weapon.projectile.hit": `${FX}soft-hit-1.mp3`,
   });
   return out;
 }
@@ -183,6 +194,7 @@ export // One-time resets: browser picks of these actions are dropped once so th
 // defaults are heard; picks made afterwards are kept.
 const RESETS: Array<[string, string[]]> = [
   ["2026-11-26", ["event.blessing", "event.plague.unlock", "event.plague.evolve", "bonus.heart", "bonus.magnet", "bonus.star", "bonus.lightning", "bonus.shield"]],
+  ["2026-11-26b", ["event.levelup", "ui.card", "weapon.staff.hit", "weapon.spear.hit", "weapon.sword.hit", "weapon.dagger.hit", "weapon.harpoon.hit", "weapon.boomerang.hit", "weapon.ring.hit", "weapon.projectile.hit"]],
 ];
 const RESET_KEY = "exodus-survivors:sound-resets";
 export const CHOICES_EVENT = "exodus-survivors:sound-choices-changed";

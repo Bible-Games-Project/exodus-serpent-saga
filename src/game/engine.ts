@@ -1243,11 +1243,12 @@ function applyStaffSwingHits(state: GameState, sw: Entity, _dt: number) {
   // A shield soldier in the swing's path stops it dead: metallic clang, sparks,
   // zero damage anywhere.
 
-  // Weapons only sound on impact. Axe and mace sound when they hit the ground (weapons.ts).
+  // Weapons only sound on impact, once per swing however many foes it hits.
+  // Axe and mace also sound when they hit the ground (weapons.ts).
   if (candidates.length) {
     const wid = equippedWeapon(state).id;
-    const hitSound = wid === "spear" ? "weapon.spear.hit" : wid === "sword" ? "weapon.sword.hit" : wid === "axe" || wid === "mace" ? null : "weapon.staff.hit";
-    if (hitSound) snd(state, hitSound, candidates[0].en.pos);
+    const hitSound = wid === "spear" ? "weapon.spear.hit" : wid === "sword" ? "weapon.sword.hit" : "weapon.staff.hit";
+    snd(state, hitSound, candidates[0].en.pos);
   }
   for (const { en, px, py } of candidates) {
     applyBlessing(en, sw.data);

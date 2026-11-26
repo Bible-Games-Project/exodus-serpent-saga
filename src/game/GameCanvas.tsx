@@ -1493,7 +1493,7 @@ function LevelUpOverlay({ state, choices, onPick }: { state: GameState; choices:
               <button
                 key={c.id}
                 data-sfx="none"
-                data-sfx-hover="ui.card"
+                data-sfx-hover="none"
                 onClick={() => onPick(c)}
                 className={`pixel-panel-sm group relative flex ${CARD} shrink-0 items-center gap-3 bg-[#f6e2ad] p-2 text-left transition-transform duration-100 hover:bg-[#f0d795] sm:flex-col sm:items-center sm:justify-start sm:gap-2 sm:p-3 sm:text-center sm:hover:-translate-y-1`}
                 style={{ boxShadow: "0 5px 0 0 rgba(58,36,18,0.6)" }}
