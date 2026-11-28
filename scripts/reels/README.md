@@ -77,7 +77,12 @@ through the sandbox proxy; node's fetch does not). The Steam link is in every
 description; TikTok and Instagram never make caption links clickable, so those also
 say "link in bio". `GET /api/uploadposts/schedule` lists scheduled posts and
 `DELETE /api/uploadposts/schedule/<job>` cancels one;
-`PATCH /api/uploadposts/schedule/<job>` with `{"scheduled_date"}` moves one. Posts go out at
+`PATCH /api/uploadposts/schedule/<job>` with `{"scheduled_date"}` moves one. The cover
+(`public/reels/covers/<id>.jpg`) goes with every upload: as the YouTube and Facebook
+thumbnail and as the video's first two frames, which Instagram, TikTok and Pinterest
+take as cover. PATCH cannot change a cover, so `--replace` re-uploads a scheduled
+episode and cancels its old job once the new one is confirmed. Published posts keep
+their cover: the owner changes it in each app (TikTok does not allow it). Posts go out at
 00:00 Spain time (23:00 UTC the day before).
 
 Comments are not answered from this repo: the owner wants one free comment bot per
