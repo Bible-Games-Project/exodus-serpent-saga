@@ -44,6 +44,7 @@ node overlays.mjs $E     # hook, subtitles and card as PNGs (headless Chromium)
 node capture.mjs $E      # gameplay frames + the sounds the game played (slow: ~0.5 s/frame)
 bun sfx.ts $E            # game sounds track
 bun compose.ts $E        # -> public/reels/<id>.mp4
+bun cover.ts $E          # cover: painted scene + big title -> public/reels/covers/<id>.jpg (episode `cover.scene`, optional `cover.text`, *gold* words)
 ```
 
 Intermediate files go to `work/<id>/` (git-ignored); delete one to redo that step
