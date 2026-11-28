@@ -9,5 +9,8 @@
     "@napi-rs/canvas": "^1.2.1",
     "@sparticuz/chromium": "^153.0.0",
     "puppeteer-core": "^25.18.1"
+  },
+  "optionalDependencies": {
+    "@ffmpeg-installer/linux-arm64": "^4.1.4"
   }
 }

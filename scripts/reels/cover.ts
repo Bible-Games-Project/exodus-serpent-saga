@@ -1,49 +1,49 @@
-// Cover (thumbnail) of a reel: a painted scene of the episode in the poster's
-// pixel-art painting style (OpenAI image edit with the poster as the only
-// reference, no text in the picture) and the big title on top, drawn here so
-// the letters are always crisp and spelled right.
+// Cover (thumbnail) of a reel: a gameplay frame from the finished reel as the
+// background, the narrator big in front (the three poses take turns by episode
+// number) and the question as a big title on top, drawn here so the letters
+// are crisp and spelled right.
 //
-//   bun cover.ts episodes/08-sandals.json          # scene (once) + title -> public/reels/covers/<id>.jpg
-//   bun cover.ts episodes/08-sandals.json --text   # redraw the title only, keep the scene
+//   bun cover.ts episodes/08-sandals.json   # -> public/reels/covers/<id>.jpg (needs public/reels/<id>.mp4)
 //
-// Episode fields: `cover.scene` (what to paint), `cover.text` (title; words in
-// *stars* are gold; defaults to `hook`). The scene is kept in
-// scripts/reels/covers/<id>-scene.png. Needs OPENAI_API_KEY for the scene.
-// The title sits in the middle 3:4 of the frame, which every network's grid shows.
+// Optional episode fields, all in `cover`: `text` (title, default `hook`;
+// words in *stars* are gold), `frame` (second of the reel to use as the
+// background, default 45% in, after the narrator has left; pick a moment with
+// action and the subtitle low on the screen, the narrator hides it), `narrator`
+// (0, 1 or 2 to force a pose). The title sits in the middle 3:4 of the frame,
+// which every network's grid shows.
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { createCanvas, GlobalFonts, loadImage, type SKRSContext2D } from "@napi-rs/canvas";
+import { FFMPEG } from "./lib.mjs";
 
-const [epPath, flag] = process.argv.slice(2);
-if (!epPath) throw new Error("usage: bun cover.ts <episode.json> [--text]");
+const [epPath] = process.argv.slice(2);
+if (!epPath) throw new Error("usage: bun cover.ts <episode.json>");
 const ep = JSON.parse(fs.readFileSync(epPath, "utf8"));
 const HERE = import.meta.dir;
-const OUT = path.join(HERE, "..", "..", "public", "reels", "covers");
+const REPO = path.join(HERE, "..", "..");
+const OUT = path.join(REPO, "public", "reels", "covers");
 fs.mkdirSync(OUT, { recursive: true });
-const scenePath = path.join(HERE, "covers", `${ep.id}-scene.png`);
 const W = 1080, H = 1920;
-
-async function paintScene() {
-  const scene = ep.cover?.scene;
-  if (!scene) throw new Error(`${ep.id}: add cover.scene to the episode`);
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY is not set");
-  const f = new FormData();
-  f.append("model", "gpt-image-1.5");
-  f.append("image[]", new Blob([fs.readFileSync(path.join(HERE, "cards", "exodus-survivors-poster.png"))], { type: "image/png" }), "poster.png");
-  f.append("prompt", `Paint a brand-new vertical scene in exactly the same art style as this image: vivid high-detail pixel-art painting, saturated warm colours, strong rim light, dramatic sky, epic biblical mood. Do NOT copy the title or layout of the reference, and draw NO text, letters or logos anywhere. Keep the top 35% of the picture as open dramatic sky (empty space for a big title added later); put the subject large and close to the camera in the middle and lower part, so it reads instantly on a small phone screen. Scene: ${scene}`);
-  f.append("size", "1024x1536");
-  f.append("quality", "high");
-  f.append("input_fidelity", "low");
-  const r = await fetch("https://api.openai.com/v1/images/edits", { method: "POST", headers: { Authorization: `Bearer ${key}` }, body: f });
-  const j = await r.json();
-  if (!j.data?.[0]?.b64_json) throw new Error(`OpenAI ${r.status}: ${JSON.stringify(j).slice(0, 300)}`);
-  fs.writeFileSync(scenePath, Buffer.from(j.data[0].b64_json, "base64"));
-}
+const POSES = ["narrator.png", "narrator-v2.png", "narrator-v3.png"];
 
 const fontDir = path.join(HERE, "node_modules", "@fontsource", "rubik", "files");
 GlobalFonts.registerFromPath(path.join(fontDir, "rubik-latin-900-normal.woff2"), "RubikBlack");
 GlobalFonts.registerFromPath(path.join(fontDir, "rubik-latin-700-normal.woff2"), "RubikBold");
+
+/** A frame of the finished reel as a PNG, `dt` seconds after the chosen moment. */
+function grabFrame(dt = 0): string {
+  const video = path.join(REPO, "public", "reels", `${ep.id}.mp4`);
+  if (!fs.existsSync(video)) throw new Error(`No video ${video}: run compose.ts first`);
+  const probe = spawnSync(FFMPEG, ["-i", video], { encoding: "utf8" }).stderr;
+  const m = probe.match(/Duration: (\d+):(\d+):([\d.]+)/);
+  const dur = m ? +m[1] * 3600 + +m[2] * 60 + +m[3] : 20;
+  const t = Math.min(dur - 3, Math.max(0, (ep.cover?.frame ?? dur * 0.45) + dt));
+  const out = path.join(process.env.TMPDIR ?? "/tmp", `cover-${ep.id}-${dt}.png`);
+  const r = spawnSync(FFMPEG, ["-y", "-v", "error", "-ss", String(t), "-i", video, "-frames:v", "1", out]);
+  if (r.status !== 0) throw new Error("ffmpeg could not read a frame");
+  return out;
+}
 
 type Word = { t: string; gold: boolean };
 function words(text: string): Word[] {
@@ -67,70 +67,92 @@ function lines(ctx: SKRSContext2D, ws: Word[], size: number, maxW: number): Word
   const out: Word[][] = [[]];
   for (const w of ws) {
     const cur = out[out.length - 1];
-    const test = [...cur, w].map((x) => x.t).join(" ");
-    if (cur.length && ctx.measureText(test).width > maxW) out.push([w]);
+    if (cur.length && ctx.measureText([...cur, w].map((x) => x.t).join(" ")).width > maxW) out.push([w]);
     else cur.push(w);
   }
   return out;
 }
 
-async function draw() {
-  const ctx0 = createCanvas(W, H);
-  const ctx = ctx0.getContext("2d");
-  const img = await loadImage(scenePath);
-  // Cover-fit the 2:3 scene into 9:16.
-  const s = Math.max(W / img.width, H / img.height);
-  ctx.drawImage(img, (W - img.width * s) / 2, (H - img.height * s) / 2, img.width * s, img.height * s);
-  // Darken the top so the title pops, and a soft vignette.
-  const g = ctx.createLinearGradient(0, 0, 0, H * 0.55);
-  g.addColorStop(0, "rgba(20,8,2,0.55)"); g.addColorStop(0.6, "rgba(20,8,2,0.25)"); g.addColorStop(1, "rgba(20,8,2,0)");
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 0.75);
-  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.45)");
-  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+const canvas = createCanvas(W, H);
+const ctx = canvas.getContext("2d");
 
-  const ws = words(ep.cover?.text ?? ep.hook);
-  const maxW = W - 150;
-  // Largest size that fits in at most 3 lines, 420 px tall, every line inside the frame.
-  const fits = (sz: number, l: Word[][]) => l.length <= 3 && sz * 1.02 * l.length <= 420 && l.every((x) => ctx.measureText(x.map((w) => w.t).join(" ")).width <= maxW);
-  let size = 150, ls = lines(ctx, ws, size, maxW);
-  while (!fits(size, ls) && size > 60) { size -= 4; ls = lines(ctx, ws, size, maxW); }
-  const lh = size * 1.02;
-  const top = 270; // inside the 3:4 centre crop (y 240..1680)
-  ctx.textBaseline = "top";
-  ctx.lineJoin = "round";
-  ls.forEach((line, i) => {
-    ctx.font = `${size}px RubikBlack`;
-    const full = line.map((w) => w.t).join(" ");
-    let x = (W - ctx.measureText(full).width) / 2;
-    const y = top + i * lh;
-    for (const w of line) {
-      const ww = ctx.measureText(w.t).width;
-      // Shadow, thick dark outline, then the fill.
-      ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillText(w.t, x + 8, y + 12);
-      ctx.strokeStyle = "#2a1206"; ctx.lineWidth = size * 0.16; ctx.strokeText(w.t, x, y);
-      ctx.fillStyle = w.gold ? "#ffc93c" : "#fff8ec"; ctx.fillText(w.t, x, y);
-      x += ww + ctx.measureText(" ").width;
-    }
-  });
-  // The Bible reference as a small pill under the title.
-  if (ep.ref) {
-    const ref = String(ep.ref).split(";")[0].trim();
-    ctx.font = "50px RubikBold";
-    const tw = ctx.measureText(ref).width;
-    const py = top + ls.length * lh + 34, ph = 78, pw = tw + 64;
-    ctx.fillStyle = "rgba(30,12,4,0.78)";
-    ctx.beginPath(); ctx.roundRect((W - pw) / 2, py, pw, ph, ph / 2); ctx.fill();
-    ctx.strokeStyle = "#ffc93c"; ctx.lineWidth = 4; ctx.stroke();
-    ctx.fillStyle = "#ffe6a8"; ctx.textBaseline = "middle";
-    ctx.fillText(ref, (W - tw) / 2, py + ph / 2 + 2);
+// The game. The reel's frames carry its own title (top, down to y ~560) and
+// the subtitles (y ~1220-1350): the top is filled with clean ground from
+// another moment of the reel and the narrator's shoulders cover the subtitles.
+const CLEAN = 560;
+const frame = await loadImage(grabFrame());
+const other = await loadImage(grabFrame(-2.5));
+ctx.drawImage(frame, 0, CLEAN, W, H - CLEAN, 0, CLEAN, W, H - CLEAN);
+ctx.drawImage(other, 0, CLEAN, W, CLEAN, 0, 0, W, CLEAN);
+// Subtitle band: ground from below the subtitles of the other moment, feathered in.
+{
+  const SUB0 = 1180, SUB1 = 1380, F = 40;
+  const patch = createCanvas(W, SUB1 - SUB0 + 2 * F);
+  const p = patch.getContext("2d");
+  p.drawImage(other, 0, 1480, W, patch.height, 0, 0, W, patch.height);
+  p.globalCompositeOperation = "destination-in";
+  const m = p.createLinearGradient(0, 0, 0, patch.height);
+  m.addColorStop(0, "rgba(0,0,0,0)"); m.addColorStop(F / patch.height, "rgba(0,0,0,1)");
+  m.addColorStop(1 - F / patch.height, "rgba(0,0,0,1)"); m.addColorStop(1, "rgba(0,0,0,0)");
+  p.fillStyle = m; p.fillRect(0, 0, W, patch.height);
+  ctx.drawImage(patch, 0, SUB0 - F);
+}
+
+// Dark top for the title, a soft vignette and a glow behind the narrator.
+const top = ctx.createLinearGradient(0, 0, 0, 900);
+top.addColorStop(0, "rgba(26,10,2,0.92)"); top.addColorStop(0.62, "rgba(26,10,2,0.78)"); top.addColorStop(1, "rgba(26,10,2,0)");
+ctx.fillStyle = top; ctx.fillRect(0, 0, W, 900);
+const vig = ctx.createRadialGradient(W / 2, H * 0.55, H * 0.3, W / 2, H * 0.55, H * 0.75);
+vig.addColorStop(0, "rgba(0,0,0,0)"); vig.addColorStop(1, "rgba(0,0,0,0.4)");
+ctx.fillStyle = vig; ctx.fillRect(0, 0, W, H);
+const glow = ctx.createRadialGradient(W / 2, 1250, 80, W / 2, 1250, 620);
+glow.addColorStop(0, "rgba(255,214,120,0.55)"); glow.addColorStop(1, "rgba(255,214,120,0)");
+ctx.fillStyle = glow; ctx.fillRect(0, 700, W, 1220);
+
+// The narrator, big, standing on the bottom edge.
+const pose = ep.cover?.narrator ?? (parseInt(ep.id, 10) || 0) % POSES.length;
+const nar = await loadImage(path.join(HERE, "narrator", POSES[pose]));
+const nw = 1100, nh = nar.height * (nw / nar.width);
+const ny = 770; // shoulders at ~y 1200, over the subtitles
+ctx.save();
+ctx.shadowColor = "rgba(0,0,0,0.55)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 10;
+ctx.drawImage(nar, (W - nw) / 2, ny, nw, nh);
+ctx.restore();
+
+// The question.
+const ws = words(ep.cover?.text ?? ep.hook);
+const maxW = W - 120;
+const fits = (sz: number, l: Word[][]) => l.length <= 4 && sz * 1.04 * l.length <= 470 && l.every((x) => ctx.measureText(x.map((w) => w.t).join(" ")).width <= maxW);
+let size = 150, ls = lines(ctx, ws, size, maxW);
+while (!fits(size, ls) && size > 60) { size -= 4; ls = lines(ctx, ws, size, maxW); }
+const lh = size * 1.04;
+const y0 = 270; // inside the 3:4 centre crop (y 240..1680)
+ctx.textBaseline = "top";
+ctx.lineJoin = "round";
+ls.forEach((line, i) => {
+  ctx.font = `${size}px RubikBlack`;
+  const sp = ctx.measureText(" ").width;
+  let x = (W - ctx.measureText(line.map((w) => w.t).join(" ")).width) / 2;
+  const y = y0 + i * lh;
+  for (const w of line) {
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillText(w.t, x + 7, y + 11);
+    ctx.strokeStyle = "#1e0c03"; ctx.lineWidth = size * 0.17; ctx.strokeText(w.t, x, y);
+    ctx.fillStyle = w.gold ? "#ffc93c" : "#fffaf0"; ctx.fillText(w.t, x, y);
+    x += ctx.measureText(w.t).width + sp;
   }
-  const out = path.join(OUT, `${ep.id}.jpg`);
-  fs.writeFileSync(out, await ctx0.encode("jpeg", 90));
-  console.log("cover", out);
+});
+// The Bible reference as a small gold pill under it.
+if (ep.ref) {
+  const ref = String(ep.ref).split(";")[0].trim();
+  ctx.font = "48px RubikBold";
+  const tw = ctx.measureText(ref).width;
+  const py = y0 + ls.length * lh + 26, ph = 74, pw = tw + 60;
+  ctx.fillStyle = "#ffc93c";
+  ctx.beginPath(); ctx.roundRect((W - pw) / 2, py, pw, ph, ph / 2); ctx.fill();
+  ctx.fillStyle = "#2a1206"; ctx.textBaseline = "middle";
+  ctx.fillText(ref, (W - tw) / 2, py + ph / 2 + 2);
 }
 
-if (flag !== "--text" || !fs.existsSync(scenePath)) {
-  if (!fs.existsSync(scenePath) || flag === "--scene") await paintScene();
-}
-await draw();
+const out = path.join(OUT, `${ep.id}.jpg`);
+fs.writeFileSync(out, await canvas.encode("jpeg", 90));
+console.log("cover", out, "pose", pose);

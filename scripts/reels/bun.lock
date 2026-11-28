@@ -12,6 +12,9 @@
         "@sparticuz/chromium": "^153.0.0",
         "puppeteer-core": "^25.18.1",
       },
+      "optionalDependencies": {
+        "@ffmpeg-installer/linux-arm64": "^4.1.4",
+      },
     },
   },
   "packages": {
